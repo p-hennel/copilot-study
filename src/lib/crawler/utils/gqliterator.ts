@@ -15,6 +15,26 @@ type QueryResultType<Result extends object> = "nodes" extends keyof Result
       [Keys in keyof Omit<Result, "prev" | "next">]: QueryResultType<Extract<Result[Keys], object>>;
     }[keyof Omit<Result, "prev" | "next">];
 
+let shouldExit = false
+process.on('SIGINT', function() {
+  if (runningCounter <= 0) {
+    process.exit(0)
+  } else {
+    shouldExit = true
+  }
+})
+
+let runningCounter = 0
+const registerRunning = () => {
+  runningCounter++
+}
+const unregisterRunning = () => {
+  runningCounter--
+  if (runningCounter <= 0 && shouldExit) {
+    process.exit(0)
+  }
+}
+
 /**
  * iterate - Iterates through all pages of a GraphQL query using cursor-based pagination.
  * 
@@ -41,6 +61,14 @@ export async function iterate<
   // Create a scoped logger with contextual information
   const logger = _logger.with({ caller: getCaller(iterate), keys });
   let total = 0; // Track total items processed
+  
+  let shouldContinue = true
+  process.on('SIGINT', function() {
+    shouldContinue = false
+  })
+
+  registerRunning()
+
   try {
     let after: string | null = null; // Cursor for pagination
     do {
@@ -72,7 +100,7 @@ export async function iterate<
       if (iterationCB) {
         await iterationCB(items);
       }
-    } while (!!after); // Continue while there's a next page
+    } while (!!after && shouldContinue); // Continue while there's a next page
 
     logger.debug("completed iterations", () => ({ total }));
   } catch (error: any) {
@@ -82,6 +110,8 @@ export async function iterate<
       query,
       params
     });
+  } finally {
+    unregisterRunning()
   }
 }
 
@@ -113,29 +143,39 @@ export async function iterateOverOffset<
   keys = Array.isArray(keys) ? [...keys] : [keys];
   const result: ResultType[] = [];
   let offset = 0;
-  while (true) {
-    // Build query arguments including offset and limit for pagination
-    const queryArgs = { ...params, offset, limit };
-    const response = await client.query(query, queryArgs);
-    if (response.error || !response.data) {
-      logger.error("query failed!", { response, queryArgs });
-      break;
+  let shouldContinue = true
+  process.on('SIGINT', function() {
+    shouldContinue = false
+  })
+
+  registerRunning()
+  try {
+    while (shouldContinue) {
+      // Build query arguments including offset and limit for pagination
+      const queryArgs = { ...params, offset, limit };
+      const response = await client.query(query, queryArgs);
+      if (response.error || !response.data) {
+        logger.error("query failed!", { response, queryArgs });
+        break;
+      }
+      // Extract data using keys
+      const data = extract(logger, response.data, [...keys]);
+      // Ensure data is an array; if not, use an empty array
+      const _data: ResultType[] = Array.isArray(data) ? data : [];
+      if (_data.length === 0) break;
+      // Append the fetched items and update offset
+      result.push(..._data);
+      offset += _data.length;
+      logger.debug("completed iteration", () => ({
+        offset,
+        total: result.length,
+        added: _data.length
+      }));
+      // If fewer records than limit were returned, assume no more pages exist
+      if (_data.length < limit) break;
     }
-    // Extract data using keys
-    const data = extract(logger, response.data, [...keys]);
-    // Ensure data is an array; if not, use an empty array
-    const _data: ResultType[] = Array.isArray(data) ? data : [];
-    if (_data.length === 0) break;
-    // Append the fetched items and update offset
-    result.push(..._data);
-    offset += _data.length;
-    logger.debug("completed iteration", () => ({
-      offset,
-      total: result.length,
-      added: _data.length
-    }));
-    // If fewer records than limit were returned, assume no more pages exist
-    if (_data.length < limit) break;
+  } catch (e: any) {
+    unregisterRunning()
   }
 
   logger.debug("completed iterations", () => ({ total: result.length }));

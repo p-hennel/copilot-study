@@ -10,3 +10,8 @@ if (!dbUrl)
 const client = createClient({ url: dbUrl });
 
 export const db = drizzle(client, { schema });
+
+process.on('SIGINT', function() {
+  client.close()
+  process.exit(0)
+})

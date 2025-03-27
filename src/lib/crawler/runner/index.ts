@@ -90,8 +90,8 @@ async function processJob(job: AvailableJobType): Promise<void> {
   if (job.provider === "gitlab") {
     const gitlabCrawler = new Crawler(
       logger.getChild("gitlab"),
-      Bun.env.GITLAB_GQL_URL,
-      Bun.env.GITLAB_REST_URL,
+      Bun.env.GITLAB_GQL_URL ?? "",
+      Bun.env.GITLAB_REST_URL ?? "",
       job.accessToken ?? "",
       job.fullPath ?? undefined
     );
@@ -112,7 +112,11 @@ async function processJob(job: AvailableJobType): Promise<void> {
  *  - Process the job and then loop for the next job.
  */
 async function runRunnerContinuously() {
-  while (true) {
+  let shouldContinue = true
+  process.on('SIGINT', function() {
+    shouldContinue = false
+  })
+  while (shouldContinue) {
     let job: AvailableJobType | undefined;
     if (process.send) {
       try {
