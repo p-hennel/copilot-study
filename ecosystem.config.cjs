@@ -19,9 +19,8 @@ module.exports = {
     },
     {
       name: "web",
-      interpreter_args: ["--bun"],
-      interpreter: "bun",
-      script: "./build/index.js",
+      interpreter: "/bin/bash",
+      script: "pm2-server.sh",
       watch: false,
       autorestart: true,
       env: {
