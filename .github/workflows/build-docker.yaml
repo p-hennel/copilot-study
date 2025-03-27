@@ -25,17 +25,9 @@ env:
 
 jobs:
   docker:
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     env:
       BUILDX_NO_DEFAULT_ATTESTATIONS: 1  # Buildx added attestations are not compatible with "docker manifest" cmds
-    strategy:
-      matrix:
-        platform: [amd64, arm64]
-        include:
-          - runner: ubuntu-latest
-            suffix: amd64
-          - runner: linux_ubuntu_24_04_arm64_2_cores
-            suffix: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,11 +58,10 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64,linux/arm64
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
-          platforms: linux/amd64,linux/arm64
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
