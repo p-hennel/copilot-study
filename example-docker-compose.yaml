@@ -27,7 +27,7 @@ services:
       - GITLAB_CLIENT_ID= # Will be added later
       - GITLAB_CLIENT_SECRET= # Will be added later
       - GITLAB_BASE_URL= # Will be added later
-      - HMAC_KEY=eaSKwKpne72488xYMTcmoq5gQc8GmcXESKfJsj6k6zppQ3KwuAb4oaLzdW3e7Pea # important to ensure persistent hashess
+      - HMAC_KEY= # !!!! HMAC KEY FOR CONSISTENT HASHES !!!
       - HASH_ALG=sha256
       - OTEL_EXPORTER_OTLP_ENDPOINT="http://134.102.23.170:5080/api/ai-study" # to keep tabs on the crawler, it loggs to a self-hosted openobserve instance in Bremen
       - OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic " # !!!! OPEN OBSERVE TOKEN !!!!
