@@ -1,0 +1,4 @@
+apiVersion: v2
+name: ailead
+description: A Helm chart for your application
+version: 1.0.0

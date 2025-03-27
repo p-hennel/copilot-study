@@ -1,0 +1,121 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "appName": "Study on AI",
+  "home": {
+    "email": {
+      "placeholder": "Your E-Mail Address",
+      "action": "Confirm"
+    },
+    "title": "The Real Impact of AI on Programming Work",
+    "intro": "We’re conducting a research study on how AI tools are changing the everyday work of software developers. Our goal is to go beyond opinions and surface-level observations to really understand what’s happening — how behaviors, routines, and practices are evolving when programmers work alongside AI tools.\nTo do this, we’re inviting you to contribute digital trace data from tools you’re already using: GitLab and Jira."
+  },
+  "auth": {
+    "signOut": "Sign Out",
+    "providers": {
+      "gitlab": {
+        "name": "Gitlab",
+        "description": "Based on the (anonymized) data from Gitlab, we will be able to better understand changes in, for example how pull requests are structured, how things change over time. Given this, we can better isolate Copilot's effects from \"natural\" effects."
+      },
+      "jiralocal": {
+        "name": "Jira",
+        "description": "Using the (anonymized) data from Jira, we can identify external events, such as requirement changes, better and therefore better isolate how things changed due to the introduction of Copilot."
+      },
+      "jiracloud": {
+        "name": "Jira (Cloud)",
+        "description": "Using the (anonymized) data from Jira, we can identify external events, such as requirement changes, better and therefore better isolate how things changed due to the introduction of Copilot."
+      }
+    },
+    "login": {
+      "title": "Login",
+      "description": "Authenticate via GitLab below.",
+      "action": "Authorize",
+      "action_done": "Already authorized",
+      "cta": {
+        "question": "Not participated yet?",
+        "action": "Take the survey"
+      }
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "name": "Administration",
+      "title": "Hello there!",
+      "summary": {
+        "total": "Total users: {user_count}",
+        "lessThanMaxAccounts": "Users with less than {maxAccounts} accounts: {user_count}"
+      },
+      "userTable": {
+        "header": {
+          "idx": "#",
+          "name": "Name",
+          "email": "E-Mail",
+          "created": "Created",
+          "accounts": "Accounts",
+          "provider": "Provider",
+          "expires": "Expires"
+        },
+        "no_accounts": "No Accounts!"
+      },
+      "processesTable": {
+        "header": {
+          "idx": "#",
+          "pid": "PID",
+          "resources": "Resources",
+          "status": "Status",
+          "details": "Details"
+        },
+        "no_processes": "No Processes",
+        "trigger": "Trigger",
+        "refresh": "Refresh",
+        "scale-up": "Scale Up",
+        "scale-down": "Scale Down"
+      },
+      "jobsTable": {
+        "header": {
+          "idx": "#",
+          "id": "ID",
+          "command": "Command",
+          "provider": "Provider",
+          "status": "Status",
+          "created_at": "Created",
+          "started_at": "Started",
+          "finished_at": "Finished",
+          "from_job": "Parent",
+          "for_area": "For Area",
+          "children_count": "Children"
+        },
+        "no_jobs": "No Jobs"
+      },
+      "areasTable": {
+        "header": {
+          "idx": "#",
+          "id": "Full Path",
+          "name": "Name",
+          "type": "Type",
+          "created_at": "Created",
+          "countAccounts": "# Accounts",
+          "countJobs": "# Jobs"
+        },
+        "no_areas": "No Areas"
+      }
+    },
+    "signin": {
+      "title": "Sign In",
+      "description": "Authenticate via Email and Password.",
+      "password": "Password",
+      "email": "E-Mail",
+      "action": "Sign In",
+      "failed": "Sign In Failed!"
+    },
+    "signup": {
+      "title": "Sign Up",
+      "description": "Register with Email and Password.",
+      "password": "Password",
+      "email": "E-Mail",
+      "action": "Sign Up",
+      "failed": "Sign Up Failed!",
+      "success": "Have your User-ID registered as admin.",
+      "name": "Name"
+    }
+  }
+}

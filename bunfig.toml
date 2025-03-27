@@ -1,0 +1,9 @@
+telemetry = false
+
+[install]
+auto = "auto"
+
+[run]
+# equivalent to `bun --bun` for all `bun run` commands
+bun = true
+silent = true
