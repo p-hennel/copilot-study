@@ -11,6 +11,8 @@ RUN apt-get update && \
 RUN echo 'modprobe cifs\necho 0 > /proc/fs/cifs/OplockEnabled' >> /etc/rc.local
 RUN wget -qO - https://raw.githubusercontent.com/cupcakearmy/autorestic/master/install.sh | bash
 
+RUN mkdir -p /data/logs /data/archive /data/config
+
 # install dependencies into temp directory
 # this will cache them and speed up future builds
 FROM base AS install
@@ -29,17 +31,16 @@ FROM base AS prerelease
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
-# TODO: CHECK FOR THINGS LIKE .autorestic.yml, ecosystem.config.cjs, ...
-
 # build for production
 ENV NODE_ENV=production
-RUN bun run build
+RUN bun run build:all
 
 # copy production dependencies and source code into final image
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/index.ts .
-COPY --from=prerelease /usr/src/app/package.json .
+COPY --from=prerelease /usr/src/app/build /usr/src/app/package.json /usr/src/app/ecosystem.config.cjs ./
+#     /usr/src/app/build/.autorest.config \
+#COPY --from=prerelease /usr/src/app/package.json .
 
 # run the app
 USER bun

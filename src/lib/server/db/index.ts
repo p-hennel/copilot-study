@@ -3,8 +3,10 @@ import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 import { env } from "$env/dynamic/private";
 
-if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
+let dbUrl = env.DATABASE_URL
+if (!dbUrl)
+  dbUrl = "file:/data/config/main.db"
 
-const client = createClient({ url: env.DATABASE_URL });
+const client = createClient({ url: dbUrl });
 
 export const db = drizzle(client, { schema });

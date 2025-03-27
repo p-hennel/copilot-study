@@ -1,4 +1,3 @@
-import { ADMIN_MAIL } from "$env/static/private";
 import { authClient } from "$lib/auth-client";
 import { json } from "@sveltejs/kit";
 
@@ -22,9 +21,9 @@ export async function GET({ request, url, locals }) {
     email: user,
     password: pw
   });
-  console.warn(signIn);
 
-  if (user == ADMIN_MAIL) {
+  // TODO: check for admin mail address
+  if (user == "") {
     if (signIn.error?.code === "INVALID_EMAIL_OR_PASSWORD") {
       const signUp = await authClient.signUp.email({
         email: user,
