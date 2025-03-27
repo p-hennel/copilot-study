@@ -1,4 +1,10 @@
 name: build-docker
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 on:
   label:
     types:
@@ -8,7 +14,6 @@ on:
       - main
       - 'releases/**'
       - 'release/**'
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
