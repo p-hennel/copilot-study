@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get upgrade -qq -y && \
-    apt-get install -qq -y nano btop cifs-utils bash wget bzip2
+    apt-get install -qq -y nano htop cifs-utils bash wget bzip2
 
 RUN echo 'modprobe cifs\necho 0 > /proc/fs/cifs/OplockEnabled' >> /etc/rc.local
 RUN wget -qO - https://raw.githubusercontent.com/cupcakearmy/autorestic/master/install.sh | bash
