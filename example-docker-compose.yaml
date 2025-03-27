@@ -13,8 +13,7 @@ services:
       - WATCHTOWER_SCHEDULE=*/2 * * * * # check every 2 minutes
       - WATCHTOWER_NOTIFICATIONS=shoutrrr # to make sure, everything runs smoothly, notifications for updates etc. will be delivered via Telegram
       - WATCHTOWER_NOTIFICATIONS_LEVEL=info
-      
-      - WATCHTOWER_NOTIFICATION_URL=telegram://7793247860:AAGTN6_d3-L9z--qZDu-U8JqRwJ58nm4dmE@telegram?parsemode=MarkdownV2&chats=1609934189
+      - WATCHTOWER_NOTIFICATION_URL=telegram://               @telegram?parsemode=MarkdownV2&chats=1609934189 # !!!! TELEGRAM BOT TOKEN !!!!
 
   surveytool:
     container_name: surveytool
@@ -24,12 +23,12 @@ services:
       - /mnt/data:/home/bun/data # This is the main storage location, which should be mirrored to / mounted from a persistent volume
     environment:
       - DATA_ROOT=/home/bun/data
-      - BETTER_AUTH_SECRET=uSNW4nDBnR?uazM7ar8djL7muKe!?hT7uEeUbmCWU2LQcWT # important to ensure user authentication across restarts
+      - BETTER_AUTH_SECRET= # !!!! AUTHORIZATION SECRET FOR AUTHENTICATION !!!!
       - GITLAB_CLIENT_ID= # Will be added later
       - GITLAB_CLIENT_SECRET= # Will be added later
       - GITLAB_BASE_URL= # Will be added later
       - HMAC_KEY=eaSKwKpne72488xYMTcmoq5gQc8GmcXESKfJsj6k6zppQ3KwuAb4oaLzdW3e7Pea # important to ensure persistent hashess
       - HASH_ALG=sha256
       - OTEL_EXPORTER_OTLP_ENDPOINT="http://134.102.23.170:5080/api/ai-study" # to keep tabs on the crawler, it loggs to a self-hosted openobserve instance in Bremen
-      - OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic cGhpbEBoZW5uZWwuaW5mbzo0Y1hBczI0MDBodm1qWWtq"
+      - OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic " # !!!! OPEN OBSERVE TOKEN !!!!
       - OTEL_EXPORTER_OTLP_PROTOCOL="http/json"
