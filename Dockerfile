@@ -6,12 +6,10 @@ WORKDIR /usr/src/app
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get upgrade -qq -y && \
-    apt-get install -qq -y nano htop cifs-utils bash wget bzip2
+    apt-get install -qq -y nano htop cifs-utils bash wget bzip2 curl
 
 RUN echo 'modprobe cifs\necho 0 > /proc/fs/cifs/OplockEnabled' >> /etc/rc.local
 RUN wget -qO - https://raw.githubusercontent.com/cupcakearmy/autorestic/master/install.sh | bash
-
-RUN mkdir -p /data/logs /data/archive /data/config
 
 # install dependencies into temp directory
 # this will cache them and speed up future builds
@@ -31,6 +29,8 @@ FROM base AS prerelease
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
+RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
+
 # build for production
 ENV NODE_ENV=production
 RUN bun run build:all
@@ -42,7 +42,10 @@ COPY --from=prerelease /usr/src/app/build /usr/src/app/package.json /usr/src/app
 #     /usr/src/app/build/.autorest.config \
 #COPY --from=prerelease /usr/src/app/package.json .
 
+RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
+RUN chown -R bun:bun /home/bun/data
+
 # run the app
 USER bun
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "pm2", "start", "ecosystem.config.cjs" ]
+ENTRYPOINT [ "bun", "pm2-runtime", "start", "ecosystem.config.cjs", "--only", "web"]

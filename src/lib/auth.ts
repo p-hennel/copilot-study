@@ -69,6 +69,7 @@ export const getUserFromJira = async (tokens: OAuth2Tokens): Promise<User | null
 };
 
 export const auth = betterAuth({
+  trustedOrigins: ["http://localhost:3000"],
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: schema

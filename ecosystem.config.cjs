@@ -4,7 +4,7 @@ module.exports = {
       name: "crawler",
       interpreter_args: ["--bun"],
       interpreter: "bun",
-      script: "/usr/src/app/crawler/main.js",
+      script: "./crawler/index.js",
       env: {
         PATH: `${process.env.HOME}/.bun/bin:${process.env.PATH}`, // Add "~/.bun/bin/bun" to PATH
       },
@@ -14,14 +14,14 @@ module.exports = {
       env_development: {
         NODE_ENV: "development"
       },
-      instances: "max",
+      instances: "1",
       exec_mode: "cluster"
     },
     {
       name: "web",
       interpreter_args: ["--bun"],
       interpreter: "bun",
-      script: "/usr/src/app/index.js",
+      script: "./build/index.js",
       watch: false,
       autorestart: true,
       env: {
