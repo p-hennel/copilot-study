@@ -10,10 +10,6 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
-  - package-ecosystem: "bun"
-    directory: "/"
-    schedule:
-      interval: "weekly"
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"
