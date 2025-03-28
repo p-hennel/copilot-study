@@ -38,7 +38,7 @@ RUN bun run build:all
 # copy production dependencies and source code into final image
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/build /usr/src/app/package.json /usr/src/app/ecosystem.config.cjs /usr/src/app/pm2-server.sh ./
+COPY --from=prerelease /usr/src/app/build /usr/src/app/package.json /usr/src/app/ecosystem.config.cjs /usr/src/app/pm2-server.sh /usr/src/app/startup.sh ./
 #     /usr/src/app/build/.autorest.config \
 #COPY --from=prerelease /usr/src/app/package.json .
 
@@ -48,4 +48,4 @@ RUN chown -R bun:bun /home/bun/data
 # run the app
 USER bun
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "pm2-runtime", "start", "ecosystem.config.cjs", "--only", "web"]
+ENTRYPOINT [ "./startup.sh" ]
