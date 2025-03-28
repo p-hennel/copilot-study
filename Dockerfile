@@ -56,6 +56,10 @@ COPY --from=prerelease \
     /usr/src/app/backup.cron \
     ./
 
+COPY --from=prerelease \
+  /usr/src/app/config/settings.example.yaml \
+  /home/bun/data/config/settings.yaml
+
 RUN crontab -u bun /usr/src/app/backup.cron
 RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
 RUN chown -R bun:bun /home/bun/data /home/bun/.ssh

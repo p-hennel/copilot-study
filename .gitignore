@@ -36,3 +36,5 @@ src/lib/paraglide
 
 *.bun-build
 *.private
+
+settings.yaml
