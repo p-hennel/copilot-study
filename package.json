@@ -100,7 +100,7 @@
     "pm2": "^6.0.5",
     "rollup": "^4.37.0",
     "stream-transform": "^3.3.3",
-    "svelte-exmarkdown": "^4.0.3",
+    "svelte-exmarkdown": "^5.0.0",
     "svelte-time": "^2.0.1",
     "ts-node": "^10.9.2",
     "ulid": "^2.4.0"
