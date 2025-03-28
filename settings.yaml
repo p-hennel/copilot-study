@@ -1,0 +1,54 @@
+paths:
+  dataRoot: /Users/philhennel/Code/copilot-survey
+  config: /Users/philhennel/Code/copilot-survey/config
+  database: file:///Users/philhennel/Code/copilot-survey/config/main.db
+  archive: /Users/philhennel/Code/copilot-survey/archive
+  logs: /Users/philhennel/Code/copilot-survey/logs
+hashing:
+  algorithm: sha256
+auth:
+  initCode: aVNEpnVwsutCH5sq4HGuQCyoFRFh7ifneoiZogrpV2EoLRsc
+  trustedOrigins:
+    - http://localhost:3000
+    - http://localhost:4173
+    - http://localhost:5173
+  trustedProviders:
+    - gitlab
+    - jira
+  allowDifferentEmails: true
+  admins: []
+  providers:
+    gitlab:
+      baseUrl: https://gitlab.com
+      scopes:
+        - read:jira-work
+        - read:jira-user
+        - read:me
+        - read:account
+      redirectURI: /api/auth/oauth2/callback/gitlab
+    jiracloud:
+      baseUrl: https://api.atlassian.com
+      authorizationUrl: https://auth.atlassian.com/authorize
+      authorizationUrlParams:
+        audience: api.atlassian.com
+      tokenUrl: https://auth.atlassian.com/oauth/token
+      scopes:
+        - read:jira-work
+        - read:jira-user
+        - read:me
+        - read:account
+      redirectURI: /api/auth/oauth2/callback/jiracloud
+      accessibleResourcesUrl: https://api.atlassian.com/oauth/token/accessible-resources
+    jira:
+      baseUrl: https://api.atlassian.com
+      authorizationUrl: /authorize
+      authorizationUrlParams:
+        audience: api.atlassian.com
+      tokenUrl: /oauth/token
+      scopes:
+        - read:jira-work
+        - read:jira-user
+        - read:me
+        - read:account
+      redirectURI: /api/auth/oauth2/callback/jira
+      accessibleResourcesUrl: https://api.atlassian.com/oauth/token/accessible-resources

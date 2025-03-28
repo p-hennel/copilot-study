@@ -1,5 +1,6 @@
 import { authClient } from "$lib/auth-client";
 import { json } from "@sveltejs/kit";
+import AppSettings from "$lib/server/settings";
 
 async function respondAsJSON(result: any, locals: any) {
   const { data: session } = await authClient.getSession();
@@ -22,8 +23,7 @@ export async function GET({ request, url, locals }) {
     password: pw
   });
 
-  // TODO: check for admin mail address
-  if (user == "") {
+  if (AppSettings.auth.admins.map(x => x.email.toLowerCase()).includes(user.toLowerCase())) {
     if (signIn.error?.code === "INVALID_EMAIL_OR_PASSWORD") {
       const signUp = await authClient.signUp.email({
         email: user,
