@@ -2,12 +2,9 @@ import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 import { env } from "$env/dynamic/private";
+import AppSettings from "../settings/index";
 
-let dbUrl = env.DATABASE_URL
-if (!dbUrl)
-  dbUrl = "file:/home/bun/data/config/main.db"
-
-const client = createClient({ url: dbUrl });
+const client = createClient({ url: AppSettings.paths.database });
 
 export const db = drizzle(client, { schema });
 

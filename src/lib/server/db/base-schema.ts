@@ -8,9 +8,9 @@ import {
   type AnySQLiteColumn,
   uniqueIndex
 } from "drizzle-orm/sqlite-core";
-//import { account } from './auth-schema'
 import { monotonicFactory } from "ulid";
 import { AreaType, CrawlCommand, JobStatus } from "../../utils";
+import { account } from "./auth-schema";
 
 const ulid = monotonicFactory();
 
@@ -58,7 +58,7 @@ function toDBEnum<T extends Record<any, string>>(data: T): [T[keyof T], ...T[key
 export const area_authorization = sqliteTable(
   "area_authorization",
   {
-    accountId: text().notNull(), //.references(() => account.id),
+    accountId: text().notNull().references(() => account.id),
     area_id: text()
       .notNull()
       .references(() => area.full_path)
@@ -66,7 +66,7 @@ export const area_authorization = sqliteTable(
   (table) => [primaryKey({ columns: [table.accountId, table.area_id] })]
 );
 export const area_authorizationRelations = relations(area_authorization, ({ one }) => ({
-  //account: one(account),
+  account: one(account),
   area: one(area)
 }));
 
@@ -78,7 +78,7 @@ export const area = sqliteTable("area", {
   created_at: integer({ mode: "timestamp" }).notNull().default(new Date())
 });
 export const areaRelations = relations(area, ({ many }) => ({
-  //usingAccounts: many(account),
+  usingAccounts: many(account),
   relatedJobs: many(job)
 }));
 

@@ -9,10 +9,6 @@ export async function getMD(slug: string, depends: any, locals: any): Promise<st
   return content.default as string;
 }
 
-export function getSurveyURL(hash: string, placeholder = "%%TOKEN%%"): string {
-  return process.env.SURVEY_URL?.replace(placeholder, hash) ?? "";
-}
-
 export async function isAdmin(locals: App.Locals | undefined) {
   return locals && locals.session && locals.user && locals.user.role === "admin";
 }
@@ -124,6 +120,7 @@ import { db } from "./db";
 import { auth } from "$lib/auth";
 import { JobStatus } from "$lib/utils";
 import { CollectionTypes } from "../crawler/utils/datastorage";
+import AppSettings from "./settings/index";
 
 export const getApiToken = async (userId: string): Promise<string | undefined> => {
   const oldKey = await db.select().from(apikey).where(eq(apikey.userId, userId)).limit(1);
@@ -176,7 +173,7 @@ export const fileForAreaPart = async (
     type = tmp;
   }
 
-  const filePath = path.resolve(path.join(process.env.DATA_ROOT_PATH ?? "./", ...fullPath));
+  const filePath = path.resolve(path.join(AppSettings.paths.dataRoot, ...fullPath));
   const file = Bun.file(filePath);
   if (!(await file.exists)) return undefined;
   else return file;

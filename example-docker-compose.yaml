@@ -1,19 +1,5 @@
 services:
-  watchtower:
-    container_name: watchtower
-    image: containrrr/watchtower:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /etc/localtime:/etc/localtime:ro
-    environment:
-      - WATCHTOWER_CLEANUP=true # remove old images after updating
-      - WATCHTOWER_INCLUDE_STOPPED=true
-      - WATCHTOWER_REVIVE_STOPPED=true
-      - WATCHTOWER_INCLUDE_RESTARTING=false
-      - WATCHTOWER_SCHEDULE=*/2 * * * * # check every 2 minutes
-      - WATCHTOWER_NOTIFICATIONS=shoutrrr # to make sure, everything runs smoothly, notifications for updates etc. will be delivered via Telegram
-      - WATCHTOWER_NOTIFICATIONS_LEVEL=info
-      - WATCHTOWER_NOTIFICATION_URL=telegram://               @telegram?parsemode=MarkdownV2&chats=1609934189 # !!!! TELEGRAM BOT TOKEN !!!!
+
 
   surveytool:
     container_name: surveytool
@@ -22,11 +8,14 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /mnt/data:/home/bun/data # This is the main storage location, which should be mirrored to / mounted from a persistent volume
     environment:
+      - AUTORESTIC_FOO_RESTIC_PASSWORD= # !!! ENCRYPTION KEY FOR BACKUP !!!
+      - BACKUP_USER= # !!! USER FOR BACKUP SERVICE !!!
+      - BACKUP_PRIVATE_KEY= # !!! SSH PRIVATE KEY FPR BACKUP SERVICE !!!
       - DATA_ROOT=/home/bun/data
       - BETTER_AUTH_SECRET= # !!!! AUTHORIZATION SECRET FOR AUTHENTICATION !!!!
-      - GITLAB_CLIENT_ID= # Will be added later
-      - GITLAB_CLIENT_SECRET= # Will be added later
-      - GITLAB_BASE_URL= # Will be added later
+#      - GITLAB_CLIENT_ID= # Will be added later
+#      - GITLAB_CLIENT_SECRET= # Will be added later
+#      - GITLAB_BASE_URL= # Will be added later
       - HMAC_KEY= # !!!! HMAC KEY FOR CONSISTENT HASHES !!!
       - HASH_ALG=sha256
       - OTEL_EXPORTER_OTLP_ENDPOINT="http://134.102.23.170:5080/api/ai-study" # to keep tabs on the crawler, it loggs to a self-hosted openobserve instance in Bremen

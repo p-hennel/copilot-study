@@ -21,6 +21,7 @@
         "eslint-plugin-drizzle": "^0.2.3",
         "export-to-csv": "^1.4.0",
         "graphql": "^16.10.0",
+        "js-yaml": "^4.1.0",
         "pm2": "^6.0.5",
         "rollup": "^4.37.0",
         "stream-transform": "^3.3.3",

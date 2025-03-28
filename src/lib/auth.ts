@@ -9,6 +9,7 @@ import { env } from "$env/dynamic/private";
 import { genericOAuth } from "better-auth/plugins";
 import { type OAuth2Tokens } from "better-auth/oauth2";
 import { normalizeURL } from "./utils";
+import AppSettings from "./server/settings";
 
 const gitlabBaseURL = normalizeURL(env.GITLAB_BASE_URL ?? "https://gitlab.com");
 const jiraBaseURL = normalizeURL(env.JIRA_BASE_URL ?? "https://auth.atlassian.com/");
@@ -51,12 +52,18 @@ export const getJiraAccountInfo = async (
   }
 };
 
+export const getUserFromJiraCloud = async (tokens: OAuth2Tokens): Promise<User | null> => {
+  return _getUserFromJira(AppSettings.auth.providers.jiracloud.accessibleResourcesUrl, tokens);
+}
 export const getUserFromJira = async (tokens: OAuth2Tokens): Promise<User | null> => {
+  return _getUserFromJira(AppSettings.auth.providers.jira.accessibleResourcesUrl, tokens);
+}
+const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User | null> => {
   const headers: HeadersInit = new Headers();
   headers.set("Accept", "application/json");
   headers.set("Authorization", `Bearer ${tokens.accessToken}`);
 
-  const response = await fetch("https://api.atlassian.com/oauth/token/accessible-resources", {
+  const response = await fetch(url, {
     method: "GET",
     headers: headers
   });
@@ -69,7 +76,7 @@ export const getUserFromJira = async (tokens: OAuth2Tokens): Promise<User | null
 };
 
 export const auth = betterAuth({
-  trustedOrigins: ["http://localhost:3000"],
+  trustedOrigins: AppSettings.auth.trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: schema
@@ -77,46 +84,40 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: ["gitlab", "jira"],
-      allowDifferentEmails: true
+      trustedProviders: AppSettings.auth.trustedProviders,
+      allowDifferentEmails: AppSettings.auth.allowDifferentEmails
     }
   },
   plugins: [
-    admin({
-      adminUserIds: [env.ADMIN_ID]
-    }),
+    admin(),
     jwt(),
     apiKey(),
     genericOAuth({
       config: [
         {
           providerId: "jiracloud",
-          clientId: env.JIRA_CLIENT_ID,
-          clientSecret: env.JIRA_CLIENT_SECRET,
-          authorizationUrl: "https://auth.atlassian.com/authorize",
-          authorizationUrlParams: {
-            audience: "api.atlassian.com"
-          },
-          tokenUrl: "https://auth.atlassian.com/oauth/token",
-          scopes: ProviderScopes.jira,
-          redirectURI: `http://localhost:5173/api/auth/oauth2/callback/jiracloud`,
-          getUserInfo: getUserFromJira
+          clientId: AppSettings.auth.providers.jiracloud.clientId,
+          clientSecret: AppSettings.auth.providers.jiracloud.clientSecret,
+          authorizationUrl: AppSettings.auth.providers.jiracloud.authorizationUrl,
+          authorizationUrlParams: AppSettings.auth.providers.jiracloud.authorizationUrlParams,
+          tokenUrl: AppSettings.auth.providers.jiracloud.tokenUrl,
+          scopes: AppSettings.auth.providers.jiracloud.scopes,
+          redirectURI: AppSettings.auth.providers.jiracloud.redirectURI,
+          getUserInfo: getUserFromJiraCloud
         },
         {
           providerId: "jiralocal",
-          clientId: env.JIRA_CLIENT_ID,
-          clientSecret: env.JIRA_CLIENT_SECRET,
-          tokenUrl: `${jiraBaseURL}/plugins/servlet/oauth/request-token`,
-          authorizationUrl: `${jiraBaseURL}/plugins/servlet/oauth/authorize`,
-          authorizationUrlParams: {
-            audience: "api.atlassian.com"
-          },
+          clientId: AppSettings.auth.providers.jira.clientId,
+          clientSecret: AppSettings.auth.providers.jira.clientSecret,
+          authorizationUrl: AppSettings.auth.providers.jira.authorizationUrl,
+          authorizationUrlParams: AppSettings.auth.providers.jira.authorizationUrlParams,
+          tokenUrl: AppSettings.auth.providers.jira.tokenUrl,
+          scopes: AppSettings.auth.providers.jira.scopes,
+          redirectURI: AppSettings.auth.providers.jira.redirectURI,
           //`${jiraBaseURL}/plugins/servlet/oauth/access-token`,
           //'RSA-SHA1',
           //discoveryUrl: `${jiraBaseURL}/.well-known/openid-configuration`,
-          scopes: ProviderScopes.jira,
           getUserInfo: getUserFromJira,
-          redirectURI: `http://localhost:5173/api/auth/oauth2/callback/jira`
         }
       ]
     })
@@ -126,10 +127,11 @@ export const auth = betterAuth({
   },
   socialProviders: {
     gitlab: {
-      clientId: env.GITLAB_CLIENT_ID as string,
-      clientSecret: env.GITLAB_CLIENT_SECRET as string,
-      discoveryUrl: `${gitlabBaseURL}/.well-known/openid-configuration`,
-      scopes: ProviderScopes.gitlab
+      clientId: AppSettings.auth.providers.gitlab.clientId,
+      clientSecret: AppSettings.auth.providers.gitlab.clientSecret,
+      discoveryUrl: AppSettings.auth.providers.gitlab.discoveryUrl,
+      scopes: AppSettings.auth.providers.gitlab.scopes,
+      redirectURI: AppSettings.auth.providers.gitlab.redirectURI
     }
   }
 });
