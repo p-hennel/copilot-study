@@ -9,7 +9,7 @@ import { ulid } from "ulid";
 import { getLogger } from "@logtape/logtape";
 import path from "node:path";
 import { JobStatus, type TokenProvider } from "$lib/utils";
-import { env } from "$env/dynamic/private";
+import AppSettings from "$lib/server/settings";
 
 const logger = getLogger(["server", "jobFactory"]);
 
@@ -431,5 +431,15 @@ export const getAvailableJobs = async (
 };
 
 export const providerToBaseURL = (provider: TokenProvider | string) => {
-  return env[`${provider.toUpperCase()}_BASE_URL`];
+  switch (provider) {
+    case "gitlab":
+      return AppSettings.auth.providers.gitlab.baseUrl;
+    case "jira":
+      return AppSettings.auth.providers.jira.baseUrl;
+    case "jiracloud":
+      return AppSettings.auth.providers.jiracloud.baseUrl;
+    default:
+      logger.warn("No base URL found for provider {provider}", { provider });
+      return null;
+  }
 };

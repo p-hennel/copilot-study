@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import yaml from 'js-yaml';
 import { z } from 'zod';
 import path from 'node:path';
+import { base } from '$service-worker';
 
 const dataRoot = path.join("/", "home", "bun", "data")
 
@@ -14,7 +15,12 @@ const settingsSchema = z.object({
     archive: z.string().nonempty().default(path.join(dataRoot, "archive")),
     logs: z.string().nonempty().default(path.join(dataRoot, "logs")),
   }),
+  hashing: z.object({
+    algorithm: z.enum(["sha256", "sha512", "blake2b512", "md5", "sha1", "sha224", "sha384", "sha512-224", "sha512-256"]).default("sha256"),
+    hmacKey: z.string().nonempty(),
+  }),
   auth: z.object({
+    initCode: z.string().nonempty().default(Bun.env.INIT_CODE ?? "aVNEpnVwsutCH5sq4HGuQCyoFRFh7ifneoiZogrpV2EoLRsc"),
     secret: z.string(),
     trustedOrigins: z.array(z.string().nonempty()).default(["http://localhost:3000", "http://localhost:4173", "http://localhost:5173"]),
     trustedProviders: z.array(z.string().nonempty()).default(["gitlab", "jira"]),
@@ -25,6 +31,7 @@ const settingsSchema = z.object({
     })),
     providers: z.object({
       gitlab: z.object({
+        baseUrl: z.string().nonempty().default("https://gitlab.com"),
         clientId: z.string(),
         clientSecret: z.string(),
         discoveryUrl: z.string(),
@@ -32,6 +39,7 @@ const settingsSchema = z.object({
         redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab"),
       }),
       jiracloud: z.object({
+        baseUrl: z.string().nonempty().default("https://api.atlassian.com"),
         clientId: z.string(),
         clientSecret: z.string(),
         authorizationUrl: z.string().default("https://auth.atlassian.com/authorize"),
@@ -42,6 +50,7 @@ const settingsSchema = z.object({
         accessibleResourcesUrl: z.string().default("https://api.atlassian.com/oauth/token/accessible-resources"),
       }),
       jira: z.object({
+        baseUrl: z.string().nonempty().default("https://api.atlassian.com"),
         clientId: z.string(), // Same as jiracloud
         clientSecret: z.string(), // Same as jiracloud
         authorizationUrl: z.string().default("/authorize"),

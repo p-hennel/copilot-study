@@ -5,19 +5,9 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./server/db/index";
 import { jwt } from "better-auth/plugins";
 import * as schema from "./server/db/schema";
-import { env } from "$env/dynamic/private";
 import { genericOAuth } from "better-auth/plugins";
 import { type OAuth2Tokens } from "better-auth/oauth2";
-import { normalizeURL } from "./utils";
 import AppSettings from "./server/settings";
-
-const gitlabBaseURL = normalizeURL(env.GITLAB_BASE_URL ?? "https://gitlab.com");
-const jiraBaseURL = normalizeURL(env.JIRA_BASE_URL ?? "https://auth.atlassian.com/");
-
-export const ProviderScopes = {
-  gitlab: ["read:jira-work", "read:jira-user", "read:me", "read:account"],
-  jira: ["read:jira-work", "read:jira-user", "read:me", "read:account"]
-};
 
 export const getJiraAccountInfo = async (
   cloudId: string,

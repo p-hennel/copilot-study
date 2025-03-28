@@ -136,11 +136,11 @@ export const jobRelations = relations(job, ({ one, many }) => ({
   forArea: one(area, {
     fields: [job.full_path],
     references: [area.full_path]
-  })
-  /*usingAccount: one(account, {
+  }),
+  usingAccount: one(account, {
 		fields: [job.accountId],
 		references: [account.id]
-	}),*/
+	}),
 }));
 
 export type Job = typeof job.$inferSelect;

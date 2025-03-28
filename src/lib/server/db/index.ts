@@ -1,7 +1,6 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "./schema";
-import { env } from "$env/dynamic/private";
 import AppSettings from "../settings/index";
 
 const client = createClient({ url: AppSettings.paths.database });

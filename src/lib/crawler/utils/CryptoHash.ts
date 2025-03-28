@@ -1,4 +1,5 @@
 import type { SupportedCryptoAlgorithms } from "bun";
+import AppSettings from "../../server/settings/index";
 
 // Global cache for computed hashes.
 const hashCache = new Map<string, string>();
@@ -13,12 +14,10 @@ const hashCache = new Map<string, string>();
  * @param algorithm - The cryptographic algorithm (defaults to "sha256").
  * @returns The hexadecimal hash digest.
  */
-
-    // TODO FETCH HMAC KEY
 export function computeHash(
   value: string,
-  key: string = process.env.HMAC_KEY,
-  algorithm: SupportedCryptoAlgorithms = "sha256"
+  key: string = AppSettings.hashing.hmacKey,
+  algorithm: SupportedCryptoAlgorithms = AppSettings.hashing.algorithm
 ): string {
   const cacheKey = `${algorithm}:${key}:${value}`;
   if (hashCache.has(cacheKey)) {
@@ -39,7 +38,7 @@ export function computeHash(
  * @param key - The secret key used to generate the hashes.
  * @param algorithm - The cryptographic algorithm.
  */
-export function loadHashes(content: string, key: string, algorithm: SupportedCryptoAlgorithms = "sha256") {
+export function loadHashes(content: string, key: string = AppSettings.hashing.hmacKey, algorithm: SupportedCryptoAlgorithms = AppSettings.hashing.algorithm) {
   for (const line of content.split("\n")) {
     if (!line.trim()) continue;
     const [value, hash] = line.split("\t");

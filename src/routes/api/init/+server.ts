@@ -1,20 +1,20 @@
 import { json } from "@sveltejs/kit";
 import { error, redirect } from "@sveltejs/kit";
 import { auth } from "$lib/auth";
-import { env } from "$env/dynamic/private";
 import { authClient } from "$lib/auth-client";
 import { user } from "../../../lib/server/db/auth-schema";
 import { db } from "$lib/server/db";
 import { count, eq, and, not } from "drizzle-orm";
 import { apikey } from "$lib/server/db/auth-schema";
+import AppSettings from "$lib/server/settings";
 
 export async function GET({ url }) {
-  const email = url.searchParams.get("user") || env.ADMIN_MAIL;
-  const password = url.searchParams.get("pw") || env.ADMIN_PASSWORD;
+  const email = url.searchParams.get("user") || "";
+  const password = url.searchParams.get("pw") || "";
   const name = url.searchParams.get("name") || "Admin";
   const code = url.searchParams.get("code") || "";
 
-  if (code !== env.INIT_CODE) {
+  if (code !== AppSettings.auth.initCode) {
     return error(401, "Not Authorized");
   }
 
