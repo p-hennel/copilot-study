@@ -16,6 +16,7 @@
     "inlang.vs-code-extension",
     "tamasfe.even-better-toml",
     "codeandstuff.package-json-upgrade",
-    "capaj.graphql-codegen-vscode"
+    "capaj.graphql-codegen-vscode",
+    "github.vscode-codeql"
   ]
 }
