@@ -1,18 +1,19 @@
 <script lang="ts">
   import { Separator } from "$lib/components/ui/separator/index.js";
-  import type { PageProps } from "./$types";
-  let { data }: PageProps = $props();
+  import type { PageData } from "./$types"; // Use PageData from generated types
+  let { data }: { data: PageData } = $props(); // Use PageData
   import Markdown from "svelte-exmarkdown";
   import { authClient } from "$lib/auth-client";
   import Gitlab from "$lib/components/Gitlab.svelte";
   import Jira from "$lib/components/Jira.svelte";
-  import AuthProvider from "$lib/components/AuthProvider.svelte";
+  // Removed: import AuthProvider from "$lib/components/AuthProvider.svelte";
   import AuthProviderCard from "$lib/components/AuthProviderCard.svelte";
   import { JobStatus, TokenProvider } from "$lib/utils";
-  import { number } from "$lib/paraglide/registry";
+  // Removed: import { number } from "$lib/paraglide/registry";
   import AreaCard from "$lib/components/AreaCard.svelte";
   import { m } from "$paraglide";
   import * as Accordion from "$lib/components/ui/accordion/index.js";
+  import { page } from "$app/stores"; // Import page store
 
   let pageState = $state({
     loading: true,
@@ -31,18 +32,19 @@
     else return `${count}`;
   };
 
-  const isLoggedIn = $derived(!!data.session && !!data.session.userId);
+  const isLoggedIn = $derived(!!$page.data.session && !!$page.data.session.userId); // Use $page store
   const jobsSummary = $derived.by(() => {
     return data.jobs.reduce(
       (ctr, item) => {
-        if (!!item.status) ctr[item.status] = ctr[item.status] + 1;
+        if (item.status) ctr[item.status] = ctr[item.status] + 1;
         return ctr;
       },
       {
         [JobStatus.failed]: 0,
         [JobStatus.finished]: 0,
         [JobStatus.queued]: 0,
-        [JobStatus.running]: 0
+        [JobStatus.running]: 0,
+        [JobStatus.paused]: 0 // Add paused status
       }
     );
   });
@@ -53,7 +55,8 @@
   <p class="mb-0">
     {m["home.intro"]()}
   </p>
-  {#if !!data.user && !!data.session}
+  {#if !!$page.data.user && !!$page.data.session}
+    <!-- Use $page store -->
     <Accordion.Root type="single" class="mt-0 w-full text-lg">
       <Accordion.Item value="explainer">
         <Accordion.Trigger class="pb-2 text-lg font-semibold">Read more...</Accordion.Trigger>
@@ -99,7 +102,8 @@
 
 {#if !!data.areas && data.areas.length > 0}
   <div class="flex flex-wrap gap-4">
-    {#each data.areas as area}
+    {#each data.areas as area (area.full_path)}
+      <!-- Add key -->
       <AreaCard {area} />
     {/each}
   </div>
@@ -109,48 +113,6 @@
     more information here.
   </p>
 {/if}
-<div class="mt-2 flex flex-wrap gap-4">
-  <AreaCard
-    area={{
-      name: "test",
-      full_path: "abc-def/ased",
-      type: "project",
-      jobsFinished: 1,
-      jobsTotal: 10,
-      gitlab_id: null
-    }}
-  />
-  <AreaCard
-    area={{
-      name: "test",
-      full_path: "abc-def/ased",
-      type: "project",
-      jobsFinished: 1,
-      jobsTotal: 10,
-      gitlab_id: null
-    }}
-  />
-  <AreaCard
-    area={{
-      name: "test",
-      full_path: "abc-def/ased",
-      type: "project",
-      jobsFinished: 1,
-      jobsTotal: 10,
-      gitlab_id: null
-    }}
-  />
-  <AreaCard
-    area={{
-      name: "test",
-      full_path: "abc-def/ased",
-      type: "project",
-      jobsFinished: 10,
-      jobsTotal: 10,
-      gitlab_id: null
-    }}
-  />
-</div>
 
 {#if !!data.jobs && data.jobs.length > 0}
   <Separator class="my-4" />

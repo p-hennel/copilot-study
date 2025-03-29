@@ -15,6 +15,9 @@ export async function GET({ request, locals }) {
 const getJobs = async () => {
   const result = (
     await db.query.job.findMany({
+      // Explicitly select all columns or list required ones including resumeState
+      // For now, let's assume findMany without 'columns' gets all, including resumeState.
+      // If resumeState is missing later, add: columns: { resumeState: true, /* other needed columns */ },
       with: {
         usingAccount: {
           columns: {

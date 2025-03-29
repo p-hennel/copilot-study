@@ -6,9 +6,11 @@
   import { JobStatus, AreaType } from "$lib/utils";
   import { Check, Cross, FolderGit2, Logs, Repeat, UsersRound } from "lucide-svelte";
 
+  // Updated type to match API response from /api/admin/areas
   type AreaInformation = {
     fullPath: string;
-    name: string;
+    gitlabId: string; // Added
+    name: string | null; // Allow null
     type: AreaType;
     createdAt: Date;
     countAccounts: number;
@@ -43,7 +45,8 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each data.areas as area, idx}
+    {#each data.areas as area, idx (area.fullPath)}
+      <!-- Add key -->
       <Table.Row>
         <Table.Cell class="text-right">{data.areas.length - idx}</Table.Cell>
         <Table.Cell class="font-mono">{area.fullPath}</Table.Cell>

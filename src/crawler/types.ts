@@ -3,39 +3,40 @@
 // --- IPC Command Types ---
 
 export type CommandType =
-  | 'START_JOB'
-  | 'PAUSE_CRAWLER'
-  | 'RESUME_CRAWLER'
-  | 'GET_STATUS'
-  | 'SHUTDOWN';
+  | "START_JOB"
+  | "PAUSE_CRAWLER"
+  | "RESUME_CRAWLER"
+  | "GET_STATUS"
+  | "SHUTDOWN";
 
 export interface BaseCommand {
   type: CommandType;
 }
 
 export interface StartJobCommand extends BaseCommand {
-  type: 'START_JOB';
+  type: "START_JOB";
   jobId: string;
   targetPath: string; // e.g., 'groups/my-group' or 'projects/my-project'
   gitlabApiUrl: string;
   gitlabToken: string;
   dataTypes: string[]; // e.g., ['issues', 'mergeRequests']
+  progress?: Record<string, JobDataTypeProgress>; // Added: Optional progress for resuming
 }
 
 export interface PauseCrawlerCommand extends BaseCommand {
-  type: 'PAUSE_CRAWLER';
+  type: "PAUSE_CRAWLER";
 }
 
 export interface ResumeCrawlerCommand extends BaseCommand {
-  type: 'RESUME_CRAWLER';
+  type: "RESUME_CRAWLER";
 }
 
 export interface GetStatusCommand extends BaseCommand {
-  type: 'GET_STATUS';
+  type: "GET_STATUS";
 }
 
 export interface ShutdownCommand extends BaseCommand {
-  type: 'SHUTDOWN';
+  type: "SHUTDOWN";
 }
 
 // Add other specific command interfaces if needed
@@ -49,7 +50,7 @@ export type CrawlerCommand =
 
 // --- IPC Status Types ---
 
-export type CrawlerState = 'idle' | 'running' | 'paused' | 'error';
+export type CrawlerState = "idle" | "running" | "paused" | "error";
 
 export interface CrawlerStatus {
   state: CrawlerState;
@@ -75,7 +76,7 @@ export interface Job {
   gitlabApiUrl: string;
   gitlabToken: string;
   dataTypes: string[];
-  status: 'pending' | 'running' | 'paused' | 'completed' | 'failed';
+  status: "pending" | "running" | "paused" | "completed" | "failed";
   progress: Record<string, JobDataTypeProgress>; // Store progress per data type
   createdAt: Date;
   updatedAt: Date;

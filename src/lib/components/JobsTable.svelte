@@ -32,6 +32,10 @@
       gitlab_id: string;
       created_at: Date;
     } | null;
+    resumeState?: Record<
+      string,
+      { afterCursor?: string; errorCount?: number; lastAttempt?: number }
+    > | null; // Added resumeState
   };
 
   type JobsTableProps = {
@@ -81,7 +85,8 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each data.jobs as job, idx}
+    {#each data.jobs as job, idx (job.id)}
+      <!-- Add key -->
       <Table.Row>
         <Table.Cell class="text-right">{data.jobs.length - idx}</Table.Cell>
         <Table.Cell class="font-mono">{job.id}</Table.Cell>
@@ -96,6 +101,11 @@
               </Tooltip.Trigger>
               <Tooltip.Content>
                 {job.status}
+                {#if (job.status === JobStatus.paused || job.status === JobStatus.failed) && job.resumeState}
+                  <pre class="bg-muted mt-2 max-w-xs overflow-auto rounded p-1 text-xs">
+                    {JSON.stringify(job.resumeState, null, 2)}
+                  </pre>
+                {/if}
               </Tooltip.Content>
             </Tooltip.Root>
           </Tooltip.Provider>

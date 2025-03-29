@@ -21,6 +21,8 @@ module.exports = {
       name: "web",
       interpreter: "/bin/bash",
       script: "pm2-server.sh",
+      exec_mode: "cluster",
+      instances: "1",
       watch: false,
       autorestart: true,
       env: {

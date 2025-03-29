@@ -1,159 +1,89 @@
-//import { spawn, type Subprocess, type SpawnOptions } from "bun";
+// import { spawn, type Subprocess, type SpawnOptions } from "bun"; // Removed: No longer spawning directly
 import { sequence } from "@sveltejs/kit/hooks";
 import type { Handle } from "@sveltejs/kit";
+import { io, type Socket } from "socket.io-client"; // Added: Socket.IO client
+// import { init } from "@socket.io/pm2"; // Removed: Not needed on client-side
 import { auth } from "$lib/auth";
 import { svelteKitHandler } from "better-auth/svelte-kit";
 import { paraglideMiddleware } from "$lib/paraglide/server";
-import { configureLogging } from "$lib/logging";
-import "$lib/messaging/MessageBusServer"; // Assuming this is needed
+// import { configureLogging } from "$lib/logging"; // Removed: Unused import
+// import "$lib/messaging/MessageBusServer"; // Removed or adjust if this was related to old IPC
 
 // Crawler specific imports
 import { db } from "$lib/server/db";
 import { job as jobSchema } from "$lib/server/db/schema";
 import { JobStatus } from "$lib/utils";
 import { eq } from "drizzle-orm";
-import type { CrawlerCommand, CrawlerStatus, StartJobCommand } from "./crawler/types"; // Adjust path if necessary
+import type {
+  CrawlerCommand,
+  CrawlerStatus,
+  StartJobCommand, // Keep if used elsewhere, like in startJob
+  JobDataTypeProgress // Added import for progress type
+} from "./crawler/types"; // Consolidated imports
 import type { JobCompletionUpdate } from "./crawler/jobManager"; // Adjust path if necessary
 
-let crawlerProcess: unknown = null; //: Subprocess | null = null;
-let lastHeartbeat: number = 0;
-let currentCrawlerStatus: CrawlerStatus | null = null; // Store latest status
+// --- Socket.IO Client Setup ---
+// Connect to the Socket.IO server (crawler) via PM2 bus
+// The actual connection details might depend on how the crawler-side server is set up.
+// Connect to the origin server, assuming PM2/sticky-session handles routing.
+const socket: Socket = io({
+  transports: ["websocket"], // Prefer WebSocket for server-to-server
+  reconnection: true // Ensure reconnection is enabled (usually default)
+});
 
-const CRAWLER_SCRIPT_PATH = "src/crawler/index.ts";
-const HEARTBEAT_TIMEOUT = 60000; // 60 seconds
-const RESTART_DELAY = 5000; // 5 seconds delay before restarting
+let lastHeartbeat: number = Date.now(); // Keep track of last known heartbeat
+let currentCrawlerStatus: CrawlerStatus | null = null; // Store latest status from crawler
+const HEARTBEAT_TIMEOUT = 60000; // 60 seconds - Keep for monitoring connection
 
-// --- Crawler Management ---
+console.log("Initializing Socket.IO client for crawler communication...");
 
-function startCrawlerProcess() {
-  /*
-  if (crawlerProcess?.pid) {
-    console.log("Crawler process already running.");
-    return;
-  }
+socket.on("connect", () => {
+  console.log("Socket.IO connected to crawler process.");
+  lastHeartbeat = Date.now(); // Reset heartbeat on connect/reconnect
+});
 
-  console.log(`Spawning crawler process: ${CRAWLER_SCRIPT_PATH}...`);
-  try {
-    const options: SpawnOptions.OptionsObject = {
-      ipc: handleIPCMessage, // Pass the handler directly
-      stdout: "pipe", // Pipe logs
-      stderr: "pipe",
-      env: { ...process.env },
-      onExit: (subprocess, exitCode, signalCode, error) => {
-        handleCrawlerExit(exitCode, signalCode, error);
-      }
-    };
+socket.on("disconnect", (reason) => {
+  console.warn(`Socket.IO disconnected from crawler: ${reason}`);
+  currentCrawlerStatus = null; // Clear status on disconnect
+  // PM2 should handle restarting the crawler process.
+  // We might want additional logic here if needed (e.g., UI indicators).
+});
 
-    crawlerProcess = spawn(['bun', 'run', CRAWLER_SCRIPT_PATH], options);
+socket.on("connect_error", (err) => {
+  console.error("Socket.IO connection error:", err.message);
+  // Maybe add a small delay before logging subsequent errors to avoid spam
+});
 
-    if (crawlerProcess.pid) {
-         streamOutput(crawlerProcess); // Log output
-         console.log(`Crawler process spawned with PID: ${crawlerProcess.pid}`);
-         lastHeartbeat = Date.now();
-    } else {
-         console.error('Crawler process failed to spawn (no PID).');
-         crawlerProcess = null;
-         // Schedule restart attempt even if initial spawn failed?
-         setTimeout(startCrawlerProcess, RESTART_DELAY);
-    }
-  } catch (error) {
-    console.error("Failed to spawn crawler process:", error);
-    crawlerProcess = null;
-    // Schedule restart attempt on error
-    setTimeout(startCrawlerProcess, RESTART_DELAY);
-  }
-  */
-}
+// Listen for messages from the crawler
+socket.on("heartbeat", (data: { timestamp: number }) => {
+  // console.log('Received heartbeat from crawler.');
+  lastHeartbeat = data?.timestamp || Date.now();
+});
 
-async function streamOutput(subprocess: any) {
-  const stdout = subprocess.stdout as ReadableStream<Uint8Array> | null;
-  const stderr = subprocess.stderr as ReadableStream<Uint8Array> | null;
-  if (!stdout || !stderr) return;
+socket.on("statusUpdate", (payload: CrawlerStatus) => {
+  // console.log('Received status update from crawler:', payload);
+  currentCrawlerStatus = payload;
+});
 
-  try {
-    const readerStdout = stdout.getReader();
-    const readerStderr = stderr.getReader();
-    const decoder = new TextDecoder();
-    const read = async (reader: ReadableStreamDefaultReader<Uint8Array>, prefix: string) => {
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let newlineIndex;
-        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-          const line = buffer.slice(0, newlineIndex).trim();
-          if (line) console.log(`${prefix}: ${line}`);
-          buffer = buffer.slice(newlineIndex + 1);
-        }
-      }
-      if (buffer.trim()) console.log(`${prefix}: ${buffer.trim()}`);
-    };
-    await Promise.all([
-      read(readerStdout, "[Crawler STDOUT]"),
-      read(readerStderr, "[Crawler STDERR]")
-    ]);
-  } catch (error) {
-    console.error("Error reading crawler output stream:", error);
-  }
-}
+socket.on("jobUpdate", (update: JobCompletionUpdate) => {
+  // console.log('Received job update from crawler:', update);
+  handleJobUpdate(update); // Reuse existing DB update logic
+});
 
-function handleCrawlerExit(exitCode: number | null, signalCode: number | null, error?: Error) {
-  const pid = crawlerProcess?.pid; // Capture pid before clearing
-  console.error(
-    `Crawler process (PID: ${pid ?? "unknown"}) exited. Code: ${exitCode}, Signal: ${signalCode}`,
-    error ?? ""
-  );
-  crawlerProcess = null;
-  currentCrawlerStatus = null;
-  // Schedule restart after a delay
-  console.log(`Scheduling crawler restart in ${RESTART_DELAY / 1000} seconds...`);
-  setTimeout(startCrawlerProcess, RESTART_DELAY);
-}
-
-function checkHeartbeat() {
-  if (!crawlerProcess?.pid) return; // No process running
-
-  const timeSinceHeartbeat = Date.now() - lastHeartbeat;
-  if (timeSinceHeartbeat > HEARTBEAT_TIMEOUT) {
-    console.error(
-      `Crawler heartbeat timeout (${timeSinceHeartbeat}ms). Terminating process (PID: ${crawlerProcess.pid}).`
+// Optional: Monitor heartbeat from our side
+// If we don't receive a heartbeat for a while, log a warning.
+// PM2 is responsible for the crawler process lifecycle, but this helps diagnose communication issues.
+setInterval(() => {
+  if (socket.connected && Date.now() - lastHeartbeat > HEARTBEAT_TIMEOUT) {
+    console.warn(
+      `No heartbeat received from crawler in over ${HEARTBEAT_TIMEOUT / 1000} seconds. Connection might be stale.`
     );
-    crawlerProcess.kill(); // Terminate the unresponsive process
-    // handleCrawlerExit will be called by the onExit handler, triggering restart logic
+    // Consider attempting a disconnect/reconnect or just logging
   }
-}
+}, HEARTBEAT_TIMEOUT / 2);
 
 /**
- * Handles messages received from the crawler process via IPC.
- */
-function handleIPCMessage(message: any, subprocess: any) {
-  // console.log('Received IPC message from crawler:', message);
-
-  if (typeof message !== "object" || message === null || !message.type) {
-    console.warn("Received invalid IPC message format from crawler:", message);
-    return;
-  }
-
-  switch (message.type) {
-    case "heartbeat":
-      lastHeartbeat = message.timestamp || Date.now();
-      // console.log('Received heartbeat from crawler.');
-      break;
-    case "statusUpdate":
-      currentCrawlerStatus = message.payload as CrawlerStatus;
-      // console.log('Received status update from crawler:', currentCrawlerStatus);
-      break;
-    case "jobUpdate": // Handle the detailed job update message
-      handleJobUpdate(message as JobCompletionUpdate);
-      break;
-    default:
-      console.warn(`Received unknown IPC message type from crawler: ${message.type}`);
-  }
-}
-
-/**
- * Handles detailed job updates (completed, failed, paused) from crawler. Updates the database.
+ * Handles detailed job updates (completed, failed, paused) received via Socket.IO. Updates the database.
  */
 async function handleJobUpdate(update: JobCompletionUpdate) {
   console.log(`Handling job update for ${update.jobId}, status: ${update.status}`);
@@ -170,11 +100,12 @@ async function handleJobUpdate(update: JobCompletionUpdate) {
     case "paused":
       dbStatus = JobStatus.paused;
       break; // Use 'paused' directly
-    default:
+    default: {
       // Add exhaustive check for type safety
       const exhaustiveCheck: never = update.status;
       console.error(`Invalid status received in jobUpdate: ${exhaustiveCheck}`);
       return;
+    }
   }
 
   try {
@@ -206,50 +137,61 @@ async function handleJobUpdate(update: JobCompletionUpdate) {
     console.error(`Failed to update DB for job ${update.jobId} (status: ${dbStatus}):`, error);
   }
 }
-
 /**
- * Sends a command to the crawler process via IPC's send method.
+ * Sends a command to the crawler process via Socket.IO.
  */
 export function sendCommandToCrawler(command: CrawlerCommand): boolean {
-  // Export for use elsewhere
-  if (!crawlerProcess?.pid) {
-    console.error("Cannot send command: Crawler process not running.");
-    // Optionally try starting it if it's not running
-    // startCrawlerProcess();
+  if (!socket.connected) {
+    console.error("Cannot send command: Socket.IO not connected to crawler.");
     return false;
   }
 
   try {
-    console.log(`Sending command to crawler via IPC send: ${command.type}`);
-    const sent = (crawlerProcess as any).send(command);
-    if (sent === false) {
-      console.error(
-        "Failed to send command to crawler (send returned false). Channel might be closed."
-      );
-      // Process might have exited, handleCrawlerExit should trigger restart
-      return false;
-    }
-    return true;
+    console.log(`Sending command to crawler via Socket.IO emit: ${command.type}`);
+    // Emit a generic 'command' event, or specific events per command type
+    // Using a generic 'command' event here for simplicity
+    socket.emit("command", command);
+    return true; // Assume emit is successful if no immediate error
   } catch (error) {
-    console.error("Failed to send command to crawler via IPC send:", error);
-    // Process might have exited, handleCrawlerExit should trigger restart
+    console.error("Failed to send command to crawler via Socket.IO emit:", error);
     return false;
   }
 }
 
-// --- Initialize Crawler and Heartbeat Monitor ---
-startCrawlerProcess(); // Start crawler on server init
-setInterval(checkHeartbeat, HEARTBEAT_TIMEOUT / 2); // Start heartbeat monitor
+// --- Old Initialization Removed ---
+// startCrawlerProcess(); // Removed: PM2 manages the crawler process
+// setInterval(checkHeartbeat, HEARTBEAT_TIMEOUT / 2); // Removed: Using socket connection status and heartbeat events
 
 // --- Export Functions for API Routes etc. ---
+// (These should now use the updated sendCommandToCrawler)
 // (Keep existing exports or add new ones as needed)
-export function startJob(params: Omit<StartJobCommand, "type">) {
-  // TODO: Fetch existing progress from DB here if needed for resume
-  // const existingProgress = await db.query...
+export async function startJob(params: Omit<StartJobCommand, "type" | "progress">) {
+  // Make async, adjust params type
+  let existingProgress: Record<string, JobDataTypeProgress> | undefined = undefined;
+  try {
+    // Fetch the job from the DB using the jobId from params
+    const jobRecord = await db.query.job.findFirst({
+      where: eq(jobSchema.id, params.jobId),
+      columns: { resumeState: true } // Only fetch the resumeState column
+    });
+
+    // Check if resumeState exists and is a valid object
+    if (jobRecord?.resumeState && typeof jobRecord.resumeState === "object") {
+      // Drizzle's mode: "json" should handle parsing, but add validation if needed
+      existingProgress = jobRecord.resumeState as Record<string, JobDataTypeProgress>;
+      console.log(`Found existing progress for job ${params.jobId}. Resuming.`);
+    } else {
+      console.log(`No existing progress found for job ${params.jobId}. Starting fresh.`);
+    }
+  } catch (dbError) {
+    console.error(`Error fetching progress for job ${params.jobId} from DB:`, dbError);
+    // Decide how to handle DB errors - proceed without progress?
+  }
+
   const command: StartJobCommand = {
     type: "START_JOB",
-    ...params
-    // progress: existingProgress ?? {} // Pass progress if resuming
+    ...params,
+    progress: existingProgress // Pass progress if found, otherwise undefined
   };
   sendCommandToCrawler(command);
 }
@@ -260,6 +202,14 @@ export function pauseCrawler() {
 
 export function resumeCrawler() {
   sendCommandToCrawler({ type: "RESUME_CRAWLER" });
+}
+
+/**
+ * Returns the last known status received from the crawler.
+ * @returns {CrawlerStatus | null} The crawler status object or null if no status received or disconnected.
+ */
+export function getCrawlerStatus(): CrawlerStatus | null {
+  return currentCrawlerStatus;
 }
 
 // --- Existing Hook Logic ---

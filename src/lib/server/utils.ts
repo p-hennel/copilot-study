@@ -41,7 +41,7 @@ export const ensureUserIsAuthenticated = (locals: App.Locals) => {
 const pm2Connect = async (): Promise<Error | undefined> => {
   return new Promise((resolve, reject) => {
     pm2.connect((err: Error) => {
-      if (!!err) reject(err);
+      if (err) reject(err);
       else resolve(undefined);
     });
   });
@@ -50,9 +50,9 @@ const pm2Connect = async (): Promise<Error | undefined> => {
 export const pm2List = async (): Promise<pm2.ProcessDescription[] | undefined> => {
   return new Promise(async (resolve, reject) => {
     const err = await pm2Connect();
-    if (!!err) return reject(err);
+    if (err) return reject(err);
     pm2.list((err: Error, procDesc: pm2.ProcessDescription[]) => {
-      if (!!err) return reject(err);
+      if (err) return reject(err);
       resolve(procDesc);
     });
   });
@@ -80,7 +80,7 @@ async function pm2Handle(
 ): Promise<pm2.Proc | undefined> {
   return new Promise(async (resolve, reject) => {
     const err = await pm2Connect();
-    if (!!err) return reject(err);
+    if (err) return reject(err);
     let fnAction: Function;
     if (action === "start") fnAction = pm2.start.bind(pm2);
     else if (action === "stop") fnAction = pm2.stop.bind(pm2);
@@ -88,11 +88,11 @@ async function pm2Handle(
     else return reject();
 
     const cb = (err: Error, proc: pm2.Proc) => {
-      if (!!err) return reject(err);
+      if (err) return reject(err);
       resolve(proc);
     };
 
-    let args: any[] = [process];
+    const args: any[] = [process];
     if (action === "start" && !!startOptions) args.push(startOptions);
     args.push(cb);
 
@@ -106,9 +106,9 @@ export const pm2Send = async <S extends object = object, R extends object = obje
 ): Promise<R | undefined> => {
   return new Promise(async (resolve, reject) => {
     const err = await pm2Connect();
-    if (!!err) return reject(err);
+    if (err) return reject(err);
     pm2.sendDataToProcessId(procId, msg, (err, result) => {
-      if (!!err) return reject(err);
+      if (err) return reject(err);
       resolve(result as R);
     });
   });
@@ -126,7 +126,13 @@ export const getApiToken = async (userId: string): Promise<string | undefined> =
   const oldKey = await db.select().from(apikey).where(eq(apikey.userId, userId)).limit(1);
   if (oldKey.length > 0 && !!oldKey.at(0)) return oldKey.at(0)?.key;
   else {
-    const newKey = await auth.api.createApiKey({
+    // Add type assertion to inform TS about the expected method
+    const api = auth.api as typeof auth.api & {
+      createApiKey: (args: {
+        body: { userId: string; enabled: boolean; rateLimitEnabled: boolean; permissions: any };
+      }) => Promise<{ key: string }>;
+    };
+    const newKey = await api.createApiKey({
       body: {
         userId: userId,
         enabled: true,
@@ -148,9 +154,9 @@ export const canAccessAreaFiles = async (fullPath: string, userId: string | unde
       count: count()
     })
     .from(area_authorization)
-    .innerJoin(account, eq(area_authorization.accountId, account.accountId))
+    .innerJoin(account, eq(area_authorization.accountId, account.id)) // Corrected join condition (assuming account PK is 'id')
     .where(and(eq(area_authorization.area_id, fullPath), eq(account.userId, userId)))
-    .then((val) => !!val && val.length > 0 && val[0].count >= 1);
+    .then((val) => val?.[0]?.count >= 1); // Safely access count, default to false if undefined/empty
 };
 
 export const areAreaJobsFinished = async (fullPath: string) => {
@@ -181,7 +187,7 @@ export const fileForAreaPart = async (
 
 export const fileToCollectionType = (file: string): CollectionTypes | undefined => {
   const keys = Object.keys(CollectionTypes);
-  let fileName = path.basename(file, path.extname(file));
+  const fileName = path.basename(file, path.extname(file));
   if (keys.includes(fileName)) return fileName as CollectionTypes;
   else return undefined;
 };

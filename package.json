@@ -93,6 +93,9 @@
     "@logtape/otel": "^0.3.0",
     "@melt-ui/svelte": "^0.86.6",
     "@rollup/plugin-json": "^6.1.0",
+    "@socket.io/cluster-adapter": "^0.2.2",
+    "@socket.io/pm2": "^5.3.0",
+    "@socket.io/sticky": "^1.0.4",
     "@tanstack/svelte-query": "^5.70.0",
     "@tanstack/svelte-query-devtools": "^5.70.0",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
@@ -109,12 +112,14 @@
     "export-to-csv": "^1.4.0",
     "graphql": "^16.10.0",
     "js-yaml": "^4.1.0",
-    "pm2": "^6.0.5",
     "rollup": "^4.38.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "stream-transform": "^3.3.3",
     "svelte-exmarkdown": "^4.0.3",
     "svelte-time": "^2.0.1",
     "ts-node": "^10.9.2",
+    "tx2": "^1.0.5",
     "ulid": "^2.4.0"
   }
 }

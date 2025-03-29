@@ -20,13 +20,23 @@
   import { cn, type pm2types } from "$lib/utils";
   import { Ellipsis } from "$ui/breadcrumb";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
+  import * as Card from "$lib/components/ui/card/index.js"; // Added for crawler status display
+  import type { CrawlerStatus } from "../../crawler/types"; // Added for crawler status type
 
   type ProcessTableProps = {
-    processes: pm2types.ProcessDescription[];
+    // Updated prop structure
+    processes: {
+      pm2: pm2types.ProcessDescription[];
+      crawler: CrawlerStatus | null;
+    };
     sessionToken: string;
   };
 
   let data: ProcessTableProps = $props();
+
+  // Access pm2 list and crawler status
+  let pm2List = $derived(data.processes.pm2);
+  let crawlerStatus = $derived(data.processes.crawler);
 
   let state = $state({
     loading: false,
@@ -41,11 +51,14 @@
     state.loading = false;
   };
 
+  // TODO: Update or remove scaling logic if not applicable anymore
   const triggerProcessRun = async (step: number) => {
     if (state.loading) return;
     state.loading = true;
-    const target = Math.min(10, Math.max(data.processes.length + step, 0));
+    // Use pm2List length for scaling PM2 processes if needed
+    const target = Math.min(10, Math.max(pm2List.length + step, 0));
     await fetch(`/admin/trigger?scale=${target}`, {
+      // This endpoint might need adjustment
       headers: {
         Authorization: `Bearer ${data.sessionToken}`
       }
@@ -85,7 +98,7 @@
   };
 
   const getDetails = (proc: pm2types.ProcessDescription): (string | undefined)[] => {
-    if (!!proc.pm2_env) {
+    if (proc.pm2_env) {
       return [
         `${proc.pm2_env.restart_time} restarts (${proc.pm2_env.unstable_restarts} unstable)`,
         proc.pm2_env.exec_interpreter
@@ -132,6 +145,42 @@
   </AlertDialog.Content>
 </AlertDialog.Root>
 
+<!-- Crawler Status Section -->
+<Card.Root class="mb-6">
+  <Card.Header>
+    <Card.Title>Crawler Status</Card.Title>
+  </Card.Header>
+  <Card.Content class="grid grid-cols-3 gap-4">
+    {#if crawlerStatus}
+      <div>State: <span class="font-semibold">{crawlerStatus.state}</span></div>
+      <div>Queue Size: <span class="font-semibold">{crawlerStatus.queueSize}</span></div>
+      <div>
+        Last Heartbeat:
+        {#if crawlerStatus.lastHeartbeat}
+          <Time timestamp={crawlerStatus.lastHeartbeat} relative class="font-semibold" /> ago
+        {:else}
+          <span class="text-muted-foreground font-semibold">Never</span>
+        {/if}
+      </div>
+      <div class="col-span-3">
+        Current Job ID:
+        <span class="font-mono text-sm">{crawlerStatus.currentJobId ?? "None"}</span>
+      </div>
+      {#if crawlerStatus.error}
+        <div class="text-destructive col-span-3">
+          Error: {crawlerStatus.error}
+        </div>
+      {/if}
+      <!-- TODO: Add Pause/Resume Buttons here -->
+      <!-- <Button variant="outline" size="sm" disabled={state.loading || crawlerStatus.state !== 'running'} onclick={() => { state.actionTarget = 'crawler'; state.action = 'pause-crawler'; /* Call action function */ }}>Pause Crawler</Button> -->
+      <!-- <Button variant="outline" size="sm" disabled={state.loading || crawlerStatus.state !== 'paused'} onclick={() => { state.actionTarget = 'crawler'; state.action = 'resume-crawler'; /* Call action function */ }}>Resume Crawler</Button> -->
+    {:else}
+      <div class="text-muted-foreground col-span-3">Crawler status not available.</div>
+    {/if}
+  </Card.Content>
+</Card.Root>
+<!-- End Crawler Status Section -->
+
 <Table.Root class="w-full">
   <Table.Header>
     <Table.Row>
@@ -165,7 +214,8 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each data.processes as process}
+    {#each pm2List as process (process.pm_id)}
+      <!-- Use pm2List and add key -->
       <Table.Row>
         <Table.Cell class="text-right">{process.pm_id}</Table.Cell>
         <Table.Cell class="text-right">{process.pid}</Table.Cell>
@@ -190,7 +240,8 @@
           </Tooltip.Provider>
         </Table.Cell>
         <Table.Cell class="w-full">
-          {#each getDetails(process) as detail, idx}
+          {#each getDetails(process) as detail, idx (idx)}
+            <!-- Add key -->
             {#if idx > 0}
               <br />
             {/if}

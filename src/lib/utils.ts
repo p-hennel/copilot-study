@@ -43,7 +43,7 @@ export const handleDownloadAsCSV = <T extends CSVbaseType>(
   filter: FilterCB,
   config?: ConfigOptions
 ) => {
-  return () => downloadAsCSV<T>(!!filter ? data.filter(filter) : data, config);
+  return () => downloadAsCSV<T>(filter ? data.filter(filter) : data, config);
 };
 
 export const dynamicHandleDownloadAsCSV = <T extends CSVbaseType>(
@@ -338,7 +338,10 @@ export enum CrawlCommand {
   pipelines = "pipelines",
   timelogs = "timelogs",
   users = "users",
-  workItems = "workItems"
+  workItems = "workItems",
+  // Added for discovery
+  groupProjects = "groupProjects",
+  groupSubgroups = "groupSubgroups"
 }
 
 export const fileNameToCommand = {

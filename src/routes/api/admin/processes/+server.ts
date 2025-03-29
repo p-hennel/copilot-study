@@ -1,17 +1,29 @@
 import { json } from "@sveltejs/kit";
 import { $ } from "bun";
 import { pm2List } from "$lib/server/utils";
+import { getCrawlerStatus } from "../../../../hooks.server"; // Import crawler status function
 
 export async function GET({ request, locals }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }
 
-  const pm2Processes = await pm2List();
-  if (!pm2Processes) return json([]);
-  return json(pm2Processes);
+  // Fetch both PM2 process list and crawler status concurrently
+  const [pm2Processes, crawlerStatus] = await Promise.all([
+    pm2List(),
+    getCrawlerStatus() // Call the imported function
+  ]);
+
+  // Combine the results into a single response object
+  const responseData = {
+    pm2: pm2Processes ?? [], // Use pm2Processes or default to empty array
+    crawler: crawlerStatus // Include the crawler status object (can be null)
+  };
+
+  return json(responseData);
 }
 
+// Keep or remove the unused getProcesses function as needed
 const getProcesses = async () => {
   let bunPids = undefined;
   let rawProcInf = undefined;
@@ -52,7 +64,7 @@ const getProcesses = async () => {
             }
             if (col === "cmd") {
               const short = value.split("/").pop();
-              if (!!short) target["cmdShort"] = short;
+              if (short) target["cmdShort"] = short;
             }
             target[col] = value;
             return target;

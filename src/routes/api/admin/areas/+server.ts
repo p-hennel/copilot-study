@@ -1,62 +1,40 @@
 import { json } from "@sveltejs/kit";
-import { account, user } from "$lib/server/db/auth-schema";
 import { db } from "$lib/server/db";
-import { eq, desc } from "drizzle-orm";
-import type { AccountInformation, UserInformation } from "$lib/utils";
-import { computeHash } from "../../../../../stashed/crawler-old/utils/CryptoHash";
-
+import { area, area_authorization, job } from "$lib/server/db/base-schema"; // Import schemas
+import { desc, sql } from "drizzle-orm"; // Removed unused eq, count
 
 export async function GET({ request, locals }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }
 
-  const users = (await getUsers()).map((x) => ({
-    ...x,
-    email: computeHash(x.email)
-  }));
+  try {
+    // Fetch areas and count related accounts and jobs
+    const areasWithCounts = await db
+      .select({
+        fullPath: area.full_path, // Rename column
+        gitlabId: area.gitlab_id, // Include gitlab_id
+        name: area.name,
+        type: area.type,
+        createdAt: area.created_at,
+        // Subquery or count for accounts
+        countAccounts:
+          sql<number>`(SELECT COUNT(*) FROM ${area_authorization} WHERE ${area_authorization.area_id} = ${area.full_path})`.mapWith(
+            Number
+          ),
+        // Subquery or count for jobs
+        countJobs:
+          sql<number>`(SELECT COUNT(*) FROM ${job} WHERE ${job.full_path} = ${area.full_path})`.mapWith(
+            Number
+          )
+      })
+      .from(area)
+      .orderBy(desc(area.created_at));
 
-  return json(users);
+    return json(areasWithCounts);
+  } catch (error) {
+    console.error("Error fetching areas with counts:", error);
+  }
 }
 
-const getUsers = async () => {
-  const db_users = await db
-    .select({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      userCreatedAt: user.createdAt,
-      accountProviderId: account.providerId,
-      accountCreatedAt: account.createdAt,
-      refreshTokenExpiresAt: account.refreshTokenExpiresAt
-    })
-    .from(user)
-    .leftJoin(account, eq(account.userId, user.id))
-    .orderBy(desc(user.createdAt));
-
-  const users = Object.values(
-    db_users.reduce(
-      (col, user) => {
-        if (!(user.id in col)) {
-          col[user.id] = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            createdAt: user.userCreatedAt,
-            accounts: [] as AccountInformation[]
-          } as UserInformation & { accounts: AccountInformation[] };
-        }
-        if (!!user.accountProviderId && !!user.accountCreatedAt) {
-          col[user.id].accounts.push({
-            providerId: user.accountProviderId,
-            createdAt: user.accountCreatedAt,
-            refreshTokenExpiresAt: user.refreshTokenExpiresAt
-          });
-        }
-        return col;
-      },
-      {} as Record<string, UserInformation & { accounts: AccountInformation[] }>
-    )
-  );
-  return users;
-};
+// Removed unused getUsers function and imports

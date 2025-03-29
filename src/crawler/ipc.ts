@@ -1,7 +1,11 @@
 // src/crawler/ipc.ts
-import type { CrawlerCommand, CrawlerStatus } from './types';
-// Removed: import { Message, send, listen } from 'bun:ipc';
+import type { CrawlerCommand, CrawlerStatus } from "./types";
+import { Server as SocketIOServer } from "socket.io"; // Renamed import
+import { createServer } from "http";
+import { createAdapter } from "@socket.io/cluster-adapter";
+import { setupWorker } from "@socket.io/sticky";
 
+// Keep the interfaces, they define the contract with crawler.ts
 interface IPCHandlers {
   onCommand: (command: CrawlerCommand) => void;
   // These will be replaced by the actual sending functions upon setup
@@ -23,65 +27,82 @@ interface IPCInstance {
  * @returns An object with functions to send messages to the main process.
  */
 export function setupIPC(handlers: IPCHandlers): IPCInstance {
-  console.log('Setting up IPC listener using process.on("message")...');
+  console.log("Setting up Socket.IO server with PM2 adapter...");
 
-  // Listen for messages from the main process (website backend) using process.on
-  process.on('message', (message: any) => { // Use 'any' or define a stricter type if possible
-    // Basic validation: Check if it's an object and has a 'type' property
-    if (
-      typeof message === 'object' &&
-      message !== null &&
-      'type' in message &&
-      typeof message.type === 'string'
-    ) {
-      console.log(`Received IPC command: ${message.type}`);
-      // Assume the message structure matches CrawlerCommand.
-      // More robust validation/parsing might be needed in a production scenario.
-      try {
-        // Ensure the message conforms to CrawlerCommand before casting
-        // This is a basic check; consider using a validation library (like Zod) for robustness
-        if (['START_JOB', 'PAUSE_CRAWLER', 'RESUME_CRAWLER', 'GET_STATUS', 'SHUTDOWN'].includes(message.type)) {
-             handlers.onCommand(message as CrawlerCommand);
+  const httpServer = createServer();
+  // Create Socket.IO server instance
+  // Consider adding options like CORS if needed, though likely not for PM2 IPC
+  const io = new SocketIOServer(httpServer);
+  io.adapter(createAdapter());
+
+  setupWorker(io);
+
+  // Listen for client connections (from the SvelteKit backend)
+  io.on("connection", (socket) => {
+    console.log(`Socket.IO client connected: ${socket.id}`);
+
+    // Listen for 'command' events from this specific client
+    socket.on("command", (command: unknown) => {
+      // Basic validation (similar to before, but checking the received command)
+      if (
+        typeof command === "object" &&
+        command !== null &&
+        "type" in command &&
+        typeof command.type === "string"
+      ) {
+        console.log(`Received command via Socket.IO: ${command.type}`);
+        // Add more robust validation if needed (e.g., using Zod)
+        if (
+          ["START_JOB", "PAUSE_CRAWLER", "RESUME_CRAWLER", "GET_STATUS", "SHUTDOWN"].includes(
+            command.type
+          )
+        ) {
+          handlers.onCommand(command as CrawlerCommand);
         } else {
-             console.warn('Received command with unknown type:', message.type);
+          console.warn("Received command with unknown type via Socket.IO:", command.type);
         }
-      } catch (error) {
-        console.error('Error handling IPC command:', error, 'Message:', message);
+      } else {
+        console.warn("Received unexpected command format via Socket.IO:", command);
       }
-    } else {
-      console.warn('Received unexpected IPC message format:', message);
-    }
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log(`Socket.IO client disconnected: ${socket.id}, Reason: ${reason}`);
+    });
   });
 
-  // Function to send status updates to the main process
+  // Function to broadcast status updates to all connected clients
   const sendStatusToMain = (status: CrawlerStatus) => {
     try {
-      // Use process.send if available (standard Node.js/Bun IPC)
-      process.send?.({ type: 'statusUpdate', payload: status });
+      // console.log('Broadcasting status update via Socket.IO:', status);
+      io.emit("statusUpdate", status); // Use io.emit to send to all clients
     } catch (error) {
-      console.error('Failed to send status update via IPC:', error);
-      // Handle potential errors (e.g., if the parent process is gone)
+      console.error("Failed to broadcast status update via Socket.IO:", error);
     }
   };
 
-  // Function to send heartbeats to the main process
+  // Function to broadcast heartbeats to all connected clients
   const sendHeartbeatToMain = () => {
     try {
-      process.send?.({ type: 'heartbeat', timestamp: Date.now() });
+      // console.log('Broadcasting heartbeat via Socket.IO');
+      io.emit("heartbeat", { timestamp: Date.now() }); // Use io.emit
     } catch (error) {
-      console.error('Failed to send heartbeat via IPC:', error);
+      console.error("Failed to broadcast heartbeat via Socket.IO:", error);
     }
   };
 
-  // Overwrite the placeholder functions in handlers with the actual IPC senders
+  // Overwrite the placeholder functions in handlers with the actual Socket.IO emitters
   handlers.sendStatus = sendStatusToMain;
   handlers.sendHeartbeat = sendHeartbeatToMain;
 
-  console.log('IPC listener setup complete.');
+  // Start the Socket.IO server listening (needs a port, but PM2 adapter might handle this implicitly? Check docs if issues arise)
+  // For PM2 adapter, often you don't need to explicitly call listen() as PM2 handles the process communication.
+  // If connection issues occur, you might need: io.listen(SOME_PORT); - but try without first.
+  console.log("Socket.IO server setup complete. Waiting for connections...");
 
   // Return an object containing the functions the crawler can use to send messages
   return {
     sendStatus: sendStatusToMain,
-    sendHeartbeat: sendHeartbeatToMain,
+    sendHeartbeat: sendHeartbeatToMain
   };
 }
