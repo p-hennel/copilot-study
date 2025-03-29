@@ -3,7 +3,7 @@ import { account, user } from "$lib/server/db/auth-schema";
 import { db } from "$lib/server/db";
 import { eq, desc } from "drizzle-orm";
 import type { AccountInformation, UserInformation } from "$lib/utils";
-import { computeHash } from "../../../../lib/crawler/utils/CryptoHash";
+import { computeHash } from "../../../../../stashed/crawler-old/utils/CryptoHash";
 
 
 export async function GET({ request, locals }) {

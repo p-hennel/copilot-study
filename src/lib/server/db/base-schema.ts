@@ -6,7 +6,8 @@ import {
   primaryKey,
   index,
   type AnySQLiteColumn,
-  uniqueIndex
+  uniqueIndex,
+  blob // Added blob for json
 } from "drizzle-orm/sqlite-core";
 import { monotonicFactory } from "ulid";
 import { AreaType, CrawlCommand, JobStatus } from "../../utils";
@@ -100,7 +101,9 @@ export const job = sqliteTable(
     from: integer({ mode: "timestamp" }).default(new Date(2022, 1, 1)),
     to: integer({ mode: "timestamp" }),
     accountId: text().notNull(), //.references(() => account.id),
-    spawned_from: text() //.references((): AnySQLiteColumn => job.id),
+    spawned_from: text(), //.references((): AnySQLiteColumn => job.id),
+    // Added field to store resume state (e.g., cursors)
+    resumeState: blob("resume_state", { mode: "json" }) // Stores JSON object for resume cursors
   },
   (table) => [
     index("job_created_at_idx").on(table.created_at),

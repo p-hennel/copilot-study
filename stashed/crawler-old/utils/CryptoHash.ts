@@ -1,5 +1,5 @@
 import type { SupportedCryptoAlgorithms } from "bun";
-import AppSettings from "../../server/settings/index";
+import AppSettings from "../../lib/server/settings/index";
 
 // Global cache for computed hashes.
 const hashCache = new Map<string, string>();

@@ -1,4 +1,4 @@
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, gt } from "drizzle-orm"; // Added gt
 import { db } from ".";
 import { account } from "./auth-schema";
 import { area, job, type JobInsert, type Job as JobType } from "./base-schema";
@@ -398,7 +398,8 @@ export const getAvailableJobs = async (
         full_path: true,
         branch: true,
         from: true,
-        to: true
+        to: true,
+        resumeState: true // Select the new resumeState field
       },
       with: {
         usingAccount: {
@@ -416,7 +417,19 @@ export const getAvailableJobs = async (
       limit: perPage
     })
   ).map((x) => {
-    const { usingAccount, full_path, command, ...rest } = x;
+    // Ensure resumeState is parsed correctly (Drizzle might return it as string or buffer depending on driver)
+    let parsedResumeState = null;
+    if (x.resumeState) {
+        try {
+            // Assuming Drizzle returns a JSON object directly for blob({ mode: 'json' })
+            parsedResumeState = typeof x.resumeState === 'string' ? JSON.parse(x.resumeState) : x.resumeState;
+        } catch (e) {
+            logger.error("Failed to parse resumeState for job {jobId}", { jobId: x.id, error: e });
+            // Keep it null if parsing fails
+        }
+    }
+
+    const { usingAccount, full_path, command, resumeState, ...rest } = x; // Destructure resumeState
     const { providerId, ...accountRest } = usingAccount;
     return {
       ...rest,
@@ -424,11 +437,37 @@ export const getAvailableJobs = async (
       fullPath: full_path,
       ...accountRest,
       baseURL: providerToBaseURL(providerId),
-      provider: providerId as TokenProvider
+      provider: providerId as TokenProvider,
+      resumeState: parsedResumeState // Add resumeState to the returned object
     };
   });
   return jobResults;
 };
+
+/**
+ * Updates the resume state for a specific job.
+ * @param jobId The ID of the job to update.
+ * @param newState The new resume state object (or null to clear it).
+ */
+export async function updateJobResumeState(jobId: string, newState: Record<string, any> | null): Promise<ResultSet> {
+  logger.debug("Updating resume state for job {jobId}", { jobId, newState });
+  try {
+    const result = await db
+      .update(job)
+      .set({
+        resumeState: newState // Drizzle should handle JSON serialization for blob({ mode: 'json' })
+      })
+      .where(eq(job.id, jobId));
+    if (result.rowsAffected === 0) {
+       logger.warn("Attempted to update resume state for non-existent job {jobId}", { jobId });
+    }
+    return result;
+  } catch (error) {
+     logger.error("Failed to update resume state for job {jobId}: {error}", { jobId, error });
+     throw error; // Re-throw the error after logging
+  }
+}
+
 
 export const providerToBaseURL = (provider: TokenProvider | string) => {
   switch (provider) {

@@ -25918,7 +25918,10 @@ export type MergeRequest = CurrentUserTodos & NoteableInterface & Todoable & {
   mergeTrainsCount?: Maybe<Scalars['Int']['output']>;
   /** User who merged the merge request or set it to auto-merge. */
   mergeUser?: Maybe<UserCore>;
-  /** Indicates if the merge has been set to auto-merge. */
+  /**
+   * Indicates if the merge has been set to auto-merge. Deprecated in GitLab 17.11: This was renamed.
+   * @deprecated This was renamed. Please use `MergeRequest.autoMergeEnabled`. Deprecated in GitLab 17.11.
+   */
   mergeWhenPipelineSucceeds?: Maybe<Scalars['Boolean']['output']>;
   /**
    * Status of all mergeability checks of the merge request. Introduced in GitLab 16.5: **Status**: Experiment.

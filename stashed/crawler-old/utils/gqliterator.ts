@@ -1,5 +1,5 @@
 import type { Logger } from "@logtape/logtape";
-import { getCaller } from "../../logging";
+import { getCaller } from "../../lib/logging";
 import type { Client } from "@urql/core";
 import type { DocumentNode } from "graphql";
 
@@ -56,8 +56,9 @@ export async function iterate<
   query: QueryType,
   params: any = {},
   enhance?: (obj: ResultType) => Promise<void> | void,
-  iterationCB?: (result: ResultType[]) => Promise<void> | void
-): Promise<void> {
+  iterationCB?: (result: ResultType[]) => Promise<void> | void,
+  startCursor?: string | null // Added startCursor parameter
+): Promise<{ lastCursor: string | null }> { // Changed return type
   // Create a scoped logger with contextual information
   const logger = _logger.with({ caller: getCaller(iterate), keys });
   let total = 0; // Track total items processed
@@ -69,23 +70,37 @@ export async function iterate<
 
   registerRunning()
 
+  let after: string | null = startCursor ?? null; // Initialize with startCursor if provided
+
   try {
-    let after: string | null = null; // Cursor for pagination
     do {
       // Execute the query with the current cursor
       const response = await client.query(query, { ...params, after });
       if (!!response.error || !response.data) {
         logger.error("query failed!", { response, after });
-        return;
+        // Return the cursor we started this failed iteration with
+        return { lastCursor: after };
       }
       // Extract data using the provided keys
       const data = extract(logger, response.data, keys);
+      // Check if data extraction was successful and if nodes exist
       if (!data || !data.nodes) {
-        logger.error("could not extract!", { data: response.data, keys, after });
-        return;
+         // It's possible to get valid responses with no nodes (e.g., empty list)
+         // Check for pageInfo to determine if we should stop
+         const pageInfo = _getPageInfo(data);
+         if (pageInfo && !pageInfo.hasNextPage) {
+            logger.debug("No nodes found, but pageInfo indicates end of data.", { data: response.data, keys, after });
+            after = null; // Set cursor to null to stop iteration
+         } else {
+            // If no nodes and no clear end signal, log error and stop
+            logger.error("Could not extract nodes and no clear end signal!", { data: response.data, keys, after });
+            return { lastCursor: after }; // Return current cursor
+         }
       }
-      let items: ResultType[] = data.nodes;
-      if (enhance) {
+
+      let items: ResultType[] = data?.nodes ?? []; // Use empty array if nodes are null/undefined
+
+      if (items.length > 0 && enhance) {
         // Optionally enhance each item concurrently
         logger.debug("enhancing: {enhance}", { enhance });
         await Promise.all(items.map(enhance));
@@ -95,21 +110,32 @@ export async function iterate<
       // Update cursor for the next iteration
       after = getEndCursor(data);
       total += items.length;
-      logger.debug("completed iteration", () => ({ after, total, added: items.length }));
+        logger.debug("completed iteration", () => ({ after, total, added: items.length }));
       // Call the iteration callback if provided
-      if (iterationCB) {
+      if (iterationCB && items.length > 0) {
         await iterationCB(items);
       }
-    } while (!!after && shouldContinue); // Continue while there's a next page
+      // Only update 'after' if we successfully processed the page or determined it's the end
+      if (data) {
+         after = getEndCursor(data);
+      }
+
+    } while (!!after && shouldContinue); // Continue while there's a next page cursor and not interrupted
 
     logger.debug("completed iterations", () => ({ total }));
+    // Return the final state of the cursor
+    return { lastCursor: after };
+
   } catch (error: any) {
     logger.error("ITERATE FAILED: {message}\n{stack}\n---", {
       message: error.message,
       stack: error.stack,
       query,
-      params
+      params,
+      currentCursor: after // Log cursor state at time of failure
     });
+    // Return the cursor state at the time of the error
+    return { lastCursor: after };
   } finally {
     unregisterRunning()
   }

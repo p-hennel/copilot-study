@@ -119,7 +119,7 @@ import { account, apikey, area_authorization, job } from "./db/schema";
 import { db } from "./db";
 import { auth } from "$lib/auth";
 import { JobStatus } from "$lib/utils";
-import { CollectionTypes } from "../crawler/utils/datastorage";
+import { CollectionTypes } from "../../../stashed/crawler-old/utils/datastorage";
 import AppSettings from "./settings/index";
 
 export const getApiToken = async (userId: string): Promise<string | undefined> => {

@@ -15,6 +15,7 @@ export function normalizeURL(url: string) {
 export enum JobStatus {
   queued = "queued",
   running = "running",
+  paused = "paused", // Added paused state
   failed = "failed",
   finished = "finished"
 }

@@ -7,6 +7,42 @@ export const fPageInfo = graphql(/* GraphQL */ `
   }
 `);
 
+// --- Authorization Scope Query ---
+export const qAuthorizationScope = graphql(/* GraphQL */ `
+  query GetAuthorizationScope($groupsAfter: String = null, $projectsAfter: String = null, $limit: Int = 100) {
+    currentUser {
+      id
+      username
+      groupMemberships(first: $limit, after: $groupsAfter) {
+        pageInfo {
+          ...PaginationDetails
+        }
+        nodes {
+          group {
+            id
+            fullPath
+            name
+          }
+        }
+      }
+      projectMemberships(first: $limit, after: $projectsAfter) {
+        pageInfo {
+          ...PaginationDetails
+        }
+        nodes {
+          project {
+            id
+            fullPath
+            name
+          }
+        }
+      }
+    }
+  }
+`);
+// --- End Authorization Scope Query ---
+
+
 export const fMemberDetails = graphql(/* GraphQL */ `
   fragment MemberDetails on MemberInterface {
     id
