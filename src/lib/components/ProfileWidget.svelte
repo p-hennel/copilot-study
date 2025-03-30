@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, buttonVariants } from "$lib/components/ui/button"
+  import { buttonVariants } from "$lib/components/ui/button"
   import {
     DropdownMenu,
     DropdownMenuContent,
@@ -58,7 +58,7 @@
             {#if isAdminArea}
               <a href="/" class="flex w-full items-center">
                 <Home class="mr-2 h-4 w-4" />
-                <span>Back</span>
+                <span>Back Home</span>
               </a>
             {:else}
               <a href="/admin" class="flex w-full items-center">
