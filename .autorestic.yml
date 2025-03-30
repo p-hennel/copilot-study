@@ -1,12 +1,12 @@
 version: 2
- 
+
 locations:
   home:
     from: /home/bun/data
     to:
       - storagebox
-    cron: '*/15 0-4,19-23 * * *' # At every 15th minute past every hour from 0 through 4 and every hour from 19 through 23.
- 
+    cron: "*/15 0-4,19-23 * * *" # At every 15th minute past every hour from 0 through 4 and every hour from 19 through 23.
+
 backends:
   storagebox:
     # key set through AUTORESTIC_STORAGEBOX_RESTIC_PASSWORD

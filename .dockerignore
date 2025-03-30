@@ -14,3 +14,17 @@ helm-charts
 .idea
 coverage*
 *.bun-build
+.svelte-kit
+.vscode
+build
+node_modules
+.dockerignore
+.env.example
+.eslintignore
+.eslintrc.cjs
+.gitignore
+.prettierignore
+Dockerfile
+prettier.config.cjs
+components.json
+README.md

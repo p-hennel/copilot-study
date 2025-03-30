@@ -1,9 +1,9 @@
 <script lang="ts">
-  import * as Table from "$lib/components/ui/table/index.js";
-  import Time from "svelte-time";
-  import { m } from "$paraglide";
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
-  import Button, { buttonVariants } from "$ui/button/button.svelte";
+  import * as Table from "$lib/components/ui/table/index.js"
+  import Time from "svelte-time"
+  import { m } from "$paraglide"
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js"
+  import Button, { buttonVariants } from "$ui/button/button.svelte"
   import {
     CircleChevronDown,
     CircleChevronUp,
@@ -13,111 +13,106 @@
     OctagonX,
     Play,
     RefreshCw
-  } from "lucide-svelte";
-  import { invalidate, invalidateAll } from "$app/navigation";
-  import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-  import Separator from "$ui/separator/separator.svelte";
-  import { cn, type pm2types } from "$lib/utils";
-  import { Ellipsis } from "$ui/breadcrumb";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-  import * as Card from "$lib/components/ui/card/index.js"; // Added for crawler status display
-  import type { CrawlerStatus } from "../../crawler/types"; // Added for crawler status type
+  } from "lucide-svelte"
+  import { invalidate, invalidateAll } from "$app/navigation"
+  import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js"
+  import Separator from "$ui/separator/separator.svelte"
+  import { cn, type pm2types } from "$lib/utils"
+  import { Ellipsis } from "$ui/breadcrumb"
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
+  import * as Card from "$lib/components/ui/card/index.js" // Added for crawler status display
+  import type { CrawlerStatus } from "../../crawler/types" // Added for crawler status type
 
   type ProcessTableProps = {
     // Updated prop structure
     processes: {
-      pm2: pm2types.ProcessDescription[];
-      crawler: CrawlerStatus | null;
-    };
-    sessionToken: string;
-  };
+      pm2: pm2types.ProcessDescription[]
+      crawler: CrawlerStatus | null
+    }
+    sessionToken: string
+  }
 
-  let data: ProcessTableProps = $props();
+  let data: ProcessTableProps = $props()
 
   // Access pm2 list and crawler status
-  let pm2List = $derived(data.processes.pm2);
-  let crawlerStatus = $derived(data.processes.crawler);
+  let pm2List = $derived(data.processes.pm2)
+  let crawlerStatus = $derived(data.processes.crawler)
 
   let state = $state({
     loading: false,
     action: null as "start" | "restart" | "stop" | null,
     actionPid: null as string | number | null | undefined
-  });
+  })
 
   const triggerRefresh = async () => {
-    if (state.loading) return;
-    state.loading = true;
-    await invalidate("/admin/processes");
-    state.loading = false;
-  };
+    if (state.loading) return
+    state.loading = true
+    await invalidate("/api/admin/processes")
+    state.loading = false
+  }
 
   // TODO: Update or remove scaling logic if not applicable anymore
   const triggerProcessRun = async (step: number) => {
-    if (state.loading) return;
-    state.loading = true;
+    if (state.loading) return
+    state.loading = true
     // Use pm2List length for scaling PM2 processes if needed
-    const target = Math.min(10, Math.max(pm2List.length + step, 0));
-    await fetch(`/admin/trigger?scale=${target}`, {
+    const target = Math.min(10, Math.max(pm2List.length + step, 0))
+    await fetch(`/api/admin/trigger?scale=${target}`, {
       // This endpoint might need adjustment
       headers: {
         Authorization: `Bearer ${data.sessionToken}`
       }
-    });
+    })
     setTimeout(async () => {
-      await invalidate("/admin/processes");
-      state.loading = false;
-    }, 1000);
-  };
+      await invalidate("/api/admin/processes")
+      state.loading = false
+    }, 1000)
+  }
 
   const scaleUp = () => {
-    triggerProcessRun(1);
-  };
+    triggerProcessRun(1)
+  }
   const scaleDown = () => {
-    triggerProcessRun(-1);
-  };
+    triggerProcessRun(-1)
+  }
 
   const doActionPid = async () => {
-    if (state.loading) return;
-    state.loading = true;
-    await fetch("/admin/kill", {
+    if (state.loading) return
+    state.loading = true
+    await fetch("/api/admin/kill", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${data.sessionToken}`
       },
       body: JSON.stringify({ pid: state.actionPid, action: state.action })
-    });
-    state.actionPid = null;
-    state.action = null;
-    await invalidate("/admin/processes");
-    state.loading = false;
-  };
+    })
+    state.actionPid = null
+    state.action = null
+    await invalidate("/api/admin/processes")
+    state.loading = false
+  }
 
   const doNotKillPid = () => {
-    state.actionPid = null;
-    state.action = null;
-  };
+    state.actionPid = null
+    state.action = null
+  }
 
   const getDetails = (proc: pm2types.ProcessDescription): (string | undefined)[] => {
     if (proc.pm2_env) {
       return [
         `${proc.pm2_env.restart_time} restarts (${proc.pm2_env.unstable_restarts} unstable)`,
         proc.pm2_env.exec_interpreter
-      ];
+      ]
     }
-    return [];
-  };
+    return []
+  }
 
-  $inspect(data.processes);
+  $inspect(data.processes)
 
-  const alertDialogOpen = $derived(
-    !!state.actionPid && `${state.actionPid}`.length > 0 && !!state.action
-  );
+  const alertDialogOpen = $derived(!!state.actionPid && `${state.actionPid}`.length > 0 && !!state.action)
 </script>
 
-<AlertDialog.Root
-  open={alertDialogOpen}
-  onOpenChange={(open) => (open ? undefined : (state.actionPid = null))}
->
+<AlertDialog.Root open={alertDialogOpen} onOpenChange={(open) => (open ? undefined : (state.actionPid = null))}>
   <AlertDialog.Content>
     <AlertDialog.Header>
       <AlertDialog.Title class="text-4xl font-black">WARNING!</AlertDialog.Title>
@@ -133,12 +128,8 @@
       </AlertDialog.Description>
     </AlertDialog.Header>
     <AlertDialog.Footer>
-      <AlertDialog.Cancel onclick={doNotKillPid} class="font-bold"
-        >Stop, cancel this.</AlertDialog.Cancel
-      >
-      <AlertDialog.Action
-        class={cn(buttonVariants({ variant: "destructive" }), "font-bold")}
-        onclick={doActionPid}
+      <AlertDialog.Cancel onclick={doNotKillPid} class="font-bold">Stop, cancel this.</AlertDialog.Cancel>
+      <AlertDialog.Action class={cn(buttonVariants({ variant: "destructive" }), "font-bold")} onclick={doActionPid}
         >{`${state.action?.substring(0, 1).toUpperCase()}${state.action?.substring(1)}`} the Process</AlertDialog.Action
       >
     </AlertDialog.Footer>
@@ -184,13 +175,9 @@
 <Table.Root class="w-full">
   <Table.Header>
     <Table.Row>
-      <Table.Head class="w-[4rem] text-right"
-        >{m["admin.dashboard.processesTable.header.idx"]()}</Table.Head
-      >
+      <Table.Head class="w-[4rem] text-right">{m["admin.dashboard.processesTable.header.idx"]()}</Table.Head>
       <Table.Head>{m["admin.dashboard.processesTable.header.pid"]()}</Table.Head>
-      <Table.Head class="text-center"
-        >{m["admin.dashboard.processesTable.header.resources"]()}</Table.Head
-      >
+      <Table.Head class="text-center">{m["admin.dashboard.processesTable.header.resources"]()}</Table.Head>
       <Table.Head>{m["admin.dashboard.processesTable.header.status"]()}</Table.Head>
       <Table.Head colspan={2}>
         <div class="flex w-full flex-row items-center justify-stretch gap-2 pb-2">
@@ -251,10 +238,7 @@
         <Table.Cell class="relative w-24">
           <DropdownMenu.Root>
             <DropdownMenu.Trigger
-              class={cn(
-                buttonVariants({ variant: "outline", size: "icon" }),
-                "absolute end-2 top-2"
-              )}
+              class={cn(buttonVariants({ variant: "outline", size: "icon" }), "absolute end-2 top-2")}
             >
               <Ellipsis />
             </DropdownMenu.Trigger>
@@ -262,8 +246,8 @@
               <DropdownMenu.Item
                 disabled={process.pm2_env?.status === "online"}
                 onclick={() => {
-                  state.actionPid = process.pm_id;
-                  state.action = "start";
+                  state.actionPid = process.pm_id
+                  state.action = "start"
                 }}
               >
                 <Play />
@@ -272,8 +256,8 @@
               <DropdownMenu.Item
                 disabled={process.pm2_env?.status !== "online"}
                 onclick={() => {
-                  state.actionPid = process.pm_id;
-                  state.action = "restart";
+                  state.actionPid = process.pm_id
+                  state.action = "restart"
                 }}
               >
                 <RefreshCw />
@@ -282,8 +266,8 @@
               <DropdownMenu.Item
                 disabled={process.pm2_env?.status !== "online"}
                 onclick={() => {
-                  state.actionPid = process.pm_id;
-                  state.action = "stop";
+                  state.actionPid = process.pm_id
+                  state.action = "stop"
                 }}
               >
                 <OctagonX />

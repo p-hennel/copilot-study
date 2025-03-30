@@ -1,33 +1,33 @@
 <script lang="ts">
-  import { Separator } from "$ui/separator";
-  import type { PageProps } from "./$types";
-  import { m } from "$paraglide";
-  import UserTable from "$lib/components/UserTable.svelte";
-  import { Skeleton } from "$ui/skeleton";
-  import * as Tabs from "$lib/components/ui/tabs/index.js";
-  import ProcesTable from "$lib/components/ProcesTable.svelte";
-  import JobsTable from "$lib/components/JobsTable.svelte";
-  import AreasTable from "$lib/components/AreasTable.svelte";
-  import type { Snapshot } from "./$types";
+  import type { PageProps } from "./$types"
+  import { m } from "$paraglide"
+  import UserTable from "$lib/components/UserTable.svelte"
+  import { Skeleton } from "$ui/skeleton"
+  import * as Tabs from "$lib/components/ui/tabs/index.js"
+  import ProcesTable from "$lib/components/ProcesTable.svelte"
+  import JobsTable from "$lib/components/JobsTable.svelte"
+  import AreasTable from "$lib/components/AreasTable.svelte"
+  import type { Snapshot } from "./$types"
+  // Removed incorrect import from $lib/server/utils
 
-  let { data }: PageProps = $props();
+  let { data }: PageProps = $props()
 
-  const randomWidths = ["w-1/2", "w-2/3", "w-3/4", "w-5/6", "w-7/12", "w-10/12", "w-11/12"];
+  const randomWidths = ["w-1/2", "w-2/3", "w-3/4", "w-5/6", "w-7/12", "w-10/12", "w-11/12"]
   const getLoadingClassForColumn = (idx: number) => {
-    if (idx === 0) return "h-4 w-3/4 ml-auto";
-    const randomWidth = randomWidths[Math.floor(Math.random() * randomWidths.length)];
-    return `col-span-${idx === 2 ? "4" : "2"} h-4 ${idx > 4 ? "mx-auto " : ""}${randomWidth}`;
-  };
+    if (idx === 0) return "h-4 w-3/4 ml-auto"
+    const randomWidth = randomWidths[Math.floor(Math.random() * randomWidths.length)]
+    return `col-span-${idx === 2 ? "4" : "2"} h-4 ${idx > 4 ? "mx-auto " : ""}${randomWidth}`
+  }
   const loadingRows = Array.from({ length: 20 }, () =>
     Array.from({ length: 7 }, (_, idx) => getLoadingClassForColumn(idx))
-  );
+  )
 
-  let selectedTab = $state("accounts");
+  let selectedTab = $state("accounts")
 
   export const snapshot: Snapshot<string> = {
     capture: () => selectedTab,
     restore: (value) => (selectedTab = value)
-  };
+  }
   const processesWithToken = $derived.by(() => Promise.all([data.processes, data.sessiontoken]))
 </script>
 
@@ -65,35 +65,37 @@
         <Skeleton class="col-span-2 mx-auto h-6 w-2/3" />
         <Skeleton class="col-span-2 mx-auto h-6 w-2/3" />
 
-        {#each loadingRows as row}
-          {#each row as col}
+        {#each loadingRows as row (row)}
+          {#each row as col (col)}
             <Skeleton class={col} />
           {/each}
         {/each}
       </div>
     {:then users}
-      <UserTable users={users ?? []} />
+      {#if users}
+        <UserTable users={users as any[]} />
+      {/if}
     {/await}
   </Tabs.Content>
   <Tabs.Content value="areas">
     {#await data.areas}
       Loading
     {:then areas}
-      <AreasTable {areas} />
+      <AreasTable areas={areas as any[]} />
     {/await}
   </Tabs.Content>
   <Tabs.Content value="jobs">
     {#await data.jobs}
       Loading
     {:then jobs}
-      <JobsTable {jobs} />
+      <JobsTable jobs={jobs as any[]} />
     {/await}
   </Tabs.Content>
   <Tabs.Content value="processes">
     {#await processesWithToken}
       Loading
     {:then [processes, token]}
-      <ProcesTable {processes} sessionToken={token ?? ""} />
+      <ProcesTable processes={processes as any} sessionToken={token ?? ""} />
     {/await}
   </Tabs.Content>
 </Tabs.Root>

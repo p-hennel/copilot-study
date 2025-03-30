@@ -6,7 +6,7 @@ module.exports = {
       interpreter: "bun",
       script: "./crawler/index.js",
       env: {
-        PATH: `${process.env.HOME}/.bun/bin:${process.env.PATH}`, // Add "~/.bun/bin/bun" to PATH
+        PATH: `${process.env.HOME}/.bun/bin:${process.env.PATH}` // Add "~/.bun/bin/bun" to PATH
       },
       env_production: {
         NODE_ENV: "production"
@@ -26,7 +26,7 @@ module.exports = {
       watch: false,
       autorestart: true,
       env: {
-        PATH: `${process.env.HOME}/.bun/bin:${process.env.PATH}`, // Add "~/.bun/bin/bun" to PATH
+        PATH: `${process.env.HOME}/.bun/bin:${process.env.PATH}` // Add "~/.bun/bin/bun" to PATH
       }
     }
   ]

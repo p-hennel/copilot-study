@@ -8,6 +8,7 @@
     "jsx": "react-jsx",
     "allowJs": true,
 
+    "types": ["bun"],
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -33,7 +34,8 @@
         "tadaOutputLocation": "./src/graphql-env.d.ts"
       }
     ]
-  }
+  },
+  "exclude": ["stashed"] // Explicitly exclude stashed directory
   // Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
   // except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
   //

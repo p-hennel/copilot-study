@@ -1,8 +1,8 @@
-import type { SupportedCryptoAlgorithms } from "bun";
-import AppSettings from "../../lib/server/settings/index";
+import { CryptoHasher, type SupportedCryptoAlgorithms } from "bun"
+import AppSettings from "$lib/server/settings"
 
 // Global cache for computed hashes.
-const hashCache = new Map<string, string>();
+const hashCache = new Map<string, string>()
 
 /**
  * Computes an HMAC hash of the given value using Bun.CryptoHasher.
@@ -16,18 +16,19 @@ const hashCache = new Map<string, string>();
  */
 export function computeHash(
   value: string,
-  key: string = AppSettings.hashing.hmacKey,
-  algorithm: SupportedCryptoAlgorithms = AppSettings.hashing.algorithm
+  key: string = AppSettings().hashing.hmacKey ?? "",
+  algorithm: SupportedCryptoAlgorithms = AppSettings().hashing.algorithm
 ): string {
-  const cacheKey = `${algorithm}:${key}:${value}`;
+  const cacheKey = `${algorithm}:${key}:${value}`
   if (hashCache.has(cacheKey)) {
-    return hashCache.get(cacheKey)!;
+    return hashCache.get(cacheKey)!
   }
-  const hasher = new Bun.CryptoHasher(algorithm, key);
-  hasher.update(value);
-  const digest = hasher.digest("hex");
-  hashCache.set(cacheKey, digest);
-  return digest;
+
+  const hasher = new CryptoHasher(algorithm, key)
+  hasher.update(value)
+  const digest = hasher.digest("hex")
+  hashCache.set(cacheKey, digest)
+  return digest
 }
 
 /**
@@ -38,13 +39,17 @@ export function computeHash(
  * @param key - The secret key used to generate the hashes.
  * @param algorithm - The cryptographic algorithm.
  */
-export function loadHashes(content: string, key: string = AppSettings.hashing.hmacKey, algorithm: SupportedCryptoAlgorithms = AppSettings.hashing.algorithm) {
+export function loadHashes(
+  content: string,
+  key: string = AppSettings().hashing.hmacKey ?? "",
+  algorithm: SupportedCryptoAlgorithms = AppSettings().hashing.algorithm
+) {
   for (const line of content.split("\n")) {
-    if (!line.trim()) continue;
-    const [value, hash] = line.split("\t");
+    if (!line.trim()) continue
+    const [value, hash] = line.split("\t")
     if (value && hash) {
-      const cacheKey = `${algorithm}:${key}:${value}`;
-      hashCache.set(cacheKey, hash.trim());
+      const cacheKey = `${algorithm}:${key}:${value}`
+      hashCache.set(cacheKey, hash.trim())
     }
   }
 }
@@ -53,5 +58,5 @@ export function loadHashes(content: string, key: string = AppSettings.hashing.hm
  * Expose the cache (for testing or inspection if needed)
  */
 export function getCache() {
-  return hashCache;
+  return hashCache
 }

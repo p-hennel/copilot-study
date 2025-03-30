@@ -1,10 +1,10 @@
-import { paraglideVitePlugin } from "@inlang/paraglide-js";
-import tailwindcss from "@tailwindcss/vite";
+import { paraglideVitePlugin } from "@inlang/paraglide-js"
+import tailwindcss from "@tailwindcss/vite"
 //import { svelteTesting } from "@testing-library/svelte/vite";
-import { sveltekit } from "@sveltejs/kit/vite";
-import { enhancedImages } from '@sveltejs/enhanced-img'
+import { sveltekit } from "@sveltejs/kit/vite"
+import { enhancedImages } from "@sveltejs/enhanced-img"
 //import autoprefixer from 'autoprefixer'
-import { defineConfig } from "vite";
+import { defineConfig } from "vite"
 
 export default defineConfig({
   plugins: [
@@ -14,15 +14,18 @@ export default defineConfig({
     paraglideVitePlugin({
       project: "./project.inlang",
       outdir: "./src/lib/paraglide",
-      strategy: ['url', 'cookie', 'baseLocale'],
+      strategy: ["url", "cookie", "baseLocale"]
     })
   ],
-/*  css: {
-    postcss: {
-      plugins: [autoprefixer()],
-    }
+  optimizeDeps: {
+    exclude: ["bun", "bun:*"]
+  },
+  ssr: {
+    external: ["bun", "bun:*"]
+  },
+  resolve: {
+    external: ["bun", "bun:*"]
   }
-*/
   // test: {
   //   workspace: [
   //     {
@@ -48,4 +51,4 @@ export default defineConfig({
   //     }
   //   ]
   // }
-});
+})

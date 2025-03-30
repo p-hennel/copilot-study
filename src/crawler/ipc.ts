@@ -1,108 +1,194 @@
-// src/crawler/ipc.ts
+// src/crawler/ipc.ts - Rewritten for Supervisor Stdout/Stdin IPC
 import type { CrawlerCommand, CrawlerStatus } from "./types";
-import { Server as SocketIOServer } from "socket.io"; // Renamed import
-import { createServer } from "http";
-import { createAdapter } from "@socket.io/cluster-adapter";
-import { setupWorker } from "@socket.io/sticky";
+import { z } from "zod"; // For message validation
+import { Writable } from "stream";
 
-// Keep the interfaces, they define the contract with crawler.ts
+// --- Message Schema (Mirrors supervisor's schema for consistency) ---
+const BaseMessageSchema = z.object({
+  source: z.enum(["crawler", "backend", "supervisor"]),
+  target: z.enum(["crawler", "backend", "supervisor", "broadcast"]),
+  type: z.string(),
+  payload: z.any().optional()
+});
+// Removed unused ReceivedMessage type
+
+// Define the structure for messages sent *from* the crawler
+export interface SendMessageArgs {
+  // Added export
+  target: "supervisor" | "backend" | "broadcast";
+  type: string;
+  payload?: unknown; // Use unknown instead of any
+}
+
+// --- Interfaces (Keep the contract with crawler.ts) ---
 interface IPCHandlers {
   onCommand: (command: CrawlerCommand) => void;
-  // These will be replaced by the actual sending functions upon setup
-  sendStatus: (status: CrawlerStatus) => void;
-  sendHeartbeat: () => void;
+  // Add a specific handler for shutdown signals from the supervisor
+  onShutdown: (signal?: string) => Promise<void> | void;
+  // sendStatus and sendHeartbeat are now implemented internally
 }
 
 interface IPCInstance {
   // Functions the crawler logic can call to send messages
   sendStatus: (status: CrawlerStatus) => void;
   sendHeartbeat: () => void;
+  // Optional: A generic send function if needed
+  sendMessage: (args: SendMessageArgs) => void;
+}
+
+// --- Helper Functions ---
+function log(level: "info" | "warn" | "error", message: string, data?: unknown) {
+  const timestamp = new Date().toISOString();
+  // Add [CrawlerIPC] prefix for clarity
+  const logMessage = `[${timestamp}] [CrawlerIPC] [${level.toUpperCase()}] ${message}`;
+  if (data !== undefined) {
+    console[level](logMessage, data);
+  } else {
+    console[level](logMessage);
+  }
+}
+
+// --- Stdout Sending Function ---
+// Ensure stdout is writable before attempting to write
+const safeStdoutWrite = (data: string) => {
+  if (process.stdout instanceof Writable && !process.stdout.destroyed) {
+    process.stdout.write(data, (err) => {
+      if (err) {
+        log("error", "Failed to write to stdout", err);
+      }
+    });
+  } else {
+    log("error", "Cannot write to stdout, stream is not writable or destroyed.");
+  }
+};
+
+const sendMessageToSupervisor = (args: SendMessageArgs) => {
+  try {
+    const message = {
+      source: "crawler", // Always set source as crawler
+      target: args.target,
+      type: args.type,
+      payload: args.payload
+    };
+    // Validate structure before sending (optional but good practice)
+    // BaseMessageSchema.parse(message); // Could use this, but assumes received structure matches sent
+    const messageString = `IPC_MSG::${JSON.stringify(message)}\n`; // Add prefix
+    safeStdoutWrite(messageString);
+    // log('info', `Sent message type '${message.type}' to ${message.target}`);
+  } catch (error) {
+    log("error", `Failed to stringify or send message`, { args, error });
+  }
+};
+
+// --- Stdin Listening and Processing ---
+let stdinBuffer = "";
+
+function processStdinBuffer(handlers: IPCHandlers) {
+  let newlineIndex;
+  // Process buffer line by line
+  while ((newlineIndex = stdinBuffer.indexOf("\n")) >= 0) {
+    const line = stdinBuffer.slice(0, newlineIndex).trim();
+    stdinBuffer = stdinBuffer.slice(newlineIndex + 1); // Remove processed line + newline
+
+    if (!line) continue; // Ignore empty lines
+
+    try {
+      const json: unknown = JSON.parse(line);
+      const message = BaseMessageSchema.parse(json); // Validate the incoming message
+
+      // Check if the message is intended for the crawler
+      if (message.target === "crawler" || message.target === "broadcast") {
+        log("info", `Received message type '${message.type}' from ${message.source}`);
+
+        // Handle specific message types
+        if (message.type === "shutdown") {
+          log("warn", "Received shutdown command from supervisor.");
+          // Trigger graceful shutdown in the crawler logic
+          handlers.onShutdown(message.payload?.signal);
+        } else {
+          // Assume other types are commands for the crawler
+          // TODO: Add more robust command type validation if needed
+          if (typeof message.payload === "object" && message.payload !== null) {
+            handlers.onCommand(message as unknown as CrawlerCommand); // Needs careful type assertion or better validation
+          } else {
+            // Handle commands without payload if necessary, or treat as invalid
+            handlers.onCommand({ type: message.type } as CrawlerCommand);
+          }
+        }
+      } else {
+        // Message not for us, ignore (or log if needed)
+        // log('info', `Ignoring message targeted at ${message.target}`);
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log("error", `Invalid IPC message format received`, { rawLine: line, error: error.errors });
+      } else if (error instanceof SyntaxError) {
+        log("error", `Invalid JSON received on stdin`, { rawLine: line });
+      } else {
+        log("error", `Failed to handle IPC message from stdin`, { rawLine: line, error });
+      }
+    }
+  }
 }
 
 /**
- * Sets up the IPC communication channel for the crawler process.
- * Listens for commands from the main process and provides functions
- * to send status and heartbeats back.
- * @param handlers Object containing callback functions for handling commands and sending messages.
- * @returns An object with functions to send messages to the main process.
+ * Sets up the IPC communication channel using stdin/stdout.
+ * Listens for commands from the supervisor via stdin and provides functions
+ * to send status and heartbeats back via stdout.
+ * @param handlers Object containing callback functions for handling commands and shutdown.
+ * @returns An object with functions to send messages to the supervisor/backend.
  */
 export function setupIPC(handlers: IPCHandlers): IPCInstance {
-  console.log("Setting up Socket.IO server with PM2 adapter...");
+  // Ensure this process is running under the supervisor
+  if (process.env.SUPERVISED_PROCESS !== "crawler") {
+    log("error", "CRITICAL: Crawler started without supervisor environment variable. Exiting.");
+    process.exit(1); // Exit if not supervised
+  }
 
-  const httpServer = createServer();
-  // Create Socket.IO server instance
-  // Consider adding options like CORS if needed, though likely not for PM2 IPC
-  const io = new SocketIOServer(httpServer);
-  io.adapter(createAdapter());
+  log("info", "Setting up stdin/stdout IPC for supervisor communication...");
 
-  setupWorker(io);
-
-  // Listen for client connections (from the SvelteKit backend)
-  io.on("connection", (socket) => {
-    console.log(`Socket.IO client connected: ${socket.id}`);
-
-    // Listen for 'command' events from this specific client
-    socket.on("command", (command: unknown) => {
-      // Basic validation (similar to before, but checking the received command)
-      if (
-        typeof command === "object" &&
-        command !== null &&
-        "type" in command &&
-        typeof command.type === "string"
-      ) {
-        console.log(`Received command via Socket.IO: ${command.type}`);
-        // Add more robust validation if needed (e.g., using Zod)
-        if (
-          ["START_JOB", "PAUSE_CRAWLER", "RESUME_CRAWLER", "GET_STATUS", "SHUTDOWN"].includes(
-            command.type
-          )
-        ) {
-          handlers.onCommand(command as CrawlerCommand);
-        } else {
-          console.warn("Received command with unknown type via Socket.IO:", command.type);
-        }
-      } else {
-        console.warn("Received unexpected command format via Socket.IO:", command);
-      }
-    });
-
-    socket.on("disconnect", (reason) => {
-      console.log(`Socket.IO client disconnected: ${socket.id}, Reason: ${reason}`);
-    });
+  // Setup stdin listener
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", (data) => {
+    stdinBuffer += data.toString();
+    processStdinBuffer(handlers); // Process buffer whenever new data arrives
   });
 
-  // Function to broadcast status updates to all connected clients
-  const sendStatusToMain = (status: CrawlerStatus) => {
-    try {
-      // console.log('Broadcasting status update via Socket.IO:', status);
-      io.emit("statusUpdate", status); // Use io.emit to send to all clients
-    } catch (error) {
-      console.error("Failed to broadcast status update via Socket.IO:", error);
+  process.stdin.on("end", () => {
+    log("warn", "Stdin stream ended. Crawler may lose connection with supervisor.");
+    // Process any remaining buffer content
+    if (stdinBuffer.length > 0) {
+      log("warn", "Processing remaining stdin buffer before exit...");
+      processStdinBuffer(handlers);
     }
-  };
+    // Optionally trigger shutdown if stdin closes unexpectedly
+    // handlers.onShutdown('stdin_closed');
+  });
 
-  // Function to broadcast heartbeats to all connected clients
-  const sendHeartbeatToMain = () => {
-    try {
-      // console.log('Broadcasting heartbeat via Socket.IO');
-      io.emit("heartbeat", { timestamp: Date.now() }); // Use io.emit
-    } catch (error) {
-      console.error("Failed to broadcast heartbeat via Socket.IO:", error);
-    }
-  };
+  process.stdin.on("error", (err) => {
+    log("error", "Stdin stream error:", err);
+    // Potentially trigger shutdown on stdin error
+    handlers.onShutdown("stdin_error");
+  });
 
-  // Overwrite the placeholder functions in handlers with the actual Socket.IO emitters
-  handlers.sendStatus = sendStatusToMain;
-  handlers.sendHeartbeat = sendHeartbeatToMain;
+  log("info", "IPC setup complete. Listening on stdin and ready to send on stdout.");
 
-  // Start the Socket.IO server listening (needs a port, but PM2 adapter might handle this implicitly? Check docs if issues arise)
-  // For PM2 adapter, often you don't need to explicitly call listen() as PM2 handles the process communication.
-  // If connection issues occur, you might need: io.listen(SOME_PORT); - but try without first.
-  console.log("Socket.IO server setup complete. Waiting for connections...");
-
-  // Return an object containing the functions the crawler can use to send messages
+  // Return the instance with methods to send messages via stdout
   return {
-    sendStatus: sendStatusToMain,
-    sendHeartbeat: sendHeartbeatToMain
+    sendStatus: (status: CrawlerStatus) => {
+      sendMessageToSupervisor({
+        target: "supervisor", // Status usually goes only to supervisor
+        type: "statusUpdate",
+        payload: status
+      });
+    },
+    sendHeartbeat: () => {
+      sendMessageToSupervisor({
+        target: "supervisor", // Heartbeat usually goes only to supervisor
+        type: "heartbeat",
+        payload: { timestamp: Date.now() }
+      });
+    },
+    sendMessage: sendMessageToSupervisor // Expose generic sender
   };
 }

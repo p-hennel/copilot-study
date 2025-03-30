@@ -1,15 +1,15 @@
 import { createAuthClient } from "better-auth/client";
-import { genericOAuthClient, jwtClient, adminClient, apiKeyClient } from "better-auth/client/plugins"
+import {
+  genericOAuthClient,
+  jwtClient,
+  adminClient,
+  apiKeyClient
+} from "better-auth/client/plugins";
 import { TokenProvider } from "./utils";
- 
+
 export const authClient = createAuthClient({
-  plugins: [
-    genericOAuthClient(),
-    jwtClient(),
-    adminClient(),
-    apiKeyClient()
-  ]
-})
+  plugins: [genericOAuthClient(), jwtClient(), adminClient(), apiKeyClient()]
+});
 
 interface Credentials {
   email: string;
@@ -29,7 +29,7 @@ export async function signIn(arg: TokenProvider | Credentials, nextUrl?: string)
         email: arg.email,
         password: arg.password,
         callbackURL: nextUrl,
-        rememberMe: true, // adjust as needed
+        rememberMe: true // adjust as needed
       });
     } else {
       // Provider flow using a TokenProvider
@@ -38,13 +38,13 @@ export async function signIn(arg: TokenProvider | Credentials, nextUrl?: string)
         // For Jira (using Generic OAuth)
         await authClient.signIn.oauth2({
           providerId: provider, // Make sure your genericOAuth plugin is configured with these IDs
-          callbackURL: nextUrl,
+          callbackURL: nextUrl
         });
       } else if (provider === TokenProvider.gitlab) {
         // For GitLab (using Social sign-in)
         await authClient.signIn.social({
           provider,
-          callbackURL: nextUrl,
+          callbackURL: nextUrl
         });
       } else {
         throw new Error(`Unsupported provider: ${provider}`);
@@ -61,14 +61,14 @@ export async function linkAccount(provider: TokenProvider, nextUrl: string): Pro
     // For GitLab, use the social linking method
     if (provider === TokenProvider.gitlab) {
       await authClient.linkSocial({
-        provider,            // Social provider (e.g., 'gitlab')
-        callbackURL: nextUrl,
+        provider, // Social provider (e.g., 'gitlab')
+        callbackURL: nextUrl
       });
     } else if (provider === TokenProvider.jira || provider === TokenProvider.jiraCloud) {
       // For Jira providers, use Generic OAuth linking
       await authClient.oauth2.link({
         providerId: provider, // Ensure your Generic OAuth plugin is configured with these IDs
-        callbackURL: nextUrl,
+        callbackURL: nextUrl
       });
     } else {
       throw new Error(`Unsupported provider for linking: ${provider}`);

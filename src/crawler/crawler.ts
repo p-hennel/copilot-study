@@ -1,46 +1,53 @@
 // src/crawler/crawler.ts
-import { setupIPC } from './ipc';
-import { JobManager } from './jobManager';
-import { Storage } from './storage';
-import type { CrawlerCommand, CrawlerStatus } from './types'; // Import CrawlerStatus
+import { setupIPC } from "./ipc"
+import { JobManager } from "./jobManager"
+import { Storage } from "./storage"
+import type { CrawlerCommand } from "./types"
+import { getLogger } from "$lib/logging" // Import logtape helper
+
+const logger = getLogger(["crawler", "main"]) // Create a logger for this module
 
 export async function startCrawler() {
-  console.log('Initializing crawler components...');
+  logger.info("Initializing crawler components...")
 
-  const storage = new Storage('./crawled_data'); // Define base path for crawled data
-  const jobManager = new JobManager(storage);
+  const storage = new Storage("./crawled_data") // Define base path for crawled data
+  const jobManager = new JobManager(storage)
 
-  // Setup IPC communication
+  // Setup IPC communication using the new stdin/stdout mechanism
   const ipc = setupIPC({
     onCommand: (command: CrawlerCommand) => {
-      console.log('Received command via IPC:', command);
+      logger.info("Received command", { type: command.type })
       // Handle commands like start, pause, resume, new job, etc.
-      jobManager.handleCommand(command);
+      jobManager.handleCommand(command)
     },
-    // Provide placeholder functions initially for status/heartbeat sending
-    // These will be replaced by the actual IPC senders inside setupIPC
-    sendStatus: (status: CrawlerStatus) => { // Explicitly type status
-      console.log('Placeholder sendStatus called:', status);
-    },
-    sendHeartbeat: () => {
-      console.log('Placeholder sendHeartbeat called');
+    // Add the required onShutdown handler
+    onShutdown: async (signal?: string) => {
+      logger.warn(`Received shutdown signal (${signal || "unknown"}). Initiating graceful shutdown...`)
+      try {
+        // Call the existing shutdown method which handles cleanup
+        await jobManager.shutdown()
+        logger.info("Job manager shutdown initiated.")
+        // Add any other *immediate* cleanup needed before exit, if any
+        // await storage.close();
+        logger.info("Graceful shutdown complete.")
+        process.exit(0) // Exit cleanly
+      } catch (error) {
+        logger.error("Error during graceful shutdown:", { error })
+        process.exit(1) // Exit with error code if shutdown fails
+      }
     }
-  });
+  })
 
   // Inject the actual IPC send functions into the JobManager instance
-  jobManager.setIPCFunctions(ipc.sendStatus, ipc.sendHeartbeat);
+  // JobManager uses these to send status updates/heartbeats/job updates back via stdout
+  jobManager.setIPCFunctions(ipc.sendStatus, ipc.sendHeartbeat, ipc.sendMessage)
 
-  console.log('Crawler components initialized and IPC connected.');
+  logger.info("Components initialized and IPC connected via stdin/stdout.")
 
-  // Start the job manager's processing loop (optional - could be triggered by IPC)
+  // Start the job manager's processing loop (optional - could be triggered by IPC command)
   // jobManager.startProcessing(); // Uncomment if you want it to start automatically
 
-  // Keep the crawler process running (e.g., waiting for IPC commands)
-  console.log('Crawler is running and waiting for commands...');
+  logger.info("Running and waiting for commands via stdin...")
 
-  // Initial status/heartbeat is now sent by JobManager after IPC setup
-
-  // Keep the process alive indefinitely or until a shutdown command
-  // In a real scenario, this might involve a loop or waiting mechanism
-  await new Promise(() => {}); // Keep process alive
+  // No need for infinite wait anymore, process will exit via onShutdown handler
 }

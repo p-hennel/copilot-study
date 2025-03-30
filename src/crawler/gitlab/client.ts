@@ -1,10 +1,10 @@
 // src/crawler/gitlab/client.ts
-import type { Job } from "../types"; // Assuming Job type includes API URL and token
+import type { Job } from "../types" // Assuming Job type includes API URL and token
 
 // Import generated GraphQL types
 // Adjust path and imported types as necessary based on actual generated file content
 // src/crawler/gitlab/client.ts
-import { Gitlab } from "@gitbeaker/rest"; // Added: Gitbeaker REST client
+import { Gitlab } from "@gitbeaker/rest" // Added: Gitbeaker REST client
 // Removed duplicate import: import type { Job } from "../types";
 
 // Import generated GraphQL types
@@ -31,31 +31,31 @@ import type {
   TimelogConnection,
   Timelog, // Timelogs
   VulnerabilityConnection,
-  Vulnerability, // Vulnerabilities
-  Discussion,
-  Note // Discussion/Note types (DiscussionConnection not needed directly)
+  Vulnerability // Vulnerabilities
+  //Discussion,
+  //Note // Discussion/Note types (DiscussionConnection not needed directly)
   // CodeQualityReportSummary, // Removed - Type seems missing
   // SecurityReportFinding, // Removed - Type seems missing/nested
   // TestReportSummary, TestSuite // Removed - Types seem missing
   // Add other specific types as needed for nested data (User, Commit, etc.)
-} from "../../../stashed/crawler-old/gql/graphql"; // Corrected relative path
+} from "../gql/graphql" // Corrected relative path
 
-import type { CommitSchema, ProjectSchema, GroupSchema } from "@gitbeaker/rest"; // Import REST types
+import type { ProjectSchema, GroupSchema } from "@gitbeaker/rest" // Import REST types
 
 // Define a simplified structure for the commit data we care about
 interface SimpleCommit {
-  id: string;
-  short_id: string;
-  title: string;
-  message: string;
-  author_name: string;
-  author_email: string;
-  authored_date: string; // ISO 8601 format
-  committer_name: string;
-  committer_email: string;
-  committed_date: string; // ISO 8601 format
-  web_url: string;
-  parent_ids: string[];
+  id: string
+  short_id: string
+  title: string
+  message: string
+  author_name: string
+  author_email: string
+  authored_date: string // ISO 8601 format
+  committer_name: string
+  committer_email: string
+  committed_date: string // ISO 8601 format
+  web_url: string
+  parent_ids: string[]
   // Add other fields if needed, like stats (additions, deletions)
 }
 
@@ -65,58 +65,58 @@ const defaultPageInfo: PageInfo = {
   hasPreviousPage: false,
   startCursor: null,
   endCursor: null
-};
+}
 
 // Define Response structure types using imported types
 // These help type the data returned by executeGraphQL
 
 interface ProjectMembersResponse {
-  project: { projectMembers: ProjectMemberConnection } | null;
+  project: { projectMembers: ProjectMemberConnection } | null
 }
 interface GroupMembersResponse {
-  group: { groupMembers: GroupMemberConnection } | null;
+  group: { groupMembers: GroupMemberConnection } | null
 }
 interface ProjectIssuesResponse {
-  project: { issues: IssueConnection } | null;
+  project: { issues: IssueConnection } | null
 }
 interface GroupIssuesResponse {
-  group: { issues: IssueConnection } | null;
+  group: { issues: IssueConnection } | null
 }
 interface ProjectLabelsResponse {
-  project: { labels: LabelConnection } | null;
+  project: { labels: LabelConnection } | null
 }
 interface GroupLabelsResponse {
-  group: { labels: LabelConnection } | null;
+  group: { labels: LabelConnection } | null
 }
 interface ProjectMilestonesResponse {
-  project: { milestones: MilestoneConnection } | null;
+  project: { milestones: MilestoneConnection } | null
 }
 interface GroupMilestonesResponse {
-  group: { milestones: MilestoneConnection } | null;
+  group: { milestones: MilestoneConnection } | null
 }
 interface ProjectBranchesResponse {
-  project: { repository?: { branches: any } } | null; // Use any for branches connection
+  project: { repository?: { branches: any } } | null // Use any for branches connection
 }
 interface ProjectMergeRequestsResponse {
-  project: { mergeRequests: MergeRequestConnection } | null;
+  project: { mergeRequests: MergeRequestConnection } | null
 }
 interface GroupMergeRequestsResponse {
-  group: { mergeRequests: MergeRequestConnection } | null;
+  group: { mergeRequests: MergeRequestConnection } | null
 }
 interface ProjectReleasesResponse {
-  project: { releases: ReleaseConnection } | null;
+  project: { releases: ReleaseConnection } | null
 }
 interface ProjectPipelinesResponse {
-  project: { pipelines: PipelineConnection } | null;
+  project: { pipelines: PipelineConnection } | null
 }
 interface ProjectTimelogsResponse {
-  project: { timelogs: TimelogConnection } | null;
+  project: { timelogs: TimelogConnection } | null
 }
 interface GroupTimelogsResponse {
-  group: { timelogs: TimelogConnection } | null;
+  group: { timelogs: TimelogConnection } | null
 }
 interface ProjectVulnerabilitiesResponse {
-  project: { vulnerabilities: VulnerabilityConnection } | null;
+  project: { vulnerabilities: VulnerabilityConnection } | null
 }
 // Add response types for Discussions, Reports, Tests if direct queries exist
 
@@ -124,82 +124,73 @@ interface ProjectVulnerabilitiesResponse {
  * Client for interacting with the GitLab GraphQL API.
  */
 export class GitlabClient {
-  private graphqlApiUrl: string; // Renamed for clarity
-  private token: string;
-  private headers: Record<string, string>;
-  private restClient: InstanceType<typeof Gitlab>; // Added: Gitbeaker REST client instance
+  private graphqlApiUrl: string // Renamed for clarity
+  private token: string
+  private headers: Record<string, string>
+  private restClient: InstanceType<typeof Gitlab> // Added: Gitbeaker REST client instance
 
   constructor(apiUrl: string, token: string) {
     // apiUrl here is expected to be the GraphQL endpoint, e.g., https://gitlab.com/api/graphql
     // Gitbeaker needs the base host, e.g., https://gitlab.com
     if (!apiUrl || !token) {
-      throw new Error("GitLab API URL and token are required.");
+      throw new Error("GitLab API URL and token are required.")
     }
-    this.graphqlApiUrl = apiUrl; // Assign to the renamed property
-    this.token = token;
+    this.graphqlApiUrl = apiUrl // Assign to the renamed property
+    this.token = token
     this.headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${this.token}`
-    };
+    }
 
     // Derive host for Gitbeaker
-    const url = new URL(apiUrl);
-    const host = `${url.protocol}//${url.host}`;
+    const url = new URL(apiUrl)
+    const host = `${url.protocol}//${url.host}`
 
     // Instantiate Gitbeaker REST client
     this.restClient = new Gitlab({
       host: host,
       token: this.token
       // Add other options like requestTimeout if needed
-    });
+    })
 
-    console.log(
-      `GitlabClient initialized for GraphQL API URL: ${this.graphqlApiUrl} and Host: ${host}`
-    );
+    console.log(`GitlabClient initialized for GraphQL API URL: ${this.graphqlApiUrl} and Host: ${host}`)
   }
 
-  private async executeGraphQL<T = any>(
-    query: string,
-    variables?: Record<string, any>
-  ): Promise<T> {
+  private async executeGraphQL<T = any>(query: string, variables?: Record<string, any>): Promise<T> {
     try {
       const response = await fetch(this.graphqlApiUrl, {
         // Use renamed property
         method: "POST",
         headers: this.headers,
         body: JSON.stringify({ query, variables })
-      });
+      })
 
       if (!response.ok) {
-        let errorBody = "";
+        let errorBody = ""
         try {
-          errorBody = await response.text();
+          errorBody = await response.text()
         } catch {
           // Remove unused variable binding
           /* ignore */
         }
-        throw new Error(
-          `GitLab API request failed: ${response.status} ${response.statusText}. Body: ${errorBody}`
-        );
+        throw new Error(`GitLab API request failed: ${response.status} ${response.statusText}. Body: ${errorBody}`)
       }
       // Add a basic type for the GraphQL response structure and cast
       const result = (await response.json()) as {
-        data?: T;
-        errors?: Array<{ message: string; [key: string]: any }>;
-      };
+        data?: T
+        errors?: Array<{ message: string; [key: string]: any }>
+      }
       if (result.errors) {
-        console.error("GitLab API returned errors:", JSON.stringify(result.errors, null, 2));
-        throw new Error(
-          `GitLab API Error: ${result.errors[0]?.message || "Unknown GraphQL error"}`
-        );
+        console.error("GitLab API returned errors:", JSON.stringify(result.errors, null, 2))
+        throw new Error(`GitLab API Error: ${result.errors[0]?.message || "Unknown GraphQL error"}`)
       }
       if (!result.data) {
-        throw new Error("GitLab API response missing data field.");
+        throw new Error("GitLab API response missing data field.")
       }
-      return result.data as T;
+      return result.data as T
     } catch (error) {
-      console.error("Error during GraphQL execution:", error);
-      throw error;
+      console.error("Error during GraphQL execution:", error)
+      throw error
     }
   }
 
@@ -214,29 +205,29 @@ export class GitlabClient {
   async fetchProjectCommits(
     fullPath: string,
     options: {
-      ref_name?: string;
-      since?: string;
-      until?: string;
-      page?: number;
-      perPage?: number;
+      ref_name?: string
+      since?: string
+      until?: string
+      page?: number
+      perPage?: number
     } = {}
   ): Promise<SimpleCommit[]> {
-    console.log(`Fetching commits for project '${fullPath}' via REST...`);
-    const projectId = encodeURIComponent(fullPath); // URL-encode the full path for REST API
-    const allCommits: SimpleCommit[] = [];
-    let page = 1;
-    const perPage = 100; // Fetch 100 per page
-    let keepFetching = true;
+    console.log(`Fetching commits for project '${fullPath}' via REST...`)
+    const projectId = encodeURIComponent(fullPath) // URL-encode the full path for REST API
+    const allCommits: SimpleCommit[] = []
+    let page = 1
+    const perPage = 100 // Fetch 100 per page
+    let keepFetching = true
 
     try {
       while (keepFetching) {
-        console.log(`Fetching page ${page} of commits for ${fullPath}...`);
+        console.log(`Fetching page ${page} of commits for ${fullPath}...`)
         const commitsPage = await this.restClient.Commits.all(projectId, {
           ...options, // Include ref_name, since, until if provided
           page: page,
           perPage: perPage
           // Remove showPagination and maxPages, handle manually
-        });
+        })
 
         if (commitsPage && commitsPage.length > 0) {
           for (const commit of commitsPage) {
@@ -254,33 +245,33 @@ export class GitlabClient {
               committed_date: (commit.committed_date ?? "") as string,
               web_url: (commit.web_url ?? "") as string,
               parent_ids: (commit.parent_ids ?? []) as string[]
-            });
+            })
           }
 
           // Check if we received fewer results than requested, indicating the last page
           if (commitsPage.length < perPage) {
-            keepFetching = false;
+            keepFetching = false
           } else {
-            page++; // Go to the next page
+            page++ // Go to the next page
           }
         } else {
-          keepFetching = false; // No more commits found
+          keepFetching = false // No more commits found
         }
 
         // Safety break (optional, adjust limit as needed)
         if (page > 1000) {
-          console.warn(`Commit fetch limit (1000 pages) reached for ${fullPath}. Stopping.`);
-          keepFetching = false;
+          console.warn(`Commit fetch limit (1000 pages) reached for ${fullPath}. Stopping.`)
+          keepFetching = false
         }
       }
-      console.log(`Fetched ${allCommits.length} commits in total for project '${fullPath}'.`);
+      console.log(`Fetched ${allCommits.length} commits in total for project '${fullPath}'.`)
     } catch (fetchError) {
       // Rename error variable
-      console.error(`Error fetching commits for project ${fullPath} via REST:`, fetchError);
+      console.error(`Error fetching commits for project ${fullPath} via REST:`, fetchError)
       // Decide how to handle errors - throw or return empty array?
       // Returning empty for now to match GraphQL error handling pattern
     }
-    return allCommits;
+    return allCommits
   }
   // --- END NEW METHOD ---
 
@@ -294,127 +285,117 @@ export class GitlabClient {
   ): Promise<{ data: any[]; pageInfo?: PageInfo; totalItems?: number }> {
     // Allow optional pageInfo and totalItems
     // Return type uses imported PageInfo
-    console.log(
-      `Fetching data type '${dataType}' for path '${targetPath}' (cursor: ${pageInfo?.after ?? "start"})`
-    );
-    const isGroup = !targetPath.includes("/"); // Simple heuristic
+    console.log(`Fetching data type '${dataType}' for path '${targetPath}' (cursor: ${pageInfo?.after ?? "start"})`)
+    const isGroup = !targetPath.includes("/") // Simple heuristic
     // Define a default PageInfo object satisfying the imported type
     const defaultPageInfo: PageInfo = {
       hasNextPage: false,
       hasPreviousPage: false,
       startCursor: null,
       endCursor: null
-    };
+    }
 
     try {
       switch (dataType) {
         // --- Discovery Data Types ---
         case "groupProjects": {
           if (!isGroup) {
-            console.warn(`fetchData: Cannot fetch projects for a project path: ${targetPath}`);
-            return { data: [], totalItems: 0 };
+            console.warn(`fetchData: Cannot fetch projects for a project path: ${targetPath}`)
+            return { data: [], totalItems: 0 }
           }
-          const projects = await this.fetchGroupProjects(targetPath);
-          return { data: projects, totalItems: projects.length }; // No pageInfo for REST fetch-all
+          const projects = await this.fetchGroupProjects(targetPath)
+          return { data: projects, totalItems: projects.length } // No pageInfo for REST fetch-all
         } // Close brace for case 'groupProjects'
         case "groupSubgroups": {
           if (!isGroup) {
-            console.warn(`fetchData: Cannot fetch subgroups for a project path: ${targetPath}`);
-            return { data: [], totalItems: 0 };
+            console.warn(`fetchData: Cannot fetch subgroups for a project path: ${targetPath}`)
+            return { data: [], totalItems: 0 }
           }
-          const subgroups = await this.fetchGroupSubgroups(targetPath);
-          return { data: subgroups, totalItems: subgroups.length }; // No pageInfo for REST fetch-all
+          const subgroups = await this.fetchGroupSubgroups(targetPath)
+          return { data: subgroups, totalItems: subgroups.length } // No pageInfo for REST fetch-all
         } // Close brace for case 'groupSubgroups'
 
         // --- Existing GraphQL Data Types ---
         case "memberships":
           return isGroup
             ? await this.fetchGroupMemberships(targetPath, pageInfo?.after)
-            : await this.fetchProjectMemberships(targetPath, pageInfo?.after);
+            : await this.fetchProjectMemberships(targetPath, pageInfo?.after)
         case "issues":
           return isGroup
             ? await this.fetchGroupIssues(targetPath, pageInfo?.after)
-            : await this.fetchProjectIssues(targetPath, pageInfo?.after);
+            : await this.fetchProjectIssues(targetPath, pageInfo?.after)
         case "labels":
           return isGroup
             ? await this.fetchGroupLabels(targetPath, pageInfo?.after)
-            : await this.fetchProjectLabels(targetPath, pageInfo?.after);
+            : await this.fetchProjectLabels(targetPath, pageInfo?.after)
         case "milestones":
           return isGroup
             ? await this.fetchGroupMilestones(targetPath, pageInfo?.after)
-            : await this.fetchProjectMilestones(targetPath, pageInfo?.after);
+            : await this.fetchProjectMilestones(targetPath, pageInfo?.after)
         case "branches":
           if (isGroup) {
-            console.warn(
-              `fetchData: Branches are project-specific. Skipping for group ${targetPath}.`
-            );
-            return { data: [], pageInfo: defaultPageInfo };
+            console.warn(`fetchData: Branches are project-specific. Skipping for group ${targetPath}.`)
+            return { data: [], pageInfo: defaultPageInfo }
           }
-          return await this.fetchProjectBranches(targetPath, pageInfo?.after);
+          return await this.fetchProjectBranches(targetPath, pageInfo?.after)
         case "mergeRequests":
           return isGroup
             ? await this.fetchGroupMergeRequests(targetPath, pageInfo?.after)
-            : await this.fetchProjectMergeRequests(targetPath, pageInfo?.after);
+            : await this.fetchProjectMergeRequests(targetPath, pageInfo?.after)
         case "releases":
           if (isGroup) {
-            console.warn(
-              `fetchData: Releases are project-specific. Skipping for group ${targetPath}.`
-            );
-            return { data: [], pageInfo: defaultPageInfo };
+            console.warn(`fetchData: Releases are project-specific. Skipping for group ${targetPath}.`)
+            return { data: [], pageInfo: defaultPageInfo }
           }
-          return await this.fetchProjectReleases(targetPath, pageInfo?.after);
+          return await this.fetchProjectReleases(targetPath, pageInfo?.after)
         case "pipelines":
           if (isGroup) {
-            console.warn(
-              `fetchData: Pipelines are project-specific. Skipping for group ${targetPath}.`
-            );
-            return { data: [], pageInfo: defaultPageInfo };
+            console.warn(`fetchData: Pipelines are project-specific. Skipping for group ${targetPath}.`)
+            return { data: [], pageInfo: defaultPageInfo }
           }
-          return await this.fetchProjectPipelines(targetPath, pageInfo?.after);
+          return await this.fetchProjectPipelines(targetPath, pageInfo?.after)
         case "timelogs":
           return isGroup
             ? await this.fetchGroupTimelogs(targetPath, pageInfo?.after)
-            : await this.fetchProjectTimelogs(targetPath, pageInfo?.after);
+            : await this.fetchProjectTimelogs(targetPath, pageInfo?.after)
         case "vulnerabilities":
           if (isGroup) {
             console.warn(
               `fetchData: Vulnerabilities query at group level not implemented. Skipping for group ${targetPath}.`
-            );
-            return { data: [], pageInfo: defaultPageInfo };
+            )
+            return { data: [], pageInfo: defaultPageInfo }
           }
-          return await this.fetchProjectVulnerabilities(targetPath, pageInfo?.after);
+          return await this.fetchProjectVulnerabilities(targetPath, pageInfo?.after)
         case "commits": {
           // Added case for commits + braces
           if (isGroup) {
-            console.warn(
-              `fetchData: Commits are project-specific. Skipping for group ${targetPath}.`
-            );
-            return { data: [], totalItems: 0 }; // Return empty, no pageInfo needed for REST fetch-all
+            console.warn(`fetchData: Commits are project-specific. Skipping for group ${targetPath}.`)
+            return { data: [], totalItems: 0 } // Return empty, no pageInfo needed for REST fetch-all
           }
           // Note: REST pagination is handled inside fetchProjectCommits
-          const commits = await this.fetchProjectCommits(targetPath);
+          const commits = await this.fetchProjectCommits(targetPath)
           // REST fetch-all doesn't use GraphQL pageInfo
-          return { data: commits, totalItems: commits.length };
+          return { data: commits, totalItems: commits.length }
         } // Close brace for case 'commits'
         case "codeQualityReports":
         case "securityReportFindings":
         case "testSuites":
           console.warn(
             `fetchData: Direct fetching for '${dataType}' not implemented (may require pipeline context). Skipping.`
-          );
-          return { data: [], pageInfo: defaultPageInfo };
+          )
+          return { data: [], pageInfo: defaultPageInfo }
         default:
-          console.error(`Unsupported data type requested: ${dataType}`);
-          throw new Error(`Unsupported data type: ${dataType}`);
+          console.error(`Unsupported data type requested: ${dataType}`)
+          throw new Error(`Unsupported data type: ${dataType}`)
       }
     } catch (error) {
-      console.error(`Error fetching ${dataType} for ${targetPath}:`, error);
+      console.error(`Error fetching ${dataType} for ${targetPath}:`, error)
       // Return empty on error, adjust structure based on expected return type
       return {
         data: [],
         pageInfo: dataType !== "commits" ? defaultPageInfo : undefined,
         totalItems: 0
-      };
+      }
     }
   }
 
@@ -430,15 +411,15 @@ export class GitlabClient {
           projectMembers(first: 100, after: $after) {
             nodes { id user { id username name state webUrl } accessLevel { stringValue } }
             pageInfo { hasNextPage endCursor }
-          } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectMembersResponse>(query, variables);
-    const members = result?.project?.projectMembers;
+          } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectMembersResponse>(query, variables)
+    const members = result?.project?.projectMembers
     // Ensure nodes are correctly typed if needed, though connection type implies it
     return {
       data: (members?.nodes as ProjectMember[]) ?? [],
       pageInfo: members?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchGroupMemberships(
@@ -451,14 +432,14 @@ export class GitlabClient {
           groupMembers(first: 100, after: $after) {
             nodes { id user { id username name state webUrl } accessLevel { stringValue } }
             pageInfo { hasNextPage endCursor }
-          } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<GroupMembersResponse>(query, variables);
-    const members = result?.group?.groupMembers;
+          } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<GroupMembersResponse>(query, variables)
+    const members = result?.group?.groupMembers
     return {
       data: (members?.nodes as GroupMember[]) ?? [],
       pageInfo: members?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchProjectIssues(
@@ -487,14 +468,14 @@ export class GitlabClient {
                 }
               }
               pageInfo { hasNextPage endCursor } # Issues pagination
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectIssuesResponse>(query, variables);
-    const issues = result?.project?.issues;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectIssuesResponse>(query, variables)
+    const issues = result?.project?.issues
     return {
       data: (issues?.nodes as Issue[]) ?? [],
       pageInfo: issues?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchGroupIssues(
@@ -523,14 +504,14 @@ export class GitlabClient {
                 }
               }
               pageInfo { hasNextPage endCursor } # Issues pagination
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<GroupIssuesResponse>(query, variables);
-    const issues = result?.group?.issues;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<GroupIssuesResponse>(query, variables)
+    const issues = result?.group?.issues
     return {
       data: (issues?.nodes as Issue[]) ?? [],
       pageInfo: issues?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchProjectLabels(
@@ -543,14 +524,14 @@ export class GitlabClient {
             labels(first: 100, after: $after) {
               nodes { id title description color textColor createdAt updatedAt }
               pageInfo { hasNextPage endCursor }
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectLabelsResponse>(query, variables);
-    const labels = result?.project?.labels;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectLabelsResponse>(query, variables)
+    const labels = result?.project?.labels
     return {
       data: (labels?.nodes as Label[]) ?? [],
       pageInfo: labels?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchGroupLabels(
@@ -563,14 +544,14 @@ export class GitlabClient {
             labels(first: 100, after: $after, includeAncestorGroups: false) {
               nodes { id title description color textColor createdAt updatedAt }
               pageInfo { hasNextPage endCursor }
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<GroupLabelsResponse>(query, variables);
-    const labels = result?.group?.labels;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<GroupLabelsResponse>(query, variables)
+    const labels = result?.group?.labels
     return {
       data: (labels?.nodes as Label[]) ?? [],
       pageInfo: labels?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchProjectMilestones(
@@ -583,14 +564,14 @@ export class GitlabClient {
             milestones(first: 100, after: $after, includeDescendants: false, state: all) {
               nodes { id iid title description state startDate dueDate createdAt updatedAt webUrl }
               pageInfo { hasNextPage endCursor }
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectMilestonesResponse>(query, variables);
-    const milestones = result?.project?.milestones;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectMilestonesResponse>(query, variables)
+    const milestones = result?.project?.milestones
     return {
       data: (milestones?.nodes as Milestone[]) ?? [],
       pageInfo: milestones?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchGroupMilestones(
@@ -603,14 +584,14 @@ export class GitlabClient {
             milestones(first: 100, after: $after, includeDescendants: true, state: all) {
               nodes { id iid title description state startDate dueDate createdAt updatedAt webUrl }
               pageInfo { hasNextPage endCursor }
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<GroupMilestonesResponse>(query, variables);
-    const milestones = result?.group?.milestones;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<GroupMilestonesResponse>(query, variables)
+    const milestones = result?.group?.milestones
     return {
       data: (milestones?.nodes as Milestone[]) ?? [],
       pageInfo: milestones?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchProjectBranches(
@@ -625,11 +606,11 @@ export class GitlabClient {
               branches(first: 100, after: $after) {
                 nodes { name webUrl protected developersCanPush developersCanMerge commit { id authoredDate committedDate message webUrl author { name email user { username } } committer { name email user { username } } } }
                 pageInfo { hasNextPage endCursor }
-              } } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectBranchesResponse>(query, variables);
-    const branches = result?.project?.repository?.branches;
-    return { data: branches?.nodes ?? [], pageInfo: branches?.pageInfo ?? defaultPageInfo }; // Removed type assertion
+              } } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectBranchesResponse>(query, variables)
+    const branches = result?.project?.repository?.branches
+    return { data: branches?.nodes ?? [], pageInfo: branches?.pageInfo ?? defaultPageInfo } // Removed type assertion
   }
 
   private async fetchProjectMergeRequests(
@@ -658,14 +639,14 @@ export class GitlabClient {
                 }
               }
               pageInfo { hasNextPage endCursor } # MR pagination
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectMergeRequestsResponse>(query, variables);
-    const mergeRequests = result?.project?.mergeRequests;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectMergeRequestsResponse>(query, variables)
+    const mergeRequests = result?.project?.mergeRequests
     return {
       data: (mergeRequests?.nodes as MergeRequest[]) ?? [],
       pageInfo: mergeRequests?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchGroupMergeRequests(
@@ -694,14 +675,14 @@ export class GitlabClient {
                 }
               }
               pageInfo { hasNextPage endCursor } # MR pagination
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<GroupMergeRequestsResponse>(query, variables);
-    const mergeRequests = result?.group?.mergeRequests;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<GroupMergeRequestsResponse>(query, variables)
+    const mergeRequests = result?.group?.mergeRequests
     return {
       data: (mergeRequests?.nodes as MergeRequest[]) ?? [],
       pageInfo: mergeRequests?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchProjectReleases(
@@ -714,14 +695,14 @@ export class GitlabClient {
             releases(first: 50, after: $after, orderBy: RELEASED_AT, sort: DESC) {
               nodes { tagName name createdAt releasedAt commit { id } author { id username name } assets { count sources(first: 10) { nodes { format url } } links(first: 10) { nodes { id name url linkType } } } milestones(first: 10) { nodes { id title } } }
               pageInfo { hasNextPage endCursor }
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectReleasesResponse>(query, variables);
-    const releases = result?.project?.releases;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectReleasesResponse>(query, variables)
+    const releases = result?.project?.releases
     return {
       data: (releases?.nodes as Release[]) ?? [],
       pageInfo: releases?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchProjectPipelines(
@@ -750,14 +731,14 @@ export class GitlabClient {
                 # jobs(first: 10) { nodes { id name status stage { name } testSuite { totalCount successCount } } } # Fetch job test counts?
               }
               pageInfo { hasNextPage endCursor }
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectPipelinesResponse>(query, variables);
-    const pipelines = result?.project?.pipelines;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectPipelinesResponse>(query, variables)
+    const pipelines = result?.project?.pipelines
     return {
       data: (pipelines?.nodes as Pipeline[]) ?? [],
       pageInfo: pipelines?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchProjectTimelogs(
@@ -770,14 +751,14 @@ export class GitlabClient {
             timelogs(first: 100, after: $after) {
               nodes { timeSpent user { id username name } issue { id iid title } mergeRequest { id iid title } note { id body } spentAt summary }
               pageInfo { hasNextPage endCursor }
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectTimelogsResponse>(query, variables);
-    const timelogs = result?.project?.timelogs;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectTimelogsResponse>(query, variables)
+    const timelogs = result?.project?.timelogs
     return {
       data: (timelogs?.nodes as Timelog[]) ?? [],
       pageInfo: timelogs?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   private async fetchGroupTimelogs(
@@ -790,14 +771,14 @@ export class GitlabClient {
             timelogs(first: 100, after: $after) {
               nodes { timeSpent user { id username name } issue { id iid title } mergeRequest { id iid title } note { id body } spentAt summary }
               pageInfo { hasNextPage endCursor }
-            } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<GroupTimelogsResponse>(query, variables);
-    const timelogs = result?.group?.timelogs;
+            } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<GroupTimelogsResponse>(query, variables)
+    const timelogs = result?.group?.timelogs
     return {
       data: (timelogs?.nodes as Timelog[]) ?? [],
       pageInfo: timelogs?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   // Placeholder: Fetching discussions might be done per-issue/MR
@@ -814,14 +795,14 @@ export class GitlabClient {
              vulnerabilities(first: 50, after: $after, state: [DETECTED, CONFIRMED]) {
                nodes { id title state severity confidence reportType scanner { id name vendor } identifiers { externalType externalId name url } location { file startLine endLine blobPath } project { id name fullPath } pipeline { id iid } detectedAt resolvedAt dismissedAt }
                pageInfo { hasNextPage endCursor }
-             } } }`;
-    const variables = { fullPath, after: afterCursor };
-    const result = await this.executeGraphQL<ProjectVulnerabilitiesResponse>(query, variables);
-    const vulnerabilities = result?.project?.vulnerabilities;
+             } } }`
+    const variables = { fullPath, after: afterCursor }
+    const result = await this.executeGraphQL<ProjectVulnerabilitiesResponse>(query, variables)
+    const vulnerabilities = result?.project?.vulnerabilities
     return {
       data: (vulnerabilities?.nodes as Vulnerability[]) ?? [],
       pageInfo: vulnerabilities?.pageInfo ?? defaultPageInfo
-    };
+    }
   }
 
   // Removed placeholder methods for Reports/Tests as they are now fetched via Pipelines query
@@ -835,12 +816,12 @@ export class GitlabClient {
    * @returns An array of project data objects.
    */
   async fetchGroupProjects(groupPath: string): Promise<ProjectSchema[]> {
-    console.log(`Fetching projects for group '${groupPath}' via REST...`);
-    const groupId = encodeURIComponent(groupPath);
-    const allProjects: any[] = []; // Use any[] to simplify type handling
-    let page = 1;
-    const perPage = 100;
-    let keepFetching = true;
+    console.log(`Fetching projects for group '${groupPath}' via REST...`)
+    const groupId = encodeURIComponent(groupPath)
+    const allProjects: any[] = [] // Use any[] to simplify type handling
+    let page = 1
+    const perPage = 100
+    let keepFetching = true
 
     try {
       while (keepFetching) {
@@ -848,29 +829,29 @@ export class GitlabClient {
           page: page,
           perPage: perPage
           // Add other options like 'archived=false' if needed
-        });
+        })
 
         if (projectsPage && projectsPage.length > 0) {
-          allProjects.push(...projectsPage);
+          allProjects.push(...projectsPage)
           if (projectsPage.length < perPage) {
-            keepFetching = false;
+            keepFetching = false
           } else {
-            page++;
+            page++
           }
         } else {
-          keepFetching = false;
+          keepFetching = false
         }
         if (page > 100) {
           // Safety break
-          console.warn(`Project fetch limit (100 pages) reached for group ${groupPath}. Stopping.`);
-          keepFetching = false;
+          console.warn(`Project fetch limit (100 pages) reached for group ${groupPath}. Stopping.`)
+          keepFetching = false
         }
       }
-      console.log(`Fetched ${allProjects.length} projects for group '${groupPath}'.`);
+      console.log(`Fetched ${allProjects.length} projects for group '${groupPath}'.`)
     } catch (error) {
-      console.error(`Error fetching projects for group ${groupPath} via REST:`, error);
+      console.error(`Error fetching projects for group ${groupPath} via REST:`, error)
     }
-    return allProjects;
+    return allProjects
   }
 
   /**
@@ -880,43 +861,41 @@ export class GitlabClient {
    * @returns An array of group data objects.
    */
   async fetchGroupSubgroups(groupPath: string): Promise<GroupSchema[]> {
-    console.log(`Fetching subgroups for group '${groupPath}' via REST...`);
-    const groupId = encodeURIComponent(groupPath);
-    const allSubgroups: any[] = []; // Use any[] to simplify type handling
-    let page = 1;
-    const perPage = 100;
-    let keepFetching = true;
+    console.log(`Fetching subgroups for group '${groupPath}' via REST...`)
+    const groupId = encodeURIComponent(groupPath)
+    const allSubgroups: any[] = [] // Use any[] to simplify type handling
+    let page = 1
+    const perPage = 100
+    let keepFetching = true
 
     try {
       while (keepFetching) {
         const subgroupsPage = await this.restClient.Groups.allSubgroups(groupId, {
           page: page,
           perPage: perPage
-        });
+        })
 
         if (subgroupsPage && subgroupsPage.length > 0) {
-          allSubgroups.push(...subgroupsPage);
+          allSubgroups.push(...subgroupsPage)
           if (subgroupsPage.length < perPage) {
-            keepFetching = false;
+            keepFetching = false
           } else {
-            page++;
+            page++
           }
         } else {
-          keepFetching = false;
+          keepFetching = false
         }
         if (page > 100) {
           // Safety break
-          console.warn(
-            `Subgroup fetch limit (100 pages) reached for group ${groupPath}. Stopping.`
-          );
-          keepFetching = false;
+          console.warn(`Subgroup fetch limit (100 pages) reached for group ${groupPath}. Stopping.`)
+          keepFetching = false
         }
       }
-      console.log(`Fetched ${allSubgroups.length} subgroups for group '${groupPath}'.`);
+      console.log(`Fetched ${allSubgroups.length} subgroups for group '${groupPath}'.`)
     } catch (error) {
-      console.error(`Error fetching subgroups for group ${groupPath} via REST:`, error);
+      console.error(`Error fetching subgroups for group ${groupPath} via REST:`, error)
     }
-    return allSubgroups;
+    return allSubgroups
   }
   // --- END NEW Methods ---
 }

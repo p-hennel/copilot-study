@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import pm2 from "pm2";
+import pm2 from "@socket.io/pm2";
 import { pm2Restart, pm2Start, pm2Stop } from "$lib/server/utils";
 
 export async function POST({ request, locals }) {
@@ -7,7 +7,7 @@ export async function POST({ request, locals }) {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }
 
-  const data = await request.json();
+  const data: any = await request.json();
   if (!data.pid) return json({ error: "Invalid request" }, { status: 400 });
 
   let result: pm2.Proc | undefined;

@@ -3,18 +3,20 @@ import {
   configure,
   getAnsiColorFormatter,
   getConsoleSink,
-  getLogger,
+  getLogger, // Keep the import
   getTextFormatter,
   withFilter,
   type LogRecord
-} from "@logtape/logtape";
-import { getOpenTelemetrySink } from "@logtape/otel";
-import { getRotatingFileSink } from "@logtape/file";
-import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir } from "node:fs/promises";
+} from "@logtape/logtape"
+// Re-export getLogger so other modules can use it via this central logging module
+export { getLogger }
+import { getOpenTelemetrySink } from "@logtape/otel"
+import { getRotatingFileSink } from "@logtape/file"
+import { AsyncLocalStorage } from "node:async_hooks"
+import { mkdir } from "node:fs/promises"
 
 export const complexFormatter = (
-  formatterFactory: (options?: {}) => (record: any) => string,
+  formatterFactory: (options?: object) => (record: any) => string,
   formatterFactoryOptions: any = {},
   allParams = true,
   spacer = "\n"
@@ -23,59 +25,59 @@ export const complexFormatter = (
     timestamp: "date-time",
     value: (v: any) => (typeof v === "object" ? Bun.inspect(v) : v),
     ...formatterFactoryOptions
-  };
+  }
 
-  const formatter = formatterFactory(formatterFactoryOptions);
+  const formatter = formatterFactory(formatterFactoryOptions)
   return (record: LogRecord) => {
     if (!allParams || !record.properties || Object.keys(record.properties).length <= 0) {
-      return formatter(record);
+      return formatter(record)
     }
 
-    let props = record.properties;
+    const props = record.properties
     for (const prop in props) {
       if (record.rawMessage.includes(`{${prop}}`)) {
-        delete props[prop];
+        delete props[prop]
       }
     }
 
-    let message: unknown[] = Object.assign([], record.message);
+    let message: unknown[] = Object.assign([], record.message)
 
     if (Object.keys(props).length > 0) {
-      if (message.length <= 0) message = [`${record.rawMessage}${spacer}`];
-      else if (message.length % 2 !== 0) message.push(`${message.pop()}${spacer}`);
-      else message.push(spacer, spacer);
-      message.push(props);
+      if (message.length <= 0) message = [`${record.rawMessage}${spacer}`]
+      else if (message.length % 2 !== 0) message.push(`${message.pop()}${spacer}`)
+      else message.push(spacer, spacer)
+      message.push(props)
     }
 
     return formatter({
       ...record,
       message
-    } as LogRecord);
-  };
-};
+    } as LogRecord)
+  }
+}
 
 export async function configureLogging(id: string | string[], verbose?: boolean, debug?: boolean) {
-  if (!Array.isArray(id)) id = [id];
-  if (verbose === undefined) verbose = false;
-  if (debug === undefined) debug = false;
+  if (!Array.isArray(id)) id = [id]
+  if (verbose === undefined) verbose = false
+  if (debug === undefined) debug = false
 
-  const plainFormatter = complexFormatter(getTextFormatter);
-  const colorFormatter = complexFormatter(getAnsiColorFormatter, {}, false);
+  const plainFormatter = complexFormatter(getTextFormatter)
+  const colorFormatter = complexFormatter(getAnsiColorFormatter, {}, false)
 
   const logfileOptions = {
     maxSize: 0x400 * 0x400, // 1 MiB
     maxFiles: 3,
     formatter: plainFormatter
-  };
+  }
 
-  await mkdir("logs", { recursive: true });
+  await mkdir("logs", { recursive: true })
 
-  const consoleLogLevel = debug ? "debug" : verbose ? "info" : "warning";
-  const fileLogLevel = debug ? "debug" : "info";
+  const consoleLogLevel = debug ? "debug" : verbose ? "info" : "warning"
+  const fileLogLevel = debug ? "debug" : "info"
 
-  const sinks = ["console", "logFile", "errorFile"];
+  const sinks = ["console", "logFile", "errorFile"]
   if (!debug && !verbose) {
-    sinks.push("otel");
+    sinks.push("otel")
   }
 
   await configure({
@@ -112,14 +114,17 @@ export async function configureLogging(id: string | string[], verbose?: boolean,
         sinks
       }
     ]
-  });
-  return getLogger(id);
+  })
+  return getLogger(id)
 }
 
 export function getCaller(parent: any) {
-  const error = new Error();
-  Error.captureStackTrace(error, parent);
-  let stack = error.stack?.split("\n");
-  // 6 / 5
-  return !!stack && stack.length > 1 ? `${stack[1].replace(/\s*at\s?/, "")}` : "unknown";
+  const error = new Error()
+  Error.captureStackTrace(error, parent)
+  const stack = error.stack?.split("\n")
+  // Check if stack exists, has enough lines, and the specific line exists before accessing it
+  if (stack && stack.length > 1 && stack[1]) {
+    return stack[1].replace(/\s*at\s?/, "")
+  }
+  return "unknown" // Return "unknown" if stack is not available, too short, or the line is undefined
 }

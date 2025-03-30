@@ -1,7 +1,7 @@
 // src/crawler/storage.ts
-import { join, dirname } from 'path';
-import { mkdir, appendFile } from 'fs/promises';
-import type { StorageMetadata } from './types';
+import { join, dirname } from "path";
+import { mkdir, appendFile } from "fs/promises";
+import type { StorageMetadata } from "./types";
 
 /**
  * Handles storing crawled data into JSONL files within a structured directory tree.
@@ -27,7 +27,7 @@ export class Storage {
    */
   private getFilePath(dataType: string, targetPath: string): string {
     // Sanitize dataType and targetPath to prevent path traversal issues if necessary
-    const safeDataType = dataType.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeDataType = dataType.replace(/[^a-zA-Z0-9_-]/g, "_");
     // Assuming targetPath is already structured like 'group/subgroup/project'
     const safeTargetPath = targetPath; // Add sanitization if needed
 
@@ -51,10 +51,10 @@ export class Storage {
       await mkdir(dirPath, { recursive: true });
 
       // Prepare the JSONL line
-      const jsonLine = JSON.stringify(data) + '\n';
+      const jsonLine = JSON.stringify(data) + "\n";
 
       // Append the line to the file
-      await appendFile(filePath, jsonLine, 'utf-8');
+      await appendFile(filePath, jsonLine, "utf-8");
       // console.log(`Stored record type '${dataType}' for path '${targetPath}'`); // Optional: verbose logging
     } catch (error) {
       console.error(`Error storing record to ${filePath}:`, error);
@@ -80,9 +80,9 @@ export class Storage {
     try {
       await mkdir(dirPath, { recursive: true });
 
-      const jsonLines = records.map(record => JSON.stringify(record)).join('\n') + '\n';
+      const jsonLines = records.map((record) => JSON.stringify(record)).join("\n") + "\n";
 
-      await appendFile(filePath, jsonLines, 'utf-8');
+      await appendFile(filePath, jsonLines, "utf-8");
       // console.log(`Stored ${records.length} records of type '${dataType}' for path '${targetPath}'`); // Optional: verbose logging
     } catch (error) {
       console.error(`Error storing multiple records to ${filePath}:`, error);

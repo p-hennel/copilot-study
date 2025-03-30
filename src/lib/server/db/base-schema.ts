@@ -59,7 +59,9 @@ function toDBEnum<T extends Record<any, string>>(data: T): [T[keyof T], ...T[key
 export const area_authorization = sqliteTable(
   "area_authorization",
   {
-    accountId: text().notNull().references(() => account.id),
+    accountId: text()
+      .notNull()
+      .references(() => account.id),
     area_id: text()
       .notNull()
       .references(() => area.full_path)
@@ -76,7 +78,9 @@ export const area = sqliteTable("area", {
   gitlab_id: text().notNull().unique(),
   name: text(),
   type: text({ enum: toDBEnum(AreaType) }).notNull(),
-  created_at: integer({ mode: "timestamp" }).notNull().default(new Date())
+  created_at: integer({ mode: "timestamp" })
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`) // Use SQL default
 });
 export const areaRelations = relations(area, ({ many }) => ({
   usingAccounts: many(account),
@@ -87,7 +91,9 @@ export const job = sqliteTable(
   "job",
   {
     id: text().notNull().$defaultFn(ulid).primaryKey(),
-    created_at: integer({ mode: "timestamp" }).notNull().default(new Date()),
+    created_at: integer({ mode: "timestamp" })
+      .notNull()
+      .default(sql`(CURRENT_TIMESTAMP)`), // Use SQL default
     started_at: integer({ mode: "timestamp" }),
     finished_at: integer({ mode: "timestamp" }),
     status: text({ enum: toDBEnum(JobStatus) })
@@ -141,9 +147,9 @@ export const jobRelations = relations(job, ({ one, many }) => ({
     references: [area.full_path]
   }),
   usingAccount: one(account, {
-		fields: [job.accountId],
-		references: [account.id]
-	}),
+    fields: [job.accountId],
+    references: [account.id]
+  })
 }));
 
 export type Job = typeof job.$inferSelect;

@@ -1,4 +1,3 @@
-/* eslint-disable */
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -13,1121 +12,198 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
-  /**
-   * A `AbuseReportID` is a global ID. It is encoded as a string.
-   *
-   * An example `AbuseReportID` is: `"gid://gitlab/AbuseReport/1"`.
-   */
   AbuseReportID: { input: any; output: any; }
-  /**
-   * A `AchievementsAchievementID` is a global ID. It is encoded as a string.
-   *
-   * An example `AchievementsAchievementID` is: `"gid://gitlab/Achievements::Achievement/1"`.
-   */
   AchievementsAchievementID: { input: any; output: any; }
-  /**
-   * A `AchievementsUserAchievementID` is a global ID. It is encoded as a string.
-   *
-   * An example `AchievementsUserAchievementID` is: `"gid://gitlab/Achievements::UserAchievement/1"`.
-   */
   AchievementsUserAchievementID: { input: any; output: any; }
-  /**
-   * A `AiAgentID` is a global ID. It is encoded as a string.
-   *
-   * An example `AiAgentID` is: `"gid://gitlab/Ai::Agent/1"`.
-   */
   AiAgentID: { input: any; output: any; }
-  /**
-   * A `AiAgentVersionID` is a global ID. It is encoded as a string.
-   *
-   * An example `AiAgentVersionID` is: `"gid://gitlab/Ai::AgentVersion/1"`.
-   */
   AiAgentVersionID: { input: any; output: any; }
-  /**
-   * A `AiConversationThreadID` is a global ID. It is encoded as a string.
-   *
-   * An example `AiConversationThreadID` is: `"gid://gitlab/Ai::Conversation::Thread/1"`.
-   */
   AiConversationThreadID: { input: any; output: any; }
-  /**
-   * A `AiDuoWorkflowsWorkflowID` is a global ID. It is encoded as a string.
-   *
-   * An example `AiDuoWorkflowsWorkflowID` is: `"gid://gitlab/Ai::DuoWorkflows::Workflow/1"`.
-   */
   AiDuoWorkflowsWorkflowID: { input: any; output: any; }
-  /**
-   * A `AiModelID` is a global ID. It is encoded as a string.
-   *
-   * An example `AiModelID` is: `"gid://gitlab/Ai::Model/1"`.
-   */
   AiModelID: { input: any; output: any; }
-  /**
-   * A `AiSelfHostedModelID` is a global ID. It is encoded as a string.
-   *
-   * An example `AiSelfHostedModelID` is: `"gid://gitlab/Ai::SelfHostedModel/1"`.
-   */
   AiSelfHostedModelID: { input: any; output: any; }
-  /**
-   * A `AlertManagementAlertID` is a global ID. It is encoded as a string.
-   *
-   * An example `AlertManagementAlertID` is: `"gid://gitlab/AlertManagement::Alert/1"`.
-   */
   AlertManagementAlertID: { input: any; output: any; }
-  /**
-   * A `AlertManagementHttpIntegrationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AlertManagementHttpIntegrationID` is: `"gid://gitlab/AlertManagement::HttpIntegration/1"`.
-   */
   AlertManagementHttpIntegrationID: { input: any; output: any; }
-  /**
-   * A `AnalyticsCycleAnalyticsStageID` is a global ID. It is encoded as a string.
-   *
-   * An example `AnalyticsCycleAnalyticsStageID` is: `"gid://gitlab/Analytics::CycleAnalytics::Stage/1"`.
-   */
   AnalyticsCycleAnalyticsStageID: { input: any; output: any; }
-  /**
-   * A `AnalyticsCycleAnalyticsValueStreamID` is a global ID. It is encoded as a string.
-   *
-   * An example `AnalyticsCycleAnalyticsValueStreamID` is: `"gid://gitlab/Analytics::CycleAnalytics::ValueStream/1"`.
-   */
   AnalyticsCycleAnalyticsValueStreamID: { input: any; output: any; }
-  /**
-   * A `AnalyticsDevopsAdoptionEnabledNamespaceID` is a global ID. It is encoded as a string.
-   *
-   * An example `AnalyticsDevopsAdoptionEnabledNamespaceID` is: `"gid://gitlab/Analytics::DevopsAdoption::EnabledNamespace/1"`.
-   */
   AnalyticsDevopsAdoptionEnabledNamespaceID: { input: any; output: any; }
-  /**
-   * A `AntiAbuseReportsLabelID` is a global ID. It is encoded as a string.
-   *
-   * An example `AntiAbuseReportsLabelID` is: `"gid://gitlab/AntiAbuse::Reports::Label/1"`.
-   */
   AntiAbuseReportsLabelID: { input: any; output: any; }
-  /**
-   * A `AntiAbuseReportsNoteID` is a global ID. It is encoded as a string.
-   *
-   * An example `AntiAbuseReportsNoteID` is: `"gid://gitlab/AntiAbuse::Reports::Note/1"`.
-   */
   AntiAbuseReportsNoteID: { input: any; output: any; }
-  /**
-   * A `AppSecFuzzingCoverageCorpusID` is a global ID. It is encoded as a string.
-   *
-   * An example `AppSecFuzzingCoverageCorpusID` is: `"gid://gitlab/AppSec::Fuzzing::Coverage::Corpus/1"`.
-   */
   AppSecFuzzingCoverageCorpusID: { input: any; output: any; }
-  /**
-   * A `ApprovalProjectRuleID` is a global ID. It is encoded as a string.
-   *
-   * An example `ApprovalProjectRuleID` is: `"gid://gitlab/ApprovalProjectRule/1"`.
-   */
   ApprovalProjectRuleID: { input: any; output: any; }
-  /**
-   * A `AuditEventsAmazonS3ConfigurationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsAmazonS3ConfigurationID` is: `"gid://gitlab/AuditEvents::AmazonS3Configuration/1"`.
-   */
   AuditEventsAmazonS3ConfigurationID: { input: any; output: any; }
-  /**
-   * A `AuditEventsExternalAuditEventDestinationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsExternalAuditEventDestinationID` is: `"gid://gitlab/AuditEvents::ExternalAuditEventDestination/1"`.
-   */
   AuditEventsExternalAuditEventDestinationID: { input: any; output: any; }
-  /**
-   * A `AuditEventsGoogleCloudLoggingConfigurationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsGoogleCloudLoggingConfigurationID` is: `"gid://gitlab/AuditEvents::GoogleCloudLoggingConfiguration/1"`.
-   */
   AuditEventsGoogleCloudLoggingConfigurationID: { input: any; output: any; }
-  /**
-   * A `AuditEventsGroupExternalStreamingDestinationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsGroupExternalStreamingDestinationID` is: `"gid://gitlab/AuditEvents::Group::ExternalStreamingDestination/1"`.
-   */
   AuditEventsGroupExternalStreamingDestinationID: { input: any; output: any; }
-  /**
-   * A `AuditEventsGroupNamespaceFilterID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsGroupNamespaceFilterID` is: `"gid://gitlab/AuditEvents::Group::NamespaceFilter/1"`.
-   */
   AuditEventsGroupNamespaceFilterID: { input: any; output: any; }
-  /**
-   * A `AuditEventsInstanceAmazonS3ConfigurationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsInstanceAmazonS3ConfigurationID` is: `"gid://gitlab/AuditEvents::Instance::AmazonS3Configuration/1"`.
-   */
   AuditEventsInstanceAmazonS3ConfigurationID: { input: any; output: any; }
-  /**
-   * A `AuditEventsInstanceExternalAuditEventDestinationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsInstanceExternalAuditEventDestinationID` is: `"gid://gitlab/AuditEvents::InstanceExternalAuditEventDestination/1"`.
-   */
   AuditEventsInstanceExternalAuditEventDestinationID: { input: any; output: any; }
-  /**
-   * A `AuditEventsInstanceExternalStreamingDestinationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsInstanceExternalStreamingDestinationID` is: `"gid://gitlab/AuditEvents::Instance::ExternalStreamingDestination/1"`.
-   */
   AuditEventsInstanceExternalStreamingDestinationID: { input: any; output: any; }
-  /**
-   * A `AuditEventsInstanceGoogleCloudLoggingConfigurationID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsInstanceGoogleCloudLoggingConfigurationID` is: `"gid://gitlab/AuditEvents::Instance::GoogleCloudLoggingConfiguration/1"`.
-   */
   AuditEventsInstanceGoogleCloudLoggingConfigurationID: { input: any; output: any; }
-  /**
-   * A `AuditEventsInstanceNamespaceFilterID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsInstanceNamespaceFilterID` is: `"gid://gitlab/AuditEvents::Instance::NamespaceFilter/1"`.
-   */
   AuditEventsInstanceNamespaceFilterID: { input: any; output: any; }
-  /**
-   * A `AuditEventsStreamingHTTPNamespaceFilterID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsStreamingHTTPNamespaceFilterID` is: `"gid://gitlab/AuditEvents::Streaming::HTTP::NamespaceFilter/1"`.
-   */
   AuditEventsStreamingHTTPNamespaceFilterID: { input: any; output: any; }
-  /**
-   * A `AuditEventsStreamingHeaderID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsStreamingHeaderID` is: `"gid://gitlab/AuditEvents::Streaming::Header/1"`.
-   */
   AuditEventsStreamingHeaderID: { input: any; output: any; }
-  /**
-   * A `AuditEventsStreamingInstanceHeaderID` is a global ID. It is encoded as a string.
-   *
-   * An example `AuditEventsStreamingInstanceHeaderID` is: `"gid://gitlab/AuditEvents::Streaming::InstanceHeader/1"`.
-   */
   AuditEventsStreamingInstanceHeaderID: { input: any; output: any; }
-  /**
-   * A `AwardableID` is a global ID. It is encoded as a string.
-   *
-   * An example `AwardableID` is: `"gid://gitlab/Awardable/1"`.
-   */
   AwardableID: { input: any; output: any; }
-  /** Represents non-fractional signed whole numeric values. Since the value may exceed the size of a 32-bit integer, it's encoded as a string. */
   BigInt: { input: any; output: any; }
-  /**
-   * A `BoardID` is a global ID. It is encoded as a string.
-   *
-   * An example `BoardID` is: `"gid://gitlab/Board/1"`.
-   */
   BoardID: { input: any; output: any; }
-  /**
-   * A `BoardsEpicBoardID` is a global ID. It is encoded as a string.
-   *
-   * An example `BoardsEpicBoardID` is: `"gid://gitlab/Boards::EpicBoard/1"`.
-   */
   BoardsEpicBoardID: { input: any; output: any; }
-  /**
-   * A `BoardsEpicListID` is a global ID. It is encoded as a string.
-   *
-   * An example `BoardsEpicListID` is: `"gid://gitlab/Boards::EpicList/1"`.
-   */
   BoardsEpicListID: { input: any; output: any; }
-  /**
-   * A `CiBuildID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiBuildID` is: `"gid://gitlab/Ci::Build/1"`.
-   */
   CiBuildID: { input: any; output: any; }
-  /**
-   * A `CiCatalogResourceID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiCatalogResourceID` is: `"gid://gitlab/Ci::Catalog::Resource/1"`.
-   */
   CiCatalogResourceID: { input: any; output: any; }
-  /**
-   * A `CiCatalogResourcesComponentID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiCatalogResourcesComponentID` is: `"gid://gitlab/Ci::Catalog::Resources::Component/1"`.
-   */
   CiCatalogResourcesComponentID: { input: any; output: any; }
-  /**
-   * A `CiCatalogResourcesVersionID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiCatalogResourcesVersionID` is: `"gid://gitlab/Ci::Catalog::Resources::Version/1"`.
-   */
   CiCatalogResourcesVersionID: { input: any; output: any; }
-  /** Value for a CI input. Can be a string, array, number, or boolean. */
   CiInputsValueInputType: { input: any; output: any; }
-  /**
-   * A `CiJobArtifactID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiJobArtifactID` is: `"gid://gitlab/Ci::JobArtifact/1"`.
-   */
   CiJobArtifactID: { input: any; output: any; }
-  /**
-   * A `CiPipelineID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiPipelineID` is: `"gid://gitlab/Ci::Pipeline/1"`.
-   */
   CiPipelineID: { input: any; output: any; }
-  /**
-   * A `CiPipelineScheduleID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiPipelineScheduleID` is: `"gid://gitlab/Ci::PipelineSchedule/1"`.
-   */
   CiPipelineScheduleID: { input: any; output: any; }
-  /**
-   * A `CiPipelineScheduleInputID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiPipelineScheduleInputID` is: `"gid://gitlab/Ci::PipelineScheduleInput/1"`.
-   */
   CiPipelineScheduleInputID: { input: any; output: any; }
-  /**
-   * A `CiPipelineScheduleVariableID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiPipelineScheduleVariableID` is: `"gid://gitlab/Ci::PipelineScheduleVariable/1"`.
-   */
   CiPipelineScheduleVariableID: { input: any; output: any; }
-  /**
-   * A `CiProcessableID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiProcessableID` is: `"gid://gitlab/Ci::Processable/1"`.
-   */
   CiProcessableID: { input: any; output: any; }
-  /**
-   * A `CiRunnerID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiRunnerID` is: `"gid://gitlab/Ci::Runner/1"`.
-   */
   CiRunnerID: { input: any; output: any; }
-  /**
-   * A `CiRunnerManagerID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiRunnerManagerID` is: `"gid://gitlab/Ci::RunnerManager/1"`.
-   */
   CiRunnerManagerID: { input: any; output: any; }
-  /**
-   * A `CiStageID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiStageID` is: `"gid://gitlab/Ci::Stage/1"`.
-   */
   CiStageID: { input: any; output: any; }
-  /**
-   * A `CiSubscriptionsProjectID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiSubscriptionsProjectID` is: `"gid://gitlab/Ci::Subscriptions::Project/1"`.
-   */
   CiSubscriptionsProjectID: { input: any; output: any; }
-  /**
-   * A `CiTriggerID` is a global ID. It is encoded as a string.
-   *
-   * An example `CiTriggerID` is: `"gid://gitlab/Ci::Trigger/1"`.
-   */
   CiTriggerID: { input: any; output: any; }
-  /**
-   * A `ClustersAgentID` is a global ID. It is encoded as a string.
-   *
-   * An example `ClustersAgentID` is: `"gid://gitlab/Clusters::Agent/1"`.
-   */
   ClustersAgentID: { input: any; output: any; }
-  /**
-   * A `ClustersAgentTokenID` is a global ID. It is encoded as a string.
-   *
-   * An example `ClustersAgentTokenID` is: `"gid://gitlab/Clusters::AgentToken/1"`.
-   */
   ClustersAgentTokenID: { input: any; output: any; }
-  /**
-   * A `ClustersAgentsUrlConfigurationID` is a global ID. It is encoded as a string.
-   *
-   * An example `ClustersAgentsUrlConfigurationID` is: `"gid://gitlab/Clusters::Agents::UrlConfiguration/1"`.
-   */
   ClustersAgentsUrlConfigurationID: { input: any; output: any; }
-  /**
-   * A `ClustersClusterID` is a global ID. It is encoded as a string.
-   *
-   * An example `ClustersClusterID` is: `"gid://gitlab/Clusters::Cluster/1"`.
-   */
   ClustersClusterID: { input: any; output: any; }
-  /**
-   * Color represented as a hex code or named color.
-   *
-   * For example: "#fefefe".
-   *
-   */
   Color: { input: any; output: any; }
-  /**
-   * A `ComplianceManagementComplianceFrameworkComplianceRequirementID` is a global ID. It is encoded as a string.
-   *
-   * An example `ComplianceManagementComplianceFrameworkComplianceRequirementID` is: `"gid://gitlab/ComplianceManagement::ComplianceFramework::ComplianceRequirement/1"`.
-   */
   ComplianceManagementComplianceFrameworkComplianceRequirementID: { input: any; output: any; }
-  /**
-   * A `ComplianceManagementComplianceFrameworkComplianceRequirementsControlID` is a global ID. It is encoded as a string.
-   *
-   * An example `ComplianceManagementComplianceFrameworkComplianceRequirementsControlID` is: `"gid://gitlab/ComplianceManagement::ComplianceFramework::ComplianceRequirementsControl/1"`.
-   */
   ComplianceManagementComplianceFrameworkComplianceRequirementsControlID: { input: any; output: any; }
-  /**
-   * A `ComplianceManagementFrameworkID` is a global ID. It is encoded as a string.
-   *
-   * An example `ComplianceManagementFrameworkID` is: `"gid://gitlab/ComplianceManagement::Framework/1"`.
-   */
   ComplianceManagementFrameworkID: { input: any; output: any; }
-  /**
-   * A `ContainerRegistryProtectionRuleID` is a global ID. It is encoded as a string.
-   *
-   * An example `ContainerRegistryProtectionRuleID` is: `"gid://gitlab/ContainerRegistry::Protection::Rule/1"`.
-   */
   ContainerRegistryProtectionRuleID: { input: any; output: any; }
-  /**
-   * A `ContainerRegistryProtectionTagRuleID` is a global ID. It is encoded as a string.
-   *
-   * An example `ContainerRegistryProtectionTagRuleID` is: `"gid://gitlab/ContainerRegistry::Protection::TagRule/1"`.
-   */
   ContainerRegistryProtectionTagRuleID: { input: any; output: any; }
-  /**
-   * A `ContainerRepositoryID` is a global ID. It is encoded as a string.
-   *
-   * An example `ContainerRepositoryID` is: `"gid://gitlab/ContainerRepository/1"`.
-   */
   ContainerRepositoryID: { input: any; output: any; }
-  /**
-   * A `CustomEmojiID` is a global ID. It is encoded as a string.
-   *
-   * An example `CustomEmojiID` is: `"gid://gitlab/CustomEmoji/1"`.
-   */
   CustomEmojiID: { input: any; output: any; }
-  /**
-   * A `CustomerRelationsContactID` is a global ID. It is encoded as a string.
-   *
-   * An example `CustomerRelationsContactID` is: `"gid://gitlab/CustomerRelations::Contact/1"`.
-   */
   CustomerRelationsContactID: { input: any; output: any; }
-  /**
-   * A `CustomerRelationsOrganizationID` is a global ID. It is encoded as a string.
-   *
-   * An example `CustomerRelationsOrganizationID` is: `"gid://gitlab/CustomerRelations::Organization/1"`.
-   */
   CustomerRelationsOrganizationID: { input: any; output: any; }
-  /**
-   * A `DastProfileID` is a global ID. It is encoded as a string.
-   *
-   * An example `DastProfileID` is: `"gid://gitlab/Dast::Profile/1"`.
-   */
   DastProfileID: { input: any; output: any; }
-  /**
-   * A `DastProfileScheduleID` is a global ID. It is encoded as a string.
-   *
-   * An example `DastProfileScheduleID` is: `"gid://gitlab/Dast::ProfileSchedule/1"`.
-   */
   DastProfileScheduleID: { input: any; output: any; }
-  /**
-   * A `DastScannerProfileID` is a global ID. It is encoded as a string.
-   *
-   * An example `DastScannerProfileID` is: `"gid://gitlab/DastScannerProfile/1"`.
-   */
   DastScannerProfileID: { input: any; output: any; }
-  /**
-   * A `DastSiteProfileID` is a global ID. It is encoded as a string.
-   *
-   * An example `DastSiteProfileID` is: `"gid://gitlab/DastSiteProfile/1"`.
-   */
   DastSiteProfileID: { input: any; output: any; }
-  /**
-   * A `DastSiteTokenID` is a global ID. It is encoded as a string.
-   *
-   * An example `DastSiteTokenID` is: `"gid://gitlab/DastSiteToken/1"`.
-   */
   DastSiteTokenID: { input: any; output: any; }
-  /**
-   * A `DastSiteValidationID` is a global ID. It is encoded as a string.
-   *
-   * An example `DastSiteValidationID` is: `"gid://gitlab/DastSiteValidation/1"`.
-   */
   DastSiteValidationID: { input: any; output: any; }
-  /** Date represented in ISO 8601 */
   Date: { input: any; output: any; }
-  /**
-   * A `DependencyProxyManifestID` is a global ID. It is encoded as a string.
-   *
-   * An example `DependencyProxyManifestID` is: `"gid://gitlab/DependencyProxy::Manifest/1"`.
-   */
   DependencyProxyManifestID: { input: any; output: any; }
-  /**
-   * A `DeployKeyID` is a global ID. It is encoded as a string.
-   *
-   * An example `DeployKeyID` is: `"gid://gitlab/DeployKey/1"`.
-   */
   DeployKeyID: { input: any; output: any; }
-  /**
-   * A `DeploymentID` is a global ID. It is encoded as a string.
-   *
-   * An example `DeploymentID` is: `"gid://gitlab/Deployment/1"`.
-   */
   DeploymentID: { input: any; output: any; }
-  /**
-   * A `DescriptionVersionID` is a global ID. It is encoded as a string.
-   *
-   * An example `DescriptionVersionID` is: `"gid://gitlab/DescriptionVersion/1"`.
-   */
   DescriptionVersionID: { input: any; output: any; }
-  /**
-   * A `DesignManagementDesignAtVersionID` is a global ID. It is encoded as a string.
-   *
-   * An example `DesignManagementDesignAtVersionID` is: `"gid://gitlab/DesignManagement::DesignAtVersion/1"`.
-   */
   DesignManagementDesignAtVersionID: { input: any; output: any; }
-  /**
-   * A `DesignManagementDesignID` is a global ID. It is encoded as a string.
-   *
-   * An example `DesignManagementDesignID` is: `"gid://gitlab/DesignManagement::Design/1"`.
-   */
   DesignManagementDesignID: { input: any; output: any; }
-  /**
-   * A `DesignManagementVersionID` is a global ID. It is encoded as a string.
-   *
-   * An example `DesignManagementVersionID` is: `"gid://gitlab/DesignManagement::Version/1"`.
-   */
   DesignManagementVersionID: { input: any; output: any; }
-  /**
-   * A `DiffNoteID` is a global ID. It is encoded as a string.
-   *
-   * An example `DiffNoteID` is: `"gid://gitlab/DiffNote/1"`.
-   */
   DiffNoteID: { input: any; output: any; }
-  /**
-   * A `DiscussionID` is a global ID. It is encoded as a string.
-   *
-   * An example `DiscussionID` is: `"gid://gitlab/Discussion/1"`.
-   */
   DiscussionID: { input: any; output: any; }
-  /**
-   * Duration between two instants, represented as a fractional number of seconds.
-   *
-   * For example: 12.3334
-   *
-   */
   Duration: { input: any; output: any; }
-  /**
-   * A `EmailID` is a global ID. It is encoded as a string.
-   *
-   * An example `EmailID` is: `"gid://gitlab/Email/1"`.
-   */
   EmailID: { input: any; output: any; }
-  /**
-   * A `EnvironmentID` is a global ID. It is encoded as a string.
-   *
-   * An example `EnvironmentID` is: `"gid://gitlab/Environment/1"`.
-   */
   EnvironmentID: { input: any; output: any; }
-  /**
-   * A `EpicID` is a global ID. It is encoded as a string.
-   *
-   * An example `EpicID` is: `"gid://gitlab/Epic/1"`.
-   */
   EpicID: { input: any; output: any; }
-  /**
-   * A `EpicTreeSortingID` is a global ID. It is encoded as a string.
-   *
-   * An example `EpicTreeSortingID` is: `"gid://gitlab/EpicTreeSorting/1"`.
-   */
   EpicTreeSortingID: { input: any; output: any; }
-  /**
-   * A `GeoBaseRegistryID` is a global ID. It is encoded as a string.
-   *
-   * An example `GeoBaseRegistryID` is: `"gid://gitlab/Geo::BaseRegistry/1"`.
-   */
   GeoBaseRegistryID: { input: any; output: any; }
-  /**
-   * A `GitlabErrorTrackingDetailedErrorID` is a global ID. It is encoded as a string.
-   *
-   * An example `GitlabErrorTrackingDetailedErrorID` is: `"gid://gitlab/Gitlab::ErrorTracking::DetailedError/1"`.
-   */
   GitlabErrorTrackingDetailedErrorID: { input: any; output: any; }
-  /**
-   * A `GitlabSubscriptionsAddOnPurchaseID` is a global ID. It is encoded as a string.
-   *
-   * An example `GitlabSubscriptionsAddOnPurchaseID` is: `"gid://gitlab/GitlabSubscriptions::AddOnPurchase/1"`.
-   */
   GitlabSubscriptionsAddOnPurchaseID: { input: any; output: any; }
-  /**
-   * A global identifier.
-   *
-   * A global identifier represents an object uniquely across the application.
-   * An example of a global identifier is `"gid://gitlab/User/1"`.
-   *
-   * `gid://gitlab` stands for the root name.
-   * `User` is the name of the ActiveRecord class of the record.
-   * `1` is the record id as per the id in the db table.
-   *
-   * Global identifiers are encoded as strings.
-   *
-   */
   GlobalID: { input: any; output: any; }
-  /** Represents a Google Cloud Image for GKE */
   GoogleCloudImage: { input: any; output: any; }
-  /** Represents a Google Cloud Compute machine type */
   GoogleCloudMachineType: { input: any; output: any; }
-  /** Represents a Google Cloud Compute project */
   GoogleCloudProject: { input: any; output: any; }
-  /** Represents a Google Cloud Compute region */
   GoogleCloudRegion: { input: any; output: any; }
-  /** Represents a Google Cloud Compute zone */
   GoogleCloudZone: { input: any; output: any; }
-  /**
-   * A `GroupID` is a global ID. It is encoded as a string.
-   *
-   * An example `GroupID` is: `"gid://gitlab/Group/1"`.
-   */
   GroupID: { input: any; output: any; }
-  /**
-   * A `GroupsSavedReplyID` is a global ID. It is encoded as a string.
-   *
-   * An example `GroupsSavedReplyID` is: `"gid://gitlab/Groups::SavedReply/1"`.
-   */
   GroupsSavedReplyID: { input: any; output: any; }
-  /** An ISO 8601-encoded date */
   ISO8601Date: { input: any; output: any; }
-  /** An ISO 8601-encoded datetime */
   ISO8601DateTime: { input: any; output: any; }
-  /**
-   * A `ImportSourceUserID` is a global ID. It is encoded as a string.
-   *
-   * An example `ImportSourceUserID` is: `"gid://gitlab/Import::SourceUser/1"`.
-   */
   ImportSourceUserID: { input: any; output: any; }
-  /**
-   * A `IncidentManagementEscalationPolicyID` is a global ID. It is encoded as a string.
-   *
-   * An example `IncidentManagementEscalationPolicyID` is: `"gid://gitlab/IncidentManagement::EscalationPolicy/1"`.
-   */
   IncidentManagementEscalationPolicyID: { input: any; output: any; }
-  /**
-   * A `IncidentManagementEscalationRuleID` is a global ID. It is encoded as a string.
-   *
-   * An example `IncidentManagementEscalationRuleID` is: `"gid://gitlab/IncidentManagement::EscalationRule/1"`.
-   */
   IncidentManagementEscalationRuleID: { input: any; output: any; }
-  /**
-   * A `IncidentManagementIssuableResourceLinkID` is a global ID. It is encoded as a string.
-   *
-   * An example `IncidentManagementIssuableResourceLinkID` is: `"gid://gitlab/IncidentManagement::IssuableResourceLink/1"`.
-   */
   IncidentManagementIssuableResourceLinkID: { input: any; output: any; }
-  /**
-   * A `IncidentManagementOncallParticipantID` is a global ID. It is encoded as a string.
-   *
-   * An example `IncidentManagementOncallParticipantID` is: `"gid://gitlab/IncidentManagement::OncallParticipant/1"`.
-   */
   IncidentManagementOncallParticipantID: { input: any; output: any; }
-  /**
-   * A `IncidentManagementOncallRotationID` is a global ID. It is encoded as a string.
-   *
-   * An example `IncidentManagementOncallRotationID` is: `"gid://gitlab/IncidentManagement::OncallRotation/1"`.
-   */
   IncidentManagementOncallRotationID: { input: any; output: any; }
-  /**
-   * A `IncidentManagementTimelineEventID` is a global ID. It is encoded as a string.
-   *
-   * An example `IncidentManagementTimelineEventID` is: `"gid://gitlab/IncidentManagement::TimelineEvent/1"`.
-   */
   IncidentManagementTimelineEventID: { input: any; output: any; }
-  /**
-   * A `IncidentManagementTimelineEventTagID` is a global ID. It is encoded as a string.
-   *
-   * An example `IncidentManagementTimelineEventTagID` is: `"gid://gitlab/IncidentManagement::TimelineEventTag/1"`.
-   */
   IncidentManagementTimelineEventTagID: { input: any; output: any; }
-  /**
-   * A `IntegrationsPrometheusID` is a global ID. It is encoded as a string.
-   *
-   * An example `IntegrationsPrometheusID` is: `"gid://gitlab/Integrations::Prometheus/1"`.
-   * The older format `"gid://gitlab/PrometheusService/1"` was deprecated in 14.1.
-   */
   IntegrationsPrometheusID: { input: any; output: any; }
-  /**
-   * A `IssuableID` is a global ID. It is encoded as a string.
-   *
-   * An example `IssuableID` is: `"gid://gitlab/Issuable/1"`.
-   */
   IssuableID: { input: any; output: any; }
-  /**
-   * A `IssuablesCustomFieldID` is a global ID. It is encoded as a string.
-   *
-   * An example `IssuablesCustomFieldID` is: `"gid://gitlab/Issuables::CustomField/1"`.
-   */
   IssuablesCustomFieldID: { input: any; output: any; }
-  /**
-   * A `IssuablesCustomFieldSelectOptionID` is a global ID. It is encoded as a string.
-   *
-   * An example `IssuablesCustomFieldSelectOptionID` is: `"gid://gitlab/Issuables::CustomFieldSelectOption/1"`.
-   */
   IssuablesCustomFieldSelectOptionID: { input: any; output: any; }
-  /**
-   * A `IssueID` is a global ID. It is encoded as a string.
-   *
-   * An example `IssueID` is: `"gid://gitlab/Issue/1"`.
-   */
   IssueID: { input: any; output: any; }
-  /**
-   * A `IssueParentID` is a global ID. It is encoded as a string.
-   *
-   * An example `IssueParentID` is: `"gid://gitlab/IssueParent/1"`.
-   */
   IssueParentID: { input: any; output: any; }
-  /**
-   * A `IterationID` is a global ID. It is encoded as a string.
-   *
-   * An example `IterationID` is: `"gid://gitlab/Iteration/1"`.
-   * The older format `"gid://gitlab/EEIteration/1"` was deprecated in 13.3.
-   */
   IterationID: { input: any; output: any; }
-  /**
-   * A `IterationsCadenceID` is a global ID. It is encoded as a string.
-   *
-   * An example `IterationsCadenceID` is: `"gid://gitlab/Iterations::Cadence/1"`.
-   */
   IterationsCadenceID: { input: any; output: any; }
-  /** Represents untyped JSON */
   JSON: { input: any; output: any; }
-  /**
-   * A `CommitStatusID` is a global ID. It is encoded as a string.
-   *
-   * An example `CommitStatusID` is: `"gid://gitlab/CommitStatus/1"`.
-   */
   JobID: { input: any; output: any; }
-  /** JSON object as raw string */
   JsonString: { input: any; output: any; }
-  /**
-   * A `LabelID` is a global ID. It is encoded as a string.
-   *
-   * An example `LabelID` is: `"gid://gitlab/Label/1"`.
-   */
   LabelID: { input: any; output: any; }
-  /**
-   * A `ListID` is a global ID. It is encoded as a string.
-   *
-   * An example `ListID` is: `"gid://gitlab/List/1"`.
-   */
   ListID: { input: any; output: any; }
-  /**
-   * A `MemberRoleID` is a global ID. It is encoded as a string.
-   *
-   * An example `MemberRoleID` is: `"gid://gitlab/MemberRole/1"`.
-   */
   MemberRoleID: { input: any; output: any; }
-  /**
-   * A `MergeRequestID` is a global ID. It is encoded as a string.
-   *
-   * An example `MergeRequestID` is: `"gid://gitlab/MergeRequest/1"`.
-   */
   MergeRequestID: { input: any; output: any; }
-  /**
-   * A `MergeRequestsClosingIssuesID` is a global ID. It is encoded as a string.
-   *
-   * An example `MergeRequestsClosingIssuesID` is: `"gid://gitlab/MergeRequestsClosingIssues/1"`.
-   */
   MergeRequestsClosingIssuesID: { input: any; output: any; }
-  /**
-   * A `MergeRequestsExternalStatusCheckID` is a global ID. It is encoded as a string.
-   *
-   * An example `MergeRequestsExternalStatusCheckID` is: `"gid://gitlab/MergeRequests::ExternalStatusCheck/1"`.
-   */
   MergeRequestsExternalStatusCheckID: { input: any; output: any; }
-  /**
-   * A `MergeTrainsCarID` is a global ID. It is encoded as a string.
-   *
-   * An example `MergeTrainsCarID` is: `"gid://gitlab/MergeTrains::Car/1"`.
-   */
   MergeTrainsCarID: { input: any; output: any; }
-  /**
-   * A `MilestoneID` is a global ID. It is encoded as a string.
-   *
-   * An example `MilestoneID` is: `"gid://gitlab/Milestone/1"`.
-   */
   MilestoneID: { input: any; output: any; }
-  /**
-   * A `MlCandidateID` is a global ID. It is encoded as a string.
-   *
-   * An example `MlCandidateID` is: `"gid://gitlab/Ml::Candidate/1"`.
-   */
   MlCandidateID: { input: any; output: any; }
-  /**
-   * A `MlCandidateMetadataID` is a global ID. It is encoded as a string.
-   *
-   * An example `MlCandidateMetadataID` is: `"gid://gitlab/Ml::CandidateMetadata/1"`.
-   */
   MlCandidateMetadataID: { input: any; output: any; }
-  /**
-   * A `MlCandidateMetricID` is a global ID. It is encoded as a string.
-   *
-   * An example `MlCandidateMetricID` is: `"gid://gitlab/Ml::CandidateMetric/1"`.
-   */
   MlCandidateMetricID: { input: any; output: any; }
-  /**
-   * A `MlCandidateParamID` is a global ID. It is encoded as a string.
-   *
-   * An example `MlCandidateParamID` is: `"gid://gitlab/Ml::CandidateParam/1"`.
-   */
   MlCandidateParamID: { input: any; output: any; }
-  /**
-   * A `MlExperimentID` is a global ID. It is encoded as a string.
-   *
-   * An example `MlExperimentID` is: `"gid://gitlab/Ml::Experiment/1"`.
-   */
   MlExperimentID: { input: any; output: any; }
-  /**
-   * A `MlModelID` is a global ID. It is encoded as a string.
-   *
-   * An example `MlModelID` is: `"gid://gitlab/Ml::Model/1"`.
-   */
   MlModelID: { input: any; output: any; }
-  /**
-   * A `MlModelVersionID` is a global ID. It is encoded as a string.
-   *
-   * An example `MlModelVersionID` is: `"gid://gitlab/Ml::ModelVersion/1"`.
-   */
   MlModelVersionID: { input: any; output: any; }
-  /**
-   * A `NamespaceID` is a global ID. It is encoded as a string.
-   *
-   * An example `NamespaceID` is: `"gid://gitlab/Namespace/1"`.
-   */
   NamespaceID: { input: any; output: any; }
-  /**
-   * A `NamespacesNamespaceBanID` is a global ID. It is encoded as a string.
-   *
-   * An example `NamespacesNamespaceBanID` is: `"gid://gitlab/Namespaces::NamespaceBan/1"`.
-   */
   NamespacesNamespaceBanID: { input: any; output: any; }
-  /**
-   * A `NoteID` is a global ID. It is encoded as a string.
-   *
-   * An example `NoteID` is: `"gid://gitlab/Note/1"`.
-   */
   NoteID: { input: any; output: any; }
-  /**
-   * A `NoteableID` is a global ID. It is encoded as a string.
-   *
-   * An example `NoteableID` is: `"gid://gitlab/Noteable/1"`.
-   */
   NoteableID: { input: any; output: any; }
-  /**
-   * A `OperationsFeatureFlagID` is a global ID. It is encoded as a string.
-   *
-   * An example `OperationsFeatureFlagID` is: `"gid://gitlab/Operations::FeatureFlag/1"`.
-   */
   OperationsFeatureFlagID: { input: any; output: any; }
-  /**
-   * A `OrganizationsOrganizationID` is a global ID. It is encoded as a string.
-   *
-   * An example `OrganizationsOrganizationID` is: `"gid://gitlab/Organizations::Organization/1"`.
-   */
   OrganizationsOrganizationID: { input: any; output: any; }
-  /**
-   * A `OrganizationsOrganizationUserID` is a global ID. It is encoded as a string.
-   *
-   * An example `OrganizationsOrganizationUserID` is: `"gid://gitlab/Organizations::OrganizationUser/1"`.
-   */
   OrganizationsOrganizationUserID: { input: any; output: any; }
-  /**
-   * A `PackagesConanFileMetadatumID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesConanFileMetadatumID` is: `"gid://gitlab/Packages::Conan::FileMetadatum/1"`.
-   */
   PackagesConanFileMetadatumID: { input: any; output: any; }
-  /**
-   * A `PackagesConanMetadatumID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesConanMetadatumID` is: `"gid://gitlab/Packages::Conan::Metadatum/1"`.
-   */
   PackagesConanMetadatumID: { input: any; output: any; }
-  /**
-   * A `PackagesDependencyID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesDependencyID` is: `"gid://gitlab/Packages::Dependency/1"`.
-   */
   PackagesDependencyID: { input: any; output: any; }
-  /**
-   * A `PackagesDependencyLinkID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesDependencyLinkID` is: `"gid://gitlab/Packages::DependencyLink/1"`.
-   */
   PackagesDependencyLinkID: { input: any; output: any; }
-  /**
-   * A `PackagesMavenMetadatumID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesMavenMetadatumID` is: `"gid://gitlab/Packages::Maven::Metadatum/1"`.
-   */
   PackagesMavenMetadatumID: { input: any; output: any; }
-  /**
-   * A `PackagesNugetDependencyLinkMetadatumID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesNugetDependencyLinkMetadatumID` is: `"gid://gitlab/Packages::Nuget::DependencyLinkMetadatum/1"`.
-   */
   PackagesNugetDependencyLinkMetadatumID: { input: any; output: any; }
-  /**
-   * A `PackagesNugetMetadatumID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesNugetMetadatumID` is: `"gid://gitlab/Packages::Nuget::Metadatum/1"`.
-   */
   PackagesNugetMetadatumID: { input: any; output: any; }
-  /**
-   * A `PackagesPackageFileID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesPackageFileID` is: `"gid://gitlab/Packages::PackageFile/1"`.
-   */
   PackagesPackageFileID: { input: any; output: any; }
-  /**
-   * A `PackagesPackageID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesPackageID` is: `"gid://gitlab/Packages::Package/1"`.
-   */
   PackagesPackageID: { input: any; output: any; }
-  /**
-   * A `PackagesProtectionRuleID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesProtectionRuleID` is: `"gid://gitlab/Packages::Protection::Rule/1"`.
-   */
   PackagesProtectionRuleID: { input: any; output: any; }
-  /**
-   * A `PackagesPypiMetadatumID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesPypiMetadatumID` is: `"gid://gitlab/Packages::Pypi::Metadatum/1"`.
-   */
   PackagesPypiMetadatumID: { input: any; output: any; }
-  /**
-   * A `PackagesTerraformModuleMetadatumID` is a global ID. It is encoded as a string.
-   *
-   * An example `PackagesTerraformModuleMetadatumID` is: `"gid://gitlab/Packages::TerraformModule::Metadatum/1"`.
-   */
   PackagesTerraformModuleMetadatumID: { input: any; output: any; }
-  /**
-   * A `PagesDeploymentID` is a global ID. It is encoded as a string.
-   *
-   * An example `PagesDeploymentID` is: `"gid://gitlab/PagesDeployment/1"`.
-   */
   PagesDeploymentID: { input: any; output: any; }
-  /**
-   * A `PathLockID` is a global ID. It is encoded as a string.
-   *
-   * An example `PathLockID` is: `"gid://gitlab/PathLock/1"`.
-   */
   PathLockID: { input: any; output: any; }
-  /** String or integer. */
   PayloadAlertFieldPathSegment: { input: any; output: any; }
-  /**
-   * A `ProjectID` is a global ID. It is encoded as a string.
-   *
-   * An example `ProjectID` is: `"gid://gitlab/Project/1"`.
-   */
   ProjectID: { input: any; output: any; }
-  /**
-   * A `ProjectImportStateID` is a global ID. It is encoded as a string.
-   *
-   * An example `ProjectImportStateID` is: `"gid://gitlab/ProjectImportState/1"`.
-   */
   ProjectImportStateID: { input: any; output: any; }
-  /**
-   * A `ProjectsBranchRuleID` is a global ID. It is encoded as a string.
-   *
-   * An example `ProjectsBranchRuleID` is: `"gid://gitlab/Projects::BranchRule/1"`.
-   */
   ProjectsBranchRuleID: { input: any; output: any; }
-  /**
-   * A `ProjectsSavedReplyID` is a global ID. It is encoded as a string.
-   *
-   * An example `ProjectsSavedReplyID` is: `"gid://gitlab/Projects::SavedReply/1"`.
-   */
   ProjectsSavedReplyID: { input: any; output: any; }
-  /**
-   * A `ProjectsTargetBranchRuleID` is a global ID. It is encoded as a string.
-   *
-   * An example `ProjectsTargetBranchRuleID` is: `"gid://gitlab/Projects::TargetBranchRule/1"`.
-   */
   ProjectsTargetBranchRuleID: { input: any; output: any; }
-  /**
-   * A `ReleaseID` is a global ID. It is encoded as a string.
-   *
-   * An example `ReleaseID` is: `"gid://gitlab/Release/1"`.
-   */
   ReleaseID: { input: any; output: any; }
-  /**
-   * A `ReleasesLinkID` is a global ID. It is encoded as a string.
-   *
-   * An example `ReleasesLinkID` is: `"gid://gitlab/Releases::Link/1"`.
-   */
   ReleasesLinkID: { input: any; output: any; }
-  /**
-   * A `RemoteDevelopmentNamespaceClusterAgentMappingID` is a global ID. It is encoded as a string.
-   *
-   * An example `RemoteDevelopmentNamespaceClusterAgentMappingID` is: `"gid://gitlab/RemoteDevelopment::NamespaceClusterAgentMapping/1"`.
-   */
   RemoteDevelopmentNamespaceClusterAgentMappingID: { input: any; output: any; }
-  /**
-   * A `RemoteDevelopmentWorkspaceID` is a global ID. It is encoded as a string.
-   *
-   * An example `RemoteDevelopmentWorkspaceID` is: `"gid://gitlab/RemoteDevelopment::Workspace/1"`.
-   */
   RemoteDevelopmentWorkspaceID: { input: any; output: any; }
-  /**
-   * A `RemoteDevelopmentWorkspaceVariableID` is a global ID. It is encoded as a string.
-   *
-   * An example `RemoteDevelopmentWorkspaceVariableID` is: `"gid://gitlab/RemoteDevelopment::WorkspaceVariable/1"`.
-   */
   RemoteDevelopmentWorkspaceVariableID: { input: any; output: any; }
-  /**
-   * A `RemoteDevelopmentWorkspacesAgentConfigID` is a global ID. It is encoded as a string.
-   *
-   * An example `RemoteDevelopmentWorkspacesAgentConfigID` is: `"gid://gitlab/RemoteDevelopment::WorkspacesAgentConfig/1"`.
-   */
   RemoteDevelopmentWorkspacesAgentConfigID: { input: any; output: any; }
-  /**
-   * A `SbomComponentID` is a global ID. It is encoded as a string.
-   *
-   * An example `SbomComponentID` is: `"gid://gitlab/Sbom::Component/1"`.
-   */
   SbomComponentID: { input: any; output: any; }
-  /**
-   * A `SbomComponentVersionID` is a global ID. It is encoded as a string.
-   *
-   * An example `SbomComponentVersionID` is: `"gid://gitlab/Sbom::ComponentVersion/1"`.
-   */
   SbomComponentVersionID: { input: any; output: any; }
-  /**
-   * A `SbomOccurrenceID` is a global ID. It is encoded as a string.
-   *
-   * An example `SbomOccurrenceID` is: `"gid://gitlab/Sbom::Occurrence/1"`.
-   */
   SbomOccurrenceID: { input: any; output: any; }
-  /**
-   * A `SecurityProjectSecurityExclusionID` is a global ID. It is encoded as a string.
-   *
-   * An example `SecurityProjectSecurityExclusionID` is: `"gid://gitlab/Security::ProjectSecurityExclusion/1"`.
-   */
   SecurityProjectSecurityExclusionID: { input: any; output: any; }
-  /**
-   * A `SecurityTrainingProviderID` is a global ID. It is encoded as a string.
-   *
-   * An example `SecurityTrainingProviderID` is: `"gid://gitlab/Security::TrainingProvider/1"`.
-   */
   SecurityTrainingProviderID: { input: any; output: any; }
-  /**
-   * A `SnippetID` is a global ID. It is encoded as a string.
-   *
-   * An example `SnippetID` is: `"gid://gitlab/Snippet/1"`.
-   */
   SnippetID: { input: any; output: any; }
-  /**
-   * A `SystemNoteMetadataID` is a global ID. It is encoded as a string.
-   *
-   * An example `SystemNoteMetadataID` is: `"gid://gitlab/SystemNoteMetadata/1"`.
-   */
   SystemNoteMetadataID: { input: any; output: any; }
-  /**
-   * A `TerraformStateID` is a global ID. It is encoded as a string.
-   *
-   * An example `TerraformStateID` is: `"gid://gitlab/Terraform::State/1"`.
-   */
   TerraformStateID: { input: any; output: any; }
-  /**
-   * Time represented in ISO 8601.
-   *
-   * For example: "2021-03-09T14:58:50+00:00".
-   *
-   * See `https://www.iso.org/iso-8601-date-and-time-format.html`.
-   *
-   */
   Time: { input: any; output: any; }
-  /**
-   * A `TimelogID` is a global ID. It is encoded as a string.
-   *
-   * An example `TimelogID` is: `"gid://gitlab/Timelog/1"`.
-   */
   TimelogID: { input: any; output: any; }
-  /**
-   * A `TodoID` is a global ID. It is encoded as a string.
-   *
-   * An example `TodoID` is: `"gid://gitlab/Todo/1"`.
-   */
   TodoID: { input: any; output: any; }
-  /**
-   * A `TodoableID` is a global ID. It is encoded as a string.
-   *
-   * An example `TodoableID` is: `"gid://gitlab/Todoable/1"`.
-   */
   TodoableID: { input: any; output: any; }
-  /** A regexp containing patterns sourced from user input */
   UntrustedRegexp: { input: any; output: any; }
   Upload: { input: any; output: any; }
-  /**
-   * A `UploadID` is a global ID. It is encoded as a string.
-   *
-   * An example `UploadID` is: `"gid://gitlab/Upload/1"`.
-   */
   UploadID: { input: any; output: any; }
-  /**
-   * A `UserID` is a global ID. It is encoded as a string.
-   *
-   * An example `UserID` is: `"gid://gitlab/User/1"`.
-   */
   UserID: { input: any; output: any; }
-  /**
-   * A `UsersSavedReplyID` is a global ID. It is encoded as a string.
-   *
-   * An example `UsersSavedReplyID` is: `"gid://gitlab/Users::SavedReply/1"`.
-   */
   UsersSavedReplyID: { input: any; output: any; }
-  /**
-   * A `VulnerabilitiesExternalIssueLinkID` is a global ID. It is encoded as a string.
-   *
-   * An example `VulnerabilitiesExternalIssueLinkID` is: `"gid://gitlab/Vulnerabilities::ExternalIssueLink/1"`.
-   */
   VulnerabilitiesExternalIssueLinkID: { input: any; output: any; }
-  /**
-   * A `VulnerabilitiesScannerID` is a global ID. It is encoded as a string.
-   *
-   * An example `VulnerabilitiesScannerID` is: `"gid://gitlab/Vulnerabilities::Scanner/1"`.
-   */
   VulnerabilitiesScannerID: { input: any; output: any; }
-  /**
-   * A `VulnerabilitiesStateTransitionID` is a global ID. It is encoded as a string.
-   *
-   * An example `VulnerabilitiesStateTransitionID` is: `"gid://gitlab/Vulnerabilities::StateTransition/1"`.
-   */
   VulnerabilitiesStateTransitionID: { input: any; output: any; }
-  /**
-   * A `VulnerabilityID` is a global ID. It is encoded as a string.
-   *
-   * An example `VulnerabilityID` is: `"gid://gitlab/Vulnerability/1"`.
-   */
   VulnerabilityID: { input: any; output: any; }
-  /**
-   * A `WikiPageMetaID` is a global ID. It is encoded as a string.
-   *
-   * An example `WikiPageMetaID` is: `"gid://gitlab/WikiPage::Meta/1"`.
-   */
   WikiPageMetaID: { input: any; output: any; }
-  /**
-   * A `WorkItemID` is a global ID. It is encoded as a string.
-   *
-   * An example `WorkItemID` is: `"gid://gitlab/WorkItem/1"`.
-   *
-   * While we transition from Issues into Work Items this type will temporarily support
-   * `IssueID` like: `"gid://gitlab/Issue/1"`. This behavior will be removed without notice in the future.
-   *
-   */
   WorkItemID: { input: any; output: any; }
-  /**
-   * A `WorkItemsParentID` is a global ID. It is encoded as a string.
-   *
-   * An example `WorkItemsParentID` is: `"gid://gitlab/WorkItems::Parent/1"`.
-   */
   WorkItemsParentID: { input: any; output: any; }
-  /**
-   * A `WorkItemsRelatedWorkItemLinkID` is a global ID. It is encoded as a string.
-   *
-   * An example `WorkItemsRelatedWorkItemLinkID` is: `"gid://gitlab/WorkItems::RelatedWorkItemLink/1"`.
-   */
   WorkItemsRelatedWorkItemLinkID: { input: any; output: any; }
-  /**
-   * A `WorkItemsTypeID` is a global ID. It is encoded as a string.
-   *
-   * An example `WorkItemsTypeID` is: `"gid://gitlab/WorkItems::Type/1"`.
-   */
   WorkItemsTypeID: { input: any; output: any; }
 };
 
@@ -1397,26 +473,25 @@ export type AccessLevelDeployKeyEdge = {
 };
 
 /** Access level to a resource */
-export enum AccessLevelEnum {
+export type AccessLevelEnum =
   /** Admin access. */
-  Admin = 'ADMIN',
+  | 'ADMIN'
   /** Developer access. */
-  Developer = 'DEVELOPER',
+  | 'DEVELOPER'
   /** Guest access. */
-  Guest = 'GUEST',
+  | 'GUEST'
   /** Maintainer access. */
-  Maintainer = 'MAINTAINER',
+  | 'MAINTAINER'
   /** Minimal access. */
-  MinimalAccess = 'MINIMAL_ACCESS',
+  | 'MINIMAL_ACCESS'
   /** No access. */
-  NoAccess = 'NO_ACCESS',
+  | 'NO_ACCESS'
   /** Owner access. */
-  Owner = 'OWNER',
+  | 'OWNER'
   /** Planner access. */
-  Planner = 'PLANNER',
+  | 'PLANNER'
   /** Reporter access. */
-  Reporter = 'REPORTER'
-}
+  | 'REPORTER';
 
 /** Representation of a GitLab group. */
 export type AccessLevelGroup = {
@@ -2340,12 +1415,11 @@ export type AgentMetadata = {
 };
 
 /** Agent token statuses */
-export enum AgentTokenStatus {
+export type AgentTokenStatus =
   /** Active agent token. */
-  Active = 'ACTIVE',
+  | 'ACTIVE'
   /** Revoked agent token. */
-  Revoked = 'REVOKED'
-}
+  | 'REVOKED';
 
 /** Version-related warning for a connected Agent */
 export type AgentVersionWarning = {
@@ -2374,32 +1448,30 @@ export type AggregationStatus = {
 };
 
 /** LLMs supported by the self-hosted model features. */
-export enum AiAcceptedSelfHostedModels {
+export type AiAcceptedSelfHostedModels =
   /** Claude 3 model family, suitable for code generation and duo chat. */
-  Claude_3 = 'CLAUDE_3',
+  | 'CLAUDE_3'
   /** CodeGemma Code: Suitable for code suggestions. */
-  Codegemma = 'CODEGEMMA',
+  | 'CODEGEMMA'
   /** Code-Llama Instruct: Suitable for code suggestions. */
-  Codellama = 'CODELLAMA',
+  | 'CODELLAMA'
   /** Codestral: Suitable for code suggestions. */
-  Codestral = 'CODESTRAL',
+  | 'CODESTRAL'
   /** Deepseek Coder base or instruct. */
-  Deepseekcoder = 'DEEPSEEKCODER',
+  | 'DEEPSEEKCODER'
   /** GPT: Suitable for code suggestions. */
-  Gpt = 'GPT',
+  | 'GPT'
   /** LLaMA 3: Suitable for code suggestions and duo chat. */
-  Llama3 = 'LLAMA3',
+  | 'LLAMA3'
   /** Mistral: Suitable for code suggestions and duo chat. */
-  Mistral = 'MISTRAL',
+  | 'MISTRAL'
   /** Mixtral: Suitable for code suggestions and duo chat. */
-  Mixtral = 'MIXTRAL'
-}
+  | 'MIXTRAL';
 
 /** Action to subscribe to. */
-export enum AiAction {
+export type AiAction =
   /** Chat action. */
-  Chat = 'CHAT'
-}
+  | 'CHAT';
 
 /** Autogenerated input type of AiAction */
 export type AiActionInput = {
@@ -2466,22 +1538,21 @@ export type AiAdditionalContext = {
 };
 
 /** The category of the additional context */
-export enum AiAdditionalContextCategory {
+export type AiAdditionalContextCategory =
   /** Dependency content category. */
-  Dependency = 'DEPENDENCY',
+  | 'DEPENDENCY'
   /** File content category. */
-  File = 'FILE',
+  | 'FILE'
   /** Issue content category. */
-  Issue = 'ISSUE',
+  | 'ISSUE'
   /** Local_git content category. */
-  LocalGit = 'LOCAL_GIT',
+  | 'LOCAL_GIT'
   /** Merge_request content category. */
-  MergeRequest = 'MERGE_REQUEST',
+  | 'MERGE_REQUEST'
   /** Snippet content category. */
-  Snippet = 'SNIPPET',
+  | 'SNIPPET'
   /** Terminal content category. */
-  Terminal = 'TERMINAL'
-}
+  | 'TERMINAL';
 
 export type AiAdditionalContextInput = {
   /** Category of the additional context. */
@@ -2666,16 +1737,15 @@ export type AiConversationsThreadEdge = {
 };
 
 /** Conversation type of the thread. */
-export enum AiConversationsThreadsConversationType {
+export type AiConversationsThreadsConversationType =
   /** duo_chat thread. */
-  DuoChat = 'DUO_CHAT',
+  | 'DUO_CHAT'
   /** duo_chat_legacy thread. */
-  DuoChatLegacy = 'DUO_CHAT_LEGACY',
+  | 'DUO_CHAT_LEGACY'
   /** duo_code_review thread. */
-  DuoCodeReview = 'DUO_CODE_REVIEW',
+  | 'DUO_CODE_REVIEW'
   /** duo_quick_chat thread. */
-  DuoQuickChat = 'DUO_QUICK_CHAT'
-}
+  | 'DUO_QUICK_CHAT';
 
 export type AiCurrentFileInput = {
   /** Content above cursor. */
@@ -2713,14 +1783,13 @@ export type AiExplainVulnerabilityInput = {
 };
 
 /** Providers for AI features that can be configured. */
-export enum AiFeatureProviders {
+export type AiFeatureProviders =
   /** Disabled option */
-  Disabled = 'DISABLED',
+  | 'DISABLED'
   /** Self hosted option */
-  SelfHosted = 'SELF_HOSTED',
+  | 'SELF_HOSTED'
   /** Vendored option */
-  Vendored = 'VENDORED'
-}
+  | 'VENDORED';
 
 /** Duo Chat feature setting */
 export type AiFeatureSetting = {
@@ -2796,24 +1865,23 @@ export type AiFeatureSettingUpdatePayload = {
 };
 
 /** AI features that can be configured through the Duo self-hosted feature settings. */
-export enum AiFeatures {
+export type AiFeatures =
   /** Code completion feature setting */
-  CodeCompletions = 'CODE_COMPLETIONS',
+  | 'CODE_COMPLETIONS'
   /** Code generation feature setting */
-  CodeGenerations = 'CODE_GENERATIONS',
+  | 'CODE_GENERATIONS'
   /** Duo Chat feature setting */
-  DuoChat = 'DUO_CHAT',
+  | 'DUO_CHAT'
   /** Duo chat explain code feature setting */
-  DuoChatExplainCode = 'DUO_CHAT_EXPLAIN_CODE',
+  | 'DUO_CHAT_EXPLAIN_CODE'
   /** Duo chat fix code feature setting */
-  DuoChatFixCode = 'DUO_CHAT_FIX_CODE',
+  | 'DUO_CHAT_FIX_CODE'
   /** Duo chat refactor code feature setting */
-  DuoChatRefactorCode = 'DUO_CHAT_REFACTOR_CODE',
+  | 'DUO_CHAT_REFACTOR_CODE'
   /** Duo chat troubleshoot job feature setting */
-  DuoChatTroubleshootJob = 'DUO_CHAT_TROUBLESHOOT_JOB',
+  | 'DUO_CHAT_TROUBLESHOOT_JOB'
   /** Duo chat write test feature setting */
-  DuoChatWriteTests = 'DUO_CHAT_WRITE_TESTS'
-}
+  | 'DUO_CHAT_WRITE_TESTS';
 
 export type AiGenerateCommitMessageInput = {
   /** Global ID of the resource to mutate. */
@@ -2904,20 +1972,18 @@ export type AiMessageExtras = {
 };
 
 /** Possible message roles for AI features. */
-export enum AiMessageRole {
+export type AiMessageRole =
   /** assistant message. */
-  Assistant = 'ASSISTANT',
+  | 'ASSISTANT'
   /** system message. */
-  System = 'SYSTEM',
+  | 'SYSTEM'
   /** user message. */
-  User = 'USER'
-}
+  | 'USER';
 
 /** Types of messages returned from AI features. */
-export enum AiMessageType {
+export type AiMessageType =
   /** Tool selection message. */
-  Tool = 'TOOL'
-}
+  | 'TOOL';
 
 /** Requires ClickHouse. Premium and Ultimate with GitLab Duo Pro and Enterprise only. */
 export type AiMetrics = {
@@ -3080,14 +2146,13 @@ export type AiSelfHostedModelEdge = {
 };
 
 /** GitLab release state of the model */
-export enum AiSelfHostedModelReleaseState {
+export type AiSelfHostedModelReleaseState =
   /** Beta status. */
-  Beta = 'BETA',
+  | 'BETA'
   /** Experimental status. */
-  Experimental = 'EXPERIMENTAL',
+  | 'EXPERIMENTAL'
   /** GA status. */
-  Ga = 'GA'
-}
+  | 'GA';
 
 /** Autogenerated input type of AiSelfHostedModelUpdate */
 export type AiSelfHostedModelUpdateInput = {
@@ -3141,14 +2206,13 @@ export type AiSummarizeReviewInput = {
 };
 
 /** Type of code suggestion event */
-export enum AiUsageCodeSuggestionEvent {
+export type AiUsageCodeSuggestionEvent =
   /** Code suggestion accepted. */
-  CodeSuggestionAcceptedInIde = 'CODE_SUGGESTION_ACCEPTED_IN_IDE',
+  | 'CODE_SUGGESTION_ACCEPTED_IN_IDE'
   /** Code suggestion rejected. */
-  CodeSuggestionRejectedInIde = 'CODE_SUGGESTION_REJECTED_IN_IDE',
+  | 'CODE_SUGGESTION_REJECTED_IN_IDE'
   /** Code suggestion shown. */
-  CodeSuggestionShownInIde = 'CODE_SUGGESTION_SHOWN_IN_IDE'
-}
+  | 'CODE_SUGGESTION_SHOWN_IN_IDE';
 
 /** Usage data for events stored in the default PostgreSQL database. Data retained for three months. Requires a personal access token. Endpoint works only on the top-level group. Ultimate with GitLab Duo Enterprise only. */
 export type AiUsageData = {
@@ -3370,64 +2434,51 @@ export type AlertManagementAlertEdge = {
 };
 
 /** Values for sorting alerts */
-export enum AlertManagementAlertSort {
+export type AlertManagementAlertSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Created time by ascending order. */
-  CreatedTimeAsc = 'CREATED_TIME_ASC',
+  | 'CREATED_TIME_ASC'
   /** Created time by descending order. */
-  CreatedTimeDesc = 'CREATED_TIME_DESC',
+  | 'CREATED_TIME_DESC'
   /** End time by ascending order. */
-  EndedAtAsc = 'ENDED_AT_ASC',
+  | 'ENDED_AT_ASC'
   /** End time by descending order. */
-  EndedAtDesc = 'ENDED_AT_DESC',
+  | 'ENDED_AT_DESC'
   /** Events count by ascending order. */
-  EventCountAsc = 'EVENT_COUNT_ASC',
+  | 'EVENT_COUNT_ASC'
   /** Events count by descending order. */
-  EventCountDesc = 'EVENT_COUNT_DESC',
+  | 'EVENT_COUNT_DESC'
   /** Severity from less critical to more critical. */
-  SeverityAsc = 'SEVERITY_ASC',
+  | 'SEVERITY_ASC'
   /** Severity from more critical to less critical. */
-  SeverityDesc = 'SEVERITY_DESC',
+  | 'SEVERITY_DESC'
   /** Start time by ascending order. */
-  StartedAtAsc = 'STARTED_AT_ASC',
+  | 'STARTED_AT_ASC'
   /** Start time by descending order. */
-  StartedAtDesc = 'STARTED_AT_DESC',
+  | 'STARTED_AT_DESC'
   /** Status by order: `Ignored > Resolved > Acknowledged > Triggered`. */
-  StatusAsc = 'STATUS_ASC',
+  | 'STATUS_ASC'
   /** Status by order: `Triggered > Acknowledged > Resolved > Ignored`. */
-  StatusDesc = 'STATUS_DESC',
+  | 'STATUS_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
+  | 'UPDATED_DESC'
   /** Created time by ascending order. */
-  UpdatedTimeAsc = 'UPDATED_TIME_ASC',
+  | 'UPDATED_TIME_ASC'
   /** Created time by descending order. */
-  UpdatedTimeDesc = 'UPDATED_TIME_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_TIME_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Represents total number of alerts for the represented categories */
 export type AlertManagementAlertStatusCountsType = {
@@ -3447,15 +2498,11 @@ export type AlertManagementAlertStatusCountsType = {
 };
 
 /** Filters the alerts based on given domain */
-export enum AlertManagementDomainFilter {
+export type AlertManagementDomainFilter =
   /** Alerts for operations domain. */
-  Operations = 'operations',
-  /**
-   * Alerts for threat monitoring domain. Deprecated in GitLab 15.0: Network policies are deprecated and will be removed in GitLab 16.0.
-   * @deprecated Network policies are deprecated and will be removed in GitLab 16.0. Deprecated in GitLab 15.0.
-   */
-  ThreatMonitoring = 'threat_monitoring'
-}
+  | 'operations'
+  /** Alerts for threat monitoring domain. Deprecated in GitLab 15.0: Network policies are deprecated and will be removed in GitLab 16.0. */
+  | 'threat_monitoring';
 
 /** An endpoint and credentials used to accept alerts for a project */
 export type AlertManagementHttpIntegration = AlertManagementIntegration & {
@@ -3540,12 +2587,11 @@ export type AlertManagementIntegrationEdge = {
 };
 
 /** Values of types of integrations */
-export enum AlertManagementIntegrationType {
+export type AlertManagementIntegrationType =
   /** Integration with any monitoring tool. */
-  Http = 'HTTP',
+  | 'HTTP'
   /** Prometheus integration. */
-  Prometheus = 'PROMETHEUS'
-}
+  | 'PROMETHEUS';
 
 /** Parsed field from an alert used for custom mappings */
 export type AlertManagementPayloadAlertField = {
@@ -3571,40 +2617,38 @@ export type AlertManagementPayloadAlertFieldInput = {
 };
 
 /** Values for alert field names used in the custom mapping */
-export enum AlertManagementPayloadAlertFieldName {
+export type AlertManagementPayloadAlertFieldName =
   /** A high-level summary of the problem. */
-  Description = 'DESCRIPTION',
+  | 'DESCRIPTION'
   /** The resolved time of the incident. */
-  EndTime = 'END_TIME',
+  | 'END_TIME'
   /** The unique identifier of the alert. This can be used to group occurrences of the same alert. */
-  Fingerprint = 'FINGERPRINT',
+  | 'FINGERPRINT'
   /** The name of the associated GitLab environment. */
-  GitlabEnvironmentName = 'GITLAB_ENVIRONMENT_NAME',
+  | 'GITLAB_ENVIRONMENT_NAME'
   /** One or more hosts, as to where this incident occurred. */
-  Hosts = 'HOSTS',
+  | 'HOSTS'
   /** The name of the associated monitoring tool. */
-  MonitoringTool = 'MONITORING_TOOL',
+  | 'MONITORING_TOOL'
   /** The affected service. */
-  Service = 'SERVICE',
+  | 'SERVICE'
   /** The severity of the alert. */
-  Severity = 'SEVERITY',
+  | 'SEVERITY'
   /** The time of the incident. */
-  StartTime = 'START_TIME',
+  | 'START_TIME'
   /** The title of the incident. */
-  Title = 'TITLE'
-}
+  | 'TITLE';
 
 /** Values for alert field types used in the custom mapping */
-export enum AlertManagementPayloadAlertFieldType {
+export type AlertManagementPayloadAlertFieldType =
   /** Array field type. */
-  Array = 'ARRAY',
+  | 'ARRAY'
   /** DateTime field type. */
-  Datetime = 'DATETIME',
+  | 'DATETIME'
   /** Number field type. */
-  Number = 'NUMBER',
+  | 'NUMBER'
   /** String field type. */
-  String = 'STRING'
-}
+  | 'STRING';
 
 /** Parsed field (with its name) from an alert used for custom mappings */
 export type AlertManagementPayloadAlertMappingField = {
@@ -3639,32 +2683,30 @@ export type AlertManagementPrometheusIntegration = AlertManagementIntegration & 
 };
 
 /** Alert severity values */
-export enum AlertManagementSeverity {
+export type AlertManagementSeverity =
   /** Critical severity */
-  Critical = 'CRITICAL',
+  | 'CRITICAL'
   /** High severity */
-  High = 'HIGH',
+  | 'HIGH'
   /** Info severity */
-  Info = 'INFO',
+  | 'INFO'
   /** Low severity */
-  Low = 'LOW',
+  | 'LOW'
   /** Medium severity */
-  Medium = 'MEDIUM',
+  | 'MEDIUM'
   /** Unknown severity */
-  Unknown = 'UNKNOWN'
-}
+  | 'UNKNOWN';
 
 /** Alert status values */
-export enum AlertManagementStatus {
+export type AlertManagementStatus =
   /** Someone is actively investigating the problem. */
-  Acknowledged = 'ACKNOWLEDGED',
+  | 'ACKNOWLEDGED'
   /** No action will be taken. */
-  Ignored = 'IGNORED',
+  | 'IGNORED'
   /** The problem has been addressed. */
-  Resolved = 'RESOLVED',
+  | 'RESOLVED'
   /** Investigation has not started. */
-  Triggered = 'TRIGGERED'
-}
+  | 'TRIGGERED';
 
 /** Autogenerated input type of AlertSetAssignees */
 export type AlertSetAssigneesInput = {
@@ -3770,14 +2812,13 @@ export type AmazonS3ConfigurationTypeEdge = {
   node?: Maybe<AmazonS3ConfigurationType>;
 };
 
-export enum AnalyticsAggregationPeriod {
+export type AnalyticsAggregationPeriod =
   /** Daily aggregation. */
-  Day = 'DAY',
+  | 'DAY'
   /** Monthly aggregation. */
-  Month = 'MONTH',
+  | 'MONTH'
   /** Weekly aggregation. */
-  Week = 'WEEK'
-}
+  | 'WEEK';
 
 export type AncestorType = {
   __typename?: 'AncestorType';
@@ -3797,14 +2838,13 @@ export type ApiFuzzingCiConfiguration = {
 };
 
 /** All possible ways to specify the API surface for an API fuzzing scan. */
-export enum ApiFuzzingScanMode {
+export type ApiFuzzingScanMode =
   /** The API surface is specified by a HAR file. */
-  Har = 'HAR',
+  | 'HAR'
   /** The API surface is specified by a OPENAPI file. */
-  Openapi = 'OPENAPI',
+  | 'OPENAPI'
   /** The API surface is specified by a POSTMAN file. */
-  Postman = 'POSTMAN'
-}
+  | 'POSTMAN';
 
 /** An API Fuzzing scan profile. */
 export type ApiFuzzingScanProfile = {
@@ -3917,14 +2957,13 @@ export type ApprovalProjectRuleEdge = {
   node?: Maybe<ApprovalProjectRule>;
 };
 
-export enum ApprovalReportType {
+export type ApprovalReportType =
   /** Represents report_type for any_merge_request related approval rules. */
-  AnyMergeRequest = 'ANY_MERGE_REQUEST',
+  | 'ANY_MERGE_REQUEST'
   /** Represents report_type for license scanning related approval rules. */
-  LicenseScanning = 'LICENSE_SCANNING',
+  | 'LICENSE_SCANNING'
   /** Represents report_type for vulnerability check related approval rules. */
-  ScanFinding = 'SCAN_FINDING'
-}
+  | 'SCAN_FINDING';
 
 /** Describes a rule for who can approve merge requests. */
 export type ApprovalRule = {
@@ -4002,16 +3041,15 @@ export type ApprovalRuleUsersArgs = {
 };
 
 /** The kind of an approval rule. */
-export enum ApprovalRuleType {
+export type ApprovalRuleType =
   /** A `any_approver` approval rule. */
-  AnyApprover = 'ANY_APPROVER',
+  | 'ANY_APPROVER'
   /** A `code_owner` approval rule. */
-  CodeOwner = 'CODE_OWNER',
+  | 'CODE_OWNER'
   /** A `regular` approval rule. */
-  Regular = 'REGULAR',
+  | 'REGULAR'
   /** A `report_approver` approval rule. */
-  ReportApprover = 'REPORT_APPROVER'
-}
+  | 'REPORT_APPROVER';
 
 /** Represents the scan result policy */
 export type ApprovalScanResultPolicy = {
@@ -4080,12 +3118,11 @@ export type AssetType = {
 };
 
 /** Assignee ID wildcard values */
-export enum AssigneeWildcardId {
+export type AssigneeWildcardId =
   /** An assignee is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** No assignee is assigned. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 /** Represents the YAML definitions for audit events defined in `ee/config/audit_events/types/<event-type-name>.yml` and `config/audit_events/types/<event-type-name>.yml`. */
 export type AuditEventDefinition = {
@@ -4779,12 +3816,11 @@ export type AuditEventsStreamingInstanceHeadersUpdatePayload = {
 };
 
 /** Auto stop setting. */
-export enum AutoStopSetting {
+export type AutoStopSetting =
   /** Always */
-  Always = 'ALWAYS',
+  | 'ALWAYS'
   /** With Action */
-  WithAction = 'WITH_ACTION'
-}
+  | 'WITH_ACTION';
 
 /** Core representation of a GitLab user. */
 export type AutocompletedUser = Todoable & User & {
@@ -5234,30 +4270,28 @@ export type AutocompletedUserWorkspacesArgs = {
 };
 
 /** User availability status */
-export enum AvailabilityEnum {
+export type AvailabilityEnum =
   /** Busy */
-  Busy = 'BUSY',
+  | 'BUSY'
   /** Not Set */
-  NotSet = 'NOT_SET'
-}
+  | 'NOT_SET';
 
 /** Available fields to be exported as CSV */
-export enum AvailableExportFields {
+export type AvailableExportFields =
   /** Author name. */
-  Author = 'AUTHOR',
+  | 'AUTHOR'
   /** Author username. */
-  AuthorUsername = 'AUTHOR_USERNAME',
+  | 'AUTHOR_USERNAME'
   /** Date of creation. */
-  CreatedAt = 'CREATED_AT',
+  | 'CREATED_AT'
   /** Description. */
-  Description = 'DESCRIPTION',
+  | 'DESCRIPTION'
   /** Unique identifier. */
-  Id = 'ID',
+  | 'ID'
   /** Title. */
-  Title = 'TITLE',
+  | 'TITLE'
   /** Type of the work item. */
-  Type = 'TYPE'
-}
+  | 'TYPE';
 
 /** An emoji awarded by a user */
 export type AwardEmoji = {
@@ -5545,14 +4579,13 @@ export type BlobViewer = {
 };
 
 /** Types of blob viewers */
-export enum BlobViewersType {
+export type BlobViewersType =
   /** Auxiliary blob viewers type. */
-  Auxiliary = 'auxiliary',
+  | 'auxiliary'
   /** Rich blob viewers type. */
-  Rich = 'rich',
+  | 'rich'
   /** Simple blob viewers type. */
-  Simple = 'simple'
-}
+  | 'simple';
 
 /** Information about the rules that must be satisfied to merge this merge request. */
 export type BlockingMergeRequests = {
@@ -6594,20 +5627,19 @@ export type CarPermissions = {
 };
 
 /** Status of a merge train's car */
-export enum CarStatus {
+export type CarStatus =
   /** Car's status: fresh */
-  Fresh = 'FRESH',
+  | 'FRESH'
   /** Car's status: idle */
-  Idle = 'IDLE',
+  | 'IDLE'
   /** Car's status: merged */
-  Merged = 'MERGED',
+  | 'MERGED'
   /** Car's status: merging */
-  Merging = 'MERGING',
+  | 'MERGING'
   /** Car's status: skip_merged */
-  SkipMerged = 'SKIP_MERGED',
+  | 'SKIP_MERGED'
   /** Car's status: stale */
-  Stale = 'STALE'
-}
+  | 'STALE';
 
 /** Autogenerated input type of CatalogResourcesCreate */
 export type CatalogResourcesCreateInput = {
@@ -6779,16 +5811,15 @@ export type CiCatalogResourceComponentInput = {
 };
 
 /** Available input types */
-export enum CiCatalogResourceComponentInputType {
+export type CiCatalogResourceComponentInputType =
   /** Array input */
-  Array = 'ARRAY',
+  | 'ARRAY'
   /** Boolean input */
-  Boolean = 'BOOLEAN',
+  | 'BOOLEAN'
   /** Number input */
-  Number = 'NUMBER',
+  | 'NUMBER'
   /** String input */
-  String = 'STRING'
-}
+  | 'STRING';
 
 /** Represents a component usage in a project */
 export type CiCatalogResourceComponentUsage = {
@@ -6844,47 +5875,44 @@ export type CiCatalogResourceEdge = {
 };
 
 /** Values for scoping catalog resources */
-export enum CiCatalogResourceScope {
+export type CiCatalogResourceScope =
   /** All catalog resources visible to the current user. */
-  All = 'ALL',
+  | 'ALL'
   /** Catalog resources belonging to authorized namespaces of the user. */
-  Namespaces = 'NAMESPACES'
-}
+  | 'NAMESPACES';
 
 /** Values for sorting catalog resources */
-export enum CiCatalogResourceSort {
+export type CiCatalogResourceSort =
   /** Created date by ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created date by descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Latest release date by ascending order. */
-  LatestReleasedAtAsc = 'LATEST_RELEASED_AT_ASC',
+  | 'LATEST_RELEASED_AT_ASC'
   /** Latest release date by descending order. */
-  LatestReleasedAtDesc = 'LATEST_RELEASED_AT_DESC',
+  | 'LATEST_RELEASED_AT_DESC'
   /** Name by ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Name by descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Star count by ascending order. */
-  StarCountAsc = 'STAR_COUNT_ASC',
+  | 'STAR_COUNT_ASC'
   /** Star count by descending order. */
-  StarCountDesc = 'STAR_COUNT_DESC',
+  | 'STAR_COUNT_DESC'
   /** Last 30-day usage count by ascending order. */
-  UsageCountAsc = 'USAGE_COUNT_ASC',
+  | 'USAGE_COUNT_ASC'
   /** Last 30-day usage count by descending order. */
-  UsageCountDesc = 'USAGE_COUNT_DESC'
-}
+  | 'USAGE_COUNT_DESC';
 
-export enum CiCatalogResourceVerificationLevel {
+export type CiCatalogResourceVerificationLevel =
   /** The resource is Gitlab Maintained */
-  GitlabMaintained = 'GITLAB_MAINTAINED',
+  | 'GITLAB_MAINTAINED'
   /** The resource is Gitlab Partner Maintained */
-  GitlabPartnerMaintained = 'GITLAB_PARTNER_MAINTAINED',
+  | 'GITLAB_PARTNER_MAINTAINED'
   /** The resource is Unverified */
-  Unverified = 'UNVERIFIED',
+  | 'UNVERIFIED'
   /** The resource is Verified Creator Maintained */
-  VerifiedCreatorMaintained = 'VERIFIED_CREATOR_MAINTAINED'
-}
+  | 'VERIFIED_CREATOR_MAINTAINED';
 
 export type CiCatalogResourceVersion = {
   __typename?: 'CiCatalogResourceVersion';
@@ -7030,18 +6058,17 @@ export type CiConfigInclude = {
 };
 
 /** Include type. */
-export enum CiConfigIncludeType {
+export type CiConfigIncludeType =
   /** Component include. */
-  Component = 'component',
+  | 'component'
   /** Project file include. */
-  File = 'file',
+  | 'file'
   /** Local include. */
-  Local = 'local',
+  | 'local'
   /** Remote include. */
-  Remote = 'remote',
+  | 'remote'
   /** Template include. */
-  Template = 'template'
-}
+  | 'template';
 
 export type CiConfigJob = {
   __typename?: 'CiConfigJob';
@@ -7170,12 +6197,11 @@ export type CiConfigStageEdge = {
 };
 
 /** Values for YAML processor result */
-export enum CiConfigStatus {
+export type CiConfigStatus =
   /** Configuration file is not valid. */
-  Invalid = 'INVALID',
+  | 'INVALID'
   /** Configuration file is valid. */
-  Valid = 'VALID'
-}
+  | 'VALID';
 
 /** CI/CD config variables. */
 export type CiConfigVariable = {
@@ -7291,12 +6317,11 @@ export type CiFreezePeriod = {
 };
 
 /** Deploy freeze period status */
-export enum CiFreezePeriodStatus {
+export type CiFreezePeriodStatus =
   /** Freeze period is active. */
-  Active = 'ACTIVE',
+  | 'ACTIVE'
   /** Freeze period is inactive. */
-  Inactive = 'INACTIVE'
-}
+  | 'INACTIVE';
 
 export type CiGroup = {
   __typename?: 'CiGroup';
@@ -7415,16 +6440,15 @@ export type CiGroupVariableEdge = {
 };
 
 /** Values for sorting inherited variables */
-export enum CiGroupVariablesSort {
+export type CiGroupVariablesSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Key by ascending order. */
-  KeyAsc = 'KEY_ASC',
+  | 'KEY_ASC'
   /** Key by descending order. */
-  KeyDesc = 'KEY_DESC'
-}
+  | 'KEY_DESC';
 
 /** Input for pipeline creation */
 export type CiInputSpec = {
@@ -7446,16 +6470,15 @@ export type CiInputSpec = {
 };
 
 /** Available input types */
-export enum CiInputType {
+export type CiInputType =
   /** Array input */
-  Array = 'ARRAY',
+  | 'ARRAY'
   /** Boolean input */
-  Boolean = 'BOOLEAN',
+  | 'BOOLEAN'
   /** Number input */
-  Number = 'NUMBER',
+  | 'NUMBER'
   /** String input */
-  String = 'STRING'
-}
+  | 'STRING';
 
 /** CI input saved for a pipeline schedule */
 export type CiInputsField = {
@@ -7755,163 +6778,159 @@ export type CiJobEdge = {
   node?: Maybe<CiJob>;
 };
 
-export enum CiJobFailureReason {
+export type CiJobFailureReason =
   /** A job that failed due to api failure. */
-  ApiFailure = 'API_FAILURE',
+  | 'API_FAILURE'
   /** A job that failed due to archived failure. */
-  ArchivedFailure = 'ARCHIVED_FAILURE',
+  | 'ARCHIVED_FAILURE'
   /** A job that failed due to bridge pipeline is child pipeline. */
-  BridgePipelineIsChildPipeline = 'BRIDGE_PIPELINE_IS_CHILD_PIPELINE',
+  | 'BRIDGE_PIPELINE_IS_CHILD_PIPELINE'
   /** A job that failed due to builds disabled. */
-  BuildsDisabled = 'BUILDS_DISABLED',
+  | 'BUILDS_DISABLED'
   /** A job that failed due to ci quota exceeded. */
-  CiQuotaExceeded = 'CI_QUOTA_EXCEEDED',
+  | 'CI_QUOTA_EXCEEDED'
   /** A job that failed due to data integrity failure. */
-  DataIntegrityFailure = 'DATA_INTEGRITY_FAILURE',
+  | 'DATA_INTEGRITY_FAILURE'
   /** A job that failed due to deployment rejected. */
-  DeploymentRejected = 'DEPLOYMENT_REJECTED',
+  | 'DEPLOYMENT_REJECTED'
   /** A job that failed due to downstream bridge project not found. */
-  DownstreamBridgeProjectNotFound = 'DOWNSTREAM_BRIDGE_PROJECT_NOT_FOUND',
+  | 'DOWNSTREAM_BRIDGE_PROJECT_NOT_FOUND'
   /** A job that failed due to downstream pipeline creation failed. */
-  DownstreamPipelineCreationFailed = 'DOWNSTREAM_PIPELINE_CREATION_FAILED',
+  | 'DOWNSTREAM_PIPELINE_CREATION_FAILED'
   /** A job that failed due to environment creation failure. */
-  EnvironmentCreationFailure = 'ENVIRONMENT_CREATION_FAILURE',
+  | 'ENVIRONMENT_CREATION_FAILURE'
   /** A job that failed due to failed outdated deployment job. */
-  FailedOutdatedDeploymentJob = 'FAILED_OUTDATED_DEPLOYMENT_JOB',
+  | 'FAILED_OUTDATED_DEPLOYMENT_JOB'
   /** A job that failed due to forward deployment failure. */
-  ForwardDeploymentFailure = 'FORWARD_DEPLOYMENT_FAILURE',
+  | 'FORWARD_DEPLOYMENT_FAILURE'
   /** A job that failed due to insufficient bridge permissions. */
-  InsufficientBridgePermissions = 'INSUFFICIENT_BRIDGE_PERMISSIONS',
+  | 'INSUFFICIENT_BRIDGE_PERMISSIONS'
   /** A job that failed due to insufficient upstream permissions. */
-  InsufficientUpstreamPermissions = 'INSUFFICIENT_UPSTREAM_PERMISSIONS',
+  | 'INSUFFICIENT_UPSTREAM_PERMISSIONS'
   /** A job that failed due to invalid bridge trigger. */
-  InvalidBridgeTrigger = 'INVALID_BRIDGE_TRIGGER',
+  | 'INVALID_BRIDGE_TRIGGER'
   /** A job that failed due to ip restriction failure. */
-  IpRestrictionFailure = 'IP_RESTRICTION_FAILURE',
+  | 'IP_RESTRICTION_FAILURE'
   /** A job that failed due to job execution timeout. */
-  JobExecutionTimeout = 'JOB_EXECUTION_TIMEOUT',
+  | 'JOB_EXECUTION_TIMEOUT'
   /** A job that failed due to missing dependency failure. */
-  MissingDependencyFailure = 'MISSING_DEPENDENCY_FAILURE',
+  | 'MISSING_DEPENDENCY_FAILURE'
   /** A job that failed due to no matching runner. */
-  NoMatchingRunner = 'NO_MATCHING_RUNNER',
+  | 'NO_MATCHING_RUNNER'
   /** A job that failed due to pipeline loop detected. */
-  PipelineLoopDetected = 'PIPELINE_LOOP_DETECTED',
+  | 'PIPELINE_LOOP_DETECTED'
   /** A job that failed due to project deleted. */
-  ProjectDeleted = 'PROJECT_DELETED',
+  | 'PROJECT_DELETED'
   /** A job that failed due to protected environment failure. */
-  ProtectedEnvironmentFailure = 'PROTECTED_ENVIRONMENT_FAILURE',
+  | 'PROTECTED_ENVIRONMENT_FAILURE'
   /** A job that failed due to reached downstream pipeline trigger rate limit. */
-  ReachedDownstreamPipelineTriggerRateLimit = 'REACHED_DOWNSTREAM_PIPELINE_TRIGGER_RATE_LIMIT',
+  | 'REACHED_DOWNSTREAM_PIPELINE_TRIGGER_RATE_LIMIT'
   /** A job that failed due to reached max descendant pipelines depth. */
-  ReachedMaxDescendantPipelinesDepth = 'REACHED_MAX_DESCENDANT_PIPELINES_DEPTH',
+  | 'REACHED_MAX_DESCENDANT_PIPELINES_DEPTH'
   /** A job that failed due to reached max pipeline hierarchy size. */
-  ReachedMaxPipelineHierarchySize = 'REACHED_MAX_PIPELINE_HIERARCHY_SIZE',
+  | 'REACHED_MAX_PIPELINE_HIERARCHY_SIZE'
   /** A job that failed due to runner system failure. */
-  RunnerSystemFailure = 'RUNNER_SYSTEM_FAILURE',
+  | 'RUNNER_SYSTEM_FAILURE'
   /** A job that failed due to runner unsupported. */
-  RunnerUnsupported = 'RUNNER_UNSUPPORTED',
+  | 'RUNNER_UNSUPPORTED'
   /** A job that failed due to scheduler failure. */
-  SchedulerFailure = 'SCHEDULER_FAILURE',
+  | 'SCHEDULER_FAILURE'
   /** A job that failed due to script failure. */
-  ScriptFailure = 'SCRIPT_FAILURE',
+  | 'SCRIPT_FAILURE'
   /** A job that failed due to secrets provider not found. */
-  SecretsProviderNotFound = 'SECRETS_PROVIDER_NOT_FOUND',
+  | 'SECRETS_PROVIDER_NOT_FOUND'
   /** A job that failed due to stale schedule. */
-  StaleSchedule = 'STALE_SCHEDULE',
+  | 'STALE_SCHEDULE'
   /** A job that failed due to stuck or timeout failure. */
-  StuckOrTimeoutFailure = 'STUCK_OR_TIMEOUT_FAILURE',
+  | 'STUCK_OR_TIMEOUT_FAILURE'
   /** A job that failed due to trace size exceeded. */
-  TraceSizeExceeded = 'TRACE_SIZE_EXCEEDED',
+  | 'TRACE_SIZE_EXCEEDED'
   /** A job that failed due to unknown failure. */
-  UnknownFailure = 'UNKNOWN_FAILURE',
+  | 'UNKNOWN_FAILURE'
   /** A job that failed due to unmet prerequisites. */
-  UnmetPrerequisites = 'UNMET_PREREQUISITES',
+  | 'UNMET_PREREQUISITES'
   /** A job that failed due to upstream bridge project not found. */
-  UpstreamBridgeProjectNotFound = 'UPSTREAM_BRIDGE_PROJECT_NOT_FOUND',
+  | 'UPSTREAM_BRIDGE_PROJECT_NOT_FOUND'
   /** A job that failed due to user blocked. */
-  UserBlocked = 'USER_BLOCKED'
-}
+  | 'USER_BLOCKED';
 
-export enum CiJobKind {
+export type CiJobKind =
   /** Bridge CI job connecting a parent and child pipeline. */
-  Bridge = 'BRIDGE',
+  | 'BRIDGE'
   /** Standard CI job. */
-  Build = 'BUILD'
-}
+  | 'BUILD';
 
-export enum CiJobSource {
+export type CiJobSource =
   /** A job initiated by api. */
-  Api = 'API',
+  | 'API'
   /** A job initiated by chat. */
-  Chat = 'CHAT',
+  | 'CHAT'
   /** A job initiated by container registry push. */
-  ContainerRegistryPush = 'CONTAINER_REGISTRY_PUSH',
+  | 'CONTAINER_REGISTRY_PUSH'
   /** A job initiated by duo workflow. */
-  DuoWorkflow = 'DUO_WORKFLOW',
+  | 'DUO_WORKFLOW'
   /** A job initiated by external. */
-  External = 'EXTERNAL',
+  | 'EXTERNAL'
   /** A job initiated by external pull request event. */
-  ExternalPullRequestEvent = 'EXTERNAL_PULL_REQUEST_EVENT',
+  | 'EXTERNAL_PULL_REQUEST_EVENT'
   /** A job initiated by merge request event. */
-  MergeRequestEvent = 'MERGE_REQUEST_EVENT',
+  | 'MERGE_REQUEST_EVENT'
   /** A job initiated by ondemand dast scan. */
-  OndemandDastScan = 'ONDEMAND_DAST_SCAN',
+  | 'ONDEMAND_DAST_SCAN'
   /** A job initiated by ondemand dast validation. */
-  OndemandDastValidation = 'ONDEMAND_DAST_VALIDATION',
+  | 'ONDEMAND_DAST_VALIDATION'
   /** A job initiated by parent pipeline. */
-  ParentPipeline = 'PARENT_PIPELINE',
+  | 'PARENT_PIPELINE'
   /** A job initiated by pipeline. */
-  Pipeline = 'PIPELINE',
+  | 'PIPELINE'
   /** A job initiated by pipeline execution policy. */
-  PipelineExecutionPolicy = 'PIPELINE_EXECUTION_POLICY',
+  | 'PIPELINE_EXECUTION_POLICY'
   /** A job initiated by pipeline execution policy schedule. */
-  PipelineExecutionPolicySchedule = 'PIPELINE_EXECUTION_POLICY_SCHEDULE',
+  | 'PIPELINE_EXECUTION_POLICY_SCHEDULE'
   /** A job initiated by push. */
-  Push = 'PUSH',
+  | 'PUSH'
   /** A job initiated by scan execution policy. */
-  ScanExecutionPolicy = 'SCAN_EXECUTION_POLICY',
+  | 'SCAN_EXECUTION_POLICY'
   /** A job initiated by schedule. */
-  Schedule = 'SCHEDULE',
+  | 'SCHEDULE'
   /** A job initiated by security orchestration policy. */
-  SecurityOrchestrationPolicy = 'SECURITY_ORCHESTRATION_POLICY',
+  | 'SECURITY_ORCHESTRATION_POLICY'
   /** A job initiated by trigger. */
-  Trigger = 'TRIGGER',
+  | 'TRIGGER'
   /** A job initiated by unknown. */
-  Unknown = 'UNKNOWN',
+  | 'UNKNOWN'
   /** A job initiated by web. */
-  Web = 'WEB',
+  | 'WEB'
   /** A job initiated by webide. */
-  Webide = 'WEBIDE'
-}
+  | 'WEBIDE';
 
-export enum CiJobStatus {
+export type CiJobStatus =
   /** A job that is canceled. */
-  Canceled = 'CANCELED',
+  | 'CANCELED'
   /** A job that is canceling. */
-  Canceling = 'CANCELING',
+  | 'CANCELING'
   /** A job that is created. */
-  Created = 'CREATED',
+  | 'CREATED'
   /** A job that is failed. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** A job that is manual. */
-  Manual = 'MANUAL',
+  | 'MANUAL'
   /** A job that is pending. */
-  Pending = 'PENDING',
+  | 'PENDING'
   /** A job that is preparing. */
-  Preparing = 'PREPARING',
+  | 'PREPARING'
   /** A job that is running. */
-  Running = 'RUNNING',
+  | 'RUNNING'
   /** A job that is scheduled. */
-  Scheduled = 'SCHEDULED',
+  | 'SCHEDULED'
   /** A job that is skipped. */
-  Skipped = 'SKIPPED',
+  | 'SKIPPED'
   /** A job that is success. */
-  Success = 'SUCCESS',
+  | 'SUCCESS'
   /** A job that is waiting for callback. */
-  WaitingForCallback = 'WAITING_FOR_CALLBACK',
+  | 'WAITING_FOR_CALLBACK'
   /** A job that is waiting for resource. */
-  WaitingForResource = 'WAITING_FOR_RESOURCE'
-}
+  | 'WAITING_FOR_RESOURCE';
 
 /** Group that can access the current project by authenticating with a CI/CD job token. */
 export type CiJobTokenAccessibleGroup = {
@@ -8184,48 +7203,46 @@ export type CiJobTokenScopeClearAllowlistAutopopulationsPayload = {
 };
 
 /** Direction of access. */
-export enum CiJobTokenScopeDirection {
+export type CiJobTokenScopeDirection =
   /** Target projects in the inbound allowlist can access the scope project through their job tokens. */
-  Inbound = 'INBOUND',
+  | 'INBOUND'
   /** Job token scope project can access target project in the outbound allowlist. */
-  Outbound = 'OUTBOUND'
-}
+  | 'OUTBOUND';
 
 /** CI_JOB_TOKEN policy */
-export enum CiJobTokenScopePolicies {
+export type CiJobTokenScopePolicies =
   /** Admin Containers */
-  AdminContainers = 'ADMIN_CONTAINERS',
+  | 'ADMIN_CONTAINERS'
   /** Admin Deployments */
-  AdminDeployments = 'ADMIN_DEPLOYMENTS',
+  | 'ADMIN_DEPLOYMENTS'
   /** Admin Environments */
-  AdminEnvironments = 'ADMIN_ENVIRONMENTS',
+  | 'ADMIN_ENVIRONMENTS'
   /** Admin Jobs */
-  AdminJobs = 'ADMIN_JOBS',
+  | 'ADMIN_JOBS'
   /** Admin Packages */
-  AdminPackages = 'ADMIN_PACKAGES',
+  | 'ADMIN_PACKAGES'
   /** Admin Releases */
-  AdminReleases = 'ADMIN_RELEASES',
+  | 'ADMIN_RELEASES'
   /** Admin Secure Files */
-  AdminSecureFiles = 'ADMIN_SECURE_FILES',
+  | 'ADMIN_SECURE_FILES'
   /** Admin Terraform State */
-  AdminTerraformState = 'ADMIN_TERRAFORM_STATE',
+  | 'ADMIN_TERRAFORM_STATE'
   /** Read Containers */
-  ReadContainers = 'READ_CONTAINERS',
+  | 'READ_CONTAINERS'
   /** Read Deployments */
-  ReadDeployments = 'READ_DEPLOYMENTS',
+  | 'READ_DEPLOYMENTS'
   /** Read Environments */
-  ReadEnvironments = 'READ_ENVIRONMENTS',
+  | 'READ_ENVIRONMENTS'
   /** Read Jobs */
-  ReadJobs = 'READ_JOBS',
+  | 'READ_JOBS'
   /** Read Packages */
-  ReadPackages = 'READ_PACKAGES',
+  | 'READ_PACKAGES'
   /** Read Releases */
-  ReadReleases = 'READ_RELEASES',
+  | 'READ_RELEASES'
   /** Read Secure Files */
-  ReadSecureFiles = 'READ_SECURE_FILES',
+  | 'READ_SECURE_FILES'
   /** Read Terraform State */
-  ReadTerraformState = 'READ_TERRAFORM_STATE'
-}
+  | 'READ_TERRAFORM_STATE';
 
 /** Autogenerated input type of CiJobTokenScopeRemoveGroup */
 export type CiJobTokenScopeRemoveGroupInput = {
@@ -8515,56 +7532,54 @@ export type CiPipelineCreationRequest = {
 };
 
 /** The status of a pipeline creation */
-export enum CiPipelineCreationStatus {
+export type CiPipelineCreationStatus =
   /** The pipeline creation is failed */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** The pipeline creation is in progress */
-  InProgress = 'IN_PROGRESS',
+  | 'IN_PROGRESS'
   /** The pipeline creation is succeeded */
-  Succeeded = 'SUCCEEDED'
-}
+  | 'SUCCEEDED';
 
 /** Ci Pipeline sources enum */
-export enum CiPipelineSources {
+export type CiPipelineSources =
   /** Pipeline created by an API event */
-  Api = 'API',
+  | 'API'
   /** Pipeline created by a chat event */
-  Chat = 'CHAT',
+  | 'CHAT'
   /** Pipeline created by a container registry push event */
-  ContainerRegistryPush = 'CONTAINER_REGISTRY_PUSH',
+  | 'CONTAINER_REGISTRY_PUSH'
   /** Pipeline created by a duo workflow event */
-  DuoWorkflow = 'DUO_WORKFLOW',
+  | 'DUO_WORKFLOW'
   /** Pipeline created by an external event */
-  External = 'EXTERNAL',
+  | 'EXTERNAL'
   /** Pipeline created by an external pull request event */
-  ExternalPullRequestEvent = 'EXTERNAL_PULL_REQUEST_EVENT',
+  | 'EXTERNAL_PULL_REQUEST_EVENT'
   /** Pipeline created by a merge request event */
-  MergeRequestEvent = 'MERGE_REQUEST_EVENT',
+  | 'MERGE_REQUEST_EVENT'
   /** Pipeline created by an ondemand dast scan event */
-  OndemandDastScan = 'ONDEMAND_DAST_SCAN',
+  | 'ONDEMAND_DAST_SCAN'
   /** Pipeline created by an ondemand dast validation event */
-  OndemandDastValidation = 'ONDEMAND_DAST_VALIDATION',
+  | 'ONDEMAND_DAST_VALIDATION'
   /** Pipeline created by a parent pipeline event */
-  ParentPipeline = 'PARENT_PIPELINE',
+  | 'PARENT_PIPELINE'
   /** Pipeline created by a pipeline event */
-  Pipeline = 'PIPELINE',
+  | 'PIPELINE'
   /** Pipeline created by a pipeline execution policy schedule event */
-  PipelineExecutionPolicySchedule = 'PIPELINE_EXECUTION_POLICY_SCHEDULE',
+  | 'PIPELINE_EXECUTION_POLICY_SCHEDULE'
   /** Pipeline created by a push event */
-  Push = 'PUSH',
+  | 'PUSH'
   /** Pipeline created by a schedule event */
-  Schedule = 'SCHEDULE',
+  | 'SCHEDULE'
   /** Pipeline created by a security orchestration policy event */
-  SecurityOrchestrationPolicy = 'SECURITY_ORCHESTRATION_POLICY',
+  | 'SECURITY_ORCHESTRATION_POLICY'
   /** Pipeline created by a trigger event */
-  Trigger = 'TRIGGER',
+  | 'TRIGGER'
   /** Pipeline created by an unknown event */
-  Unknown = 'UNKNOWN',
+  | 'UNKNOWN'
   /** Pipeline created by a web event */
-  Web = 'WEB',
+  | 'WEB'
   /** Pipeline created by a webide event */
-  Webide = 'WEBIDE'
-}
+  | 'WEBIDE';
 
 export type CiProjectSubscription = {
   __typename?: 'CiProjectSubscription';
@@ -8782,20 +7797,18 @@ export type CiRunnerProjectsArgs = {
   topics?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
-export enum CiRunnerAccessLevel {
+export type CiRunnerAccessLevel =
   /** A runner that is not protected. */
-  NotProtected = 'NOT_PROTECTED',
+  | 'NOT_PROTECTED'
   /** A runner that is ref protected. */
-  RefProtected = 'REF_PROTECTED'
-}
+  | 'REF_PROTECTED';
 
 /** Runner cloud provider. */
-export enum CiRunnerCloudProvider {
+export type CiRunnerCloudProvider =
   /** Google Kubernetes Engine. */
-  Gke = 'GKE',
+  | 'GKE'
   /** Google Cloud. */
-  GoogleCloud = 'GOOGLE_CLOUD'
-}
+  | 'GOOGLE_CLOUD';
 
 /** Information used in runner cloud provisioning. */
 export type CiRunnerCloudProvisioning = CiRunnerGkeProvisioning | CiRunnerGoogleCloudProvisioning;
@@ -8829,12 +7842,11 @@ export type CiRunnerConnection = {
   pageInfo: PageInfo;
 };
 
-export enum CiRunnerCreationMethod {
+export type CiRunnerCreationMethod =
   /** Applies to a runner that was created by an authenticated user. */
-  AuthenticatedUser = 'AUTHENTICATED_USER',
+  | 'AUTHENTICATED_USER'
   /** Applies to a runner that was created by a runner registration token. */
-  RegistrationToken = 'REGISTRATION_TOKEN'
-}
+  | 'REGISTRATION_TOKEN';
 
 /** An edge in a connection. */
 export type CiRunnerEdge = {
@@ -8896,18 +7908,11 @@ export type CiRunnerGoogleCloudProvisioningProvisioningStepsArgs = {
   zone: Scalars['GoogleCloudZone']['input'];
 };
 
-export enum CiRunnerJobExecutionStatus {
-  /**
-   * Runner is busy. Introduced in GitLab 17.2: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.2.
-   */
-  Active = 'ACTIVE',
-  /**
-   * Runner is idle. Introduced in GitLab 15.7: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 15.7.
-   */
-  Idle = 'IDLE'
-}
+export type CiRunnerJobExecutionStatus =
+  /** Runner is busy. Introduced in GitLab 17.2: **Status**: Experiment. */
+  | 'ACTIVE'
+  /** Runner is idle. Introduced in GitLab 15.7: **Status**: Experiment. */
+  | 'IDLE';
 
 export type CiRunnerManager = {
   __typename?: 'CiRunnerManager';
@@ -8967,74 +7972,62 @@ export type CiRunnerManagerEdge = {
 };
 
 /** Values for filtering runners in namespaces. */
-export enum CiRunnerMembershipFilter {
-  /**
-   * Include all runners. This list includes runners for all projects in the group and subgroups, as well as for the parent groups and instance. Introduced in GitLab 15.5: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 15.5.
-   */
-  AllAvailable = 'ALL_AVAILABLE',
+export type CiRunnerMembershipFilter =
+  /** Include all runners. This list includes runners for all projects in the group and subgroups, as well as for the parent groups and instance. Introduced in GitLab 15.5: **Status**: Experiment. */
+  | 'ALL_AVAILABLE'
   /** Include runners that have either a direct or inherited relationship. These runners can be specific to a project or a group. */
-  Descendants = 'DESCENDANTS',
+  | 'DESCENDANTS'
   /** Include runners that have a direct relationship. */
-  Direct = 'DIRECT'
-}
+  | 'DIRECT';
 
-export enum CiRunnerOwnerWildcard {
+export type CiRunnerOwnerWildcard =
   /** Filter runners owned by an administrator. */
-  Administrators = 'ADMINISTRATORS'
-}
+  | 'ADMINISTRATORS';
 
 /** Values for sorting runners */
-export enum CiRunnerSort {
+export type CiRunnerSort =
   /** Ordered by contacted_at in ascending order. */
-  ContactedAsc = 'CONTACTED_ASC',
+  | 'CONTACTED_ASC'
   /** Ordered by contacted_at in descending order. */
-  ContactedDesc = 'CONTACTED_DESC',
+  | 'CONTACTED_DESC'
   /** Ordered by created_at in ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Ordered by created_at in descending order. */
-  CreatedDesc = 'CREATED_DESC',
-  /**
-   * Ordered by number of running jobs in descending order (only available on Ultimate plans). Introduced in GitLab 16.2: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.2.
-   */
-  MostActiveDesc = 'MOST_ACTIVE_DESC',
+  | 'CREATED_DESC'
+  /** Ordered by number of running jobs in descending order (only available on Ultimate plans). Introduced in GitLab 16.2: **Status**: Experiment. */
+  | 'MOST_ACTIVE_DESC'
   /** Ordered by token_expires_at in ascending order. */
-  TokenExpiresAtAsc = 'TOKEN_EXPIRES_AT_ASC',
+  | 'TOKEN_EXPIRES_AT_ASC'
   /** Ordered by token_expires_at in descending order. */
-  TokenExpiresAtDesc = 'TOKEN_EXPIRES_AT_DESC'
-}
+  | 'TOKEN_EXPIRES_AT_DESC';
 
-export enum CiRunnerStatus {
+export type CiRunnerStatus =
   /** Runner that has never contacted the instance. */
-  NeverContacted = 'NEVER_CONTACTED',
+  | 'NEVER_CONTACTED'
   /** Runner that has not contacted this instance within the last 2 hours. Will be considered `STALE` if offline for more than 7 days. */
-  Offline = 'OFFLINE',
+  | 'OFFLINE'
   /** Runner that contacted this instance within the last 2 hours. */
-  Online = 'ONLINE',
+  | 'ONLINE'
   /** Runner that has not contacted this instance within the last 7 days. */
-  Stale = 'STALE'
-}
+  | 'STALE';
 
-export enum CiRunnerType {
+export type CiRunnerType =
   /** A runner that is group type. */
-  GroupType = 'GROUP_TYPE',
+  | 'GROUP_TYPE'
   /** A runner that is instance type. */
-  InstanceType = 'INSTANCE_TYPE',
+  | 'INSTANCE_TYPE'
   /** A runner that is project type. */
-  ProjectType = 'PROJECT_TYPE'
-}
+  | 'PROJECT_TYPE';
 
-export enum CiRunnerUpgradeStatus {
+export type CiRunnerUpgradeStatus =
   /** Upgrade is available for the runner. */
-  Available = 'AVAILABLE',
+  | 'AVAILABLE'
   /** Runner version is not valid. */
-  Invalid = 'INVALID',
+  | 'INVALID'
   /** Upgrade is not available for the runner. */
-  NotAvailable = 'NOT_AVAILABLE',
+  | 'NOT_AVAILABLE'
   /** Upgrade is available and recommended for the runner. */
-  Recommended = 'RECOMMENDED'
-}
+  | 'RECOMMENDED';
 
 /** Runner usage in minutes. */
 export type CiRunnerUsage = {
@@ -9283,19 +8276,17 @@ export type CiVariableInput = {
 };
 
 /** Values for sorting variables */
-export enum CiVariableSort {
+export type CiVariableSort =
   /** Sorted by key in ascending order. */
-  KeyAsc = 'KEY_ASC',
+  | 'KEY_ASC'
   /** Sorted by key in descending order. */
-  KeyDesc = 'KEY_DESC'
-}
+  | 'KEY_DESC';
 
-export enum CiVariableType {
+export type CiVariableType =
   /** Env var type. */
-  EnvVar = 'ENV_VAR',
+  | 'ENV_VAR'
   /** File type. */
-  File = 'FILE'
-}
+  | 'FILE';
 
 export type CloudConnectorProbeResult = {
   __typename?: 'CloudConnectorProbeResult';
@@ -9755,14 +8746,13 @@ export type CodeCoverageSummary = {
 };
 
 /** The code flow node type */
-export enum CodeFlowNodeType {
+export type CodeFlowNodeType =
   /** Propagation node. */
-  Propagation = 'PROPAGATION',
+  | 'PROPAGATION'
   /** Sink node. */
-  Sink = 'SINK',
+  | 'SINK'
   /** Source node. */
-  Source = 'SOURCE'
-}
+  | 'SOURCE';
 
 /** Represents a code quality degradation on the pipeline. */
 export type CodeQualityDegradation = {
@@ -9805,20 +8795,19 @@ export type CodeQualityDegradationEdge = {
   node?: Maybe<CodeQualityDegradation>;
 };
 
-export enum CodeQualityDegradationSeverity {
+export type CodeQualityDegradationSeverity =
   /** Code Quality degradation has a status of blocker. */
-  Blocker = 'BLOCKER',
+  | 'BLOCKER'
   /** Code Quality degradation has a status of critical. */
-  Critical = 'CRITICAL',
+  | 'CRITICAL'
   /** Code Quality degradation has a status of info. */
-  Info = 'INFO',
+  | 'INFO'
   /** Code Quality degradation has a status of major. */
-  Major = 'MAJOR',
+  | 'MAJOR'
   /** Code Quality degradation has a status of minor. */
-  Minor = 'MINOR',
+  | 'MINOR'
   /** Code Quality degradation has a status of unknown. */
-  Unknown = 'UNKNOWN'
-}
+  | 'UNKNOWN';
 
 /** Code Quality report for a pipeline */
 export type CodeQualityReportSummary = {
@@ -9921,14 +8910,13 @@ export type CodequalityReportsComparerReportDegradation = {
 };
 
 /** Represents the generation status of the compared codequality report. */
-export enum CodequalityReportsComparerReportGenerationStatus {
+export type CodequalityReportsComparerReportGenerationStatus =
   /** An error happened while generating the report. */
-  Error = 'ERROR',
+  | 'ERROR'
   /** Report was generated. */
-  Parsed = 'PARSED',
+  | 'PARSED'
   /** Report is being generated. */
-  Parsing = 'PARSING'
-}
+  | 'PARSING';
 
 /** Represents a summary of the compared codequality report. */
 export type CodequalityReportsComparerReportSummary = {
@@ -9942,14 +8930,13 @@ export type CodequalityReportsComparerReportSummary = {
 };
 
 /** Represents the state of the code quality report. */
-export enum CodequalityReportsComparerStatus {
+export type CodequalityReportsComparerStatus =
   /** Report generated and there are new code quality degradations. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Head report or base report not found. */
-  NotFound = 'NOT_FOUND',
+  | 'NOT_FOUND'
   /** No degradations found in the head pipeline report. */
-  Success = 'SUCCESS'
-}
+  | 'SUCCESS';
 
 export type Commit = Todoable & {
   __typename?: 'Commit';
@@ -10039,18 +9026,17 @@ export type CommitAction = {
 };
 
 /** Mode of a commit action */
-export enum CommitActionMode {
+export type CommitActionMode =
   /** Chmod command. */
-  Chmod = 'CHMOD',
+  | 'CHMOD'
   /** Create command. */
-  Create = 'CREATE',
+  | 'CREATE'
   /** Delete command. */
-  Delete = 'DELETE',
+  | 'DELETE'
   /** Move command. */
-  Move = 'MOVE',
+  | 'MOVE'
   /** Update command. */
-  Update = 'UPDATE'
-}
+  | 'UPDATE';
 
 /** The connection type for Commit. */
 export type CommitConnection = {
@@ -10119,12 +9105,11 @@ export type CommitEdge = {
   node?: Maybe<Commit>;
 };
 
-export enum CommitEncoding {
+export type CommitEncoding =
   /** Base64 encoding. */
-  Base64 = 'BASE64',
+  | 'BASE64'
   /** Text encoding. */
-  Text = 'TEXT'
-}
+  | 'TEXT';
 
 export type CommitParentNames = {
   __typename?: 'CommitParentNames';
@@ -10177,22 +9162,21 @@ export type CommitSignature = {
 };
 
 /** Comparable security report type */
-export enum ComparableSecurityReportType {
+export type ComparableSecurityReportType =
   /** API Fuzzing report */
-  ApiFuzzing = 'API_FUZZING',
+  | 'API_FUZZING'
   /** Container Scanning report */
-  ContainerScanning = 'CONTAINER_SCANNING',
+  | 'CONTAINER_SCANNING'
   /** Coverage Fuzzing report */
-  CoverageFuzzing = 'COVERAGE_FUZZING',
+  | 'COVERAGE_FUZZING'
   /** DAST report */
-  Dast = 'DAST',
+  | 'DAST'
   /** Dependency Scanning report */
-  DependencyScanning = 'DEPENDENCY_SCANNING',
+  | 'DEPENDENCY_SCANNING'
   /** SAST report */
-  Sast = 'SAST',
+  | 'SAST'
   /** Secret Detection report */
-  SecretDetection = 'SECRET_DETECTION'
-}
+  | 'SECRET_DETECTION';
 
 /** Represents compared security report. */
 export type ComparedSecurityReport = {
@@ -10391,12 +9375,11 @@ export type ComplianceFrameworkInput = {
 };
 
 /** ComplianceFramework of a project for filtering */
-export enum ComplianceFrameworkPresenceFilter {
+export type ComplianceFrameworkPresenceFilter =
   /** Any compliance framework is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** No compliance framework is assigned. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 /** Represents a ComplianceRequirement associated with a ComplianceFramework */
 export type ComplianceRequirement = {
@@ -10522,20 +9505,19 @@ export type ComplianceStandardsAdherence = {
 };
 
 /** Name of the check for the compliance standard. */
-export enum ComplianceStandardsAdherenceCheckName {
+export type ComplianceStandardsAdherenceCheckName =
   /** At least one non author approval */
-  AtLeastOneNonAuthorApproval = 'AT_LEAST_ONE_NON_AUTHOR_APPROVAL',
+  | 'AT_LEAST_ONE_NON_AUTHOR_APPROVAL'
   /** At least two approvals */
-  AtLeastTwoApprovals = 'AT_LEAST_TWO_APPROVALS',
+  | 'AT_LEAST_TWO_APPROVALS'
   /** Dast */
-  Dast = 'DAST',
+  | 'DAST'
   /** Prevent approval by merge request author */
-  PreventApprovalByMergeRequestAuthor = 'PREVENT_APPROVAL_BY_MERGE_REQUEST_AUTHOR',
+  | 'PREVENT_APPROVAL_BY_MERGE_REQUEST_AUTHOR'
   /** Prevent approval by merge request committers */
-  PreventApprovalByMergeRequestCommitters = 'PREVENT_APPROVAL_BY_MERGE_REQUEST_COMMITTERS',
+  | 'PREVENT_APPROVAL_BY_MERGE_REQUEST_COMMITTERS'
   /** Sast */
-  Sast = 'SAST'
-}
+  | 'SAST';
 
 /** The connection type for ComplianceStandardsAdherence. */
 export type ComplianceStandardsAdherenceConnection = {
@@ -10567,20 +9549,18 @@ export type ComplianceStandardsAdherenceInput = {
 };
 
 /** Name of the compliance standard. */
-export enum ComplianceStandardsAdherenceStandard {
+export type ComplianceStandardsAdherenceStandard =
   /** Gitlab */
-  Gitlab = 'GITLAB',
+  | 'GITLAB'
   /** Soc2 */
-  Soc2 = 'SOC2'
-}
+  | 'SOC2';
 
 /** Status of the compliance standards adherence. */
-export enum ComplianceStandardsAdherenceStatus {
+export type ComplianceStandardsAdherenceStatus =
   /** Fail */
-  Fail = 'FAIL',
+  | 'FAIL'
   /** Success */
-  Success = 'SUCCESS'
-}
+  | 'SUCCESS';
 
 export type ComplianceStandardsProjectAdherenceInput = {
   /** Name of the check for the compliance standard. */
@@ -10645,48 +9625,45 @@ export type ComplianceViolationProjectInput = {
 };
 
 /** Reason for the compliance violation. */
-export enum ComplianceViolationReason {
+export type ComplianceViolationReason =
   /** Approved by committer */
-  ApprovedByCommitter = 'APPROVED_BY_COMMITTER',
+  | 'APPROVED_BY_COMMITTER'
   /** Approved by insufficient users */
-  ApprovedByInsufficientUsers = 'APPROVED_BY_INSUFFICIENT_USERS',
+  | 'APPROVED_BY_INSUFFICIENT_USERS'
   /** Approved by merge request author */
-  ApprovedByMergeRequestAuthor = 'APPROVED_BY_MERGE_REQUEST_AUTHOR'
-}
+  | 'APPROVED_BY_MERGE_REQUEST_AUTHOR';
 
 /** Severity of the compliance violation. */
-export enum ComplianceViolationSeverity {
+export type ComplianceViolationSeverity =
   /** Critical severity */
-  Critical = 'CRITICAL',
+  | 'CRITICAL'
   /** High severity */
-  High = 'HIGH',
+  | 'HIGH'
   /** Info severity */
-  Info = 'INFO',
+  | 'INFO'
   /** Low severity */
-  Low = 'LOW',
+  | 'LOW'
   /** Medium severity */
-  Medium = 'MEDIUM'
-}
+  | 'MEDIUM';
 
 /** Compliance violation sort values. */
-export enum ComplianceViolationSort {
+export type ComplianceViolationSort =
   /** Date merged in ascending order, further sorted by ID in ascending order. */
-  MergedAtAsc = 'MERGED_AT_ASC',
+  | 'MERGED_AT_ASC'
   /** Date merged in descending order, further sorted by ID in descending order. */
-  MergedAtDesc = 'MERGED_AT_DESC',
+  | 'MERGED_AT_DESC'
   /** Merge request title in ascending order, further sorted by ID in ascending order. */
-  MergeRequestTitleAsc = 'MERGE_REQUEST_TITLE_ASC',
+  | 'MERGE_REQUEST_TITLE_ASC'
   /** Merge request title in descending order, further sorted by ID in descending order. */
-  MergeRequestTitleDesc = 'MERGE_REQUEST_TITLE_DESC',
+  | 'MERGE_REQUEST_TITLE_DESC'
   /** Severity in ascending order, further sorted by ID in ascending order. */
-  SeverityLevelAsc = 'SEVERITY_LEVEL_ASC',
+  | 'SEVERITY_LEVEL_ASC'
   /** Severity in descending order, further sorted by ID in descending order. */
-  SeverityLevelDesc = 'SEVERITY_LEVEL_DESC',
+  | 'SEVERITY_LEVEL_DESC'
   /** Violation reason in ascending order, further sorted by ID in ascending order. */
-  ViolationReasonAsc = 'VIOLATION_REASON_ASC',
+  | 'VIOLATION_REASON_ASC'
   /** Violation reason in descending order, further sorted by ID in descending order. */
-  ViolationReasonDesc = 'VIOLATION_REASON_DESC'
-}
+  | 'VIOLATION_REASON_DESC';
 
 /** A software dependency used by a project */
 export type Component = {
@@ -10774,12 +9751,11 @@ export type ConanMetadata = {
 };
 
 /** Conan file types */
-export enum ConanMetadatumFileTypeEnum {
+export type ConanMetadatumFileTypeEnum =
   /** A package file type. */
-  PackageFile = 'PACKAGE_FILE',
+  | 'PACKAGE_FILE'
   /** A recipe file type. */
-  RecipeFile = 'RECIPE_FILE'
-}
+  | 'RECIPE_FILE';
 
 /** Autogenerated input type of ConfigureContainerScanning */
 export type ConfigureContainerScanningInput = {
@@ -10922,60 +9898,47 @@ export type ConnectedAgentEdge = {
 };
 
 /** Values for sorting contacts */
-export enum ContactSort {
+export type ContactSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Description in ascending order. */
-  DescriptionAsc = 'DESCRIPTION_ASC',
+  | 'DESCRIPTION_ASC'
   /** Description in descending order. */
-  DescriptionDesc = 'DESCRIPTION_DESC',
+  | 'DESCRIPTION_DESC'
   /** Email in ascending order. */
-  EmailAsc = 'EMAIL_ASC',
+  | 'EMAIL_ASC'
   /** Email in descending order. */
-  EmailDesc = 'EMAIL_DESC',
+  | 'EMAIL_DESC'
   /** First name in ascending order. */
-  FirstNameAsc = 'FIRST_NAME_ASC',
+  | 'FIRST_NAME_ASC'
   /** First name in descending order. */
-  FirstNameDesc = 'FIRST_NAME_DESC',
+  | 'FIRST_NAME_DESC'
   /** Last name in ascending order. */
-  LastNameAsc = 'LAST_NAME_ASC',
+  | 'LAST_NAME_ASC'
   /** Last name in descending order. */
-  LastNameDesc = 'LAST_NAME_DESC',
+  | 'LAST_NAME_DESC'
   /** Organization in ascending order. */
-  OrganizationAsc = 'ORGANIZATION_ASC',
+  | 'ORGANIZATION_ASC'
   /** Organization in descending order. */
-  OrganizationDesc = 'ORGANIZATION_DESC',
+  | 'ORGANIZATION_DESC'
   /** Phone in ascending order. */
-  PhoneAsc = 'PHONE_ASC',
+  | 'PHONE_ASC'
   /** Phone in descending order. */
-  PhoneDesc = 'PHONE_DESC',
+  | 'PHONE_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Represents the total number of contacts for the represented states. */
 export type ContactStateCounts = {
@@ -11011,46 +9974,43 @@ export type ContainerExpirationPolicy = {
   updatedAt: Scalars['Time']['output'];
 };
 
-export enum ContainerExpirationPolicyCadenceEnum {
+export type ContainerExpirationPolicyCadenceEnum =
   /** Every day */
-  EveryDay = 'EVERY_DAY',
+  | 'EVERY_DAY'
   /** Every month */
-  EveryMonth = 'EVERY_MONTH',
+  | 'EVERY_MONTH'
   /** Every three months */
-  EveryThreeMonths = 'EVERY_THREE_MONTHS',
+  | 'EVERY_THREE_MONTHS'
   /** Every two weeks */
-  EveryTwoWeeks = 'EVERY_TWO_WEEKS',
+  | 'EVERY_TWO_WEEKS'
   /** Every week */
-  EveryWeek = 'EVERY_WEEK'
-}
+  | 'EVERY_WEEK';
 
-export enum ContainerExpirationPolicyKeepEnum {
+export type ContainerExpirationPolicyKeepEnum =
   /** 50 tags per image name */
-  FiftyTags = 'FIFTY_TAGS',
+  | 'FIFTY_TAGS'
   /** 5 tags per image name */
-  FiveTags = 'FIVE_TAGS',
+  | 'FIVE_TAGS'
   /** 100 tags per image name */
-  OneHundredTags = 'ONE_HUNDRED_TAGS',
+  | 'ONE_HUNDRED_TAGS'
   /** 1 tag per image name */
-  OneTag = 'ONE_TAG',
+  | 'ONE_TAG'
   /** 10 tags per image name */
-  TenTags = 'TEN_TAGS',
+  | 'TEN_TAGS'
   /** 25 tags per image name */
-  TwentyFiveTags = 'TWENTY_FIVE_TAGS'
-}
+  | 'TWENTY_FIVE_TAGS';
 
-export enum ContainerExpirationPolicyOlderThanEnum {
+export type ContainerExpirationPolicyOlderThanEnum =
   /** 14 days until tags are automatically removed */
-  FourteenDays = 'FOURTEEN_DAYS',
+  | 'FOURTEEN_DAYS'
   /** 90 days until tags are automatically removed */
-  NinetyDays = 'NINETY_DAYS',
+  | 'NINETY_DAYS'
   /** 7 days until tags are automatically removed */
-  SevenDays = 'SEVEN_DAYS',
+  | 'SEVEN_DAYS'
   /** 60 days until tags are automatically removed */
-  SixtyDays = 'SIXTY_DAYS',
+  | 'SIXTY_DAYS'
   /** 30 days until tags are automatically removed */
-  ThirtyDays = 'THIRTY_DAYS'
-}
+  | 'THIRTY_DAYS';
 
 /** Represents the most restrictive permissions for a container image tag */
 export type ContainerProtectionAccessLevel = AccessLevelInterface & {
@@ -11081,14 +10041,13 @@ export type ContainerProtectionRepositoryRule = {
 };
 
 /** Access level for a container repository protection rule resource */
-export enum ContainerProtectionRepositoryRuleAccessLevel {
+export type ContainerProtectionRepositoryRuleAccessLevel =
   /** Admin access. */
-  Admin = 'ADMIN',
+  | 'ADMIN'
   /** Maintainer access. */
-  Maintainer = 'MAINTAINER',
+  | 'MAINTAINER'
   /** Owner access. */
-  Owner = 'OWNER'
-}
+  | 'OWNER';
 
 /** The connection type for ContainerProtectionRepositoryRule. */
 export type ContainerProtectionRepositoryRuleConnection = {
@@ -11136,23 +10095,13 @@ export type ContainerProtectionTagRule = AccessLevelInterface & {
 };
 
 /** Access level of a container registry tag protection rule resource */
-export enum ContainerProtectionTagRuleAccessLevel {
-  /**
-   * Admin access. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
-  Admin = 'ADMIN',
-  /**
-   * Maintainer access. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
-  Maintainer = 'MAINTAINER',
-  /**
-   * Owner access. Introduced in GitLab 17.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.8.
-   */
-  Owner = 'OWNER'
-}
+export type ContainerProtectionTagRuleAccessLevel =
+  /** Admin access. Introduced in GitLab 17.8: **Status**: Experiment. */
+  | 'ADMIN'
+  /** Maintainer access. Introduced in GitLab 17.8: **Status**: Experiment. */
+  | 'MAINTAINER'
+  /** Owner access. Introduced in GitLab 17.8: **Status**: Experiment. */
+  | 'OWNER';
 
 /** The connection type for ContainerProtectionTagRule. */
 export type ContainerProtectionTagRuleConnection = {
@@ -11213,16 +10162,15 @@ export type ContainerRepository = {
 };
 
 /** Status of the tags cleanup of a container repository */
-export enum ContainerRepositoryCleanupStatus {
+export type ContainerRepositoryCleanupStatus =
   /** Tags cleanup is ongoing. */
-  Ongoing = 'ONGOING',
+  | 'ONGOING'
   /** Tags cleanup is scheduled and is going to be executed shortly. */
-  Scheduled = 'SCHEDULED',
+  | 'SCHEDULED'
   /** Tags cleanup has been partially executed. There are still remaining tags to delete. */
-  Unfinished = 'UNFINISHED',
+  | 'UNFINISHED'
   /** Tags cleanup is not scheduled. This is the default state. */
-  Unscheduled = 'UNSCHEDULED'
-}
+  | 'UNSCHEDULED';
 
 /** The connection type for ContainerRepository. */
 export type ContainerRepositoryConnection = {
@@ -11403,50 +10351,36 @@ export type ContainerRepositoryRegistryEdge = {
 };
 
 /** Values for sorting container repositories */
-export enum ContainerRepositorySort {
+export type ContainerRepositorySort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Name by ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Name by descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Status of a container repository */
-export enum ContainerRepositoryStatus {
+export type ContainerRepositoryStatus =
   /** Delete Failed status. */
-  DeleteFailed = 'DELETE_FAILED',
+  | 'DELETE_FAILED'
   /** Delete Ongoing status. */
-  DeleteOngoing = 'DELETE_ONGOING',
+  | 'DELETE_ONGOING'
   /** Delete Scheduled status. */
-  DeleteScheduled = 'DELETE_SCHEDULED'
-}
+  | 'DELETE_SCHEDULED';
 
 /** A tag from a container repository */
 export type ContainerRepositoryTag = {
@@ -11509,16 +10443,15 @@ export type ContainerRepositoryTagPermissions = {
 };
 
 /** Values for sorting tags */
-export enum ContainerRepositoryTagSort {
+export type ContainerRepositoryTagSort =
   /** Ordered by name in ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Ordered by name in descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Ordered by published_at in ascending order. Only available for GitLab.com. */
-  PublishedAtAsc = 'PUBLISHED_AT_ASC',
+  | 'PUBLISHED_AT_ASC'
   /** Ordered by published_at in descending order. Only available for GitLab.com. */
-  PublishedAtDesc = 'PUBLISHED_AT_DESC'
-}
+  | 'PUBLISHED_AT_DESC';
 
 /** A tag expiration policy using regex patterns to control which images to keep or expire. */
 export type ContainerTagsExpirationPolicy = {
@@ -13053,16 +11986,15 @@ export type CustomFieldSelectOptionInput = {
 };
 
 /** Type of custom field */
-export enum CustomFieldType {
+export type CustomFieldType =
   /** Multi select field type. */
-  MultiSelect = 'MULTI_SELECT',
+  | 'MULTI_SELECT'
   /** Number field type. */
-  Number = 'NUMBER',
+  | 'NUMBER'
   /** Single select field type. */
-  SingleSelect = 'SINGLE_SELECT',
+  | 'SINGLE_SELECT'
   /** Text field type. */
-  Text = 'TEXT'
-}
+  | 'TEXT';
 
 /** Autogenerated input type of CustomFieldUnarchive */
 export type CustomFieldUnarchiveInput = {
@@ -13183,14 +12115,13 @@ export type CustomerRelationsContactEdge = {
   node?: Maybe<CustomerRelationsContact>;
 };
 
-export enum CustomerRelationsContactState {
+export type CustomerRelationsContactState =
   /** Active contacts. */
-  Active = 'active',
+  | 'active'
   /** All available contacts. */
-  All = 'all',
+  | 'all'
   /** Inactive contacts. */
-  Inactive = 'inactive'
-}
+  | 'inactive';
 
 /** Autogenerated input type of CustomerRelationsContactUpdate */
 export type CustomerRelationsContactUpdateInput = {
@@ -13288,14 +12219,13 @@ export type CustomerRelationsOrganizationEdge = {
   node?: Maybe<CustomerRelationsOrganization>;
 };
 
-export enum CustomerRelationsOrganizationState {
+export type CustomerRelationsOrganizationState =
   /** Active organizations. */
-  Active = 'active',
+  | 'active'
   /** All available organizations. */
-  All = 'all',
+  | 'all'
   /** Inactive organizations. */
-  Inactive = 'inactive'
-}
+  | 'inactive';
 
 /** Autogenerated input type of CustomerRelationsOrganizationUpdate */
 export type CustomerRelationsOrganizationUpdateInput = {
@@ -13394,10 +12324,9 @@ export type CustomizableDashboardPanelsArgs = {
 };
 
 /** Categories for customizable dashboards. */
-export enum CustomizableDashboardCategory {
+export type CustomizableDashboardCategory =
   /** Analytics category for customizable dashboards. */
-  Analytics = 'ANALYTICS'
-}
+  | 'ANALYTICS';
 
 /** The connection type for CustomizableDashboard. */
 export type CustomizableDashboardConnection = {
@@ -13537,18 +12466,17 @@ export type CveEnrichmentType = {
 };
 
 /** Values for a CVSS severity */
-export enum CvssSeverity {
+export type CvssSeverity =
   /** Critical severity. */
-  Critical = 'CRITICAL',
+  | 'CRITICAL'
   /** High severity. */
-  High = 'HIGH',
+  | 'HIGH'
   /** Low severity. */
-  Low = 'LOW',
+  | 'LOW'
   /** Medium severity. */
-  Medium = 'MEDIUM',
+  | 'MEDIUM'
   /** Not a vulnerability. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 /** Represents a vulnerability's CVSS score. */
 export type CvssType = {
@@ -13602,26 +12530,24 @@ export type DastPreScanVerification = {
 };
 
 /** Check type of the pre scan verification step. */
-export enum DastPreScanVerificationCheckType {
+export type DastPreScanVerificationCheckType =
   /** Authentication check */
-  Authentication = 'AUTHENTICATION',
+  | 'AUTHENTICATION'
   /** Connection check */
-  Connection = 'CONNECTION',
+  | 'CONNECTION'
   /** Crawling check */
-  Crawling = 'CRAWLING'
-}
+  | 'CRAWLING';
 
 /** Status of DAST pre scan verification. */
-export enum DastPreScanVerificationStatus {
+export type DastPreScanVerificationStatus =
   /** Pre Scan Verification complete without errors. */
-  Complete = 'COMPLETE',
+  | 'COMPLETE'
   /** Pre Scan Verification finished with one or more errors. */
-  CompleteWithErrors = 'COMPLETE_WITH_ERRORS',
+  | 'COMPLETE_WITH_ERRORS'
   /** Pre Scan Validation unable to finish. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Pre Scan Verification in execution. */
-  Running = 'RUNNING'
-}
+  | 'RUNNING';
 
 /** Represents a DAST Pre Scan Verification Step */
 export type DastPreScanVerificationStep = {
@@ -13691,16 +12617,15 @@ export type DastProfileCadenceInput = {
 };
 
 /** Unit for the duration of Dast Profile Cadence. */
-export enum DastProfileCadenceUnit {
+export type DastProfileCadenceUnit =
   /** DAST Profile Cadence duration in days. */
-  Day = 'DAY',
+  | 'DAY'
   /** DAST Profile Cadence duration in months. */
-  Month = 'MONTH',
+  | 'MONTH'
   /** DAST Profile Cadence duration in weeks. */
-  Week = 'WEEK',
+  | 'WEEK'
   /** DAST Profile Cadence duration in years. */
-  Year = 'YEAR'
-}
+  | 'YEAR';
 
 /** The connection type for DastProfile. */
 export type DastProfileConnection = {
@@ -13866,25 +12791,23 @@ export type DastProfileUpdatePayload = {
 };
 
 /** Scan method to be used by the scanner. */
-export enum DastScanMethodType {
+export type DastScanMethodType =
   /** GraphQL scan method. */
-  Graphql = 'GRAPHQL',
+  | 'GRAPHQL'
   /** HAR scan method. */
-  Har = 'HAR',
+  | 'HAR'
   /** OpenAPI scan method. */
-  Openapi = 'OPENAPI',
+  | 'OPENAPI'
   /** Postman scan method. */
-  PostmanCollection = 'POSTMAN_COLLECTION',
+  | 'POSTMAN_COLLECTION'
   /** Website scan method. */
-  Website = 'WEBSITE'
-}
+  | 'WEBSITE';
 
-export enum DastScanTypeEnum {
+export type DastScanTypeEnum =
   /** Active DAST scan. This scan will make active attacks against the target site. */
-  Active = 'ACTIVE',
+  | 'ACTIVE'
   /** Passive DAST scan. This scan will not make active attacks against the target site. */
-  Passive = 'PASSIVE'
-}
+  | 'PASSIVE';
 
 /** Represents a DAST scanner profile */
 export type DastScannerProfile = {
@@ -14225,18 +13148,17 @@ export type DastSiteProfileUpdatePayload = {
   id?: Maybe<Scalars['DastSiteProfileID']['output']>;
 };
 
-export enum DastSiteProfileValidationStatusEnum {
+export type DastSiteProfileValidationStatusEnum =
   /** Site validation process finished but failed. */
-  FailedValidation = 'FAILED_VALIDATION',
+  | 'FAILED_VALIDATION'
   /** Site validation process is in progress. */
-  InprogressValidation = 'INPROGRESS_VALIDATION',
+  | 'INPROGRESS_VALIDATION'
   /** No site validation exists. */
-  None = 'NONE',
+  | 'NONE'
   /** Site validation process finished successfully. */
-  PassedValidation = 'PASSED_VALIDATION',
+  | 'PASSED_VALIDATION'
   /** Site validation process has not started. */
-  PendingValidation = 'PENDING_VALIDATION'
-}
+  | 'PENDING_VALIDATION';
 
 /** Autogenerated input type of DastSiteTokenCreate */
 export type DastSiteTokenCreateInput = {
@@ -14342,72 +13264,67 @@ export type DastSiteValidationRevokePayload = {
   errors: Array<Scalars['String']['output']>;
 };
 
-export enum DastSiteValidationStatusEnum {
+export type DastSiteValidationStatusEnum =
   /** Site validation process finished but failed. */
-  FailedValidation = 'FAILED_VALIDATION',
+  | 'FAILED_VALIDATION'
   /** Site validation process is in progress. */
-  InprogressValidation = 'INPROGRESS_VALIDATION',
+  | 'INPROGRESS_VALIDATION'
   /** Site validation process finished successfully. */
-  PassedValidation = 'PASSED_VALIDATION',
+  | 'PASSED_VALIDATION'
   /** Site validation process has not started. */
-  PendingValidation = 'PENDING_VALIDATION'
-}
+  | 'PENDING_VALIDATION';
 
-export enum DastSiteValidationStrategyEnum {
+export type DastSiteValidationStrategyEnum =
   /** Header validation. */
-  Header = 'HEADER',
+  | 'HEADER'
   /** Meta tag validation. */
-  MetaTag = 'META_TAG',
+  | 'META_TAG'
   /** Text file validation. */
-  TextFile = 'TEXT_FILE'
-}
+  | 'TEXT_FILE';
 
-export enum DastTargetTypeEnum {
+export type DastTargetTypeEnum =
   /** API target. */
-  Api = 'API',
+  | 'API'
   /** Website target. */
-  Website = 'WEBSITE'
-}
+  | 'WEBSITE';
 
 /** Color of the data visualization palette */
-export enum DataVisualizationColorEnum {
+export type DataVisualizationColorEnum =
   /** Aqua color */
-  Aqua = 'AQUA',
+  | 'AQUA'
   /** Blue color */
-  Blue = 'BLUE',
+  | 'BLUE'
   /** Green color */
-  Green = 'GREEN',
+  | 'GREEN'
   /** Magenta color */
-  Magenta = 'MAGENTA',
+  | 'MAGENTA'
   /** Orange color */
-  Orange = 'ORANGE'
-}
+  | 'ORANGE';
 
 /** Weight of the data visualization palette */
-export enum DataVisualizationWeightEnum {
+export type DataVisualizationWeightEnum =
   /** 50 weight */
-  Weight_50 = 'WEIGHT_50',
+  | 'WEIGHT_50'
   /** 100 weight */
-  Weight_100 = 'WEIGHT_100',
+  | 'WEIGHT_100'
   /** 200 weight */
-  Weight_200 = 'WEIGHT_200',
+  | 'WEIGHT_200'
   /** 300 weight */
-  Weight_300 = 'WEIGHT_300',
+  | 'WEIGHT_300'
   /** 400 weight */
-  Weight_400 = 'WEIGHT_400',
+  | 'WEIGHT_400'
   /** 500 weight */
-  Weight_500 = 'WEIGHT_500',
+  | 'WEIGHT_500'
   /** 600 weight */
-  Weight_600 = 'WEIGHT_600',
+  | 'WEIGHT_600'
   /** 700 weight */
-  Weight_700 = 'WEIGHT_700',
+  | 'WEIGHT_700'
   /** 800 weight */
-  Weight_800 = 'WEIGHT_800',
+  | 'WEIGHT_800'
   /** 900 weight */
-  Weight_900 = 'WEIGHT_900',
+  | 'WEIGHT_900'
   /** 950 weight */
-  Weight_950 = 'WEIGHT_950'
-}
+  | 'WEIGHT_950';
 
 /** Autogenerated input type of DeleteAnnotation */
 export type DeleteAnnotationInput = {
@@ -14848,16 +13765,15 @@ export type DependencyProxyManifestRegistryEdge = {
   node?: Maybe<DependencyProxyManifestRegistry>;
 };
 
-export enum DependencyProxyManifestStatus {
+export type DependencyProxyManifestStatus =
   /** Dependency proxy manifest has a status of default. */
-  Default = 'DEFAULT',
+  | 'DEFAULT'
   /** Dependency proxy manifest has a status of error. */
-  Error = 'ERROR',
+  | 'ERROR'
   /** Dependency proxy manifest has a status of pending_destruction. */
-  PendingDestruction = 'PENDING_DESTRUCTION',
+  | 'PENDING_DESTRUCTION'
   /** Dependency proxy manifest has a status of processing. */
-  Processing = 'PROCESSING'
-}
+  | 'PROCESSING';
 
 /** Project-level Dependency Proxy for packages settings */
 export type DependencyProxyPackagesSetting = {
@@ -14880,20 +13796,19 @@ export type DependencyProxySetting = {
 };
 
 /** Values for sorting dependencies */
-export enum DependencySort {
+export type DependencySort =
   /** Name by ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Name by descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Packager by ascending order. */
-  PackagerAsc = 'PACKAGER_ASC',
+  | 'PACKAGER_ASC'
   /** Packager by descending order. */
-  PackagerDesc = 'PACKAGER_DESC',
+  | 'PACKAGER_DESC'
   /** Severity by ascending order. */
-  SeverityAsc = 'SEVERITY_ASC',
+  | 'SEVERITY_ASC'
   /** Severity by descending order. */
-  SeverityDesc = 'SEVERITY_DESC'
-}
+  | 'SEVERITY_DESC';
 
 /** The deployment of an environment */
 export type Deployment = {
@@ -14967,14 +13882,13 @@ export type DeploymentApprovalSummary = {
 };
 
 /** Status of the deployment approval summary. */
-export enum DeploymentApprovalSummaryStatus {
+export type DeploymentApprovalSummaryStatus =
   /** Summarized deployment approval status that is approved. */
-  Approved = 'APPROVED',
+  | 'APPROVED'
   /** Summarized deployment approval status that is pending approval. */
-  PendingApproval = 'PENDING_APPROVAL',
+  | 'PENDING_APPROVAL'
   /** Summarized deployment approval status that is rejected. */
-  Rejected = 'REJECTED'
-}
+  | 'REJECTED';
 
 /** The connection type for Deployment. */
 export type DeploymentConnection = {
@@ -15007,22 +13921,21 @@ export type DeploymentPermissions = {
 };
 
 /** All deployment statuses. */
-export enum DeploymentStatus {
+export type DeploymentStatus =
   /** A deployment that is blocked. */
-  Blocked = 'BLOCKED',
+  | 'BLOCKED'
   /** A deployment that is canceled. */
-  Canceled = 'CANCELED',
+  | 'CANCELED'
   /** A deployment that is created. */
-  Created = 'CREATED',
+  | 'CREATED'
   /** A deployment that is failed. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** A deployment that is running. */
-  Running = 'RUNNING',
+  | 'RUNNING'
   /** A deployment that is skipped. */
-  Skipped = 'SKIPPED',
+  | 'SKIPPED'
   /** A deployment that is success. */
-  Success = 'SUCCESS'
-}
+  | 'SUCCESS';
 
 /** Tags for a given deployment */
 export type DeploymentTag = {
@@ -15036,26 +13949,24 @@ export type DeploymentTag = {
 };
 
 /** All environment deployment tiers. */
-export enum DeploymentTier {
+export type DeploymentTier =
   /** Development. */
-  Development = 'DEVELOPMENT',
+  | 'DEVELOPMENT'
   /** Other. */
-  Other = 'OTHER',
+  | 'OTHER'
   /** Production. */
-  Production = 'PRODUCTION',
+  | 'PRODUCTION'
   /** Staging. */
-  Staging = 'STAGING',
+  | 'STAGING'
   /** Testing. */
-  Testing = 'TESTING'
-}
+  | 'TESTING';
 
 /** Status of the deployment approval. */
-export enum DeploymentsApprovalStatus {
+export type DeploymentsApprovalStatus =
   /** A deployment approval that is approved. */
-  Approved = 'APPROVED',
+  | 'APPROVED'
   /** A deployment approval that is rejected. */
-  Rejected = 'REJECTED'
-}
+  | 'REJECTED';
 
 /** Values for ordering deployments by a specific field */
 export type DeploymentsOrderByInput = {
@@ -15310,14 +14221,13 @@ export type DesignCollectionVersionsArgs = {
 };
 
 /** Copy state of a DesignCollection */
-export enum DesignCollectionCopyState {
+export type DesignCollectionCopyState =
   /** The DesignCollection encountered an error during a copy */
-  Error = 'ERROR',
+  | 'ERROR'
   /** The DesignCollection is being copied */
-  InProgress = 'IN_PROGRESS',
+  | 'IN_PROGRESS'
   /** The DesignCollection has no copy in progress */
-  Ready = 'READY'
-}
+  | 'READY';
 
 /** The connection type for Design. */
 export type DesignConnection = {
@@ -15616,16 +14526,15 @@ export type DesignVersionEdge = {
 };
 
 /** Mutation event of a design within a version */
-export enum DesignVersionEvent {
+export type DesignVersionEvent =
   /** A creation event */
-  Creation = 'CREATION',
+  | 'CREATION'
   /** A deletion event */
-  Deletion = 'DELETION',
+  | 'DELETION'
   /** A modification event */
-  Modification = 'MODIFICATION',
+  | 'MODIFICATION'
   /** No change. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 /** Autogenerated input type of DestroyBoard */
 export type DestroyBoardInput = {
@@ -15924,52 +14833,51 @@ export type DetailedImportStatus = {
 };
 
 /** Detailed representation of whether a GitLab merge request can be merged. */
-export enum DetailedMergeStatus {
+export type DetailedMergeStatus =
   /** Merge request approvals currently syncing. */
-  ApprovalsSyncing = 'APPROVALS_SYNCING',
+  | 'APPROVALS_SYNCING'
   /** Merge request dependencies must be merged. */
-  BlockedStatus = 'BLOCKED_STATUS',
+  | 'BLOCKED_STATUS'
   /** Currently checking for mergeability. */
-  Checking = 'CHECKING',
+  | 'CHECKING'
   /** Pipeline must succeed before merging. */
-  CiMustPass = 'CI_MUST_PASS',
+  | 'CI_MUST_PASS'
   /** Pipeline is still running. */
-  CiStillRunning = 'CI_STILL_RUNNING',
+  | 'CI_STILL_RUNNING'
   /** Source branch exists and contains commits. */
-  CommitsStatus = 'COMMITS_STATUS',
+  | 'COMMITS_STATUS'
   /** There are conflicts between the source and target branches. */
-  Conflict = 'CONFLICT',
+  | 'CONFLICT'
   /** Discussions must be resolved before merging. */
-  DiscussionsNotResolved = 'DISCUSSIONS_NOT_RESOLVED',
+  | 'DISCUSSIONS_NOT_RESOLVED'
   /** Merge request must not be draft before merging. */
-  DraftStatus = 'DRAFT_STATUS',
+  | 'DRAFT_STATUS'
   /** Status checks must pass. */
-  ExternalStatusChecks = 'EXTERNAL_STATUS_CHECKS',
+  | 'EXTERNAL_STATUS_CHECKS'
   /** Either the title or description must reference a Jira issue. */
-  JiraAssociation = 'JIRA_ASSOCIATION',
+  | 'JIRA_ASSOCIATION'
   /** Merge request includes locked LFS files. */
-  LockedLfsFiles = 'LOCKED_LFS_FILES',
+  | 'LOCKED_LFS_FILES'
   /** Merge request includes locked paths. */
-  LockedPaths = 'LOCKED_PATHS',
+  | 'LOCKED_PATHS'
   /** Branch can be merged. */
-  Mergeable = 'MERGEABLE',
+  | 'MERGEABLE'
   /** Merge request may not be merged until after the specified time. */
-  MergeTime = 'MERGE_TIME',
+  | 'MERGE_TIME'
   /** Merge request needs to be rebased. */
-  NeedRebase = 'NEED_REBASE',
+  | 'NEED_REBASE'
   /** Merge request must be approved before merging. */
-  NotApproved = 'NOT_APPROVED',
+  | 'NOT_APPROVED'
   /** Merge request must be open before merging. */
-  NotOpen = 'NOT_OPEN',
+  | 'NOT_OPEN'
   /** Merge request diff is being created. */
-  Preparing = 'PREPARING',
+  | 'PREPARING'
   /** Indicates a reviewer has requested changes. */
-  RequestedChanges = 'REQUESTED_CHANGES',
+  | 'REQUESTED_CHANGES'
   /** All policy rules must be satisfied. */
-  SecurityPoliciesViolations = 'SECURITY_POLICIES_VIOLATIONS',
+  | 'SECURITY_POLICIES_VIOLATIONS'
   /** Merge status has not been checked. */
-  Unchecked = 'UNCHECKED'
-}
+  | 'UNCHECKED';
 
 export type DetailedStatus = {
   __typename?: 'DetailedStatus';
@@ -16197,14 +15105,13 @@ export type DiffPositionInput = {
 };
 
 /** Type of file the position refers to */
-export enum DiffPositionType {
+export type DiffPositionType =
   /** Unknown file type. */
-  File = 'file',
+  | 'file'
   /** An image. */
-  Image = 'image',
+  | 'image'
   /** Text file. */
-  Text = 'text'
-}
+  | 'text';
 
 export type DiffRefs = {
   __typename?: 'DiffRefs';
@@ -16359,14 +15266,13 @@ export type DoraMetric = {
 };
 
 /** All possible ways that DORA metrics can be aggregated. */
-export enum DoraMetricBucketingInterval {
+export type DoraMetricBucketingInterval =
   /** All data points are combined into a single value. */
-  All = 'ALL',
+  | 'ALL'
   /** Data points are combined into chunks by day. */
-  Daily = 'DAILY',
+  | 'DAILY'
   /** Data points are combined into chunks by month. */
-  Monthly = 'MONTHLY'
-}
+  | 'MONTHLY';
 
 /** Aggregated DORA score counts for projects for the last complete month. */
 export type DoraPerformanceScoreCount = {
@@ -16576,24 +15482,23 @@ export type DuoWorkflowEventEdge = {
 };
 
 /** The status of the workflow. */
-export enum DuoWorkflowStatus {
+export type DuoWorkflowStatus =
   /** The workflow is created. */
-  Created = 'CREATED',
+  | 'CREATED'
   /** The workflow is failed. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** The workflow is finished. */
-  Finished = 'FINISHED',
+  | 'FINISHED'
   /** The workflow is input_required. */
-  InputRequired = 'INPUT_REQUIRED',
+  | 'INPUT_REQUIRED'
   /** The workflow is paused. */
-  Paused = 'PAUSED',
+  | 'PAUSED'
   /** The workflow is plan_approval_required. */
-  PlanApprovalRequired = 'PLAN_APPROVAL_REQUIRED',
+  | 'PLAN_APPROVAL_REQUIRED'
   /** The workflow is running. */
-  Running = 'RUNNING',
+  | 'RUNNING'
   /** The workflow is stopped. */
-  Stopped = 'STOPPED'
-}
+  | 'STOPPED';
 
 /** Autogenerated input type of EchoCreate */
 export type EchoCreateInput = {
@@ -16749,14 +15654,13 @@ export type Entry = {
 };
 
 /** Type of a tree entry */
-export enum EntryType {
+export type EntryType =
   /** File tree type. */
-  Blob = 'blob',
+  | 'blob'
   /** Commit tree type. */
-  Commit = 'commit',
+  | 'commit'
   /** Directory tree type. */
-  Tree = 'tree'
-}
+  | 'tree';
 
 /** Describes where code is deployed for a project */
 export type Environment = {
@@ -18067,66 +16971,51 @@ export type EpicSetSubscriptionPayload = {
 };
 
 /** Roadmap sort values */
-export enum EpicSort {
+export type EpicSort =
   /** Sort by created_at by ascending order. */
-  CreatedAtAsc = 'CREATED_AT_ASC',
+  | 'CREATED_AT_ASC'
   /** Sort by created_at by descending order. */
-  CreatedAtDesc = 'CREATED_AT_DESC',
+  | 'CREATED_AT_DESC'
   /** Sort by end date in ascending order. */
-  EndDateAsc = 'END_DATE_ASC',
+  | 'END_DATE_ASC'
   /** Sort by end date in descending order. */
-  EndDateDesc = 'END_DATE_DESC',
+  | 'END_DATE_DESC'
   /** Sort by start date in ascending order. */
-  StartDateAsc = 'START_DATE_ASC',
+  | 'START_DATE_ASC'
   /** Sort by start date in descending order. */
-  StartDateDesc = 'START_DATE_DESC',
+  | 'START_DATE_DESC'
   /** Sort by title in ascending order. */
-  TitleAsc = 'TITLE_ASC',
+  | 'TITLE_ASC'
   /** Sort by title in descending order. */
-  TitleDesc = 'TITLE_DESC',
+  | 'TITLE_DESC'
   /** Sort by updated_at by ascending order. */
-  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  | 'UPDATED_AT_ASC'
   /** Sort by updated_at by descending order. */
-  UpdatedAtDesc = 'UPDATED_AT_DESC',
-  /**
-   * End date at ascending order. Deprecated in GitLab 13.11: Use END_DATE_ASC.
-   * @deprecated Use END_DATE_ASC. Deprecated in GitLab 13.11.
-   */
-  EndDateAsc = 'end_date_asc',
-  /**
-   * End date at descending order. Deprecated in GitLab 13.11: Use END_DATE_DESC.
-   * @deprecated Use END_DATE_DESC. Deprecated in GitLab 13.11.
-   */
-  EndDateDesc = 'end_date_desc',
-  /**
-   * Start date at ascending order. Deprecated in GitLab 13.11: Use START_DATE_ASC.
-   * @deprecated Use START_DATE_ASC. Deprecated in GitLab 13.11.
-   */
-  StartDateAsc = 'start_date_asc',
-  /**
-   * Start date at descending order. Deprecated in GitLab 13.11: Use START_DATE_DESC.
-   * @deprecated Use START_DATE_DESC. Deprecated in GitLab 13.11.
-   */
-  StartDateDesc = 'start_date_desc'
-}
+  | 'UPDATED_AT_DESC'
+  /** End date at ascending order. Deprecated in GitLab 13.11: Use END_DATE_ASC. */
+  | 'end_date_asc'
+  /** End date at descending order. Deprecated in GitLab 13.11: Use END_DATE_DESC. */
+  | 'end_date_desc'
+  /** Start date at ascending order. Deprecated in GitLab 13.11: Use START_DATE_ASC. */
+  | 'start_date_asc'
+  /** Start date at descending order. Deprecated in GitLab 13.11: Use START_DATE_DESC. */
+  | 'start_date_desc';
 
 /** State of an epic */
-export enum EpicState {
+export type EpicState =
   /** All epics. */
-  All = 'all',
+  | 'all'
   /** Closed epics. */
-  Closed = 'closed',
+  | 'closed'
   /** Open epics. */
-  Opened = 'opened'
-}
+  | 'opened';
 
 /** State event of an epic */
-export enum EpicStateEvent {
+export type EpicStateEvent =
   /** Close the epic. */
-  Close = 'CLOSE',
+  | 'CLOSE'
   /** Reopen the epic. */
-  Reopen = 'REOPEN'
-}
+  | 'REOPEN';
 
 /** A node of an epic tree. */
 export type EpicTreeNodeFieldsInputType = {
@@ -18160,12 +17049,11 @@ export type EpicTreeReorderPayload = {
 };
 
 /** Epic ID wildcard values */
-export enum EpicWildcardId {
+export type EpicWildcardId =
   /** Any epic is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** No epic is assigned. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 /** Represents a stack trace */
 export type ErrorTrackingStackTrace = {
@@ -18207,16 +17095,15 @@ export type ErrorTrackingStackTraceEdge = {
 };
 
 /** Status of the error tracking service */
-export enum ErrorTrackingStatus {
+export type ErrorTrackingStatus =
   /** Error tracking service respond with an error. */
-  Error = 'ERROR',
+  | 'ERROR'
   /** Sentry issue not found. */
-  NotFound = 'NOT_FOUND',
+  | 'NOT_FOUND'
   /** Error tracking service is not ready. */
-  Retry = 'RETRY',
+  | 'RETRY'
   /** Successfuly fetch the stack trace. */
-  Success = 'SUCCESS'
-}
+  | 'SUCCESS';
 
 /** Autogenerated input type of EscalationPolicyCreate */
 export type EscalationPolicyCreateInput = {
@@ -18333,12 +17220,11 @@ export type EscalationRuleInput = {
 };
 
 /** Escalation rule statuses */
-export enum EscalationRuleStatus {
+export type EscalationRuleStatus =
   /** . */
-  Acknowledged = 'ACKNOWLEDGED',
+  | 'ACKNOWLEDGED'
   /** . */
-  Resolved = 'RESOLVED'
-}
+  | 'RESOLVED';
 
 /** Represents an escalation rule for an escalation policy */
 export type EscalationRuleType = {
@@ -18375,32 +17261,31 @@ export type Event = {
 };
 
 /** Event action */
-export enum EventAction {
+export type EventAction =
   /** Approved action */
-  Approved = 'APPROVED',
+  | 'APPROVED'
   /** Closed action */
-  Closed = 'CLOSED',
+  | 'CLOSED'
   /** Commented action */
-  Commented = 'COMMENTED',
+  | 'COMMENTED'
   /** Created action */
-  Created = 'CREATED',
+  | 'CREATED'
   /** Destroyed action */
-  Destroyed = 'DESTROYED',
+  | 'DESTROYED'
   /** Expired action */
-  Expired = 'EXPIRED',
+  | 'EXPIRED'
   /** Joined action */
-  Joined = 'JOINED',
+  | 'JOINED'
   /** Left action */
-  Left = 'LEFT',
+  | 'LEFT'
   /** Merged action */
-  Merged = 'MERGED',
+  | 'MERGED'
   /** Pushed action */
-  Pushed = 'PUSHED',
+  | 'PUSHED'
   /** Reopened action */
-  Reopened = 'REOPENED',
+  | 'REOPENED'
   /** Updated action */
-  Updated = 'UPDATED'
-}
+  | 'UPDATED';
 
 /** The connection type for Event. */
 export type EventConnection = {
@@ -18423,26 +17308,25 @@ export type EventEdge = {
 };
 
 /** Event target */
-export enum EventTarget {
+export type EventTarget =
   /** All events */
-  All = 'ALL',
+  | 'ALL'
   /** Comments events */
-  Comments = 'COMMENTS',
+  | 'COMMENTS'
   /** Designs events */
-  Designs = 'DESIGNS',
+  | 'DESIGNS'
   /** Epic events */
-  Epic = 'EPIC',
+  | 'EPIC'
   /** Issue events */
-  Issue = 'ISSUE',
+  | 'ISSUE'
   /** Merged events */
-  Merged = 'MERGED',
+  | 'MERGED'
   /** Push events */
-  Push = 'PUSH',
+  | 'PUSH'
   /** Team events */
-  Team = 'TEAM',
+  | 'TEAM'
   /** Wiki events */
-  Wiki = 'WIKI'
-}
+  | 'WIKI';
 
 /** Represents an object that can be the subject of an event. */
 export type EventTargetType = Design | Issue | MergeRequest | Milestone | Note | Project | Snippet | UserCore | WikiPage;
@@ -18461,22 +17345,20 @@ export type EventableEventsArgs = {
 };
 
 /** Enum for the security scanners used with exclusions */
-export enum ExclusionScannerEnum {
+export type ExclusionScannerEnum =
   /** Secret Push Protection. */
-  SecretPushProtection = 'SECRET_PUSH_PROTECTION'
-}
+  | 'SECRET_PUSH_PROTECTION';
 
 /** Enum for types of exclusion for a security scanner */
-export enum ExclusionTypeEnum {
+export type ExclusionTypeEnum =
   /** File or directory location. */
-  Path = 'PATH',
+  | 'PATH'
   /** Raw value to ignore. */
-  RawValue = 'RAW_VALUE',
+  | 'RAW_VALUE'
   /** Regex pattern matching rules. */
-  RegexPattern = 'REGEX_PATTERN',
+  | 'REGEX_PATTERN'
   /** Scanner rule identifier. */
-  Rule = 'RULE'
-}
+  | 'RULE';
 
 /** Autogenerated input type of ExportRequirements */
 export type ExportRequirementsInput = {
@@ -18517,14 +17399,13 @@ export type ExpressionInterface = {
 export type ExpressionValue = BooleanExpression | IntegerExpression | StringExpression;
 
 /** Values for status of the Web IDE Extension Marketplace opt-in for the user */
-export enum ExtensionsMarketplaceOptInStatus {
+export type ExtensionsMarketplaceOptInStatus =
   /** Web IDE Extension Marketplace opt-in status: DISABLED. */
-  Disabled = 'DISABLED',
+  | 'DISABLED'
   /** Web IDE Extension Marketplace opt-in status: ENABLED. */
-  Enabled = 'ENABLED',
+  | 'ENABLED'
   /** Web IDE Extension Marketplace opt-in status: UNSET. */
-  Unset = 'UNSET'
-}
+  | 'UNSET';
 
 /** Represents an external resource to send audit events to */
 export type ExternalAuditEventDestination = ExternalAuditEventDestinationInterface & {
@@ -18765,14 +17646,13 @@ export type FindingReportsComparer = {
 };
 
 /** Report comparison status */
-export enum FindingReportsComparerStatus {
+export type FindingReportsComparerStatus =
   /** An error happened while generating the report. */
-  Error = 'ERROR',
+  | 'ERROR'
   /** Report was generated. */
-  Parsed = 'PARSED',
+  | 'PARSED'
   /** Report is being generated. */
-  Parsing = 'PARSING'
-}
+  | 'PARSING';
 
 /** Details of the fork project compared to its upstream project. */
 export type ForkDetails = {
@@ -19074,12 +17954,11 @@ export type GeoNodeUploadRegistriesArgs = {
 };
 
 /** Action to trigger on multiple Geo registries */
-export enum GeoRegistriesBulkAction {
+export type GeoRegistriesBulkAction =
   /** Resync multiple registries. */
-  ResyncAll = 'RESYNC_ALL',
+  | 'RESYNC_ALL'
   /** Reverify multiple registries. */
-  ReverifyAll = 'REVERIFY_ALL'
-}
+  | 'REVERIFY_ALL';
 
 /** Autogenerated input type of GeoRegistriesBulkUpdate */
 export type GeoRegistriesBulkUpdateInput = {
@@ -19124,66 +18003,63 @@ export type GeoRegistriesUpdatePayload = {
 };
 
 /** Action to trigger on an individual Geo registry */
-export enum GeoRegistryAction {
+export type GeoRegistryAction =
   /** Resync a registry. */
-  Resync = 'RESYNC',
+  | 'RESYNC'
   /** Reverify a registry. */
-  Reverify = 'REVERIFY'
-}
+  | 'REVERIFY';
 
 /** Geo registry class */
-export enum GeoRegistryClass {
+export type GeoRegistryClass =
   /** Geo::CiSecureFileRegistry registry class */
-  CiSecureFileRegistry = 'CI_SECURE_FILE_REGISTRY',
+  | 'CI_SECURE_FILE_REGISTRY'
   /** Geo::ContainerRepositoryRegistry registry class */
-  ContainerRepositoryRegistry = 'CONTAINER_REPOSITORY_REGISTRY',
+  | 'CONTAINER_REPOSITORY_REGISTRY'
   /** Geo::DependencyProxyBlobRegistry registry class */
-  DependencyProxyBlobRegistry = 'DEPENDENCY_PROXY_BLOB_REGISTRY',
+  | 'DEPENDENCY_PROXY_BLOB_REGISTRY'
   /** Geo::DependencyProxyManifestRegistry registry class */
-  DependencyProxyManifestRegistry = 'DEPENDENCY_PROXY_MANIFEST_REGISTRY',
+  | 'DEPENDENCY_PROXY_MANIFEST_REGISTRY'
   /** Geo::DesignManagementRepositoryRegistry registry class */
-  DesignManagementRepositoryRegistry = 'DESIGN_MANAGEMENT_REPOSITORY_REGISTRY',
+  | 'DESIGN_MANAGEMENT_REPOSITORY_REGISTRY'
   /** Geo::GroupWikiRepositoryRegistry registry class */
-  GroupWikiRepositoryRegistry = 'GROUP_WIKI_REPOSITORY_REGISTRY',
+  | 'GROUP_WIKI_REPOSITORY_REGISTRY'
   /** Geo::JobArtifactRegistry registry class */
-  JobArtifactRegistry = 'JOB_ARTIFACT_REGISTRY',
+  | 'JOB_ARTIFACT_REGISTRY'
   /** Geo::LfsObjectRegistry registry class */
-  LfsObjectRegistry = 'LFS_OBJECT_REGISTRY',
+  | 'LFS_OBJECT_REGISTRY'
   /** Geo::MergeRequestDiffRegistry registry class */
-  MergeRequestDiffRegistry = 'MERGE_REQUEST_DIFF_REGISTRY',
+  | 'MERGE_REQUEST_DIFF_REGISTRY'
   /** Geo::PackageFileRegistry registry class */
-  PackageFileRegistry = 'PACKAGE_FILE_REGISTRY',
+  | 'PACKAGE_FILE_REGISTRY'
   /** Geo::PagesDeploymentRegistry registry class */
-  PagesDeploymentRegistry = 'PAGES_DEPLOYMENT_REGISTRY',
+  | 'PAGES_DEPLOYMENT_REGISTRY'
   /** Geo::PipelineArtifactRegistry registry class */
-  PipelineArtifactRegistry = 'PIPELINE_ARTIFACT_REGISTRY',
+  | 'PIPELINE_ARTIFACT_REGISTRY'
   /** Geo::ProjectRepositoryRegistry registry class */
-  ProjectRepositoryRegistry = 'PROJECT_REPOSITORY_REGISTRY',
+  | 'PROJECT_REPOSITORY_REGISTRY'
   /** Geo::ProjectWikiRepositoryRegistry registry class */
-  ProjectWikiRepositoryRegistry = 'PROJECT_WIKI_REPOSITORY_REGISTRY',
+  | 'PROJECT_WIKI_REPOSITORY_REGISTRY'
   /** Geo::SnippetRepositoryRegistry registry class */
-  SnippetRepositoryRegistry = 'SNIPPET_REPOSITORY_REGISTRY',
+  | 'SNIPPET_REPOSITORY_REGISTRY'
   /** Geo::TerraformStateVersionRegistry registry class */
-  TerraformStateVersionRegistry = 'TERRAFORM_STATE_VERSION_REGISTRY',
+  | 'TERRAFORM_STATE_VERSION_REGISTRY'
   /** Geo::UploadRegistry registry class */
-  UploadRegistry = 'UPLOAD_REGISTRY'
-}
+  | 'UPLOAD_REGISTRY';
 
 /** Values for sorting Geo registries */
-export enum GeoRegistrySort {
+export type GeoRegistrySort =
   /** ID by ascending order. */
-  IdAsc = 'ID_ASC',
+  | 'ID_ASC'
   /** ID by descending order. */
-  IdDesc = 'ID_DESC',
+  | 'ID_DESC'
   /** Latest sync date by ascending order. */
-  LastSyncedAtAsc = 'LAST_SYNCED_AT_ASC',
+  | 'LAST_SYNCED_AT_ASC'
   /** Latest sync date by descending order. */
-  LastSyncedAtDesc = 'LAST_SYNCED_AT_DESC',
+  | 'LAST_SYNCED_AT_DESC'
   /** Latest verification date by ascending order. */
-  VerifiedAtAsc = 'VERIFIED_AT_ASC',
+  | 'VERIFIED_AT_ASC'
   /** Latest verification date by descending order. */
-  VerifiedAtDesc = 'VERIFIED_AT_DESC'
-}
+  | 'VERIFIED_AT_DESC';
 
 /** A feature flag for the GitLab instance. */
 export type GitlabInstanceFeatureFlag = {
@@ -19255,46 +18131,43 @@ export type GitlabSubscriptionHistoryEdge = {
 };
 
 /** Types of add-ons */
-export enum GitlabSubscriptionsAddOnType {
+export type GitlabSubscriptionsAddOnType =
   /** GitLab Duo Pro seat add-on. */
-  CodeSuggestions = 'CODE_SUGGESTIONS',
+  | 'CODE_SUGGESTIONS'
   /** GitLab Duo with Amazon Q seat add-on. */
-  DuoAmazonQ = 'DUO_AMAZON_Q',
+  | 'DUO_AMAZON_Q'
   /** GitLab Duo Enterprise seat add-on. */
-  DuoEnterprise = 'DUO_ENTERPRISE'
-}
+  | 'DUO_ENTERPRISE';
 
 /** Role of User */
-export enum GitlabSubscriptionsUserRole {
+export type GitlabSubscriptionsUserRole =
   /** Developer. */
-  Developer = 'DEVELOPER',
+  | 'DEVELOPER'
   /** Guest. */
-  Guest = 'GUEST',
+  | 'GUEST'
   /** Maintainer. */
-  Maintainer = 'MAINTAINER',
+  | 'MAINTAINER'
   /** Owner. */
-  Owner = 'OWNER',
+  | 'OWNER'
   /** Planner. */
-  Planner = 'PLANNER',
+  | 'PLANNER'
   /** Reporter. */
-  Reporter = 'REPORTER'
-}
+  | 'REPORTER';
 
 /** Values for sorting users */
-export enum GitlabSubscriptionsUserSort {
+export type GitlabSubscriptionsUserSort =
   /** Id by ascending order. */
-  IdAsc = 'ID_ASC',
+  | 'ID_ASC'
   /** Id by descending order. */
-  IdDesc = 'ID_DESC',
+  | 'ID_DESC'
   /** Last activity by ascending order. */
-  LastActivityOnAsc = 'LAST_ACTIVITY_ON_ASC',
+  | 'LAST_ACTIVITY_ON_ASC'
   /** Last activity by descending order. */
-  LastActivityOnDesc = 'LAST_ACTIVITY_ON_DESC',
+  | 'LAST_ACTIVITY_ON_DESC'
   /** Name by ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Name by descending order. */
-  NameDesc = 'NAME_DESC'
-}
+  | 'NAME_DESC';
 
 /** A base type of Google Artifact Registry artifacts */
 export type GoogleCloudArtifactRegistryArtifact = GoogleCloudArtifactRegistryDockerImage;
@@ -19323,32 +18196,31 @@ export type GoogleCloudArtifactRegistryArtifactEdge = {
 };
 
 /** Values for sorting artifacts */
-export enum GoogleCloudArtifactRegistryArtifactsSort {
+export type GoogleCloudArtifactRegistryArtifactsSort =
   /** Ordered by `build_time` in ascending order. */
-  BuildTimeAsc = 'BUILD_TIME_ASC',
+  | 'BUILD_TIME_ASC'
   /** Ordered by `build_time` in descending order. */
-  BuildTimeDesc = 'BUILD_TIME_DESC',
+  | 'BUILD_TIME_DESC'
   /** Ordered by `image_size_bytes` in ascending order. */
-  ImageSizeBytesAsc = 'IMAGE_SIZE_BYTES_ASC',
+  | 'IMAGE_SIZE_BYTES_ASC'
   /** Ordered by `image_size_bytes` in descending order. */
-  ImageSizeBytesDesc = 'IMAGE_SIZE_BYTES_DESC',
+  | 'IMAGE_SIZE_BYTES_DESC'
   /** Ordered by `media_type` in ascending order. */
-  MediaTypeAsc = 'MEDIA_TYPE_ASC',
+  | 'MEDIA_TYPE_ASC'
   /** Ordered by `media_type` in descending order. */
-  MediaTypeDesc = 'MEDIA_TYPE_DESC',
+  | 'MEDIA_TYPE_DESC'
   /** Ordered by `name` in ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Ordered by `name` in descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Ordered by `update_time` in ascending order. */
-  UpdateTimeAsc = 'UPDATE_TIME_ASC',
+  | 'UPDATE_TIME_ASC'
   /** Ordered by `update_time` in descending order. */
-  UpdateTimeDesc = 'UPDATE_TIME_DESC',
+  | 'UPDATE_TIME_DESC'
   /** Ordered by `upload_time` in ascending order. */
-  UploadTimeAsc = 'UPLOAD_TIME_ASC',
+  | 'UPLOAD_TIME_ASC'
   /** Ordered by `upload_time` in descending order. */
-  UploadTimeDesc = 'UPLOAD_TIME_DESC'
-}
+  | 'UPLOAD_TIME_DESC';
 
 /** Represents a docker artifact of Google Artifact Registry */
 export type GoogleCloudArtifactRegistryDockerImage = {
@@ -21420,16 +20292,15 @@ export type GroupMemberEdge = {
 };
 
 /** Group member relation */
-export enum GroupMemberRelation {
+export type GroupMemberRelation =
   /** Members in the group's subgroups. */
-  Descendants = 'DESCENDANTS',
+  | 'DESCENDANTS'
   /** Members in the group itself. */
-  Direct = 'DIRECT',
+  | 'DIRECT'
   /** Members in the group's ancestor groups. */
-  Inherited = 'INHERITED',
+  | 'INHERITED'
   /** Invited group's members. */
-  SharedFromGroups = 'SHARED_FROM_GROUPS'
-}
+  | 'SHARED_FROM_GROUPS';
 
 /** Autogenerated input type of GroupMembersExport */
 export type GroupMembersExportInput = {
@@ -21451,14 +20322,13 @@ export type GroupMembersExportPayload = {
 };
 
 /** User permission on groups */
-export enum GroupPermission {
+export type GroupPermission =
   /** Groups where the user can create projects. */
-  CreateProjects = 'CREATE_PROJECTS',
+  | 'CREATE_PROJECTS'
   /** Groups where the user can import projects to. */
-  ImportProjects = 'IMPORT_PROJECTS',
+  | 'IMPORT_PROJECTS'
   /** Groups where the user can transfer projects to. */
-  TransferProjects = 'TRANSFER_PROJECTS'
-}
+  | 'TRANSFER_PROJECTS';
 
 export type GroupPermissions = {
   __typename?: 'GroupPermissions';
@@ -21486,12 +20356,11 @@ export type GroupProjectRequirementComplianceStatusInput = {
 };
 
 /** Values for sorting releases belonging to a group */
-export enum GroupReleaseSort {
+export type GroupReleaseSort =
   /** Released at by ascending order. */
-  ReleasedAtAsc = 'RELEASED_AT_ASC',
+  | 'RELEASED_AT_ASC'
   /** Released at by descending order. */
-  ReleasedAtDesc = 'RELEASED_AT_DESC'
-}
+  | 'RELEASED_AT_DESC';
 
 /** Contains release-related statistics about a group */
 export type GroupReleaseStats = {
@@ -21609,10 +20478,9 @@ export type GroupSecurityPolicySource = {
 };
 
 /** Values for sorting groups */
-export enum GroupSort {
+export type GroupSort =
   /** Most similar to the search query. */
-  Similarity = 'SIMILARITY'
-}
+  | 'SIMILARITY';
 
 /** Contains statistics about a group */
 export type GroupStats = {
@@ -21838,12 +20706,11 @@ export type GroupWikiRepositoryRegistryEdge = {
 };
 
 /** Values for grouping compute usage data. */
-export enum GroupingEnum {
+export type GroupingEnum =
   /** Aggregate usage data across all namespaces in the instance. */
-  InstanceAggregate = 'INSTANCE_AGGREGATE',
+  | 'INSTANCE_AGGREGATE'
   /** Group data by individual root namespace. */
-  PerRootNamespace = 'PER_ROOT_NAMESPACE'
-}
+  | 'PER_ROOT_NAMESPACE';
 
 export type Groups = {
   __typename?: 'Groups';
@@ -21860,28 +20727,26 @@ export type Groups = {
 };
 
 /** Health status of an issue or epic */
-export enum HealthStatus {
+export type HealthStatus =
   /** At risk */
-  AtRisk = 'atRisk',
+  | 'atRisk'
   /** Needs attention */
-  NeedsAttention = 'needsAttention',
+  | 'needsAttention'
   /** On track */
-  OnTrack = 'onTrack'
-}
+  | 'onTrack';
 
 /** Health status of an issue or epic for filtering */
-export enum HealthStatusFilter {
+export type HealthStatusFilter =
   /** Any health status is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** No health status is assigned. */
-  None = 'NONE',
+  | 'NONE'
   /** At risk */
-  AtRisk = 'atRisk',
+  | 'atRisk'
   /** Needs attention */
-  NeedsAttention = 'needsAttention',
+  | 'needsAttention'
   /** On track */
-  OnTrack = 'onTrack'
-}
+  | 'onTrack';
 
 /** Helm file metadata */
 export type HelmFileMetadata = PackageFileMetadata & {
@@ -22004,32 +20869,31 @@ export type ImagePullSecrets = {
 };
 
 /** Import source */
-export enum ImportSource {
+export type ImportSource =
   /** Bitbucket */
-  Bitbucket = 'BITBUCKET',
+  | 'BITBUCKET'
   /** Bitbucket Server */
-  BitbucketServer = 'BITBUCKET_SERVER',
+  | 'BITBUCKET_SERVER'
   /** Custom Template */
-  CustomTemplate = 'CUSTOM_TEMPLATE',
+  | 'CUSTOM_TEMPLATE'
   /** Fogbugz */
-  Fogbugz = 'FOGBUGZ',
+  | 'FOGBUGZ'
   /** Git */
-  Git = 'GIT',
+  | 'GIT'
   /** Gitea */
-  Gitea = 'GITEA',
+  | 'GITEA'
   /** Github */
-  Github = 'GITHUB',
+  | 'GITHUB'
   /** Gitlab Group */
-  GitlabGroup = 'GITLAB_GROUP',
+  | 'GITLAB_GROUP'
   /** Gitlab Migration */
-  GitlabMigration = 'GITLAB_MIGRATION',
+  | 'GITLAB_MIGRATION'
   /** Gitlab Project */
-  GitlabProject = 'GITLAB_PROJECT',
+  | 'GITLAB_PROJECT'
   /** Manifest */
-  Manifest = 'MANIFEST',
+  | 'MANIFEST'
   /** Not imported */
-  None = 'NONE'
-}
+  | 'NONE';
 
 export type ImportSourceUser = {
   __typename?: 'ImportSourceUser';
@@ -22176,22 +21040,21 @@ export type ImportSourceUserResendNotificationPayload = {
   importSourceUser?: Maybe<ImportSourceUser>;
 };
 
-export enum ImportSourceUserStatus {
+export type ImportSourceUserStatus =
   /** An import source user mapping that is awaiting approval. */
-  AwaitingApproval = 'AWAITING_APPROVAL',
+  | 'AWAITING_APPROVAL'
   /** An import source user mapping that is completed. */
-  Completed = 'COMPLETED',
+  | 'COMPLETED'
   /** An import source user mapping that is failed. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** An import source user mapping that is keep as placeholder. */
-  KeepAsPlaceholder = 'KEEP_AS_PLACEHOLDER',
+  | 'KEEP_AS_PLACEHOLDER'
   /** An import source user mapping that is pending reassignment. */
-  PendingReassignment = 'PENDING_REASSIGNMENT',
+  | 'PENDING_REASSIGNMENT'
   /** An import source user mapping that is reassignment in progress. */
-  ReassignmentInProgress = 'REASSIGNMENT_IN_PROGRESS',
+  | 'REASSIGNMENT_IN_PROGRESS'
   /** An import source user mapping that is rejected. */
-  Rejected = 'REJECTED'
-}
+  | 'REJECTED';
 
 /** Describes an incident management on-call rotation */
 export type IncidentManagementOncallRotation = {
@@ -22909,10 +21772,9 @@ export type IntegrationExclusionEdge = {
 };
 
 /** Integration Names */
-export enum IntegrationType {
+export type IntegrationType =
   /** Beyond Identity. */
-  BeyondIdentity = 'BEYOND_IDENTITY'
-}
+  | 'BEYOND_IDENTITY';
 
 /** Represents an issuable. */
 export type Issuable = Epic | Issue | MergeRequest | WorkItem;
@@ -22997,58 +21859,53 @@ export type IssuableResourceLinkEdge = {
 };
 
 /** Issuable resource link type enum */
-export enum IssuableResourceLinkType {
+export type IssuableResourceLinkType =
   /** General link type */
-  General = 'general',
+  | 'general'
   /** Pagerduty link type */
-  Pagerduty = 'pagerduty',
+  | 'pagerduty'
   /** Slack link type */
-  Slack = 'slack',
+  | 'slack'
   /** Zoom link type */
-  Zoom = 'zoom'
-}
+  | 'zoom';
 
 /** Fields to perform the search in */
-export enum IssuableSearchableField {
+export type IssuableSearchableField =
   /** Search in description field. */
-  Description = 'DESCRIPTION',
+  | 'DESCRIPTION'
   /** Search in title field. */
-  Title = 'TITLE'
-}
+  | 'TITLE';
 
 /** Incident severity */
-export enum IssuableSeverity {
+export type IssuableSeverity =
   /** Critical severity */
-  Critical = 'CRITICAL',
+  | 'CRITICAL'
   /** High severity */
-  High = 'HIGH',
+  | 'HIGH'
   /** Low severity */
-  Low = 'LOW',
+  | 'LOW'
   /** Medium severity */
-  Medium = 'MEDIUM',
+  | 'MEDIUM'
   /** Unknown severity */
-  Unknown = 'UNKNOWN'
-}
+  | 'UNKNOWN';
 
 /** State of a GitLab issue or merge request */
-export enum IssuableState {
+export type IssuableState =
   /** All available. */
-  All = 'all',
+  | 'all'
   /** In closed state. */
-  Closed = 'closed',
+  | 'closed'
   /** Discussion has been locked. */
-  Locked = 'locked',
+  | 'locked'
   /** In open state. */
-  Opened = 'opened'
-}
+  | 'opened';
 
 /** Values for subscribing and unsubscribing from issuables */
-export enum IssuableSubscriptionEvent {
+export type IssuableSubscriptionEvent =
   /** Subscribe to an issuable. */
-  Subscribe = 'SUBSCRIBE',
+  | 'SUBSCRIBE'
   /** Unsubscribe from an issuable. */
-  Unsubscribe = 'UNSUBSCRIBE'
-}
+  | 'UNSUBSCRIBE';
 
 export type Issue = CurrentUserTodos & NoteableInterface & Todoable & {
   __typename?: 'Issue';
@@ -23373,10 +22230,9 @@ export type IssueConnection = {
 };
 
 /** Iteration ID wildcard values for issue creation */
-export enum IssueCreationIterationWildcardId {
+export type IssueCreationIterationWildcardId =
   /** Current iteration. */
-  Current = 'CURRENT'
-}
+  | 'CURRENT';
 
 /** An edge in a connection. */
 export type IssueEdge = {
@@ -23388,16 +22244,15 @@ export type IssueEdge = {
 };
 
 /** Issue escalation status values */
-export enum IssueEscalationStatus {
+export type IssueEscalationStatus =
   /** Someone is actively investigating the problem. */
-  Acknowledged = 'ACKNOWLEDGED',
+  | 'ACKNOWLEDGED'
   /** No action will be taken. */
-  Ignored = 'IGNORED',
+  | 'IGNORED'
   /** The problem has been addressed. */
-  Resolved = 'RESOLVED',
+  | 'RESOLVED'
   /** Investigation has not started. */
-  Triggered = 'TRIGGERED'
-}
+  | 'TRIGGERED';
 
 /** Autogenerated input type of IssueLinkAlerts */
 export type IssueLinkAlertsInput = {
@@ -23791,114 +22646,99 @@ export type IssueSetWeightPayload = {
 };
 
 /** Values for sorting issues */
-export enum IssueSort {
+export type IssueSort =
   /** Blocking issues count by ascending order. */
-  BlockingIssuesAsc = 'BLOCKING_ISSUES_ASC',
+  | 'BLOCKING_ISSUES_ASC'
   /** Blocking issues count by descending order. */
-  BlockingIssuesDesc = 'BLOCKING_ISSUES_DESC',
+  | 'BLOCKING_ISSUES_DESC'
   /** Closed time by ascending order. */
-  ClosedAtAsc = 'CLOSED_AT_ASC',
+  | 'CLOSED_AT_ASC'
   /** Closed time by descending order. */
-  ClosedAtDesc = 'CLOSED_AT_DESC',
+  | 'CLOSED_AT_DESC'
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Due date by ascending order. */
-  DueDateAsc = 'DUE_DATE_ASC',
+  | 'DUE_DATE_ASC'
   /** Due date by descending order. */
-  DueDateDesc = 'DUE_DATE_DESC',
+  | 'DUE_DATE_DESC'
   /** Status from triggered to resolved. */
-  EscalationStatusAsc = 'ESCALATION_STATUS_ASC',
+  | 'ESCALATION_STATUS_ASC'
   /** Status from resolved to triggered. */
-  EscalationStatusDesc = 'ESCALATION_STATUS_DESC',
+  | 'ESCALATION_STATUS_DESC'
   /** Issues with healthy issues first. */
-  HealthStatusAsc = 'HEALTH_STATUS_ASC',
+  | 'HEALTH_STATUS_ASC'
   /** Issues with unhealthy issues first. */
-  HealthStatusDesc = 'HEALTH_STATUS_DESC',
+  | 'HEALTH_STATUS_DESC'
   /** Label priority by ascending order. */
-  LabelPriorityAsc = 'LABEL_PRIORITY_ASC',
+  | 'LABEL_PRIORITY_ASC'
   /** Label priority by descending order. */
-  LabelPriorityDesc = 'LABEL_PRIORITY_DESC',
+  | 'LABEL_PRIORITY_DESC'
   /** Milestone due date by ascending order. */
-  MilestoneDueAsc = 'MILESTONE_DUE_ASC',
+  | 'MILESTONE_DUE_ASC'
   /** Milestone due date by descending order. */
-  MilestoneDueDesc = 'MILESTONE_DUE_DESC',
+  | 'MILESTONE_DUE_DESC'
   /** Number of upvotes (awarded "thumbs up" emoji) by ascending order. */
-  PopularityAsc = 'POPULARITY_ASC',
+  | 'POPULARITY_ASC'
   /** Number of upvotes (awarded "thumbs up" emoji) by descending order. */
-  PopularityDesc = 'POPULARITY_DESC',
+  | 'POPULARITY_DESC'
   /** Priority by ascending order. */
-  PriorityAsc = 'PRIORITY_ASC',
+  | 'PRIORITY_ASC'
   /** Priority by descending order. */
-  PriorityDesc = 'PRIORITY_DESC',
+  | 'PRIORITY_DESC'
   /** Published issues shown last. */
-  PublishedAsc = 'PUBLISHED_ASC',
+  | 'PUBLISHED_ASC'
   /** Published issues shown first. */
-  PublishedDesc = 'PUBLISHED_DESC',
+  | 'PUBLISHED_DESC'
   /** Relative position by ascending order. */
-  RelativePositionAsc = 'RELATIVE_POSITION_ASC',
+  | 'RELATIVE_POSITION_ASC'
   /** Severity from less critical to more critical. */
-  SeverityAsc = 'SEVERITY_ASC',
+  | 'SEVERITY_ASC'
   /** Severity from more critical to less critical. */
-  SeverityDesc = 'SEVERITY_DESC',
+  | 'SEVERITY_DESC'
   /** Issues with earliest SLA due time shown first. */
-  SlaDueAtAsc = 'SLA_DUE_AT_ASC',
+  | 'SLA_DUE_AT_ASC'
   /** Issues with latest SLA due time shown first. */
-  SlaDueAtDesc = 'SLA_DUE_AT_DESC',
+  | 'SLA_DUE_AT_DESC'
   /** Title by ascending order. */
-  TitleAsc = 'TITLE_ASC',
+  | 'TITLE_ASC'
   /** Title by descending order. */
-  TitleDesc = 'TITLE_DESC',
+  | 'TITLE_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
+  | 'UPDATED_DESC'
   /** Weight by ascending order. */
-  WeightAsc = 'WEIGHT_ASC',
+  | 'WEIGHT_ASC'
   /** Weight by descending order. */
-  WeightDesc = 'WEIGHT_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'WEIGHT_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** State of a GitLab issue */
-export enum IssueState {
+export type IssueState =
   /** All available. */
-  All = 'all',
+  | 'all'
   /** In closed state. */
-  Closed = 'closed',
+  | 'closed'
   /** Discussion has been locked. */
-  Locked = 'locked',
+  | 'locked'
   /** In open state. */
-  Opened = 'opened'
-}
+  | 'opened';
 
 /** Values for issue state events */
-export enum IssueStateEvent {
+export type IssueStateEvent =
   /** Closes the issue. */
-  Close = 'CLOSE',
+  | 'CLOSE'
   /** Reopens the issue. */
-  Reopen = 'REOPEN'
-}
+  | 'REOPEN';
 
 /** Represents total number of issues for the represented statuses */
 export type IssueStatusCountsType = {
@@ -23912,35 +22752,25 @@ export type IssueStatusCountsType = {
 };
 
 /** Issue type */
-export enum IssueType {
-  /**
-   * Epic issue type. Available only when feature epics is available and the feature flag `work_item_epics` is enabled. Introduced in GitLab 16.7: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.7.
-   */
-  Epic = 'EPIC',
+export type IssueType =
+  /** Epic issue type. Available only when feature epics is available and the feature flag `work_item_epics` is enabled. Introduced in GitLab 16.7: **Status**: Experiment. */
+  | 'EPIC'
   /** Incident issue type */
-  Incident = 'INCIDENT',
+  | 'INCIDENT'
   /** Issue issue type */
-  Issue = 'ISSUE',
-  /**
-   * Key Result issue type. Available only when feature flag `okrs_mvc` is enabled. Introduced in GitLab 15.7: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 15.7.
-   */
-  KeyResult = 'KEY_RESULT',
-  /**
-   * Objective issue type. Available only when feature flag `okrs_mvc` is enabled. Introduced in GitLab 15.6: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 15.6.
-   */
-  Objective = 'OBJECTIVE',
+  | 'ISSUE'
+  /** Key Result issue type. Available only when feature flag `okrs_mvc` is enabled. Introduced in GitLab 15.7: **Status**: Experiment. */
+  | 'KEY_RESULT'
+  /** Objective issue type. Available only when feature flag `okrs_mvc` is enabled. Introduced in GitLab 15.6: **Status**: Experiment. */
+  | 'OBJECTIVE'
   /** Requirement issue type */
-  Requirement = 'REQUIREMENT',
+  | 'REQUIREMENT'
   /** Task issue type */
-  Task = 'TASK',
+  | 'TASK'
   /** Test Case issue type */
-  TestCase = 'TEST_CASE',
+  | 'TEST_CASE'
   /** Ticket issue type */
-  Ticket = 'TICKET'
-}
+  | 'TICKET';
 
 /** Autogenerated input type of IssueUnlinkAlert */
 export type IssueUnlinkAlertInput = {
@@ -24219,44 +23049,40 @@ export type IterationEdge = {
 };
 
 /** Fields to perform the search in */
-export enum IterationSearchableField {
+export type IterationSearchableField =
   /** Search in cadence_title field. */
-  CadenceTitle = 'CADENCE_TITLE',
+  | 'CADENCE_TITLE'
   /** Search in title field. */
-  Title = 'TITLE'
-}
+  | 'TITLE';
 
 /** Iteration sort values */
-export enum IterationSort {
+export type IterationSort =
   /** Sort by cadence id in ascending and due date in ascending order. */
-  CadenceAndDueDateAsc = 'CADENCE_AND_DUE_DATE_ASC',
+  | 'CADENCE_AND_DUE_DATE_ASC'
   /** Sort by cadence id in ascending and due date in descending order. */
-  CadenceAndDueDateDesc = 'CADENCE_AND_DUE_DATE_DESC'
-}
+  | 'CADENCE_AND_DUE_DATE_DESC';
 
 /** State of a GitLab iteration */
-export enum IterationState {
+export type IterationState =
   /** Any iteration. */
-  All = 'all',
+  | 'all'
   /** Closed iteration. */
-  Closed = 'closed',
+  | 'closed'
   /** Current iteration. */
-  Current = 'current',
+  | 'current'
   /** Open iteration. */
-  Opened = 'opened',
+  | 'opened'
   /** Upcoming iteration. */
-  Upcoming = 'upcoming'
-}
+  | 'upcoming';
 
 /** Iteration ID wildcard values */
-export enum IterationWildcardId {
+export type IterationWildcardId =
   /** An iteration is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** Current iteration. */
-  Current = 'CURRENT',
+  | 'CURRENT'
   /** No iteration is assigned. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 export type JiraImport = {
   __typename?: 'JiraImport';
@@ -24414,72 +23240,71 @@ export type JiraUsersMappingInputType = {
   jiraAccountId: Scalars['String']['input'];
 };
 
-export enum JobArtifactFileType {
+export type JobArtifactFileType =
   /** ACCESSIBILITY job artifact file type. */
-  Accessibility = 'ACCESSIBILITY',
+  | 'ACCESSIBILITY'
   /** ANNOTATIONS job artifact file type. */
-  Annotations = 'ANNOTATIONS',
+  | 'ANNOTATIONS'
   /** API FUZZING job artifact file type. */
-  ApiFuzzing = 'API_FUZZING',
+  | 'API_FUZZING'
   /** ARCHIVE job artifact file type. */
-  Archive = 'ARCHIVE',
+  | 'ARCHIVE'
   /** BROWSER PERFORMANCE job artifact file type. */
-  BrowserPerformance = 'BROWSER_PERFORMANCE',
+  | 'BROWSER_PERFORMANCE'
   /** CLUSTER APPLICATIONS job artifact file type. */
-  ClusterApplications = 'CLUSTER_APPLICATIONS',
+  | 'CLUSTER_APPLICATIONS'
   /** CLUSTER IMAGE SCANNING job artifact file type. */
-  ClusterImageScanning = 'CLUSTER_IMAGE_SCANNING',
+  | 'CLUSTER_IMAGE_SCANNING'
   /** COBERTURA job artifact file type. */
-  Cobertura = 'COBERTURA',
+  | 'COBERTURA'
   /** CODE QUALITY job artifact file type. */
-  Codequality = 'CODEQUALITY',
+  | 'CODEQUALITY'
   /** CONTAINER SCANNING job artifact file type. */
-  ContainerScanning = 'CONTAINER_SCANNING',
+  | 'CONTAINER_SCANNING'
   /** COVERAGE FUZZING job artifact file type. */
-  CoverageFuzzing = 'COVERAGE_FUZZING',
+  | 'COVERAGE_FUZZING'
   /** CYCLONEDX job artifact file type. */
-  Cyclonedx = 'CYCLONEDX',
+  | 'CYCLONEDX'
   /** DAST job artifact file type. */
-  Dast = 'DAST',
+  | 'DAST'
   /** DEPENDENCY SCANNING job artifact file type. */
-  DependencyScanning = 'DEPENDENCY_SCANNING',
+  | 'DEPENDENCY_SCANNING'
   /** DOTENV job artifact file type. */
-  Dotenv = 'DOTENV',
+  | 'DOTENV'
   /** JACOCO job artifact file type. */
-  Jacoco = 'JACOCO',
+  | 'JACOCO'
   /** JUNIT job artifact file type. */
-  Junit = 'JUNIT',
+  | 'JUNIT'
   /** LICENSE SCANNING job artifact file type. */
-  LicenseScanning = 'LICENSE_SCANNING',
+  | 'LICENSE_SCANNING'
   /** LOAD PERFORMANCE job artifact file type. */
-  LoadPerformance = 'LOAD_PERFORMANCE',
+  | 'LOAD_PERFORMANCE'
   /** LSIF job artifact file type. */
-  Lsif = 'LSIF',
+  | 'LSIF'
   /** METADATA job artifact file type. */
-  Metadata = 'METADATA',
+  | 'METADATA'
   /** METRICS job artifact file type. */
-  Metrics = 'METRICS',
+  | 'METRICS'
   /** METRICS REFEREE job artifact file type. */
-  MetricsReferee = 'METRICS_REFEREE',
+  | 'METRICS_REFEREE'
   /** NETWORK REFEREE job artifact file type. */
-  NetworkReferee = 'NETWORK_REFEREE',
+  | 'NETWORK_REFEREE'
   /** PERFORMANCE job artifact file type. */
-  Performance = 'PERFORMANCE',
+  | 'PERFORMANCE'
   /** REPOSITORY XRAY job artifact file type. */
-  RepositoryXray = 'REPOSITORY_XRAY',
+  | 'REPOSITORY_XRAY'
   /** REQUIREMENTS job artifact file type. */
-  Requirements = 'REQUIREMENTS',
+  | 'REQUIREMENTS'
   /** REQUIREMENTS V2 job artifact file type. */
-  RequirementsV2 = 'REQUIREMENTS_V2',
+  | 'REQUIREMENTS_V2'
   /** SAST job artifact file type. */
-  Sast = 'SAST',
+  | 'SAST'
   /** SECRET DETECTION job artifact file type. */
-  SecretDetection = 'SECRET_DETECTION',
+  | 'SECRET_DETECTION'
   /** TERRAFORM job artifact file type. */
-  Terraform = 'TERRAFORM',
+  | 'TERRAFORM'
   /** TRACE job artifact file type. */
-  Trace = 'TRACE'
-}
+  | 'TRACE';
 
 /** Represents the Geo replication and verification state of a job_artifact. */
 export type JobArtifactRegistry = {
@@ -24832,12 +23657,11 @@ export type LabelInterface = {
 };
 
 /** List of fields where the provided searchTerm should be looked up */
-export enum LabelSearchFieldList {
+export type LabelSearchFieldList =
   /** Search in the label description. */
-  Description = 'DESCRIPTION',
+  | 'DESCRIPTION'
   /** Search in the label title. */
-  Title = 'TITLE'
-}
+  | 'TITLE';
 
 /** Represents the Geo sync and verification state of an LFS object */
 export type LfsObjectRegistry = {
@@ -25011,14 +23835,13 @@ export type LinkedWorkItemTypeEdge = {
 };
 
 /** List limit metric setting */
-export enum ListLimitMetric {
+export type ListLimitMetric =
   /** Limit list by number and total weight of issues. */
-  AllMetrics = 'all_metrics',
+  | 'all_metrics'
   /** Limit list by number of issues. */
-  IssueCount = 'issue_count',
+  | 'issue_count'
   /** Limit list by total weight of issues. */
-  IssueWeights = 'issue_weights'
-}
+  | 'issue_weights';
 
 export type Location = {
   __typename?: 'Location';
@@ -25098,62 +23921,59 @@ export type MavenMetadata = {
 };
 
 /** Possible identifier types for a measurement */
-export enum MeasurementIdentifier {
+export type MeasurementIdentifier =
   /** Group count. */
-  Groups = 'GROUPS',
+  | 'GROUPS'
   /** Issue count. */
-  Issues = 'ISSUES',
+  | 'ISSUES'
   /** Merge request count. */
-  MergeRequests = 'MERGE_REQUESTS',
+  | 'MERGE_REQUESTS'
   /** Pipeline count. */
-  Pipelines = 'PIPELINES',
+  | 'PIPELINES'
   /** Pipeline count with canceled status. */
-  PipelinesCanceled = 'PIPELINES_CANCELED',
+  | 'PIPELINES_CANCELED'
   /** Pipeline count with failed status. */
-  PipelinesFailed = 'PIPELINES_FAILED',
+  | 'PIPELINES_FAILED'
   /** Pipeline count with skipped status. */
-  PipelinesSkipped = 'PIPELINES_SKIPPED',
+  | 'PIPELINES_SKIPPED'
   /** Pipeline count with success status. */
-  PipelinesSucceeded = 'PIPELINES_SUCCEEDED',
+  | 'PIPELINES_SUCCEEDED'
   /** Project count. */
-  Projects = 'PROJECTS',
+  | 'PROJECTS'
   /** User count. */
-  Users = 'USERS'
-}
+  | 'USERS';
 
 /** Access level of a group or project member */
-export enum MemberAccessLevel {
+export type MemberAccessLevel =
   /** The Developer role gives users access to contribute code while restricting sensitive administrative actions. */
-  Developer = 'DEVELOPER',
+  | 'DEVELOPER'
   /** The Guest role is for users who need visibility into a project or group but should not have the ability to make changes, such as external stakeholders. */
-  Guest = 'GUEST',
+  | 'GUEST'
   /** The Maintainer role is primarily used for managing code reviews, approvals, and administrative settings for projects. This role can also manage project memberships. */
-  Maintainer = 'MAINTAINER',
+  | 'MAINTAINER'
   /** The Minimal Access role is for users who need the least amount of access into groups and projects. You can assign this role as a default, before giving a user another role with more permissions. */
-  MinimalAccess = 'MINIMAL_ACCESS',
+  | 'MINIMAL_ACCESS'
   /** The Owner role is typically assigned to the individual or team responsible for managing and maintaining the group or creating the project. This role has the highest level of administrative control, and can manage all aspects of the group or project, including managing other Owners. */
-  Owner = 'OWNER',
+  | 'OWNER'
   /** The Planner role is suitable for team members who need to manage projects and track work items but do not need to contribute code. */
-  Planner = 'PLANNER',
+  | 'PLANNER'
   /** The Reporter role is suitable for team members who need to stay informed about a project or group but do not actively contribute code. */
-  Reporter = 'REPORTER'
-}
+  | 'REPORTER';
 
 /** Name of access levels of a group or project member */
-export enum MemberAccessLevelName {
+export type MemberAccessLevelName =
   /** Developer access. */
-  Developer = 'DEVELOPER',
+  | 'DEVELOPER'
   /** Guest access. */
-  Guest = 'GUEST',
+  | 'GUEST'
   /** Maintainer access. */
-  Maintainer = 'MAINTAINER',
+  | 'MAINTAINER'
   /** Owner access. */
-  Owner = 'OWNER',
+  | 'OWNER'
   /** Planner access. */
-  Planner = 'PLANNER',
+  | 'PLANNER'
   /** Reporter access. */
-  Reporter = 'REPORTER'
-}
+  | 'REPORTER';
 
 /** Represents a Member Approval queued for role promotion. */
 export type MemberApproval = {
@@ -25203,14 +24023,13 @@ export type MemberApprovalEdge = {
 };
 
 /** Types of member approval status. */
-export enum MemberApprovalStatusType {
+export type MemberApprovalStatusType =
   /** Approved promotion request. */
-  Approved = 'APPROVED',
+  | 'APPROVED'
   /** Denied promotion request. */
-  Denied = 'DENIED',
+  | 'DENIED'
   /** Pending promotion request. */
-  Pending = 'PENDING'
-}
+  | 'PENDING';
 
 export type MemberInterface = {
   /** GitLab::Access level. */
@@ -25353,33 +24172,17 @@ export type MemberRoleAdminDeletePayload = {
 };
 
 /** Member role admin permission */
-export enum MemberRoleAdminPermission {
-  /**
-   * Read CI/CD details including runners and jobs. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  ReadAdminCicd = 'READ_ADMIN_CICD',
-  /**
-   * Read-only access to admin dashboard Introduced in GitLab 17.6: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.6.
-   */
-  ReadAdminDashboard = 'READ_ADMIN_DASHBOARD',
-  /**
-   * Allows read access to system monitoring including system info, background migrations, health checks, audit logs, and gitaly in the Admin Area. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  ReadAdminMonitoring = 'READ_ADMIN_MONITORING',
-  /**
-   * Read subscription details in the Admin area. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  ReadAdminSubscription = 'READ_ADMIN_SUBSCRIPTION',
-  /**
-   * Allows read access to the user list and user details in the Admin area Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  ReadAdminUsers = 'READ_ADMIN_USERS'
-}
+export type MemberRoleAdminPermission =
+  /** Read CI/CD details including runners and jobs. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'READ_ADMIN_CICD'
+  /** Read-only access to admin dashboard Introduced in GitLab 17.6: **Status**: Experiment. */
+  | 'READ_ADMIN_DASHBOARD'
+  /** Allows read access to system monitoring including system info, background migrations, health checks, audit logs, and gitaly in the Admin Area. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'READ_ADMIN_MONITORING'
+  /** Read subscription details in the Admin area. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'READ_ADMIN_SUBSCRIPTION'
+  /** Allows read access to the user list and user details in the Admin area Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'READ_ADMIN_USERS';
 
 /** Autogenerated input type of MemberRoleAdminUpdate */
 export type MemberRoleAdminUpdateInput = {
@@ -25473,143 +24276,132 @@ export type MemberRoleEdge = {
 };
 
 /** Member role permission */
-export enum MemberRolePermission {
+export type MemberRolePermission =
   /** Create, read, update, and delete CI/CD variables. */
-  AdminCicdVariables = 'ADMIN_CICD_VARIABLES',
+  | 'ADMIN_CICD_VARIABLES'
   /** Create, read, update, and delete compliance frameworks. Users with this permission can also assign a compliance framework label to a project, and set the default framework of a group. */
-  AdminComplianceFramework = 'ADMIN_COMPLIANCE_FRAMEWORK',
+  | 'ADMIN_COMPLIANCE_FRAMEWORK'
   /** Add or remove users in a group, and assign roles to users. When assigning a role, users with this custom permission must select a role that has the same or fewer permissions as the default role used as the base for their custom role. */
-  AdminGroupMember = 'ADMIN_GROUP_MEMBER',
+  | 'ADMIN_GROUP_MEMBER'
   /** Create, read, update, and delete integrations with external applications. */
-  AdminIntegrations = 'ADMIN_INTEGRATIONS',
+  | 'ADMIN_INTEGRATIONS'
   /** Allows approval of merge requests. */
-  AdminMergeRequest = 'ADMIN_MERGE_REQUEST',
+  | 'ADMIN_MERGE_REQUEST'
   /** Create, read, update, and delete protected branches for a project. */
-  AdminProtectedBranch = 'ADMIN_PROTECTED_BRANCH',
+  | 'ADMIN_PROTECTED_BRANCH'
   /** Create, read, update, and delete environments */
-  AdminProtectedEnvironments = 'ADMIN_PROTECTED_ENVIRONMENTS',
+  | 'ADMIN_PROTECTED_ENVIRONMENTS'
   /** Configure push rules for repositories at the group or project level. */
-  AdminPushRules = 'ADMIN_PUSH_RULES',
+  | 'ADMIN_PUSH_RULES'
   /** Create, view, edit, and delete group or project Runners. Includes configuring Runner settings. */
-  AdminRunners = 'ADMIN_RUNNERS',
+  | 'ADMIN_RUNNERS'
   /** Edit and manage security testing configurations and settings. */
-  AdminSecurityTesting = 'ADMIN_SECURITY_TESTING',
+  | 'ADMIN_SECURITY_TESTING'
   /** Execute terraform commands, lock/unlock terraform state files, and remove file versions. */
-  AdminTerraformState = 'ADMIN_TERRAFORM_STATE',
+  | 'ADMIN_TERRAFORM_STATE'
   /** Edit the status, linked issue, and severity of a vulnerability object. Also requires the `read_vulnerability` permission. */
-  AdminVulnerability = 'ADMIN_VULNERABILITY',
+  | 'ADMIN_VULNERABILITY'
   /** Manage webhooks */
-  AdminWebHook = 'ADMIN_WEB_HOOK',
+  | 'ADMIN_WEB_HOOK'
   /** Allows archiving of projects. */
-  ArchiveProject = 'ARCHIVE_PROJECT',
+  | 'ARCHIVE_PROJECT'
   /** Manage deploy tokens at the group or project level. */
-  ManageDeployTokens = 'MANAGE_DEPLOY_TOKENS',
+  | 'MANAGE_DEPLOY_TOKENS'
   /** Create, read, update, and delete group access tokens. When creating a token, users with this custom permission must select a role for that token that has the same or fewer permissions as the default role used as the base for the custom role. */
-  ManageGroupAccessTokens = 'MANAGE_GROUP_ACCESS_TOKENS',
+  | 'MANAGE_GROUP_ACCESS_TOKENS'
   /** Configure merge request settings at the group or project level. Group actions include managing merge checks and approval settings. Project actions include managing MR configurations, approval rules and settings, and branch targets. In order to enable Suggested reviewers, the "Manage project access tokens" custom permission needs to be enabled. */
-  ManageMergeRequestSettings = 'MANAGE_MERGE_REQUEST_SETTINGS',
+  | 'MANAGE_MERGE_REQUEST_SETTINGS'
   /** Create, read, update, and delete project access tokens. When creating a token, users with this custom permission must select a role for that token that has the same or fewer permissions as the default role used as the base for the custom role. */
-  ManageProjectAccessTokens = 'MANAGE_PROJECT_ACCESS_TOKENS',
+  | 'MANAGE_PROJECT_ACCESS_TOKENS'
   /** Create, read, update, and delete protected tags. */
-  ManageProtectedTags = 'MANAGE_PROTECTED_TAGS',
+  | 'MANAGE_PROTECTED_TAGS'
   /** Allows linking security policy projects. */
-  ManageSecurityPolicyLink = 'MANAGE_SECURITY_POLICY_LINK',
+  | 'MANAGE_SECURITY_POLICY_LINK'
   /** Read CI/CD details including runners and jobs. */
-  ReadAdminCicd = 'READ_ADMIN_CICD',
+  | 'READ_ADMIN_CICD'
   /** Read-only access to admin dashboard */
-  ReadAdminDashboard = 'READ_ADMIN_DASHBOARD',
+  | 'READ_ADMIN_DASHBOARD'
   /** Allows read access to system monitoring including system info, background migrations, health checks, audit logs, and gitaly in the Admin Area. */
-  ReadAdminMonitoring = 'READ_ADMIN_MONITORING',
+  | 'READ_ADMIN_MONITORING'
   /** Read subscription details in the Admin area. */
-  ReadAdminSubscription = 'READ_ADMIN_SUBSCRIPTION',
+  | 'READ_ADMIN_SUBSCRIPTION'
   /** Allows read access to the user list and user details in the Admin area */
-  ReadAdminUsers = 'READ_ADMIN_USERS',
+  | 'READ_ADMIN_USERS'
   /** Allows read-only access to the source code in the user interface. Does not allow users to edit or download repository archives, clone or pull repositories, view source code in an IDE, or view merge requests for private projects. You can download individual files because read-only access inherently grants the ability to make a local copy of the file. */
-  ReadCode = 'READ_CODE',
+  | 'READ_CODE'
   /** Read compliance capabilities including adherence, violations, and frameworks for groups and projects. */
-  ReadComplianceDashboard = 'READ_COMPLIANCE_DASHBOARD',
+  | 'READ_COMPLIANCE_DASHBOARD'
   /** Read CRM contact. */
-  ReadCrmContact = 'READ_CRM_CONTACT',
+  | 'READ_CRM_CONTACT'
   /** Allows read-only access to the dependencies and licenses. */
-  ReadDependency = 'READ_DEPENDENCY',
+  | 'READ_DEPENDENCY'
   /** Allows read-only access to group or project runners, including the runner fleet dashboard. */
-  ReadRunners = 'READ_RUNNERS',
+  | 'READ_RUNNERS'
   /** Read vulnerability reports and security dashboards. */
-  ReadVulnerability = 'READ_VULNERABILITY',
+  | 'READ_VULNERABILITY'
   /** Ability to delete or restore a group. This ability does not allow deleting top-level groups. Review the Retention period settings to prevent accidental deletion. */
-  RemoveGroup = 'REMOVE_GROUP',
+  | 'REMOVE_GROUP'
   /** Allows deletion of projects. */
-  RemoveProject = 'REMOVE_PROJECT'
-}
+  | 'REMOVE_PROJECT';
 
 /** Member role standard permission */
-export enum MemberRoleStandardPermission {
+export type MemberRoleStandardPermission =
   /** Create, read, update, and delete CI/CD variables. */
-  AdminCicdVariables = 'ADMIN_CICD_VARIABLES',
+  | 'ADMIN_CICD_VARIABLES'
   /** Create, read, update, and delete compliance frameworks. Users with this permission can also assign a compliance framework label to a project, and set the default framework of a group. */
-  AdminComplianceFramework = 'ADMIN_COMPLIANCE_FRAMEWORK',
+  | 'ADMIN_COMPLIANCE_FRAMEWORK'
   /** Add or remove users in a group, and assign roles to users. When assigning a role, users with this custom permission must select a role that has the same or fewer permissions as the default role used as the base for their custom role. */
-  AdminGroupMember = 'ADMIN_GROUP_MEMBER',
+  | 'ADMIN_GROUP_MEMBER'
   /** Create, read, update, and delete integrations with external applications. */
-  AdminIntegrations = 'ADMIN_INTEGRATIONS',
+  | 'ADMIN_INTEGRATIONS'
   /** Allows approval of merge requests. */
-  AdminMergeRequest = 'ADMIN_MERGE_REQUEST',
+  | 'ADMIN_MERGE_REQUEST'
   /** Create, read, update, and delete protected branches for a project. */
-  AdminProtectedBranch = 'ADMIN_PROTECTED_BRANCH',
-  /**
-   * Create, read, update, and delete environments Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  AdminProtectedEnvironments = 'ADMIN_PROTECTED_ENVIRONMENTS',
+  | 'ADMIN_PROTECTED_BRANCH'
+  /** Create, read, update, and delete environments Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'ADMIN_PROTECTED_ENVIRONMENTS'
   /** Configure push rules for repositories at the group or project level. */
-  AdminPushRules = 'ADMIN_PUSH_RULES',
+  | 'ADMIN_PUSH_RULES'
   /** Create, view, edit, and delete group or project Runners. Includes configuring Runner settings. */
-  AdminRunners = 'ADMIN_RUNNERS',
-  /**
-   * Edit and manage security testing configurations and settings. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  AdminSecurityTesting = 'ADMIN_SECURITY_TESTING',
+  | 'ADMIN_RUNNERS'
+  /** Edit and manage security testing configurations and settings. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'ADMIN_SECURITY_TESTING'
   /** Execute terraform commands, lock/unlock terraform state files, and remove file versions. */
-  AdminTerraformState = 'ADMIN_TERRAFORM_STATE',
+  | 'ADMIN_TERRAFORM_STATE'
   /** Edit the status, linked issue, and severity of a vulnerability object. Also requires the `read_vulnerability` permission. */
-  AdminVulnerability = 'ADMIN_VULNERABILITY',
+  | 'ADMIN_VULNERABILITY'
   /** Manage webhooks */
-  AdminWebHook = 'ADMIN_WEB_HOOK',
+  | 'ADMIN_WEB_HOOK'
   /** Allows archiving of projects. */
-  ArchiveProject = 'ARCHIVE_PROJECT',
+  | 'ARCHIVE_PROJECT'
   /** Manage deploy tokens at the group or project level. */
-  ManageDeployTokens = 'MANAGE_DEPLOY_TOKENS',
+  | 'MANAGE_DEPLOY_TOKENS'
   /** Create, read, update, and delete group access tokens. When creating a token, users with this custom permission must select a role for that token that has the same or fewer permissions as the default role used as the base for the custom role. */
-  ManageGroupAccessTokens = 'MANAGE_GROUP_ACCESS_TOKENS',
+  | 'MANAGE_GROUP_ACCESS_TOKENS'
   /** Configure merge request settings at the group or project level. Group actions include managing merge checks and approval settings. Project actions include managing MR configurations, approval rules and settings, and branch targets. In order to enable Suggested reviewers, the "Manage project access tokens" custom permission needs to be enabled. */
-  ManageMergeRequestSettings = 'MANAGE_MERGE_REQUEST_SETTINGS',
+  | 'MANAGE_MERGE_REQUEST_SETTINGS'
   /** Create, read, update, and delete project access tokens. When creating a token, users with this custom permission must select a role for that token that has the same or fewer permissions as the default role used as the base for the custom role. */
-  ManageProjectAccessTokens = 'MANAGE_PROJECT_ACCESS_TOKENS',
-  /**
-   * Create, read, update, and delete protected tags. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  ManageProtectedTags = 'MANAGE_PROTECTED_TAGS',
+  | 'MANAGE_PROJECT_ACCESS_TOKENS'
+  /** Create, read, update, and delete protected tags. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'MANAGE_PROTECTED_TAGS'
   /** Allows linking security policy projects. */
-  ManageSecurityPolicyLink = 'MANAGE_SECURITY_POLICY_LINK',
+  | 'MANAGE_SECURITY_POLICY_LINK'
   /** Allows read-only access to the source code in the user interface. Does not allow users to edit or download repository archives, clone or pull repositories, view source code in an IDE, or view merge requests for private projects. You can download individual files because read-only access inherently grants the ability to make a local copy of the file. */
-  ReadCode = 'READ_CODE',
+  | 'READ_CODE'
   /** Read compliance capabilities including adherence, violations, and frameworks for groups and projects. */
-  ReadComplianceDashboard = 'READ_COMPLIANCE_DASHBOARD',
+  | 'READ_COMPLIANCE_DASHBOARD'
   /** Read CRM contact. */
-  ReadCrmContact = 'READ_CRM_CONTACT',
+  | 'READ_CRM_CONTACT'
   /** Allows read-only access to the dependencies and licenses. */
-  ReadDependency = 'READ_DEPENDENCY',
+  | 'READ_DEPENDENCY'
   /** Allows read-only access to group or project runners, including the runner fleet dashboard. */
-  ReadRunners = 'READ_RUNNERS',
+  | 'READ_RUNNERS'
   /** Read vulnerability reports and security dashboards. */
-  ReadVulnerability = 'READ_VULNERABILITY',
+  | 'READ_VULNERABILITY'
   /** Ability to delete or restore a group. This ability does not allow deleting top-level groups. Review the Retention period settings to prevent accidental deletion. */
-  RemoveGroup = 'REMOVE_GROUP',
+  | 'REMOVE_GROUP'
   /** Allows deletion of projects. */
-  RemoveProject = 'REMOVE_PROJECT'
-}
+  | 'REMOVE_PROJECT';
 
 /** Autogenerated input type of MemberRoleToUserAssign */
 export type MemberRoleToUserAssignInput = {
@@ -25661,70 +24453,55 @@ export type MemberRoleUpdatePayload = {
 };
 
 /** Access level of a group or project member */
-export enum MemberRolesAccessLevel {
+export type MemberRolesAccessLevel =
   /** The Developer role gives users access to contribute code while restricting sensitive administrative actions. */
-  Developer = 'DEVELOPER',
+  | 'DEVELOPER'
   /** The Guest role is for users who need visibility into a project or group but should not have the ability to make changes, such as external stakeholders. */
-  Guest = 'GUEST',
+  | 'GUEST'
   /** The Maintainer role is primarily used for managing code reviews, approvals, and administrative settings for projects. This role can also manage project memberships. */
-  Maintainer = 'MAINTAINER',
+  | 'MAINTAINER'
   /** The Minimal Access role is for users who need the least amount of access into groups and projects. You can assign this role as a default, before giving a user another role with more permissions. */
-  MinimalAccess = 'MINIMAL_ACCESS',
+  | 'MINIMAL_ACCESS'
   /** The Planner role is suitable for team members who need to manage projects and track work items but do not need to contribute code. */
-  Planner = 'PLANNER',
+  | 'PLANNER'
   /** The Reporter role is suitable for team members who need to stay informed about a project or group but do not actively contribute code. */
-  Reporter = 'REPORTER'
-}
+  | 'REPORTER';
 
 /** Values for ordering member roles by a specific field */
-export enum MemberRolesOrderBy {
+export type MemberRolesOrderBy =
   /** Ordered by creation time. */
-  CreatedAt = 'CREATED_AT',
+  | 'CREATED_AT'
   /** Ordered by id. */
-  Id = 'ID',
+  | 'ID'
   /** Ordered by name. */
-  Name = 'NAME'
-}
+  | 'NAME';
 
 /** Values for sorting members */
-export enum MemberSort {
+export type MemberSort =
   /** Access level ascending order. */
-  AccessLevelAsc = 'ACCESS_LEVEL_ASC',
+  | 'ACCESS_LEVEL_ASC'
   /** Access level descending order. */
-  AccessLevelDesc = 'ACCESS_LEVEL_DESC',
+  | 'ACCESS_LEVEL_DESC'
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
+  | 'UPDATED_DESC'
   /** User's full name ascending order. */
-  UserFullNameAsc = 'USER_FULL_NAME_ASC',
+  | 'USER_FULL_NAME_ASC'
   /** User's full name descending order. */
-  UserFullNameDesc = 'USER_FULL_NAME_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'USER_FULL_NAME_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Defines which user roles, users, or groups can merge into a protected branch. */
 export type MergeAccessLevel = {
@@ -27352,12 +26129,11 @@ export type MergeRequestMergeabilityCheck = {
 };
 
 /** New state to apply to a merge request. */
-export enum MergeRequestNewState {
+export type MergeRequestNewState =
   /** Close the merge request if it is open. */
-  Closed = 'CLOSED',
+  | 'CLOSED'
   /** Open the merge request if it is closed. */
-  Open = 'OPEN'
-}
+  | 'OPEN';
 
 /** A user participating in a merge request. */
 export type MergeRequestParticipant = Todoable & User & {
@@ -27848,20 +26624,19 @@ export type MergeRequestPermissions = {
 };
 
 /** State of a review of a GitLab merge request. */
-export enum MergeRequestReviewState {
+export type MergeRequestReviewState =
   /** Merge request reviewer has approved the changes. */
-  Approved = 'APPROVED',
+  | 'APPROVED'
   /** Merge request reviewer has requested changes. */
-  RequestedChanges = 'REQUESTED_CHANGES',
+  | 'REQUESTED_CHANGES'
   /** Merge request reviewer has reviewed. */
-  Reviewed = 'REVIEWED',
+  | 'REVIEWED'
   /** Merge request reviewer has started a review. */
-  ReviewStarted = 'REVIEW_STARTED',
+  | 'REVIEW_STARTED'
   /** Merge request reviewer removed their approval of the changes. */
-  Unapproved = 'UNAPPROVED',
+  | 'UNAPPROVED'
   /** Awaiting review from merge request reviewer. */
-  Unreviewed = 'UNREVIEWED'
-}
+  | 'UNREVIEWED';
 
 /** A user assigned to a merge request as a reviewer. */
 export type MergeRequestReviewer = Todoable & User & {
@@ -28535,78 +27310,64 @@ export type MergeRequestSetSubscriptionPayload = {
 };
 
 /** Values for sorting merge requests */
-export enum MergeRequestSort {
+export type MergeRequestSort =
   /** Closed time by ascending order. */
-  ClosedAtAsc = 'CLOSED_AT_ASC',
+  | 'CLOSED_AT_ASC'
   /** Closed time by descending order. */
-  ClosedAtDesc = 'CLOSED_AT_DESC',
+  | 'CLOSED_AT_DESC'
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Label priority by ascending order. */
-  LabelPriorityAsc = 'LABEL_PRIORITY_ASC',
+  | 'LABEL_PRIORITY_ASC'
   /** Label priority by descending order. */
-  LabelPriorityDesc = 'LABEL_PRIORITY_DESC',
+  | 'LABEL_PRIORITY_DESC'
   /** Merge time by ascending order. */
-  MergedAtAsc = 'MERGED_AT_ASC',
+  | 'MERGED_AT_ASC'
   /** Merge time by descending order. */
-  MergedAtDesc = 'MERGED_AT_DESC',
+  | 'MERGED_AT_DESC'
   /** Milestone due date by ascending order. */
-  MilestoneDueAsc = 'MILESTONE_DUE_ASC',
+  | 'MILESTONE_DUE_ASC'
   /** Milestone due date by descending order. */
-  MilestoneDueDesc = 'MILESTONE_DUE_DESC',
+  | 'MILESTONE_DUE_DESC'
   /** Number of upvotes (awarded "thumbs up" emoji) by ascending order. */
-  PopularityAsc = 'POPULARITY_ASC',
+  | 'POPULARITY_ASC'
   /** Number of upvotes (awarded "thumbs up" emoji) by descending order. */
-  PopularityDesc = 'POPULARITY_DESC',
+  | 'POPULARITY_DESC'
   /** Priority by ascending order. */
-  PriorityAsc = 'PRIORITY_ASC',
+  | 'PRIORITY_ASC'
   /** Priority by descending order. */
-  PriorityDesc = 'PRIORITY_DESC',
+  | 'PRIORITY_DESC'
   /** Title by ascending order. */
-  TitleAsc = 'TITLE_ASC',
+  | 'TITLE_ASC'
   /** Title by descending order. */
-  TitleDesc = 'TITLE_DESC',
+  | 'TITLE_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** State of a GitLab merge request */
-export enum MergeRequestState {
+export type MergeRequestState =
   /** All available. */
-  All = 'all',
+  | 'all'
   /** In closed state. */
-  Closed = 'closed',
+  | 'closed'
   /** Discussion has been locked. */
-  Locked = 'locked',
+  | 'locked'
   /** Merge request has been merged. */
-  Merged = 'merged',
+  | 'merged'
   /** Opened merge request. */
-  Opened = 'opened'
-}
+  | 'opened';
 
 /** Autogenerated input type of MergeRequestUpdateApprovalRule */
 export type MergeRequestUpdateApprovalRuleInput = {
@@ -28677,12 +27438,11 @@ export type MergeRequestUpdatePayload = {
 };
 
 /** Values for merge request dashboard list type */
-export enum MergeRequestsDashboardListType {
+export type MergeRequestsDashboardListType =
   /** Action based list rendering. */
-  ActionBased = 'ACTION_BASED',
+  | 'ACTION_BASED'
   /** Role based list rendering. */
-  RoleBased = 'ROLE_BASED'
-}
+  | 'ROLE_BASED';
 
 export type MergeRequestsResolverNegatedParams = {
   /** Filters merge requests to exclude any that are approved by usernames in the given array. */
@@ -28708,29 +27468,27 @@ export type MergeRequestsResolverNegatedParams = {
 };
 
 /** Representation of whether a GitLab merge request can be merged. */
-export enum MergeStatus {
+export type MergeStatus =
   /** There are conflicts between the source and target branches. */
-  CannotBeMerged = 'CANNOT_BE_MERGED',
+  | 'CANNOT_BE_MERGED'
   /** Currently unchecked. The previous state was `CANNOT_BE_MERGED`. */
-  CannotBeMergedRecheck = 'CANNOT_BE_MERGED_RECHECK',
+  | 'CANNOT_BE_MERGED_RECHECK'
   /** There are no conflicts between the source and target branches. */
-  CanBeMerged = 'CAN_BE_MERGED',
+  | 'CAN_BE_MERGED'
   /** Currently checking for mergeability. */
-  Checking = 'CHECKING',
+  | 'CHECKING'
   /** Merge status has not been checked. */
-  Unchecked = 'UNCHECKED'
-}
+  | 'UNCHECKED';
 
-export enum MergeStrategyEnum {
+export type MergeStrategyEnum =
   /** Use the add_to_merge_train_when_checks_pass merge strategy. */
-  AddToMergeTrainWhenChecksPass = 'ADD_TO_MERGE_TRAIN_WHEN_CHECKS_PASS',
+  | 'ADD_TO_MERGE_TRAIN_WHEN_CHECKS_PASS'
   /** Use the merge_train merge strategy. */
-  MergeTrain = 'MERGE_TRAIN',
+  | 'MERGE_TRAIN'
   /** Use the merge_when_checks_pass merge strategy. */
-  MergeWhenChecksPass = 'MERGE_WHEN_CHECKS_PASS',
+  | 'MERGE_WHEN_CHECKS_PASS'
   /** Use the merge_when_pipeline_succeeds merge strategy. */
-  MergeWhenPipelineSucceeds = 'MERGE_WHEN_PIPELINE_SUCCEEDS'
-}
+  | 'MERGE_WHEN_PIPELINE_SUCCEEDS';
 
 /** Represents a set of cars/merge_requests queued for merging */
 export type MergeTrain = {
@@ -28829,12 +27587,11 @@ export type MergeTrainEdge = {
   node?: Maybe<MergeTrain>;
 };
 
-export enum MergeTrainStatus {
+export type MergeTrainStatus =
   /** Active merge train. */
-  Active = 'ACTIVE',
+  | 'ACTIVE'
   /** Completed merge train. */
-  Completed = 'COMPLETED'
-}
+  | 'COMPLETED';
 
 /** Autogenerated input type of MergeTrainsDeleteCar */
 export type MergeTrainsDeleteCarInput = {
@@ -28854,54 +27611,52 @@ export type MergeTrainsDeleteCarPayload = {
 };
 
 /** Representation of mergeability check identifier. */
-export enum MergeabilityCheckIdentifier {
+export type MergeabilityCheckIdentifier =
   /** Checks whether CI has passed */
-  CiMustPass = 'CI_MUST_PASS',
+  | 'CI_MUST_PASS'
   /** Checks source branch exists and contains commits. */
-  CommitsStatus = 'COMMITS_STATUS',
+  | 'COMMITS_STATUS'
   /** Checks whether the merge request has a conflict */
-  Conflict = 'CONFLICT',
+  | 'CONFLICT'
   /** Checks whether the merge request has open discussions */
-  DiscussionsNotResolved = 'DISCUSSIONS_NOT_RESOLVED',
+  | 'DISCUSSIONS_NOT_RESOLVED'
   /** Checks whether the merge request is draft */
-  DraftStatus = 'DRAFT_STATUS',
+  | 'DRAFT_STATUS'
   /** Checks whether the title or description references a Jira issue. */
-  JiraAssociationMissing = 'JIRA_ASSOCIATION_MISSING',
+  | 'JIRA_ASSOCIATION_MISSING'
   /** Checks whether the merge request contains locked LFS files that are locked by users other than the merge request author */
-  LockedLfsFiles = 'LOCKED_LFS_FILES',
+  | 'LOCKED_LFS_FILES'
   /** Checks whether the merge request contains locked paths */
-  LockedPaths = 'LOCKED_PATHS',
+  | 'LOCKED_PATHS'
   /** Checks whether the merge request is blocked */
-  MergeRequestBlocked = 'MERGE_REQUEST_BLOCKED',
+  | 'MERGE_REQUEST_BLOCKED'
   /** Checks whether the merge is blocked due to a scheduled merge time */
-  MergeTime = 'MERGE_TIME',
+  | 'MERGE_TIME'
   /** Checks whether the merge request needs to be rebased */
-  NeedRebase = 'NEED_REBASE',
+  | 'NEED_REBASE'
   /** Checks whether the merge request is approved */
-  NotApproved = 'NOT_APPROVED',
+  | 'NOT_APPROVED'
   /** Checks whether the merge request is open */
-  NotOpen = 'NOT_OPEN',
+  | 'NOT_OPEN'
   /** Checks whether the merge request has changes requested */
-  RequestedChanges = 'REQUESTED_CHANGES',
+  | 'REQUESTED_CHANGES'
   /** Checks whether the security policies are satisfied */
-  SecurityPolicyViolations = 'SECURITY_POLICY_VIOLATIONS',
+  | 'SECURITY_POLICY_VIOLATIONS'
   /** Checks whether the external status checks pass */
-  StatusChecksMustPass = 'STATUS_CHECKS_MUST_PASS'
-}
+  | 'STATUS_CHECKS_MUST_PASS';
 
 /** Representation of whether a mergeability check passed, checking, failed or is inactive. */
-export enum MergeabilityCheckStatus {
+export type MergeabilityCheckStatus =
   /** Mergeability check is being checked. */
-  Checking = 'CHECKING',
+  | 'CHECKING'
   /** Mergeability check has failed. The merge request cannot be merged. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Mergeability check is disabled via settings. */
-  Inactive = 'INACTIVE',
+  | 'INACTIVE'
   /** Mergeability check has passed. */
-  Success = 'SUCCESS',
+  | 'SUCCESS'
   /** Mergeability check has passed with a warning. */
-  Warning = 'WARNING'
-}
+  | 'WARNING';
 
 export type Metadata = {
   __typename?: 'Metadata';
@@ -29035,52 +27790,38 @@ export type MilestoneEdge = {
 };
 
 /** Values for sorting milestones */
-export enum MilestoneSort {
+export type MilestoneSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Milestone due date by ascending order. */
-  DueDateAsc = 'DUE_DATE_ASC',
+  | 'DUE_DATE_ASC'
   /** Milestone due date by descending order. */
-  DueDateDesc = 'DUE_DATE_DESC',
+  | 'DUE_DATE_DESC'
   /** Group milestones in the order: non-expired milestones with due dates, non-expired milestones without due dates and expired milestones then sort by due date in ascending order. */
-  ExpiredLastDueDateAsc = 'EXPIRED_LAST_DUE_DATE_ASC',
+  | 'EXPIRED_LAST_DUE_DATE_ASC'
   /** Group milestones in the order: non-expired milestones with due dates, non-expired milestones without due dates and expired milestones then sort by due date in descending order. */
-  ExpiredLastDueDateDesc = 'EXPIRED_LAST_DUE_DATE_DESC',
+  | 'EXPIRED_LAST_DUE_DATE_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Current state of milestone */
-export enum MilestoneStateEnum {
+export type MilestoneStateEnum =
   /** Milestone is currently active. */
-  Active = 'active',
+  | 'active'
   /** Milestone is closed. */
-  Closed = 'closed'
-}
+  | 'closed';
 
 /** Contains statistics about a milestone */
 export type MilestoneStats = {
@@ -29092,16 +27833,15 @@ export type MilestoneStats = {
 };
 
 /** Milestone ID wildcard values */
-export enum MilestoneWildcardId {
+export type MilestoneWildcardId =
   /** Milestone is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** No milestone is assigned. */
-  None = 'NONE',
+  | 'NONE'
   /** Milestone assigned is open and started (start date <= today). */
-  Started = 'STARTED',
+  | 'STARTED'
   /** Milestone assigned is due in the future (due date > today). */
-  Upcoming = 'UPCOMING'
-}
+  | 'UPCOMING';
 
 /** Candidate for a model version in the model registry */
 export type MlCandidate = {
@@ -29671,26 +28411,24 @@ export type MlModelVersionEditPayload = {
 };
 
 /** Field names for ordering machine learning model versions */
-export enum MlModelVersionsOrderBy {
+export type MlModelVersionsOrderBy =
   /** Ordered by creation time. */
-  CreatedAt = 'CREATED_AT',
+  | 'CREATED_AT'
   /** Ordered by id. */
-  Id = 'ID',
+  | 'ID'
   /** Ordered by name. */
-  Version = 'VERSION'
-}
+  | 'VERSION';
 
 /** Values for ordering machine learning models by a specific field */
-export enum MlModelsOrderBy {
+export type MlModelsOrderBy =
   /** Ordered by creation time. */
-  CreatedAt = 'CREATED_AT',
+  | 'CREATED_AT'
   /** Ordered by id. */
-  Id = 'ID',
+  | 'ID'
   /** Ordered by name. */
-  Name = 'NAME',
+  | 'NAME'
   /** Ordered by update time. */
-  UpdatedAt = 'UPDATED_AT'
-}
+  | 'UPDATED_AT';
 
 /** A year and month input for querying product analytics usage data. */
 export type MonthSelectionInput = {
@@ -29712,12 +28450,11 @@ export type MonthlyUsage = {
 };
 
 /** The position to which the adjacent object should be moved */
-export enum MoveType {
+export type MoveType =
   /** Adjacent object is moved after the object that is being moved. */
-  After = 'after',
+  | 'after'
   /** Adjacent object is moved before the object that is being moved. */
-  Before = 'before'
-}
+  | 'before';
 
 export type Mutation = {
   __typename?: 'Mutation';
@@ -32925,14 +31662,13 @@ export type MutationWorkspaceUpdateArgs = {
 };
 
 /** Different toggles for changing mutator behavior */
-export enum MutationOperationMode {
+export type MutationOperationMode =
   /** Performs an append operation. */
-  Append = 'APPEND',
+  | 'APPEND'
   /** Performs a removal operation. */
-  Remove = 'REMOVE',
+  | 'REMOVE'
   /** Performs a replace operation. */
-  Replace = 'REPLACE'
-}
+  | 'REPLACE';
 
 export type Namespace = Todoable & {
   __typename?: 'Namespace';
@@ -33352,14 +32088,13 @@ export type NamespaceCiCdSettingsUpdatePayload = {
 };
 
 /** Possible filter types for remote development cluster agents in a namespace */
-export enum NamespaceClusterAgentFilter {
+export type NamespaceClusterAgentFilter =
   /** Cluster agents in the namespace that can be used for hosting workspaces. */
-  Available = 'AVAILABLE',
+  | 'AVAILABLE'
   /** Cluster agents that are directly mapped to the given namespace. */
-  DirectlyMapped = 'DIRECTLY_MAPPED',
+  | 'DIRECTLY_MAPPED'
   /** Cluster agents within a namespace that are not directly mapped to it. */
-  Unmapped = 'UNMAPPED'
-}
+  | 'UNMAPPED';
 
 /** Represents a namespace-cluster-agent mapping. */
 export type NamespaceClusterAgentMapping = {
@@ -33484,51 +32219,47 @@ export type NamespacePermissions = {
 };
 
 /** Values for sorting projects */
-export enum NamespaceProjectSort {
+export type NamespaceProjectSort =
   /** Sort by latest activity, descending order. */
-  ActivityDesc = 'ACTIVITY_DESC',
+  | 'ACTIVITY_DESC'
   /** Sort by total build artifact size, ascending order. */
-  BuildArtifactsSizeAsc = 'BUILD_ARTIFACTS_SIZE_ASC',
+  | 'BUILD_ARTIFACTS_SIZE_ASC'
   /** Sort by total build artifact size, descending order. */
-  BuildArtifactsSizeDesc = 'BUILD_ARTIFACTS_SIZE_DESC',
+  | 'BUILD_ARTIFACTS_SIZE_DESC'
   /** Sort by total container registry size, ascending order. */
-  ContainerRegistrySizeAsc = 'CONTAINER_REGISTRY_SIZE_ASC',
+  | 'CONTAINER_REGISTRY_SIZE_ASC'
   /** Sort by total container registry size, descending order. */
-  ContainerRegistrySizeDesc = 'CONTAINER_REGISTRY_SIZE_DESC',
+  | 'CONTAINER_REGISTRY_SIZE_DESC'
   /** Sort by excess repository storage size, descending order. */
-  ExcessRepoStorageSizeDesc = 'EXCESS_REPO_STORAGE_SIZE_DESC',
+  | 'EXCESS_REPO_STORAGE_SIZE_DESC'
   /** Sort by total LFS object size, ascending order. */
-  LfsObjectsSizeAsc = 'LFS_OBJECTS_SIZE_ASC',
+  | 'LFS_OBJECTS_SIZE_ASC'
   /** Sort by total LFS object size, descending order. */
-  LfsObjectsSizeDesc = 'LFS_OBJECTS_SIZE_DESC',
+  | 'LFS_OBJECTS_SIZE_DESC'
   /** Sort by total package size, ascending order. */
-  PackagesSizeAsc = 'PACKAGES_SIZE_ASC',
+  | 'PACKAGES_SIZE_ASC'
   /** Sort by total package size, descending order. */
-  PackagesSizeDesc = 'PACKAGES_SIZE_DESC',
+  | 'PACKAGES_SIZE_DESC'
   /** Sort by total repository size, ascending order. */
-  RepositorySizeAsc = 'REPOSITORY_SIZE_ASC',
+  | 'REPOSITORY_SIZE_ASC'
   /** Sort by total repository size, descending order. */
-  RepositorySizeDesc = 'REPOSITORY_SIZE_DESC',
+  | 'REPOSITORY_SIZE_DESC'
   /** Most similar to the search query. */
-  Similarity = 'SIMILARITY',
+  | 'SIMILARITY'
   /** Sort by total snippet size, ascending order. */
-  SnippetsSizeAsc = 'SNIPPETS_SIZE_ASC',
+  | 'SNIPPETS_SIZE_ASC'
   /** Sort by total snippet size, descending order. */
-  SnippetsSizeDesc = 'SNIPPETS_SIZE_DESC',
-  /**
-   * Sort by excess repository storage size, descending order. Deprecated in GitLab 16.9: Please use EXCESS_REPO_STORAGE_SIZE_DESC.
-   * @deprecated Please use EXCESS_REPO_STORAGE_SIZE_DESC. Deprecated in GitLab 16.9.
-   */
-  Storage = 'STORAGE',
+  | 'SNIPPETS_SIZE_DESC'
+  /** Sort by excess repository storage size, descending order. Deprecated in GitLab 16.9: Please use EXCESS_REPO_STORAGE_SIZE_DESC. */
+  | 'STORAGE'
   /** Sort by total storage size, ascending order. */
-  StorageSizeAsc = 'STORAGE_SIZE_ASC',
+  | 'STORAGE_SIZE_ASC'
   /** Sort by total storage size, descending order. */
-  StorageSizeDesc = 'STORAGE_SIZE_DESC',
+  | 'STORAGE_SIZE_DESC'
   /** Sort by total wiki size, ascending order. */
-  WikiSizeAsc = 'WIKI_SIZE_ASC',
+  | 'WIKI_SIZE_ASC'
   /** Sort by total wiki size, descending order. */
-  WikiSizeDesc = 'WIKI_SIZE_DESC'
-}
+  | 'WIKI_SIZE_DESC';
 
 /** Autogenerated input type of NamespaceSettingsUpdate */
 export type NamespaceSettingsUpdateInput = {
@@ -33657,18 +32388,16 @@ export type NegatedIssueFilterInput = {
 };
 
 /** Negated Iteration ID wildcard values */
-export enum NegatedIterationWildcardId {
+export type NegatedIterationWildcardId =
   /** Current iteration. */
-  Current = 'CURRENT'
-}
+  | 'CURRENT';
 
 /** Negated Milestone ID wildcard values */
-export enum NegatedMilestoneWildcardId {
+export type NegatedMilestoneWildcardId =
   /** Milestone assigned is open and yet to be started (start date > today). */
-  Started = 'STARTED',
+  | 'STARTED'
   /** Milestone assigned is open but due in the past (due date <= today). */
-  Upcoming = 'UPCOMING'
-}
+  | 'UPCOMING';
 
 export type NegatedValueStreamAnalyticsIssuableFilterInput = {
   /** Usernames of users not assigned to the issue or merge request. */
@@ -33906,14 +32635,13 @@ export type NoteableInterfaceNotesArgs = {
 export type NoteableType = Design | Issue | MergeRequest;
 
 /** Work item notes collection type. */
-export enum NotesFilterType {
+export type NotesFilterType =
   /** Show all activity */
-  AllNotes = 'ALL_NOTES',
+  | 'ALL_NOTES'
   /** Show history only */
-  OnlyActivity = 'ONLY_ACTIVITY',
+  | 'ONLY_ACTIVITY'
   /** Show comments only */
-  OnlyComments = 'ONLY_COMMENTS'
-}
+  | 'ONLY_COMMENTS';
 
 /** Nuget dependency link metadata */
 export type NugetDependencyLinkMetadata = {
@@ -34163,14 +32891,13 @@ export type OncallRotationLengthInputType = {
 };
 
 /** Rotation length unit of an on-call rotation */
-export enum OncallRotationUnitEnum {
+export type OncallRotationUnitEnum =
   /** Days */
-  Days = 'DAYS',
+  | 'DAYS'
   /** Hours */
-  Hours = 'HOURS',
+  | 'HOURS'
   /** Weeks */
-  Weeks = 'WEEKS'
-}
+  | 'WEEKS';
 
 /** Autogenerated input type of OncallRotationUpdate */
 export type OncallRotationUpdateInput = {
@@ -34287,16 +33014,15 @@ export type OncallUserInputType = {
 };
 
 /** Enum defining the type of OpenTelemetry metric */
-export enum OpenTelemetryMetricType {
+export type OpenTelemetryMetricType =
   /** Exponential Histogram Type type. */
-  ExponentialHistogramType = 'EXPONENTIAL_HISTOGRAM_TYPE',
+  | 'EXPONENTIAL_HISTOGRAM_TYPE'
   /** Gauge Type type. */
-  GaugeType = 'GAUGE_TYPE',
+  | 'GAUGE_TYPE'
   /** Histogram Type type. */
-  HistogramType = 'HISTOGRAM_TYPE',
+  | 'HISTOGRAM_TYPE'
   /** Sum Type type. */
-  SumType = 'SUM_TYPE'
-}
+  | 'SUM_TYPE';
 
 export type OrchestrationPolicy = {
   /** Description of the policy. */
@@ -34519,104 +33245,65 @@ export type OrganizationEdge = {
 };
 
 /** Default list view for organization groups and projects. */
-export enum OrganizationGroupProjectDisplay {
-  /**
-   * Display organization groups list. Introduced in GitLab 17.2: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.2.
-   */
-  Groups = 'GROUPS',
-  /**
-   * Display organization projects list. Introduced in GitLab 17.2: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.2.
-   */
-  Projects = 'PROJECTS'
-}
+export type OrganizationGroupProjectDisplay =
+  /** Display organization groups list. Introduced in GitLab 17.2: **Status**: Experiment. */
+  | 'GROUPS'
+  /** Display organization projects list. Introduced in GitLab 17.2: **Status**: Experiment. */
+  | 'PROJECTS';
 
 /** Values for sorting organization groups and projects. */
-export enum OrganizationGroupProjectSort {
+export type OrganizationGroupProjectSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
-  /**
-   * Name ascending order. Introduced in GitLab 17.2: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.2.
-   */
-  NameAsc = 'NAME_ASC',
-  /**
-   * Name descending order. Introduced in GitLab 17.2: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.2.
-   */
-  NameDesc = 'NAME_DESC',
+  | 'CREATED_DESC'
+  /** Name ascending order. Introduced in GitLab 17.2: **Status**: Experiment. */
+  | 'NAME_ASC'
+  /** Name descending order. Introduced in GitLab 17.2: **Status**: Experiment. */
+  | 'NAME_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Values for sorting organizations */
-export enum OrganizationSort {
+export type OrganizationSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Default Rate in ascending order. */
-  DefaultRateAsc = 'DEFAULT_RATE_ASC',
+  | 'DEFAULT_RATE_ASC'
   /** Default Rate in descending order. */
-  DefaultRateDesc = 'DEFAULT_RATE_DESC',
+  | 'DEFAULT_RATE_DESC'
   /** Description in ascending order. */
-  DescriptionAsc = 'DESCRIPTION_ASC',
+  | 'DESCRIPTION_ASC'
   /** Description in descending order. */
-  DescriptionDesc = 'DESCRIPTION_DESC',
+  | 'DESCRIPTION_DESC'
   /** Name in ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Name in descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Represents the total number of organizations for the represented states. */
 export type OrganizationStateCounts = {
@@ -34704,18 +33391,11 @@ export type OrganizationUserAccess = {
 };
 
 /** Access level of an organization user */
-export enum OrganizationUserAccessLevel {
-  /**
-   * Guest access. Introduced in GitLab 16.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.11.
-   */
-  Default = 'DEFAULT',
-  /**
-   * Owner access. Introduced in GitLab 16.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.11.
-   */
-  Owner = 'OWNER'
-}
+export type OrganizationUserAccessLevel =
+  /** Guest access. Introduced in GitLab 16.11: **Status**: Experiment. */
+  | 'DEFAULT'
+  /** Owner access. Introduced in GitLab 16.11: **Status**: Experiment. */
+  | 'OWNER';
 
 /** An organization user badge. */
 export type OrganizationUserBadge = {
@@ -34970,16 +33650,15 @@ export type PackageDependencyLinkEdge = {
   node?: Maybe<PackageDependencyLink>;
 };
 
-export enum PackageDependencyType {
+export type PackageDependencyType =
   /** bundleDependencies dependency type */
-  BundleDependencies = 'BUNDLE_DEPENDENCIES',
+  | 'BUNDLE_DEPENDENCIES'
   /** dependencies dependency type */
-  Dependencies = 'DEPENDENCIES',
+  | 'DEPENDENCIES'
   /** devDependencies dependency type */
-  DevDependencies = 'DEV_DEPENDENCIES',
+  | 'DEV_DEPENDENCIES'
   /** peerDependencies dependency type */
-  PeerDependencies = 'PEER_DEPENDENCIES'
-}
+  | 'PEER_DEPENDENCIES';
 
 /** Represents a package details in the Package Registry */
 export type PackageDetailsType = {
@@ -35229,28 +33908,27 @@ export type PackageFileRegistryEdge = {
 };
 
 /** Values for sorting group packages */
-export enum PackageGroupSort {
+export type PackageGroupSort =
   /** Ordered by created_at in ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Ordered by created_at in descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Ordered by name in ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Ordered by name in descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Ordered by project path in ascending order. */
-  ProjectPathAsc = 'PROJECT_PATH_ASC',
+  | 'PROJECT_PATH_ASC'
   /** Ordered by project path in descending order. */
-  ProjectPathDesc = 'PROJECT_PATH_DESC',
+  | 'PROJECT_PATH_DESC'
   /** Ordered by type in ascending order. */
-  TypeAsc = 'TYPE_ASC',
+  | 'TYPE_ASC'
   /** Ordered by type in descending order. */
-  TypeDesc = 'TYPE_DESC',
+  | 'TYPE_DESC'
   /** Ordered by version in ascending order. */
-  VersionAsc = 'VERSION_ASC',
+  | 'VERSION_ASC'
   /** Ordered by version in descending order. */
-  VersionDesc = 'VERSION_DESC'
-}
+  | 'VERSION_DESC';
 
 /** Represents a Helm dependency */
 export type PackageHelmDependencyType = {
@@ -35331,44 +34009,43 @@ export type PackageLinks = {
 };
 
 /** Values for package manager */
-export enum PackageManager {
+export type PackageManager =
   /** Package manager: apk. */
-  Apk = 'APK',
+  | 'APK'
   /** Package manager: bundler. */
-  Bundler = 'BUNDLER',
+  | 'BUNDLER'
   /** Package manager: composer. */
-  Composer = 'COMPOSER',
+  | 'COMPOSER'
   /** Package manager: conan. */
-  Conan = 'CONAN',
+  | 'CONAN'
   /** Package manager: conda. */
-  Conda = 'CONDA',
+  | 'CONDA'
   /** Package manager: go. */
-  Go = 'GO',
+  | 'GO'
   /** Package manager: gradle. */
-  Gradle = 'GRADLE',
+  | 'GRADLE'
   /** Package manager: maven. */
-  Maven = 'MAVEN',
+  | 'MAVEN'
   /** Package manager: npm. */
-  Npm = 'NPM',
+  | 'NPM'
   /** Package manager: nuget. */
-  Nuget = 'NUGET',
+  | 'NUGET'
   /** Package manager: pip. */
-  Pip = 'PIP',
+  | 'PIP'
   /** Package manager: pipenv. */
-  Pipenv = 'PIPENV',
+  | 'PIPENV'
   /** Package manager: pnpm. */
-  Pnpm = 'PNPM',
+  | 'PNPM'
   /** Package manager: poetry. */
-  Poetry = 'POETRY',
+  | 'POETRY'
   /** Package manager: pub. */
-  Pub = 'PUB',
+  | 'PUB'
   /** Package manager: sbt. */
-  Sbt = 'SBT',
+  | 'SBT'
   /** Package manager: setuptools. */
-  Setuptools = 'SETUPTOOLS',
+  | 'SETUPTOOLS'
   /** Package manager: yarn. */
-  Yarn = 'YARN'
-}
+  | 'YARN';
 
 /** Represents metadata associated with a Package */
 export type PackageMetadata = ComposerMetadata | ConanMetadata | MavenMetadata | NugetMetadata | PypiMetadata | TerraformModuleMetadata;
@@ -35426,39 +34103,37 @@ export type PackageSettings = {
 };
 
 /** Values for sorting package */
-export enum PackageSort {
+export type PackageSort =
   /** Ordered by created_at in ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Ordered by created_at in descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Ordered by name in ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Ordered by name in descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Ordered by type in ascending order. */
-  TypeAsc = 'TYPE_ASC',
+  | 'TYPE_ASC'
   /** Ordered by type in descending order. */
-  TypeDesc = 'TYPE_DESC',
+  | 'TYPE_DESC'
   /** Ordered by version in ascending order. */
-  VersionAsc = 'VERSION_ASC',
+  | 'VERSION_ASC'
   /** Ordered by version in descending order. */
-  VersionDesc = 'VERSION_DESC'
-}
+  | 'VERSION_DESC';
 
-export enum PackageStatus {
+export type PackageStatus =
   /** Packages with a default status */
-  Default = 'DEFAULT',
+  | 'DEFAULT'
   /** Packages with a deprecated status */
-  Deprecated = 'DEPRECATED',
+  | 'DEPRECATED'
   /** Packages with a error status */
-  Error = 'ERROR',
+  | 'ERROR'
   /** Packages with a hidden status */
-  Hidden = 'HIDDEN',
+  | 'HIDDEN'
   /** Packages with a pending_destruction status */
-  PendingDestruction = 'PENDING_DESTRUCTION',
+  | 'PENDING_DESTRUCTION'
   /** Packages with a processing status */
-  Processing = 'PROCESSING'
-}
+  | 'PROCESSING';
 
 /** Represents a package tag */
 export type PackageTag = {
@@ -35493,53 +34168,51 @@ export type PackageTagEdge = {
   node?: Maybe<PackageTag>;
 };
 
-export enum PackageTypeEnum {
+export type PackageTypeEnum =
   /** Packages from the Composer package manager */
-  Composer = 'COMPOSER',
+  | 'COMPOSER'
   /** Packages from the Conan package manager */
-  Conan = 'CONAN',
+  | 'CONAN'
   /** Packages from the Debian package manager */
-  Debian = 'DEBIAN',
+  | 'DEBIAN'
   /** Packages from the Generic package manager */
-  Generic = 'GENERIC',
+  | 'GENERIC'
   /** Packages from the Golang package manager */
-  Golang = 'GOLANG',
+  | 'GOLANG'
   /** Packages from the Helm package manager */
-  Helm = 'HELM',
+  | 'HELM'
   /** Packages from the Maven package manager */
-  Maven = 'MAVEN',
+  | 'MAVEN'
   /** Packages from the Ml_model package manager */
-  MlModel = 'ML_MODEL',
+  | 'ML_MODEL'
   /** Packages from the npm package manager */
-  Npm = 'NPM',
+  | 'NPM'
   /** Packages from the Nuget package manager */
-  Nuget = 'NUGET',
+  | 'NUGET'
   /** Packages from the PyPI package manager */
-  Pypi = 'PYPI',
+  | 'PYPI'
   /** Packages from the Rpm package manager */
-  Rpm = 'RPM',
+  | 'RPM'
   /** Packages from the Rubygems package manager */
-  Rubygems = 'RUBYGEMS',
+  | 'RUBYGEMS'
   /** Packages from the Terraform Module package manager */
-  TerraformModule = 'TERRAFORM_MODULE'
-}
+  | 'TERRAFORM_MODULE';
 
-export enum PackagesCleanupKeepDuplicatedPackageFilesEnum {
+export type PackagesCleanupKeepDuplicatedPackageFilesEnum =
   /** Value to keep all package files */
-  AllPackageFiles = 'ALL_PACKAGE_FILES',
+  | 'ALL_PACKAGE_FILES'
   /** Value to keep 50 package files */
-  FiftyPackageFiles = 'FIFTY_PACKAGE_FILES',
+  | 'FIFTY_PACKAGE_FILES'
   /** Value to keep 40 package files */
-  FortyPackageFiles = 'FORTY_PACKAGE_FILES',
+  | 'FORTY_PACKAGE_FILES'
   /** Value to keep 1 package files */
-  OnePackageFile = 'ONE_PACKAGE_FILE',
+  | 'ONE_PACKAGE_FILE'
   /** Value to keep 10 package files */
-  TenPackageFiles = 'TEN_PACKAGE_FILES',
+  | 'TEN_PACKAGE_FILES'
   /** Value to keep 30 package files */
-  ThirtyPackageFiles = 'THIRTY_PACKAGE_FILES',
+  | 'THIRTY_PACKAGE_FILES'
   /** Value to keep 20 package files */
-  TwentyPackageFiles = 'TWENTY_PACKAGE_FILES'
-}
+  | 'TWENTY_PACKAGE_FILES';
 
 /** A packages cleanup policy designed to keep only packages and packages assets that matter most */
 export type PackagesCleanupPolicy = {
@@ -35569,22 +34242,20 @@ export type PackagesProtectionRule = {
 };
 
 /** Access level of a package protection rule resource */
-export enum PackagesProtectionRuleAccessLevel {
+export type PackagesProtectionRuleAccessLevel =
   /** Admin access. */
-  Admin = 'ADMIN',
+  | 'ADMIN'
   /** Maintainer access. */
-  Maintainer = 'MAINTAINER',
+  | 'MAINTAINER'
   /** Owner access. */
-  Owner = 'OWNER'
-}
+  | 'OWNER';
 
 /** Access level for the deletion of a package protection rule resource. */
-export enum PackagesProtectionRuleAccessLevelForDelete {
+export type PackagesProtectionRuleAccessLevelForDelete =
   /** Admin access. Available only when feature flag `packages_protected_packages_delete` is enabled. */
-  Admin = 'ADMIN',
+  | 'ADMIN'
   /** Owner access. Available only when feature flag `packages_protected_packages_delete` is enabled. */
-  Owner = 'OWNER'
-}
+  | 'OWNER';
 
 /** The connection type for PackagesProtectionRule. */
 export type PackagesProtectionRuleConnection = {
@@ -35607,22 +34278,15 @@ export type PackagesProtectionRuleEdge = {
 };
 
 /** Package type of a package protection rule resource */
-export enum PackagesProtectionRulePackageType {
-  /**
-   * Packages of the Conan format. Available only when feature flag `packages_protected_packages_conan` is enabled. Introduced in GitLab 17.6: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.6.
-   */
-  Conan = 'CONAN',
-  /**
-   * Packages of the Maven format. Available only when feature flag `packages_protected_packages_maven` is enabled. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  Maven = 'MAVEN',
+export type PackagesProtectionRulePackageType =
+  /** Packages of the Conan format. Available only when feature flag `packages_protected_packages_conan` is enabled. Introduced in GitLab 17.6: **Status**: Experiment. */
+  | 'CONAN'
+  /** Packages of the Maven format. Available only when feature flag `packages_protected_packages_maven` is enabled. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'MAVEN'
   /** Packages of the npm format. */
-  Npm = 'NPM',
+  | 'NPM'
   /** Packages of the PyPI format. */
-  Pypi = 'PYPI'
-}
+  | 'PYPI';
 
 /** Information about pagination in a connection. */
 export type PageInfo = {
@@ -36232,16 +34896,15 @@ export type PipelineAnalyticsTimeSeriesArgs = {
   period: AnalyticsAggregationPeriod;
 };
 
-export enum PipelineAnalyticsJobStatus {
+export type PipelineAnalyticsJobStatus =
   /** Jobs with any status. */
-  Any = 'ANY',
+  | 'ANY'
   /** Job that failed. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Job that was canceled or skipped. */
-  Other = 'OTHER',
+  | 'OTHER'
   /** Job that succeeded. */
-  Success = 'SUCCESS'
-}
+  | 'SUCCESS';
 
 export type PipelineAnalyticsPeriod = {
   __typename?: 'PipelineAnalyticsPeriod';
@@ -36360,30 +35023,29 @@ export type PipelineCancelPayload = {
   errors: Array<Scalars['String']['output']>;
 };
 
-export enum PipelineConfigSourceEnum {
+export type PipelineConfigSourceEnum =
   /** Auto DevOps source. */
-  AutoDevopsSource = 'AUTO_DEVOPS_SOURCE',
+  | 'AUTO_DEVOPS_SOURCE'
   /** Bridge source. */
-  BridgeSource = 'BRIDGE_SOURCE',
+  | 'BRIDGE_SOURCE'
   /** Compliance source. */
-  ComplianceSource = 'COMPLIANCE_SOURCE',
+  | 'COMPLIANCE_SOURCE'
   /** External project source. */
-  ExternalProjectSource = 'EXTERNAL_PROJECT_SOURCE',
+  | 'EXTERNAL_PROJECT_SOURCE'
   /** Parameter source. */
-  ParameterSource = 'PARAMETER_SOURCE',
+  | 'PARAMETER_SOURCE'
   /** Pipeline execution policy forced. */
-  PipelineExecutionPolicyForced = 'PIPELINE_EXECUTION_POLICY_FORCED',
+  | 'PIPELINE_EXECUTION_POLICY_FORCED'
   /** Remote source. */
-  RemoteSource = 'REMOTE_SOURCE',
+  | 'REMOTE_SOURCE'
   /** Repository source. */
-  RepositorySource = 'REPOSITORY_SOURCE',
+  | 'REPOSITORY_SOURCE'
   /** Security policies default source. */
-  SecurityPoliciesDefaultSource = 'SECURITY_POLICIES_DEFAULT_SOURCE',
+  | 'SECURITY_POLICIES_DEFAULT_SOURCE'
   /** Unknown source. */
-  UnknownSource = 'UNKNOWN_SOURCE',
+  | 'UNKNOWN_SOURCE'
   /** Webide source. */
-  WebideSource = 'WEBIDE_SOURCE'
-}
+  | 'WEBIDE_SOURCE';
 
 /** The connection type for Pipeline. */
 export type PipelineConnection = {
@@ -36542,14 +35204,13 @@ export type PipelineManualVariableEdge = {
 };
 
 /** Event type of the pipeline associated with a merge request */
-export enum PipelineMergeRequestEventType {
+export type PipelineMergeRequestEventType =
   /** Pipeline run on the changes in the merge request source branch. */
-  Detached = 'DETACHED',
+  | 'DETACHED'
   /** Pipeline run on the changes from the source branch combined with the target branch. */
-  MergedResult = 'MERGED_RESULT',
+  | 'MERGED_RESULT'
   /** Pipeline ran as part of a merge train. */
-  MergeTrain = 'MERGE_TRAIN'
-}
+  | 'MERGE_TRAIN';
 
 export type PipelineMessage = {
   __typename?: 'PipelineMessage';
@@ -36785,39 +35446,37 @@ export type PipelineSchedulePlayPayload = {
 };
 
 /** Values for sorting pipeline schedules. */
-export enum PipelineScheduleSort {
+export type PipelineScheduleSort =
   /** Sort pipeline schedules by created date in ascending order. */
-  CreatedAtAsc = 'CREATED_AT_ASC',
+  | 'CREATED_AT_ASC'
   /** Sort pipeline schedules by created date in descending order. */
-  CreatedAtDesc = 'CREATED_AT_DESC',
+  | 'CREATED_AT_DESC'
   /** Sort pipeline schedules by description in ascending order. */
-  DescriptionAsc = 'DESCRIPTION_ASC',
+  | 'DESCRIPTION_ASC'
   /** Sort pipeline schedules by description in descending order. */
-  DescriptionDesc = 'DESCRIPTION_DESC',
+  | 'DESCRIPTION_DESC'
   /** Sort pipeline schedules by ID in ascending order. */
-  IdAsc = 'ID_ASC',
+  | 'ID_ASC'
   /** Sort pipeline schedules by ID in descending order. */
-  IdDesc = 'ID_DESC',
+  | 'ID_DESC'
   /** Sort pipeline schedules by next run in ascending order. */
-  NextRunAtAsc = 'NEXT_RUN_AT_ASC',
+  | 'NEXT_RUN_AT_ASC'
   /** Sort pipeline schedules by next run in descending order. */
-  NextRunAtDesc = 'NEXT_RUN_AT_DESC',
+  | 'NEXT_RUN_AT_DESC'
   /** Sort pipeline schedules by target in ascending order. */
-  RefAsc = 'REF_ASC',
+  | 'REF_ASC'
   /** Sort pipeline schedules by target in descending order. */
-  RefDesc = 'REF_DESC',
+  | 'REF_DESC'
   /** Sort pipeline schedules by updated date in ascending order. */
-  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  | 'UPDATED_AT_ASC'
   /** Sort pipeline schedules by updated date in descending order. */
-  UpdatedAtDesc = 'UPDATED_AT_DESC'
-}
+  | 'UPDATED_AT_DESC';
 
-export enum PipelineScheduleStatus {
+export type PipelineScheduleStatus =
   /** Active pipeline schedules. */
-  Active = 'ACTIVE',
+  | 'ACTIVE'
   /** Inactive pipeline schedules. */
-  Inactive = 'INACTIVE'
-}
+  | 'INACTIVE';
 
 /** Autogenerated input type of PipelineScheduleTakeOwnership */
 export type PipelineScheduleTakeOwnershipInput = {
@@ -36921,18 +35580,17 @@ export type PipelineScheduleVariableInput = {
   variableType: CiVariableType;
 };
 
-export enum PipelineScopeEnum {
+export type PipelineScopeEnum =
   /** Branches. */
-  Branches = 'BRANCHES',
+  | 'BRANCHES'
   /** Pipeline has completed. */
-  Finished = 'FINISHED',
+  | 'FINISHED'
   /** Pipeline has not started running yet. */
-  Pending = 'PENDING',
+  | 'PENDING'
   /** Pipeline is running. */
-  Running = 'RUNNING',
+  | 'RUNNING'
   /** Tags. */
-  Tags = 'TAGS'
-}
+  | 'TAGS';
 
 /** Represents vulnerability finding of a security report on the pipeline. */
 export type PipelineSecurityReportFinding = {
@@ -37052,41 +35710,39 @@ export type PipelineSecurityReportFindingPermissions = {
 };
 
 /** Pipeline security report finding sort values */
-export enum PipelineSecurityReportFindingSort {
+export type PipelineSecurityReportFindingSort =
   /** Severity in ascending order. */
-  SeverityAsc = 'severity_asc',
+  | 'severity_asc'
   /** Severity in descending order. */
-  SeverityDesc = 'severity_desc'
-}
+  | 'severity_desc';
 
-export enum PipelineStatusEnum {
+export type PipelineStatusEnum =
   /** Pipeline was canceled before completion. */
-  Canceled = 'CANCELED',
+  | 'CANCELED'
   /** Pipeline is in the process of canceling. */
-  Canceling = 'CANCELING',
+  | 'CANCELING'
   /** Pipeline has been created. */
-  Created = 'CREATED',
+  | 'CREATED'
   /** At least one stage of the pipeline failed. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Pipeline needs to be manually started. */
-  Manual = 'MANUAL',
+  | 'MANUAL'
   /** Pipeline has not started running yet. */
-  Pending = 'PENDING',
+  | 'PENDING'
   /** Pipeline is preparing to run. */
-  Preparing = 'PREPARING',
+  | 'PREPARING'
   /** Pipeline is running. */
-  Running = 'RUNNING',
+  | 'RUNNING'
   /** Pipeline is scheduled to run. */
-  Scheduled = 'SCHEDULED',
+  | 'SCHEDULED'
   /** Pipeline was skipped. */
-  Skipped = 'SKIPPED',
+  | 'SKIPPED'
   /** Pipeline completed successfully. */
-  Success = 'SUCCESS',
+  | 'SUCCESS'
   /** Pipeline is waiting for an external action. */
-  WaitingForCallback = 'WAITING_FOR_CALLBACK',
+  | 'WAITING_FOR_CALLBACK'
   /** A resource (for example, a runner) that the pipeline requires to run is unavailable. */
-  WaitingForResource = 'WAITING_FOR_RESOURCE'
-}
+  | 'WAITING_FOR_RESOURCE';
 
 export type PipelineTrigger = {
   __typename?: 'PipelineTrigger';
@@ -37192,16 +35848,15 @@ export type PipelineTriggerUpdatePayload = {
 };
 
 /** Pipeline variables minimum override roles. */
-export enum PipelineVariablesDefaultRoleType {
+export type PipelineVariablesDefaultRoleType =
   /** Developer */
-  Developer = 'DEVELOPER',
+  | 'DEVELOPER'
   /** Maintainer */
-  Maintainer = 'MAINTAINER',
+  | 'MAINTAINER'
   /** No one allowed */
-  NoOneAllowed = 'NO_ONE_ALLOWED',
+  | 'NO_ONE_ALLOWED'
   /** Owner */
-  Owner = 'OWNER'
-}
+  | 'OWNER';
 
 /** Represents policy violation for `any_merge_request` report_type */
 export type PolicyAnyMergeRequestViolation = {
@@ -37306,12 +35961,11 @@ export type PolicyProjectCreated = {
 };
 
 /** Types of security policy project created status. */
-export enum PolicyProjectCreatedStatus {
+export type PolicyProjectCreatedStatus =
   /** Creating the security policy project faild. */
-  Error = 'ERROR',
+  | 'ERROR'
   /** Creating the security policy project was successful. */
-  Success = 'SUCCESS'
-}
+  | 'SUCCESS';
 
 /** Represents policy violation for `scan_finding` report_type */
 export type PolicyScanFindingViolation = {
@@ -37403,14 +36057,13 @@ export type PolicyViolationDetails = {
   violationsCount: Scalars['Int']['output'];
 };
 
-export enum PolicyViolationErrorType {
+export type PolicyViolationErrorType =
   /** Represents error which occurs when pipeline is misconfigured and does not include necessary artifacts to evaluate a policy. */
-  ArtifactsMissing = 'ARTIFACTS_MISSING',
+  | 'ARTIFACTS_MISSING'
   /** Represents mismatch between the scans of the source and target pipelines. */
-  ScanRemoved = 'SCAN_REMOVED',
+  | 'SCAN_REMOVED'
   /** Represents unknown error. */
-  Unknown = 'UNKNOWN'
-}
+  | 'UNKNOWN';
 
 /** Represents generic policy violation information. */
 export type PolicyViolationInfo = {
@@ -37423,14 +36076,13 @@ export type PolicyViolationInfo = {
   status?: Maybe<PolicyViolationStatus>;
 };
 
-export enum PolicyViolationStatus {
+export type PolicyViolationStatus =
   /** Represents a failed policy violation. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Represents a running policy violation. */
-  Running = 'RUNNING',
+  | 'RUNNING'
   /** Represents a policy violation warning. */
-  Warning = 'WARNING'
-}
+  | 'WARNING';
 
 export type PreviewBillableUserChange = {
   __typename?: 'PreviewBillableUserChange';
@@ -37510,16 +36162,15 @@ export type ProductAnalyticsProjectSettingsUpdatePayload = {
 };
 
 /** Current state of the product analytics stack. */
-export enum ProductAnalyticsState {
+export type ProductAnalyticsState =
   /** Stack has been initialized and has data. */
-  Complete = 'COMPLETE',
+  | 'COMPLETE'
   /** Stack has not been created yet. */
-  CreateInstance = 'CREATE_INSTANCE',
+  | 'CREATE_INSTANCE'
   /** Stack is currently initializing. */
-  LoadingInstance = 'LOADING_INSTANCE',
+  | 'LOADING_INSTANCE'
   /** Stack is waiting for events from users. */
-  WaitingForEvents = 'WAITING_FOR_EVENTS'
-}
+  | 'WAITING_FOR_EVENTS';
 
 export type Project = Todoable & {
   __typename?: 'Project';
@@ -39678,14 +38329,13 @@ export type ProjectWorkItemsArgs = {
 };
 
 /** Values for the archived argument */
-export enum ProjectArchived {
+export type ProjectArchived =
   /** Exclude archived projects. */
-  Exclude = 'EXCLUDE',
+  | 'EXCLUDE'
   /** Include archvied projects. */
-  Include = 'INCLUDE',
+  | 'INCLUDE'
   /** Only archived projects. */
-  Only = 'ONLY'
-}
+  | 'ONLY';
 
 export type ProjectCiCdSetting = {
   __typename?: 'ProjectCiCdSetting';
@@ -39743,14 +38393,13 @@ export type ProjectCiCdSettingsUpdatePayload = {
 };
 
 /** Compliance status of the project control. */
-export enum ProjectComplianceControlStatus {
+export type ProjectComplianceControlStatus =
   /** Fail */
-  Fail = 'FAIL',
+  | 'FAIL'
   /** Pass */
-  Pass = 'PASS',
+  | 'PASS'
   /** Pending */
-  Pending = 'PENDING'
-}
+  | 'PENDING';
 
 export type ProjectComplianceControlStatusInput = {
   /** Compliance requirement id of the statuses. */
@@ -39879,14 +38528,13 @@ export type ProjectFeatureAccess = {
 };
 
 /** Access level of a project feature */
-export enum ProjectFeatureAccessLevel {
+export type ProjectFeatureAccessLevel =
   /** Not enabled for anyone. */
-  Disabled = 'DISABLED',
+  | 'DISABLED'
   /** Enabled for everyone able to access the project. */
-  Enabled = 'ENABLED',
+  | 'ENABLED'
   /** Enabled only for team members. */
-  Private = 'PRIVATE'
-}
+  | 'PRIVATE';
 
 /** Autogenerated input type of ProjectInitializeProductAnalytics */
 export type ProjectInitializeProductAnalyticsInput = {
@@ -39995,18 +38643,17 @@ export type ProjectMemberEdge = {
 };
 
 /** Project member relation */
-export enum ProjectMemberRelation {
+export type ProjectMemberRelation =
   /** Descendants members */
-  Descendants = 'DESCENDANTS',
+  | 'DESCENDANTS'
   /** Direct members */
-  Direct = 'DIRECT',
+  | 'DIRECT'
   /** Inherited members */
-  Inherited = 'INHERITED',
+  | 'INHERITED'
   /** Invited Groups members */
-  InvitedGroups = 'INVITED_GROUPS',
+  | 'INVITED_GROUPS'
   /** Shared Into Ancestors members */
-  SharedIntoAncestors = 'SHARED_INTO_ANCESTORS'
-}
+  | 'SHARED_INTO_ANCESTORS';
 
 export type ProjectPermissions = {
   __typename?: 'ProjectPermissions';
@@ -40408,12 +39055,11 @@ export type ProjectSecretsManagerInitializePayload = {
 };
 
 /** Values for the project secrets manager status */
-export enum ProjectSecretsManagerStatus {
+export type ProjectSecretsManagerStatus =
   /** Secrets manager has been provisioned. */
-  Active = 'ACTIVE',
+  | 'ACTIVE'
   /** Secrets manager is being provisioned. */
-  Provisioning = 'PROVISIONING'
-}
+  | 'PROVISIONING';
 
 /** Represents a project-level security scanner exclusion */
 export type ProjectSecurityExclusion = {
@@ -40651,60 +39297,47 @@ export type ProjectSettingsUpdatePayload = {
 };
 
 /** Values for sorting projects */
-export enum ProjectSort {
+export type ProjectSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** ID by ascending order. */
-  IdAsc = 'ID_ASC',
+  | 'ID_ASC'
   /** ID by descending order. */
-  IdDesc = 'ID_DESC',
+  | 'ID_DESC'
   /** Latest activity by ascending order. */
-  LatestActivityAsc = 'LATEST_ACTIVITY_ASC',
+  | 'LATEST_ACTIVITY_ASC'
   /** Latest activity by descending order. */
-  LatestActivityDesc = 'LATEST_ACTIVITY_DESC',
+  | 'LATEST_ACTIVITY_DESC'
   /** Name by ascending order. */
-  NameAsc = 'NAME_ASC',
+  | 'NAME_ASC'
   /** Name by descending order. */
-  NameDesc = 'NAME_DESC',
+  | 'NAME_DESC'
   /** Path by ascending order. */
-  PathAsc = 'PATH_ASC',
+  | 'PATH_ASC'
   /** Path by descending order. */
-  PathDesc = 'PATH_DESC',
+  | 'PATH_DESC'
   /** Stars by ascending order. */
-  StarsAsc = 'STARS_ASC',
+  | 'STARS_ASC'
   /** Stars by descending order. */
-  StarsDesc = 'STARS_DESC',
+  | 'STARS_DESC'
   /** Storage size by ascending order. */
-  StorageSizeAsc = 'STORAGE_SIZE_ASC',
+  | 'STORAGE_SIZE_ASC'
   /** Storage size by descending order. */
-  StorageSizeDesc = 'STORAGE_SIZE_DESC',
+  | 'STORAGE_SIZE_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 export type ProjectStatistics = {
   __typename?: 'ProjectStatistics';
@@ -42604,12 +41237,11 @@ export type QuickActionsStatus = {
 };
 
 /** Dependency reachability status */
-export enum ReachabilityType {
+export type ReachabilityType =
   /** Dependency is imported and in use. */
-  InUse = 'IN_USE',
+  | 'IN_USE'
   /** Dependency reachability status is unknown. */
-  Unknown = 'UNKNOWN'
-}
+  | 'UNKNOWN';
 
 /** Recent failure history of a test case. */
 export type RecentFailures = {
@@ -42621,12 +41253,11 @@ export type RecentFailures = {
 };
 
 /** Type of ref */
-export enum RefType {
+export type RefType =
   /** Ref type for branches. */
-  Heads = 'HEADS',
+  | 'HEADS'
   /** Ref type for tags. */
-  Tags = 'TAGS'
-}
+  | 'TAGS';
 
 /** Autogenerated input type of RefreshStandardsAdherenceChecks */
 export type RefreshStandardsAdherenceChecksInput = {
@@ -42650,24 +41281,22 @@ export type RefreshStandardsAdherenceChecksPayload = {
 export type Registrable = CiSecureFileRegistry | ContainerRepositoryRegistry | DependencyProxyBlobRegistry | DependencyProxyManifestRegistry | DesignManagementRepositoryRegistry | GroupWikiRepositoryRegistry | JobArtifactRegistry | LfsObjectRegistry | MergeRequestDiffRegistry | PackageFileRegistry | PagesDeploymentRegistry | PipelineArtifactRegistry | ProjectWikiRepositoryRegistry | SnippetRepositoryRegistry | TerraformStateVersionRegistry | UploadRegistry;
 
 /** State of a Geo registry */
-export enum RegistryState {
+export type RegistryState =
   /** Registry that failed to sync. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Registry waiting to be synced. */
-  Pending = 'PENDING',
+  | 'PENDING'
   /** Registry currently syncing. */
-  Started = 'STARTED',
+  | 'STARTED'
   /** Registry that is synced. */
-  Synced = 'SYNCED'
-}
+  | 'SYNCED';
 
 /** The position to which the object should be moved */
-export enum RelativePositionType {
+export type RelativePositionType =
   /** Object is moved after an adjacent object. */
-  After = 'AFTER',
+  | 'AFTER'
   /** Object is moved before an adjacent object. */
-  Before = 'BEFORE'
-}
+  | 'BEFORE';
 
 /** Represents a release */
 export type Release = {
@@ -42822,16 +41451,15 @@ export type ReleaseAssetLinkInput = {
 };
 
 /** Type of the link: `other`, `runbook`, `image`, `package` */
-export enum ReleaseAssetLinkType {
+export type ReleaseAssetLinkType =
   /** Image link type */
-  Image = 'IMAGE',
+  | 'IMAGE'
   /** Other link type */
-  Other = 'OTHER',
+  | 'OTHER'
   /** Package link type */
-  Package = 'PACKAGE',
+  | 'PACKAGE'
   /** Runbook link type */
-  Runbook = 'RUNBOOK'
-}
+  | 'RUNBOOK';
 
 /** Autogenerated input type of ReleaseAssetLinkUpdate */
 export type ReleaseAssetLinkUpdateInput = {
@@ -43025,16 +41653,15 @@ export type ReleaseLinks = {
 };
 
 /** Values for sorting releases */
-export enum ReleaseSort {
+export type ReleaseSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Released at by ascending order. */
-  ReleasedAtAsc = 'RELEASED_AT_ASC',
+  | 'RELEASED_AT_ASC'
   /** Released at by descending order. */
-  ReleasedAtDesc = 'RELEASED_AT_DESC'
-}
+  | 'RELEASED_AT_DESC';
 
 /** Represents the source code attached to a release in a particular format */
 export type ReleaseSource = {
@@ -43066,12 +41693,11 @@ export type ReleaseSourceEdge = {
 };
 
 /** Release tag ID wildcard values */
-export enum ReleaseTagWildcardId {
+export type ReleaseTagWildcardId =
   /** Release tag is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** No release tag is assigned. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 /** Autogenerated input type of ReleaseUpdate */
 export type ReleaseUpdateInput = {
@@ -43119,16 +41745,15 @@ export type RemoveProjectFromSecurityDashboardPayload = {
   errors: Array<Scalars['String']['output']>;
 };
 
-export enum ReplicationStateEnum {
+export type ReplicationStateEnum =
   /** Replication process finished but failed. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Replication process has not started. */
-  Pending = 'PENDING',
+  | 'PENDING'
   /** Replication process is in progress. */
-  Started = 'STARTED',
+  | 'STARTED'
   /** Replication process finished successfully. */
-  Synced = 'SYNCED'
-}
+  | 'SYNCED';
 
 /** Autogenerated input type of RepositionImageDiffNote */
 export type RepositionImageDiffNoteInput = {
@@ -43472,12 +42097,11 @@ export type RequirementPermissions = {
 };
 
 /** State of a requirement */
-export enum RequirementState {
+export type RequirementState =
   /** Archived requirement. */
-  Archived = 'ARCHIVED',
+  | 'ARCHIVED'
   /** Open requirement. */
-  Opened = 'OPENED'
-}
+  | 'OPENED';
 
 /** Counts of requirements by their state */
 export type RequirementStatesCount = {
@@ -43489,14 +42113,13 @@ export type RequirementStatesCount = {
 };
 
 /** Status of a requirement based on last test report */
-export enum RequirementStatusFilter {
+export type RequirementStatusFilter =
   /** Failed test report. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Requirements without any test report. */
-  Missing = 'MISSING',
+  | 'MISSING'
   /** Passed test report. */
-  Passed = 'PASSED'
-}
+  | 'PASSED';
 
 export type ResolvableInterface = {
   /** Indicates if the object can be resolved. */
@@ -43538,12 +42161,11 @@ export type RestorePagesDeploymentPayload = {
 };
 
 /** Reviewer ID wildcard values */
-export enum ReviewerWildcardId {
+export type ReviewerWildcardId =
   /** Any reviewer is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** No reviewer is assigned. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 export type RoleInterface = {
   /** Role description. */
@@ -44044,14 +42666,13 @@ export type SastCiConfigurationOptionsEntityEdge = {
 };
 
 /** Size of UI component in SAST configuration page */
-export enum SastUiComponentSize {
+export type SastUiComponentSize =
   /** Size of UI component in SAST configuration page is large. */
-  Large = 'LARGE',
+  | 'LARGE'
   /** Size of UI component in SAST configuration page is medium. */
-  Medium = 'MEDIUM',
+  | 'MEDIUM'
   /** Size of UI component in SAST configuration page is small. */
-  Small = 'SMALL'
-}
+  | 'SMALL';
 
 export type SavedReply = {
   __typename?: 'SavedReply';
@@ -44149,16 +42770,15 @@ export type SavedReplyUpdatePayload = {
 };
 
 /** Values for sbom source types */
-export enum SbomSourceType {
+export type SbomSourceType =
   /** Source Type: container_scanning. */
-  ContainerScanning = 'CONTAINER_SCANNING',
+  | 'CONTAINER_SCANNING'
   /** Source Type: container_scanning_for_registry. */
-  ContainerScanningForRegistry = 'CONTAINER_SCANNING_FOR_REGISTRY',
+  | 'CONTAINER_SCANNING_FOR_REGISTRY'
   /** Source Type: dependency_scanning. */
-  DependencyScanning = 'DEPENDENCY_SCANNING',
+  | 'DEPENDENCY_SCANNING'
   /** Enum source nil. */
-  NilSource = 'NIL_SOURCE'
-}
+  | 'NIL_SOURCE';
 
 /** Represents the security scan information */
 export type Scan = {
@@ -44323,22 +42943,21 @@ export type ScanResultPolicyEdge = {
 };
 
 /** The status of the security scan */
-export enum ScanStatus {
+export type ScanStatus =
   /** The scan has been created. */
-  Created = 'CREATED',
+  | 'CREATED'
   /** The related CI build failed. */
-  JobFailed = 'JOB_FAILED',
+  | 'JOB_FAILED'
   /** Report couldn't be prepared. */
-  PreparationFailed = 'PREPARATION_FAILED',
+  | 'PREPARATION_FAILED'
   /** Preparing the report for the scan. */
-  Preparing = 'PREPARING',
+  | 'PREPARING'
   /** Report for the scan has been removed from the database. */
-  Purged = 'PURGED',
+  | 'PURGED'
   /** The report artifact provided by the CI build couldn't be parsed. */
-  ReportError = 'REPORT_ERROR',
+  | 'REPORT_ERROR'
   /** The report has been successfully prepared. */
-  Succeeded = 'SUCCEEDED'
-}
+  | 'SUCCEEDED';
 
 /** Represents a resource scanned by a security scan */
 export type ScannedResource = {
@@ -44450,24 +43069,22 @@ export type SearchBlobLine = {
 };
 
 /** Level of search */
-export enum SearchLevel {
+export type SearchLevel =
   /** Global search including all groups and projects. */
-  Global = 'GLOBAL',
+  | 'GLOBAL'
   /** Group search. */
-  Group = 'GROUP',
+  | 'GROUP'
   /** Project search. */
-  Project = 'PROJECT'
-}
+  | 'PROJECT';
 
 /** Type of search */
-export enum SearchType {
+export type SearchType =
   /** Advanced search. */
-  Advanced = 'ADVANCED',
+  | 'ADVANCED'
   /** Basic search. */
-  Basic = 'BASIC',
+  | 'BASIC'
   /** Exact code search. */
-  Zoekt = 'ZOEKT'
-}
+  | 'ZOEKT';
 
 /** Autogenerated input type of SecurityFindingCreateIssue */
 export type SecurityFindingCreateIssueInput = {
@@ -44667,16 +43284,15 @@ export type SecurityPolicyProjectUnassignPayload = {
   errors: Array<Scalars['String']['output']>;
 };
 
-export enum SecurityPolicyRelationType {
+export type SecurityPolicyRelationType =
   /** Policies defined for the group's descendant projects/groups only. Only valid for group-level policies. */
-  Descendant = 'DESCENDANT',
+  | 'DESCENDANT'
   /** Policies defined for the project/group only. */
-  Direct = 'DIRECT',
+  | 'DIRECT'
   /** Policies defined for the project/group and ancestor groups. */
-  Inherited = 'INHERITED',
+  | 'INHERITED'
   /** Policies defined for the project/group's ancestor groups only. */
-  InheritedOnly = 'INHERITED_ONLY'
-}
+  | 'INHERITED_ONLY';
 
 /** Represents a policy source. Its fields depend on the source type. */
 export type SecurityPolicySource = GroupSecurityPolicySource | ProjectSecurityPolicySource;
@@ -44754,52 +43370,50 @@ export type SecurityReportSummarySectionScansArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export enum SecurityReportTypeEnum {
+export type SecurityReportTypeEnum =
   /** API FUZZING scan report */
-  ApiFuzzing = 'API_FUZZING',
+  | 'API_FUZZING'
   /** CLUSTER IMAGE SCANNING scan report */
-  ClusterImageScanning = 'CLUSTER_IMAGE_SCANNING',
+  | 'CLUSTER_IMAGE_SCANNING'
   /** CONTAINER SCANNING scan report */
-  ContainerScanning = 'CONTAINER_SCANNING',
+  | 'CONTAINER_SCANNING'
   /** COVERAGE FUZZING scan report */
-  CoverageFuzzing = 'COVERAGE_FUZZING',
+  | 'COVERAGE_FUZZING'
   /** DAST scan report */
-  Dast = 'DAST',
+  | 'DAST'
   /** DEPENDENCY SCANNING scan report */
-  DependencyScanning = 'DEPENDENCY_SCANNING',
+  | 'DEPENDENCY_SCANNING'
   /** SAST scan report */
-  Sast = 'SAST',
+  | 'SAST'
   /** SAST ADVANCED scan report */
-  SastAdvanced = 'SAST_ADVANCED',
+  | 'SAST_ADVANCED'
   /** SAST IAC scan report */
-  SastIac = 'SAST_IAC',
+  | 'SAST_IAC'
   /** SECRET DETECTION scan report */
-  SecretDetection = 'SECRET_DETECTION'
-}
+  | 'SECRET_DETECTION';
 
 /** The type of the security scanner */
-export enum SecurityScannerType {
+export type SecurityScannerType =
   /** API Fuzzing scanner */
-  ApiFuzzing = 'API_FUZZING',
+  | 'API_FUZZING'
   /** Cluster Image Scanning scanner */
-  ClusterImageScanning = 'CLUSTER_IMAGE_SCANNING',
+  | 'CLUSTER_IMAGE_SCANNING'
   /** Container Scanning scanner */
-  ContainerScanning = 'CONTAINER_SCANNING',
+  | 'CONTAINER_SCANNING'
   /** Coverage Fuzzing scanner */
-  CoverageFuzzing = 'COVERAGE_FUZZING',
+  | 'COVERAGE_FUZZING'
   /** DAST scanner */
-  Dast = 'DAST',
+  | 'DAST'
   /** Dependency Scanning scanner */
-  DependencyScanning = 'DEPENDENCY_SCANNING',
+  | 'DEPENDENCY_SCANNING'
   /** SAST scanner */
-  Sast = 'SAST',
+  | 'SAST'
   /** Sast Advanced scanner */
-  SastAdvanced = 'SAST_ADVANCED',
+  | 'SAST_ADVANCED'
   /** Sast Iac scanner */
-  SastIac = 'SAST_IAC',
+  | 'SAST_IAC'
   /** Secret Detection scanner */
-  SecretDetection = 'SECRET_DETECTION'
-}
+  | 'SECRET_DETECTION';
 
 /** Represents a list of security scanners */
 export type SecurityScanners = {
@@ -45052,16 +43666,15 @@ export type SentryErrorStackTraceEntry = {
 };
 
 /** State of a Sentry error */
-export enum SentryErrorStatus {
+export type SentryErrorStatus =
   /** Error has been ignored. */
-  Ignored = 'IGNORED',
+  | 'IGNORED'
   /** Error has been resolved. */
-  Resolved = 'RESOLVED',
+  | 'RESOLVED'
   /** Error has been ignored until next release. */
-  ResolvedInNextRelease = 'RESOLVED_IN_NEXT_RELEASE',
+  | 'RESOLVED_IN_NEXT_RELEASE'
   /** Error is unresolved. */
-  Unresolved = 'UNRESOLVED'
-}
+  | 'UNRESOLVED';
 
 /** State of a Sentry error */
 export type SentryErrorTags = {
@@ -45101,108 +43714,107 @@ export type ServiceEdge = {
   node?: Maybe<Service>;
 };
 
-export enum ServiceType {
+export type ServiceType =
   /** AppleAppStoreService type */
-  AppleAppStoreService = 'APPLE_APP_STORE_SERVICE',
+  | 'APPLE_APP_STORE_SERVICE'
   /** AsanaService type */
-  AsanaService = 'ASANA_SERVICE',
+  | 'ASANA_SERVICE'
   /** AssemblaService type */
-  AssemblaService = 'ASSEMBLA_SERVICE',
+  | 'ASSEMBLA_SERVICE'
   /** BambooService type */
-  BambooService = 'BAMBOO_SERVICE',
+  | 'BAMBOO_SERVICE'
   /** BugzillaService type */
-  BugzillaService = 'BUGZILLA_SERVICE',
+  | 'BUGZILLA_SERVICE'
   /** BuildkiteService type */
-  BuildkiteService = 'BUILDKITE_SERVICE',
+  | 'BUILDKITE_SERVICE'
   /** CampfireService type */
-  CampfireService = 'CAMPFIRE_SERVICE',
+  | 'CAMPFIRE_SERVICE'
   /** ClickupService type */
-  ClickupService = 'CLICKUP_SERVICE',
+  | 'CLICKUP_SERVICE'
   /** ConfluenceService type */
-  ConfluenceService = 'CONFLUENCE_SERVICE',
+  | 'CONFLUENCE_SERVICE'
   /** CustomIssueTrackerService type */
-  CustomIssueTrackerService = 'CUSTOM_ISSUE_TRACKER_SERVICE',
+  | 'CUSTOM_ISSUE_TRACKER_SERVICE'
   /** DatadogService type */
-  DatadogService = 'DATADOG_SERVICE',
+  | 'DATADOG_SERVICE'
   /** DiffblueCoverService type */
-  DiffblueCoverService = 'DIFFBLUE_COVER_SERVICE',
+  | 'DIFFBLUE_COVER_SERVICE'
   /** DiscordService type */
-  DiscordService = 'DISCORD_SERVICE',
+  | 'DISCORD_SERVICE'
   /** DroneCiService type */
-  DroneCiService = 'DRONE_CI_SERVICE',
+  | 'DRONE_CI_SERVICE'
   /** EmailsOnPushService type */
-  EmailsOnPushService = 'EMAILS_ON_PUSH_SERVICE',
+  | 'EMAILS_ON_PUSH_SERVICE'
   /** EwmService type */
-  EwmService = 'EWM_SERVICE',
+  | 'EWM_SERVICE'
   /** ExternalWikiService type */
-  ExternalWikiService = 'EXTERNAL_WIKI_SERVICE',
+  | 'EXTERNAL_WIKI_SERVICE'
   /** GithubService type */
-  GithubService = 'GITHUB_SERVICE',
+  | 'GITHUB_SERVICE'
   /** GitlabSlackApplicationService type */
-  GitlabSlackApplicationService = 'GITLAB_SLACK_APPLICATION_SERVICE',
+  | 'GITLAB_SLACK_APPLICATION_SERVICE'
   /** GitGuardianService type */
-  GitGuardianService = 'GIT_GUARDIAN_SERVICE',
+  | 'GIT_GUARDIAN_SERVICE'
   /** GoogleCloudPlatformArtifactRegistryService type */
-  GoogleCloudPlatformArtifactRegistryService = 'GOOGLE_CLOUD_PLATFORM_ARTIFACT_REGISTRY_SERVICE',
+  | 'GOOGLE_CLOUD_PLATFORM_ARTIFACT_REGISTRY_SERVICE'
   /** GoogleCloudPlatformWorkloadIdentityFederationService type */
-  GoogleCloudPlatformWorkloadIdentityFederationService = 'GOOGLE_CLOUD_PLATFORM_WORKLOAD_IDENTITY_FEDERATION_SERVICE',
+  | 'GOOGLE_CLOUD_PLATFORM_WORKLOAD_IDENTITY_FEDERATION_SERVICE'
   /** GooglePlayService type */
-  GooglePlayService = 'GOOGLE_PLAY_SERVICE',
+  | 'GOOGLE_PLAY_SERVICE'
   /** HangoutsChatService type */
-  HangoutsChatService = 'HANGOUTS_CHAT_SERVICE',
+  | 'HANGOUTS_CHAT_SERVICE'
   /** HarborService type */
-  HarborService = 'HARBOR_SERVICE',
+  | 'HARBOR_SERVICE'
   /** IrkerService type */
-  IrkerService = 'IRKER_SERVICE',
+  | 'IRKER_SERVICE'
   /** JenkinsService type */
-  JenkinsService = 'JENKINS_SERVICE',
+  | 'JENKINS_SERVICE'
   /** JiraCloudAppService type */
-  JiraCloudAppService = 'JIRA_CLOUD_APP_SERVICE',
+  | 'JIRA_CLOUD_APP_SERVICE'
   /** JiraService type */
-  JiraService = 'JIRA_SERVICE',
+  | 'JIRA_SERVICE'
   /** MatrixService type */
-  MatrixService = 'MATRIX_SERVICE',
+  | 'MATRIX_SERVICE'
   /** MattermostService type */
-  MattermostService = 'MATTERMOST_SERVICE',
+  | 'MATTERMOST_SERVICE'
   /** MattermostSlashCommandsService type */
-  MattermostSlashCommandsService = 'MATTERMOST_SLASH_COMMANDS_SERVICE',
+  | 'MATTERMOST_SLASH_COMMANDS_SERVICE'
   /** MicrosoftTeamsService type */
-  MicrosoftTeamsService = 'MICROSOFT_TEAMS_SERVICE',
+  | 'MICROSOFT_TEAMS_SERVICE'
   /** PackagistService type */
-  PackagistService = 'PACKAGIST_SERVICE',
+  | 'PACKAGIST_SERVICE'
   /** PhorgeService type */
-  PhorgeService = 'PHORGE_SERVICE',
+  | 'PHORGE_SERVICE'
   /** PipelinesEmailService type */
-  PipelinesEmailService = 'PIPELINES_EMAIL_SERVICE',
+  | 'PIPELINES_EMAIL_SERVICE'
   /** PivotaltrackerService type */
-  PivotaltrackerService = 'PIVOTALTRACKER_SERVICE',
+  | 'PIVOTALTRACKER_SERVICE'
   /** PrometheusService type */
-  PrometheusService = 'PROMETHEUS_SERVICE',
+  | 'PROMETHEUS_SERVICE'
   /** PumbleService type */
-  PumbleService = 'PUMBLE_SERVICE',
+  | 'PUMBLE_SERVICE'
   /** PushoverService type */
-  PushoverService = 'PUSHOVER_SERVICE',
+  | 'PUSHOVER_SERVICE'
   /** RedmineService type */
-  RedmineService = 'REDMINE_SERVICE',
+  | 'REDMINE_SERVICE'
   /** SlackService type */
-  SlackService = 'SLACK_SERVICE',
+  | 'SLACK_SERVICE'
   /** SlackSlashCommandsService type */
-  SlackSlashCommandsService = 'SLACK_SLASH_COMMANDS_SERVICE',
+  | 'SLACK_SLASH_COMMANDS_SERVICE'
   /** SquashTmService type */
-  SquashTmService = 'SQUASH_TM_SERVICE',
+  | 'SQUASH_TM_SERVICE'
   /** TeamcityService type */
-  TeamcityService = 'TEAMCITY_SERVICE',
+  | 'TEAMCITY_SERVICE'
   /** TelegramService type */
-  TelegramService = 'TELEGRAM_SERVICE',
+  | 'TELEGRAM_SERVICE'
   /** UnifyCircuitService type */
-  UnifyCircuitService = 'UNIFY_CIRCUIT_SERVICE',
+  | 'UNIFY_CIRCUIT_SERVICE'
   /** WebexTeamsService type */
-  WebexTeamsService = 'WEBEX_TEAMS_SERVICE',
+  | 'WEBEX_TEAMS_SERVICE'
   /** YoutrackService type */
-  YoutrackService = 'YOUTRACK_SERVICE',
+  | 'YOUTRACK_SERVICE'
   /** ZentaoService type */
-  ZentaoService = 'ZENTAO_SERVICE'
-}
+  | 'ZENTAO_SERVICE';
 
 /** Autogenerated input type of SetContainerScanningForRegistry */
 export type SetContainerScanningForRegistryInput = {
@@ -45326,21 +43938,19 @@ export type SeverityOverrideEdge = {
 };
 
 /** How to format SHA strings. */
-export enum ShaFormat {
+export type ShaFormat =
   /** Unabbreviated format. */
-  Long = 'LONG',
+  | 'LONG'
   /** Abbreviated format. Short SHAs are typically eight characters long. */
-  Short = 'SHORT'
-}
+  | 'SHORT';
 
-export enum SharedRunnersSetting {
+export type SharedRunnersSetting =
   /** Sharing of runners is disabled and overridable. */
-  DisabledAndOverridable = 'DISABLED_AND_OVERRIDABLE',
+  | 'DISABLED_AND_OVERRIDABLE'
   /** Sharing of runners is disabled and unoverridable. */
-  DisabledAndUnoverridable = 'DISABLED_AND_UNOVERRIDABLE',
+  | 'DISABLED_AND_UNOVERRIDABLE'
   /** Sharing of runners is enabled. */
-  Enabled = 'ENABLED'
-}
+  | 'ENABLED';
 
 /** Duo Chat slash command */
 export type SlashCommand = {
@@ -45472,16 +44082,15 @@ export type SnippetBlob = {
 };
 
 /** Type of a snippet blob input action */
-export enum SnippetBlobActionEnum {
+export type SnippetBlobActionEnum =
   /** Create a snippet blob. */
-  Create = 'create',
+  | 'create'
   /** Delete a snippet blob. */
-  Delete = 'delete',
+  | 'delete'
   /** Move a snippet blob. */
-  Move = 'move',
+  | 'move'
   /** Update a snippet blob. */
-  Update = 'update'
-}
+  | 'update';
 
 /** Represents an action to perform over a snippet file */
 export type SnippetBlobActionInputType = {
@@ -45649,60 +44258,45 @@ export type SnippetRepositoryRegistryEdge = {
 };
 
 /** Common sort values */
-export enum Sort {
+export type Sort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Values for sort direction */
-export enum SortDirectionEnum {
+export type SortDirectionEnum =
   /** Ascending order. */
-  Asc = 'ASC',
+  | 'ASC'
   /** Descending order. */
-  Desc = 'DESC'
-}
+  | 'DESC';
 
 /** Values for sorting the mapping of users on source instance to users on destination instance. */
-export enum SourceUserSort {
+export type SourceUserSort =
   /** ID of the source user by ascending order. */
-  IdAsc = 'ID_ASC',
+  | 'ID_ASC'
   /** ID of the source user by descending order. */
-  IdDesc = 'ID_DESC',
+  | 'ID_DESC'
   /** Instance source name by ascending order. */
-  SourceNameAsc = 'SOURCE_NAME_ASC',
+  | 'SOURCE_NAME_ASC'
   /** Instance source name by descending order. */
-  SourceNameDesc = 'SOURCE_NAME_DESC',
+  | 'SOURCE_NAME_DESC'
   /** Status of the mapping by ascending order. */
-  StatusAsc = 'STATUS_ASC',
+  | 'STATUS_ASC'
   /** Status of the mapping by descending order. */
-  StatusDesc = 'STATUS_DESC'
-}
+  | 'STATUS_DESC';
 
 /** Squash option overrides for a protected branch */
 export type SquashOption = {
@@ -45714,16 +44308,15 @@ export type SquashOption = {
 };
 
 /** Options for default squash behaviour for merge requests */
-export enum SquashOptionSetting {
+export type SquashOptionSetting =
   /** Allow. */
-  Allowed = 'ALLOWED',
+  | 'ALLOWED'
   /** Require. */
-  Always = 'ALWAYS',
+  | 'ALWAYS'
   /** Encourage. */
-  Encouraged = 'ENCOURAGED',
+  | 'ENCOURAGED'
   /** Do not allow. */
-  Never = 'NEVER'
-}
+  | 'NEVER';
 
 /** SSH signature for a signed commit */
 export type SshSignature = CommitSignature & {
@@ -46143,20 +44736,18 @@ export type SubscriptionFutureEntryEdge = {
 };
 
 /** Types of change for a subscription history record */
-export enum SubscriptionHistoryChangeType {
+export type SubscriptionHistoryChangeType =
   /** This was the previous state before the subscription was destroyed. */
-  GitlabSubscriptionDestroyed = 'GITLAB_SUBSCRIPTION_DESTROYED',
+  | 'GITLAB_SUBSCRIPTION_DESTROYED'
   /** This was the previous state before the subscription was updated. */
-  GitlabSubscriptionUpdated = 'GITLAB_SUBSCRIPTION_UPDATED'
-}
+  | 'GITLAB_SUBSCRIPTION_UPDATED';
 
 /** Status of the subscription to an issuable. */
-export enum SubscriptionStatus {
+export type SubscriptionStatus =
   /** User is explicitly subscribed to the issuable. */
-  ExplicitlySubscribed = 'EXPLICITLY_SUBSCRIBED',
+  | 'EXPLICITLY_SUBSCRIBED'
   /** User is explicitly unsubscribed from the issuable. */
-  ExplicitlyUnsubscribed = 'EXPLICITLY_UNSUBSCRIBED'
-}
+  | 'EXPLICITLY_UNSUBSCRIBED';
 
 /** Represents a Suggested Reviewers result set */
 export type SuggestedReviewersType = {
@@ -46606,16 +45197,15 @@ export type TestCaseEdge = {
   node?: Maybe<TestCase>;
 };
 
-export enum TestCaseStatus {
+export type TestCaseStatus =
   /** Test case that has a status of error. */
-  Error = 'error',
+  | 'error'
   /** Test case that has a status of failed. */
-  Failed = 'failed',
+  | 'failed'
   /** Test case that has a status of skipped. */
-  Skipped = 'skipped',
+  | 'skipped'
   /** Test case that has a status of success. */
-  Success = 'success'
-}
+  | 'success';
 
 /** Represents a requirement test report */
 export type TestReport = {
@@ -46653,12 +45243,11 @@ export type TestReportEdge = {
 };
 
 /** State of a test report */
-export enum TestReportState {
+export type TestReportState =
   /** Failed test report. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Passed test report. */
-  Passed = 'PASSED'
-}
+  | 'PASSED';
 
 /** Test report for a pipeline */
 export type TestReportSummary = {
@@ -46855,54 +45444,41 @@ export type TimeboxReportError = {
 };
 
 /** Category of error. */
-export enum TimeboxReportErrorReason {
+export type TimeboxReportErrorReason =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Label priority by ascending order. */
-  LabelPriorityAsc = 'LABEL_PRIORITY_ASC',
+  | 'LABEL_PRIORITY_ASC'
   /** Label priority by descending order. */
-  LabelPriorityDesc = 'LABEL_PRIORITY_DESC',
+  | 'LABEL_PRIORITY_DESC'
   /** Milestone due date by ascending order. */
-  MilestoneDueAsc = 'MILESTONE_DUE_ASC',
+  | 'MILESTONE_DUE_ASC'
   /** Milestone due date by descending order. */
-  MilestoneDueDesc = 'MILESTONE_DUE_DESC',
+  | 'MILESTONE_DUE_DESC'
   /** One or both of start_date and due_date is missing. */
-  MissingDates = 'MISSING_DATES',
+  | 'MISSING_DATES'
   /** Priority by ascending order. */
-  PriorityAsc = 'PRIORITY_ASC',
+  | 'PRIORITY_ASC'
   /** Priority by descending order. */
-  PriorityDesc = 'PRIORITY_DESC',
+  | 'PRIORITY_DESC'
   /** There are too many events. */
-  TooManyEvents = 'TOO_MANY_EVENTS',
+  | 'TOO_MANY_EVENTS'
   /** This type does not support timebox reports. */
-  Unsupported = 'UNSUPPORTED',
+  | 'UNSUPPORTED'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 export type TimeboxReportInterface = {
   /** Historically accurate report about the timebox. */
@@ -47219,44 +45795,31 @@ export type TimelogPermissions = {
 };
 
 /** Values for sorting timelogs */
-export enum TimelogSort {
+export type TimelogSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** Spent at ascending order. */
-  SpentAtAsc = 'SPENT_AT_ASC',
+  | 'SPENT_AT_ASC'
   /** Spent at descending order. */
-  SpentAtDesc = 'SPENT_AT_DESC',
+  | 'SPENT_AT_DESC'
   /** Time spent ascending order. */
-  TimeSpentAsc = 'TIME_SPENT_ASC',
+  | 'TIME_SPENT_ASC'
   /** Time spent descending order. */
-  TimeSpentDesc = 'TIME_SPENT_DESC',
+  | 'TIME_SPENT_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** Representing a to-do entry */
 export type Todo = {
@@ -47296,42 +45859,41 @@ export type Todo = {
   targetUrl?: Maybe<Scalars['String']['output']>;
 };
 
-export enum TodoActionEnum {
+export type TodoActionEnum =
   /** User was added as an approver. */
-  AddedApprover = 'added_approver',
+  | 'added_approver'
   /** User was set as an approver. */
-  ApprovalRequired = 'approval_required',
+  | 'approval_required'
   /** User was assigned. */
-  Assigned = 'assigned',
+  | 'assigned'
   /** Build triggered by the user failed. */
-  BuildFailed = 'build_failed',
+  | 'build_failed'
   /** User was directly addressed. */
-  DirectlyAddressed = 'directly_addressed',
+  | 'directly_addressed'
   /** Access to Duo Enterprise has been granted to the user. */
-  DuoEnterpriseAccessGranted = 'duo_enterprise_access_granted',
+  | 'duo_enterprise_access_granted'
   /** Access to Duo Pro has been granted to the user. */
-  DuoProAccessGranted = 'duo_pro_access_granted',
+  | 'duo_pro_access_granted'
   /** User added a to-do item. */
-  Marked = 'marked',
+  | 'marked'
   /** Group or project access requested from the user. */
-  MemberAccessRequested = 'member_access_requested',
+  | 'member_access_requested'
   /** User was mentioned. */
-  Mentioned = 'mentioned',
+  | 'mentioned'
   /** Merge request authored by the user was removed from the merge train. */
-  MergeTrainRemoved = 'merge_train_removed',
+  | 'merge_train_removed'
   /** An OKR assigned to the user requires an update. */
-  OkrCheckinRequested = 'okr_checkin_requested',
+  | 'okr_checkin_requested'
   /** Review was requested from the user. */
-  ReviewRequested = 'review_requested',
+  | 'review_requested'
   /** Merge request authored by the user received a review. */
-  ReviewSubmitted = 'review_submitted',
+  | 'review_submitted'
   /** SSH key of the user has expired. */
-  SshKeyExpired = 'ssh_key_expired',
+  | 'ssh_key_expired'
   /** SSH key of the user will expire soon. */
-  SshKeyExpiringSoon = 'ssh_key_expiring_soon',
+  | 'ssh_key_expiring_soon'
   /** Merge request authored by the user could not be merged. */
-  Unmergeable = 'unmergeable'
-}
+  | 'unmergeable';
 
 /** The connection type for Todo. */
 export type TodoConnection = {
@@ -47510,76 +46072,61 @@ export type TodoSnoozePayload = {
 };
 
 /** Sort options for todos. */
-export enum TodoSort {
+export type TodoSort =
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
+  | 'CREATED_DESC'
   /** By label priority in ascending order. */
-  LabelPriorityAsc = 'LABEL_PRIORITY_ASC',
+  | 'LABEL_PRIORITY_ASC'
   /** By label priority in descending order. */
-  LabelPriorityDesc = 'LABEL_PRIORITY_DESC',
+  | 'LABEL_PRIORITY_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
-export enum TodoStateEnum {
+export type TodoStateEnum =
   /** State of the todo is done. */
-  Done = 'done',
+  | 'done'
   /** State of the todo is pending. */
-  Pending = 'pending'
-}
+  | 'pending';
 
-export enum TodoTargetEnum {
+export type TodoTargetEnum =
   /** Alert. */
-  Alert = 'ALERT',
+  | 'ALERT'
   /** Commit. */
-  Commit = 'COMMIT',
+  | 'COMMIT'
   /** Design. */
-  Design = 'DESIGN',
+  | 'DESIGN'
   /** An Epic. */
-  Epic = 'EPIC',
+  | 'EPIC'
   /** Issue. */
-  Issue = 'ISSUE',
+  | 'ISSUE'
   /** SSH key. */
-  Key = 'KEY',
+  | 'KEY'
   /** Merge request. */
-  Mergerequest = 'MERGEREQUEST',
+  | 'MERGEREQUEST'
   /** Namespace. */
-  Namespace = 'NAMESPACE',
+  | 'NAMESPACE'
   /** Project. */
-  Project = 'PROJECT',
+  | 'PROJECT'
   /** User. */
-  User = 'USER',
+  | 'USER'
   /** Vulnerability. */
-  Vulnerability = 'VULNERABILITY',
+  | 'VULNERABILITY'
   /** Wiki page. */
-  Wikipagemeta = 'WIKIPAGEMETA',
+  | 'WIKIPAGEMETA'
   /** Work item. */
-  Workitem = 'WORKITEM'
-}
+  | 'WORKITEM';
 
 /** Autogenerated input type of TodoUnSnooze */
 export type TodoUnSnoozeInput = {
@@ -47708,12 +46255,11 @@ export type TrackingEventInput = {
 };
 
 /** Status of the request to the training provider. The URL of a TrainingUrl is calculated asynchronously. When PENDING, the URL of the TrainingUrl will be null. When COMPLETED, the URL of the TrainingUrl will be available. */
-export enum TrainingUrlRequestStatus {
+export type TrainingUrlRequestStatus =
   /** Completed request. */
-  Completed = 'COMPLETED',
+  | 'COMPLETED'
   /** Pending request. */
-  Pending = 'PENDING'
-}
+  | 'PENDING';
 
 export type Tree = {
   __typename?: 'Tree';
@@ -47812,12 +46358,11 @@ export type TreeEntryEdge = {
   node?: Maybe<TreeEntry>;
 };
 
-export enum TypeEnum {
+export type TypeEnum =
   /** Snippet created independent of any project. */
-  Personal = 'personal',
+  | 'personal'
   /** Snippet related to a specific project. */
-  Project = 'project'
-}
+  | 'project';
 
 export type UnionedEpicFilterInput = {
   /** Filters epics that are authored by one of the given users. */
@@ -49441,150 +47986,149 @@ export type UserCalloutEdge = {
 };
 
 /** Name of the feature that the callout is for. */
-export enum UserCalloutFeatureNameEnum {
+export type UserCalloutFeatureNameEnum =
   /** Callout feature name for active_user_count_threshold. */
-  ActiveUserCountThreshold = 'ACTIVE_USER_COUNT_THRESHOLD',
+  | 'ACTIVE_USER_COUNT_THRESHOLD'
   /** Callout feature name for branch_rules_info_callout. */
-  BranchRulesInfoCallout = 'BRANCH_RULES_INFO_CALLOUT',
+  | 'BRANCH_RULES_INFO_CALLOUT'
   /** Callout feature name for branch_rules_tip_callout. */
-  BranchRulesTipCallout = 'BRANCH_RULES_TIP_CALLOUT',
+  | 'BRANCH_RULES_TIP_CALLOUT'
   /** Callout feature name for buy_pipeline_minutes_notification_dot. */
-  BuyPipelineMinutesNotificationDot = 'BUY_PIPELINE_MINUTES_NOTIFICATION_DOT',
+  | 'BUY_PIPELINE_MINUTES_NOTIFICATION_DOT'
   /** Callout feature name for canary_deployment. */
-  CanaryDeployment = 'CANARY_DEPLOYMENT',
+  | 'CANARY_DEPLOYMENT'
   /** Callout feature name for ci_deprecation_warning_for_types_keyword. */
-  CiDeprecationWarningForTypesKeyword = 'CI_DEPRECATION_WARNING_FOR_TYPES_KEYWORD',
+  | 'CI_DEPRECATION_WARNING_FOR_TYPES_KEYWORD'
   /** Callout feature name for ci_minutes_limit_alert_danger_stage. */
-  CiMinutesLimitAlertDangerStage = 'CI_MINUTES_LIMIT_ALERT_DANGER_STAGE',
+  | 'CI_MINUTES_LIMIT_ALERT_DANGER_STAGE'
   /** Callout feature name for ci_minutes_limit_alert_exceeded_stage. */
-  CiMinutesLimitAlertExceededStage = 'CI_MINUTES_LIMIT_ALERT_EXCEEDED_STAGE',
+  | 'CI_MINUTES_LIMIT_ALERT_EXCEEDED_STAGE'
   /** Callout feature name for ci_minutes_limit_alert_warning_stage. */
-  CiMinutesLimitAlertWarningStage = 'CI_MINUTES_LIMIT_ALERT_WARNING_STAGE',
+  | 'CI_MINUTES_LIMIT_ALERT_WARNING_STAGE'
   /** Callout feature name for cluster_security_warning. */
-  ClusterSecurityWarning = 'CLUSTER_SECURITY_WARNING',
+  | 'CLUSTER_SECURITY_WARNING'
   /** Callout feature name for deployment_approvals_empty_state. */
-  DeploymentApprovalsEmptyState = 'DEPLOYMENT_APPROVALS_EMPTY_STATE',
+  | 'DEPLOYMENT_APPROVALS_EMPTY_STATE'
   /** Callout feature name for deployment_details_feedback. */
-  DeploymentDetailsFeedback = 'DEPLOYMENT_DETAILS_FEEDBACK',
+  | 'DEPLOYMENT_DETAILS_FEEDBACK'
   /** Callout feature name for duo_chat_callout. */
-  DuoChatCallout = 'DUO_CHAT_CALLOUT',
+  | 'DUO_CHAT_CALLOUT'
   /** Callout feature name for feature_flags_new_version. */
-  FeatureFlagsNewVersion = 'FEATURE_FLAGS_NEW_VERSION',
+  | 'FEATURE_FLAGS_NEW_VERSION'
   /** Callout feature name for gcp_signup_offer. */
-  GcpSignupOffer = 'GCP_SIGNUP_OFFER',
+  | 'GCP_SIGNUP_OFFER'
   /** Callout feature name for geo_enable_hashed_storage. */
-  GeoEnableHashedStorage = 'GEO_ENABLE_HASHED_STORAGE',
+  | 'GEO_ENABLE_HASHED_STORAGE'
   /** Callout feature name for geo_migrate_hashed_storage. */
-  GeoMigrateHashedStorage = 'GEO_MIGRATE_HASHED_STORAGE',
+  | 'GEO_MIGRATE_HASHED_STORAGE'
   /** Callout feature name for gke_cluster_integration. */
-  GkeClusterIntegration = 'GKE_CLUSTER_INTEGRATION',
+  | 'GKE_CLUSTER_INTEGRATION'
   /** Callout feature name for gold_trial_billings. */
-  GoldTrialBillings = 'GOLD_TRIAL_BILLINGS',
+  | 'GOLD_TRIAL_BILLINGS'
   /** Callout feature name for joining_a_project_alert. */
-  JoiningAProjectAlert = 'JOINING_A_PROJECT_ALERT',
+  | 'JOINING_A_PROJECT_ALERT'
   /** Callout feature name for mr_experience_survey. */
-  MrExperienceSurvey = 'MR_EXPERIENCE_SURVEY',
+  | 'MR_EXPERIENCE_SURVEY'
   /** Callout feature name for namespace_over_storage_users_combined_alert. */
-  NamespaceOverStorageUsersCombinedAlert = 'NAMESPACE_OVER_STORAGE_USERS_COMBINED_ALERT',
+  | 'NAMESPACE_OVER_STORAGE_USERS_COMBINED_ALERT'
   /** Callout feature name for namespace_storage_limit_alert_alert_threshold. */
-  NamespaceStorageLimitAlertAlertThreshold = 'NAMESPACE_STORAGE_LIMIT_ALERT_ALERT_THRESHOLD',
+  | 'NAMESPACE_STORAGE_LIMIT_ALERT_ALERT_THRESHOLD'
   /** Callout feature name for namespace_storage_limit_alert_error_threshold. */
-  NamespaceStorageLimitAlertErrorThreshold = 'NAMESPACE_STORAGE_LIMIT_ALERT_ERROR_THRESHOLD',
+  | 'NAMESPACE_STORAGE_LIMIT_ALERT_ERROR_THRESHOLD'
   /** Callout feature name for namespace_storage_limit_alert_warning_threshold. */
-  NamespaceStorageLimitAlertWarningThreshold = 'NAMESPACE_STORAGE_LIMIT_ALERT_WARNING_THRESHOLD',
+  | 'NAMESPACE_STORAGE_LIMIT_ALERT_WARNING_THRESHOLD'
   /** Callout feature name for namespace_storage_pre_enforcement_banner. */
-  NamespaceStoragePreEnforcementBanner = 'NAMESPACE_STORAGE_PRE_ENFORCEMENT_BANNER',
+  | 'NAMESPACE_STORAGE_PRE_ENFORCEMENT_BANNER'
   /** Callout feature name for new_merge_request_dashboard_welcome. */
-  NewMergeRequestDashboardWelcome = 'NEW_MERGE_REQUEST_DASHBOARD_WELCOME',
+  | 'NEW_MERGE_REQUEST_DASHBOARD_WELCOME'
   /** Callout feature name for new_mr_dashboard_banner. */
-  NewMrDashboardBanner = 'NEW_MR_DASHBOARD_BANNER',
+  | 'NEW_MR_DASHBOARD_BANNER'
   /** Callout feature name for new_top_level_group_alert. */
-  NewTopLevelGroupAlert = 'NEW_TOP_LEVEL_GROUP_ALERT',
+  | 'NEW_TOP_LEVEL_GROUP_ALERT'
   /** Callout feature name for new_user_signups_cap_reached. */
-  NewUserSignupsCapReached = 'NEW_USER_SIGNUPS_CAP_REACHED',
+  | 'NEW_USER_SIGNUPS_CAP_REACHED'
   /** Callout feature name for openssl_callout. */
-  OpensslCallout = 'OPENSSL_CALLOUT',
+  | 'OPENSSL_CALLOUT'
   /** Callout feature name for period_in_terraform_state_name_alert. */
-  PeriodInTerraformStateNameAlert = 'PERIOD_IN_TERRAFORM_STATE_NAME_ALERT',
+  | 'PERIOD_IN_TERRAFORM_STATE_NAME_ALERT'
   /** Callout feature name for personal_access_token_expiry. */
-  PersonalAccessTokenExpiry = 'PERSONAL_ACCESS_TOKEN_EXPIRY',
+  | 'PERSONAL_ACCESS_TOKEN_EXPIRY'
   /** Callout feature name for personal_project_limitations_banner. */
-  PersonalProjectLimitationsBanner = 'PERSONAL_PROJECT_LIMITATIONS_BANNER',
+  | 'PERSONAL_PROJECT_LIMITATIONS_BANNER'
   /** Callout feature name for pipeline_inputs_announcement_banner. */
-  PipelineInputsAnnouncementBanner = 'PIPELINE_INPUTS_ANNOUNCEMENT_BANNER',
+  | 'PIPELINE_INPUTS_ANNOUNCEMENT_BANNER'
   /** Callout feature name for pipeline_needs_banner. */
-  PipelineNeedsBanner = 'PIPELINE_NEEDS_BANNER',
+  | 'PIPELINE_NEEDS_BANNER'
   /** Callout feature name for pipeline_needs_hover_tip. */
-  PipelineNeedsHoverTip = 'PIPELINE_NEEDS_HOVER_TIP',
+  | 'PIPELINE_NEEDS_HOVER_TIP'
   /** Callout feature name for pipeline_new_inputs_adoption_banner. */
-  PipelineNewInputsAdoptionBanner = 'PIPELINE_NEW_INPUTS_ADOPTION_BANNER',
+  | 'PIPELINE_NEW_INPUTS_ADOPTION_BANNER'
   /** Callout feature name for pipeline_schedules_inputs_adoption_banner. */
-  PipelineSchedulesInputsAdoptionBanner = 'PIPELINE_SCHEDULES_INPUTS_ADOPTION_BANNER',
+  | 'PIPELINE_SCHEDULES_INPUTS_ADOPTION_BANNER'
   /** Callout feature name for pipl_compliance_alert. */
-  PiplComplianceAlert = 'PIPL_COMPLIANCE_ALERT',
+  | 'PIPL_COMPLIANCE_ALERT'
   /** Callout feature name for planner_role_callout. */
-  PlannerRoleCallout = 'PLANNER_ROLE_CALLOUT',
+  | 'PLANNER_ROLE_CALLOUT'
   /** Callout feature name for preview_user_over_limit_free_plan_alert. */
-  PreviewUserOverLimitFreePlanAlert = 'PREVIEW_USER_OVER_LIMIT_FREE_PLAN_ALERT',
+  | 'PREVIEW_USER_OVER_LIMIT_FREE_PLAN_ALERT'
   /** Callout feature name for product_analytics_dashboard_feedback. */
-  ProductAnalyticsDashboardFeedback = 'PRODUCT_ANALYTICS_DASHBOARD_FEEDBACK',
+  | 'PRODUCT_ANALYTICS_DASHBOARD_FEEDBACK'
   /** Callout feature name for profile_personal_access_token_expiry. */
-  ProfilePersonalAccessTokenExpiry = 'PROFILE_PERSONAL_ACCESS_TOKEN_EXPIRY',
+  | 'PROFILE_PERSONAL_ACCESS_TOKEN_EXPIRY'
   /** Callout feature name for project_quality_summary_feedback. */
-  ProjectQualitySummaryFeedback = 'PROJECT_QUALITY_SUMMARY_FEEDBACK',
+  | 'PROJECT_QUALITY_SUMMARY_FEEDBACK'
   /** Callout feature name for project_repository_limit_alert_warning_threshold. */
-  ProjectRepositoryLimitAlertWarningThreshold = 'PROJECT_REPOSITORY_LIMIT_ALERT_WARNING_THRESHOLD',
+  | 'PROJECT_REPOSITORY_LIMIT_ALERT_WARNING_THRESHOLD'
   /** Callout feature name for registration_enabled_callout. */
-  RegistrationEnabledCallout = 'REGISTRATION_ENABLED_CALLOUT',
+  | 'REGISTRATION_ENABLED_CALLOUT'
   /** Callout feature name for security_configuration_devops_alert. */
-  SecurityConfigurationDevopsAlert = 'SECURITY_CONFIGURATION_DEVOPS_ALERT',
+  | 'SECURITY_CONFIGURATION_DEVOPS_ALERT'
   /** Callout feature name for security_configuration_upgrade_banner. */
-  SecurityConfigurationUpgradeBanner = 'SECURITY_CONFIGURATION_UPGRADE_BANNER',
+  | 'SECURITY_CONFIGURATION_UPGRADE_BANNER'
   /** Callout feature name for security_newsletter_callout. */
-  SecurityNewsletterCallout = 'SECURITY_NEWSLETTER_CALLOUT',
+  | 'SECURITY_NEWSLETTER_CALLOUT'
   /** Callout feature name for security_policy_protected_branch_modification. */
-  SecurityPolicyProtectedBranchModification = 'SECURITY_POLICY_PROTECTED_BRANCH_MODIFICATION',
+  | 'SECURITY_POLICY_PROTECTED_BRANCH_MODIFICATION'
   /** Callout feature name for security_training_feature_promotion. */
-  SecurityTrainingFeaturePromotion = 'SECURITY_TRAINING_FEATURE_PROMOTION',
+  | 'SECURITY_TRAINING_FEATURE_PROMOTION'
   /** Callout feature name for submit_license_usage_data_banner. */
-  SubmitLicenseUsageDataBanner = 'SUBMIT_LICENSE_USAGE_DATA_BANNER',
+  | 'SUBMIT_LICENSE_USAGE_DATA_BANNER'
   /** Callout feature name for suggest_pipeline. */
-  SuggestPipeline = 'SUGGEST_PIPELINE',
+  | 'SUGGEST_PIPELINE'
   /** Callout feature name for suggest_popover_dismissed. */
-  SuggestPopoverDismissed = 'SUGGEST_POPOVER_DISMISSED',
+  | 'SUGGEST_POPOVER_DISMISSED'
   /** Callout feature name for tabs_position_highlight. */
-  TabsPositionHighlight = 'TABS_POSITION_HIGHLIGHT',
+  | 'TABS_POSITION_HIGHLIGHT'
   /** Callout feature name for terraform_notification_dismissed. */
-  TerraformNotificationDismissed = 'TERRAFORM_NOTIFICATION_DISMISSED',
+  | 'TERRAFORM_NOTIFICATION_DISMISSED'
   /** Callout feature name for threat_monitoring_info. */
-  ThreatMonitoringInfo = 'THREAT_MONITORING_INFO',
+  | 'THREAT_MONITORING_INFO'
   /** Callout feature name for transition_to_jihu_callout. */
-  TransitionToJihuCallout = 'TRANSITION_TO_JIHU_CALLOUT',
+  | 'TRANSITION_TO_JIHU_CALLOUT'
   /** Callout feature name for trial_status_reminder_d3. */
-  TrialStatusReminderD3 = 'TRIAL_STATUS_REMINDER_D3',
+  | 'TRIAL_STATUS_REMINDER_D3'
   /** Callout feature name for trial_status_reminder_d14. */
-  TrialStatusReminderD14 = 'TRIAL_STATUS_REMINDER_D14',
+  | 'TRIAL_STATUS_REMINDER_D14'
   /** Callout feature name for two_factor_auth_recovery_settings_check. */
-  TwoFactorAuthRecoverySettingsCheck = 'TWO_FACTOR_AUTH_RECOVERY_SETTINGS_CHECK',
+  | 'TWO_FACTOR_AUTH_RECOVERY_SETTINGS_CHECK'
   /** Callout feature name for ultimate_trial. */
-  UltimateTrial = 'ULTIMATE_TRIAL',
+  | 'ULTIMATE_TRIAL'
   /** Callout feature name for unfinished_tag_cleanup_callout. */
-  UnfinishedTagCleanupCallout = 'UNFINISHED_TAG_CLEANUP_CALLOUT',
+  | 'UNFINISHED_TAG_CLEANUP_CALLOUT'
   /** Callout feature name for user_reached_limit_free_plan_alert. */
-  UserReachedLimitFreePlanAlert = 'USER_REACHED_LIMIT_FREE_PLAN_ALERT',
+  | 'USER_REACHED_LIMIT_FREE_PLAN_ALERT'
   /** Callout feature name for verification_reminder. */
-  VerificationReminder = 'VERIFICATION_REMINDER',
+  | 'VERIFICATION_REMINDER'
   /** Callout feature name for vsd_feedback_banner. */
-  VsdFeedbackBanner = 'VSD_FEEDBACK_BANNER',
+  | 'VSD_FEEDBACK_BANNER'
   /** Callout feature name for vulnerability_report_grouping. */
-  VulnerabilityReportGrouping = 'VULNERABILITY_REPORT_GROUPING',
+  | 'VULNERABILITY_REPORT_GROUPING'
   /** Callout feature name for web_ide_alert_dismissed. */
-  WebIdeAlertDismissed = 'WEB_IDE_ALERT_DISMISSED',
+  | 'WEB_IDE_ALERT_DISMISSED'
   /** Callout feature name for web_ide_ci_environments_guidance. */
-  WebIdeCiEnvironmentsGuidance = 'WEB_IDE_CI_ENVIRONMENTS_GUIDANCE',
+  | 'WEB_IDE_CI_ENVIRONMENTS_GUIDANCE'
   /** Callout feature name for work_item_epic_feedback. */
-  WorkItemEpicFeedback = 'WORK_ITEM_EPIC_FEEDBACK'
-}
+  | 'WORK_ITEM_EPIC_FEEDBACK';
 
 /** Core representation of a GitLab user. */
 export type UserCore = Todoable & User & {
@@ -50149,14 +48693,13 @@ export type UserPreferencesUpdatePayload = {
 };
 
 /** Types of User Promotion States. */
-export enum UserPromotionStatusType {
+export type UserPromotionStatusType =
   /** Failed to apply promotion requests for user. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** User promotion was successful, but all promotion requests were not successfully applied. */
-  PartialSuccess = 'PARTIAL_SUCCESS',
+  | 'PARTIAL_SUCCESS'
   /** Successfully applied all promotion requests for user. */
-  Success = 'SUCCESS'
-}
+  | 'SUCCESS';
 
 /** Autogenerated input type of UserSetNamespaceCommitEmail */
 export type UserSetNamespaceCommitEmailInput = {
@@ -50180,20 +48723,19 @@ export type UserSetNamespaceCommitEmailPayload = {
 };
 
 /** Possible states of a user */
-export enum UserState {
+export type UserState =
   /** User is active and can use the system. */
-  Active = 'active',
+  | 'active'
   /** User is blocked, and their contributions are hidden. */
-  Banned = 'banned',
+  | 'banned'
   /** User has been blocked by an administrator and cannot use the system. */
-  Blocked = 'blocked',
+  | 'blocked'
   /** User is blocked and pending approval. */
-  BlockedPendingApproval = 'blocked_pending_approval',
+  | 'blocked_pending_approval'
   /** User is no longer active and cannot use the system. */
-  Deactivated = 'deactivated',
+  | 'deactivated'
   /** User has been blocked by the system. */
-  LdapBlocked = 'ldap_blocked'
-}
+  | 'ldap_blocked';
 
 export type UserStatus = {
   __typename?: 'UserStatus';
@@ -50208,44 +48750,43 @@ export type UserStatus = {
 };
 
 /** Possible types of user */
-export enum UserType {
+export type UserType =
   /** Admin bot */
-  AdminBot = 'ADMIN_BOT',
+  | 'ADMIN_BOT'
   /** Alert bot */
-  AlertBot = 'ALERT_BOT',
+  | 'ALERT_BOT'
   /** Automation bot */
-  AutomationBot = 'AUTOMATION_BOT',
+  | 'AUTOMATION_BOT'
   /** Duo code review bot */
-  DuoCodeReviewBot = 'DUO_CODE_REVIEW_BOT',
+  | 'DUO_CODE_REVIEW_BOT'
   /** Ghost */
-  Ghost = 'GHOST',
+  | 'GHOST'
   /** Human */
-  Human = 'HUMAN',
+  | 'HUMAN'
   /** Import user */
-  ImportUser = 'IMPORT_USER',
+  | 'IMPORT_USER'
   /** Llm bot */
-  LlmBot = 'LLM_BOT',
+  | 'LLM_BOT'
   /** Migration bot */
-  MigrationBot = 'MIGRATION_BOT',
+  | 'MIGRATION_BOT'
   /** Placeholder */
-  Placeholder = 'PLACEHOLDER',
+  | 'PLACEHOLDER'
   /** Project bot */
-  ProjectBot = 'PROJECT_BOT',
+  | 'PROJECT_BOT'
   /** Security bot */
-  SecurityBot = 'SECURITY_BOT',
+  | 'SECURITY_BOT'
   /** Security policy bot */
-  SecurityPolicyBot = 'SECURITY_POLICY_BOT',
+  | 'SECURITY_POLICY_BOT'
   /** Service account */
-  ServiceAccount = 'SERVICE_ACCOUNT',
+  | 'SERVICE_ACCOUNT'
   /** Service user */
-  ServiceUser = 'SERVICE_USER',
+  | 'SERVICE_USER'
   /** Suggested reviewers bot */
-  SuggestedReviewersBot = 'SUGGESTED_REVIEWERS_BOT',
+  | 'SUGGESTED_REVIEWERS_BOT'
   /** Support bot */
-  SupportBot = 'SUPPORT_BOT',
+  | 'SUPPORT_BOT'
   /** Visual review bot */
-  VisualReviewBot = 'VISUAL_REVIEW_BOT'
-}
+  | 'VISUAL_REVIEW_BOT';
 
 /** Represents a Pending Member Approval Queued for Role Promotion */
 export type UsersQueuedForRolePromotion = {
@@ -50384,34 +48925,32 @@ export type ValueStreamDashboardCount = {
 };
 
 /** Possible identifier types for a measurement */
-export enum ValueStreamDashboardMetric {
+export type ValueStreamDashboardMetric =
   /** Contributor count. EXPERIMENTAL: Only available on the SaaS version of GitLab when the ClickHouse database backend is enabled. */
-  Contributors = 'CONTRIBUTORS',
+  | 'CONTRIBUTORS'
   /** Group count. */
-  Groups = 'GROUPS',
+  | 'GROUPS'
   /** Issue count. */
-  Issues = 'ISSUES',
+  | 'ISSUES'
   /** Merge request count. */
-  MergeRequests = 'MERGE_REQUESTS',
+  | 'MERGE_REQUESTS'
   /** Pipeline count. */
-  Pipelines = 'PIPELINES',
+  | 'PIPELINES'
   /** Project count. */
-  Projects = 'PROJECTS',
+  | 'PROJECTS'
   /** User count. */
-  Users = 'USERS'
-}
+  | 'USERS';
 
 /** Possible identifier types for project-level measurement */
-export enum ValueStreamDashboardProjectLevelMetric {
+export type ValueStreamDashboardProjectLevelMetric =
   /** Contributor count. EXPERIMENTAL: Only available on the SaaS version of GitLab when the ClickHouse database backend is enabled. */
-  Contributors = 'CONTRIBUTORS',
+  | 'CONTRIBUTORS'
   /** Issue count. */
-  Issues = 'ISSUES',
+  | 'ISSUES'
   /** Merge request count. */
-  MergeRequests = 'MERGE_REQUESTS',
+  | 'MERGE_REQUESTS'
   /** Pipeline count. */
-  Pipelines = 'PIPELINES'
-}
+  | 'PIPELINES';
 
 /** Autogenerated input type of ValueStreamDestroy */
 export type ValueStreamDestroyInput = {
@@ -50500,62 +49039,61 @@ export type ValueStreamStageMetricsArgs = {
 };
 
 /** Stage event identifiers */
-export enum ValueStreamStageEvent {
+export type ValueStreamStageEvent =
   /** Code stage start event. */
-  CodeStageStart = 'CODE_STAGE_START',
+  | 'CODE_STAGE_START'
   /** Issue closed event. */
-  IssueClosed = 'ISSUE_CLOSED',
+  | 'ISSUE_CLOSED'
   /** Issue created event. */
-  IssueCreated = 'ISSUE_CREATED',
+  | 'ISSUE_CREATED'
   /** Issue deployed to production event. */
-  IssueDeployedToProduction = 'ISSUE_DEPLOYED_TO_PRODUCTION',
+  | 'ISSUE_DEPLOYED_TO_PRODUCTION'
   /** Issue first added to board event. */
-  IssueFirstAddedToBoard = 'ISSUE_FIRST_ADDED_TO_BOARD',
+  | 'ISSUE_FIRST_ADDED_TO_BOARD'
   /** Issue first added to iteration event. */
-  IssueFirstAddedToIteration = 'ISSUE_FIRST_ADDED_TO_ITERATION',
+  | 'ISSUE_FIRST_ADDED_TO_ITERATION'
   /** Issue first assigned at event. */
-  IssueFirstAssignedAt = 'ISSUE_FIRST_ASSIGNED_AT',
+  | 'ISSUE_FIRST_ASSIGNED_AT'
   /** Issue first associated with milestone event. */
-  IssueFirstAssociatedWithMilestone = 'ISSUE_FIRST_ASSOCIATED_WITH_MILESTONE',
+  | 'ISSUE_FIRST_ASSOCIATED_WITH_MILESTONE'
   /** Issue first mentioned in commit event. */
-  IssueFirstMentionedInCommit = 'ISSUE_FIRST_MENTIONED_IN_COMMIT',
+  | 'ISSUE_FIRST_MENTIONED_IN_COMMIT'
   /** Issue label added event. */
-  IssueLabelAdded = 'ISSUE_LABEL_ADDED',
+  | 'ISSUE_LABEL_ADDED'
   /** Issue label removed event. */
-  IssueLabelRemoved = 'ISSUE_LABEL_REMOVED',
+  | 'ISSUE_LABEL_REMOVED'
   /** Issue last edited event. */
-  IssueLastEdited = 'ISSUE_LAST_EDITED',
+  | 'ISSUE_LAST_EDITED'
   /** Issue stage end event. */
-  IssueStageEnd = 'ISSUE_STAGE_END',
+  | 'ISSUE_STAGE_END'
   /** Merge request closed event. */
-  MergeRequestClosed = 'MERGE_REQUEST_CLOSED',
+  | 'MERGE_REQUEST_CLOSED'
   /** Merge request created event. */
-  MergeRequestCreated = 'MERGE_REQUEST_CREATED',
+  | 'MERGE_REQUEST_CREATED'
   /** Merge request first assigned at event. */
-  MergeRequestFirstAssignedAt = 'MERGE_REQUEST_FIRST_ASSIGNED_AT',
+  | 'MERGE_REQUEST_FIRST_ASSIGNED_AT'
   /** Merge request first commit at event. */
-  MergeRequestFirstCommitAt = 'MERGE_REQUEST_FIRST_COMMIT_AT',
+  | 'MERGE_REQUEST_FIRST_COMMIT_AT'
   /** Merge request first deployed to production event. */
-  MergeRequestFirstDeployedToProduction = 'MERGE_REQUEST_FIRST_DEPLOYED_TO_PRODUCTION',
+  | 'MERGE_REQUEST_FIRST_DEPLOYED_TO_PRODUCTION'
   /** Merge request label added event. */
-  MergeRequestLabelAdded = 'MERGE_REQUEST_LABEL_ADDED',
+  | 'MERGE_REQUEST_LABEL_ADDED'
   /** Merge request label removed event. */
-  MergeRequestLabelRemoved = 'MERGE_REQUEST_LABEL_REMOVED',
+  | 'MERGE_REQUEST_LABEL_REMOVED'
   /** Merge request last approved at event. */
-  MergeRequestLastApprovedAt = 'MERGE_REQUEST_LAST_APPROVED_AT',
+  | 'MERGE_REQUEST_LAST_APPROVED_AT'
   /** Merge request last build finished event. */
-  MergeRequestLastBuildFinished = 'MERGE_REQUEST_LAST_BUILD_FINISHED',
+  | 'MERGE_REQUEST_LAST_BUILD_FINISHED'
   /** Merge request last build started event. */
-  MergeRequestLastBuildStarted = 'MERGE_REQUEST_LAST_BUILD_STARTED',
+  | 'MERGE_REQUEST_LAST_BUILD_STARTED'
   /** Merge request last edited event. */
-  MergeRequestLastEdited = 'MERGE_REQUEST_LAST_EDITED',
+  | 'MERGE_REQUEST_LAST_EDITED'
   /** Merge request merged event. */
-  MergeRequestMerged = 'MERGE_REQUEST_MERGED',
+  | 'MERGE_REQUEST_MERGED'
   /** Merge request reviewer first assigned event. */
-  MergeRequestReviewerFirstAssigned = 'MERGE_REQUEST_REVIEWER_FIRST_ASSIGNED',
+  | 'MERGE_REQUEST_REVIEWER_FIRST_ASSIGNED'
   /** Plan stage start event. */
-  PlanStageStart = 'PLAN_STAGE_START'
-}
+  | 'PLAN_STAGE_START';
 
 /** Attributes for value stream stage. */
 export type ValueStreamStageInput = {
@@ -50576,16 +49114,15 @@ export type ValueStreamStageInput = {
 };
 
 /** Sorting values available to value stream stage items */
-export enum ValueStreamStageItemSort {
+export type ValueStreamStageItemSort =
   /** Duration by ascending order. */
-  DurationAsc = 'DURATION_ASC',
+  | 'DURATION_ASC'
   /** Duration by ascending order. */
-  DurationDesc = 'DURATION_DESC',
+  | 'DURATION_DESC'
   /** Stage end event time by ascending order. */
-  EndEventAsc = 'END_EVENT_ASC',
+  | 'END_EVENT_ASC'
   /** Stage end event time by descending order. */
-  EndEventDesc = 'END_EVENT_DESC'
-}
+  | 'END_EVENT_DESC';
 
 export type ValueStreamStageItems = {
   __typename?: 'ValueStreamStageItems';
@@ -50679,44 +49216,42 @@ export type ValueStreamUpdatePayload = {
   valueStream?: Maybe<ValueStream>;
 };
 
-export enum VerificationStateEnum {
+export type VerificationStateEnum =
   /** Verification process is disabled. */
-  Disabled = 'DISABLED',
+  | 'DISABLED'
   /** Verification process finished but failed. */
-  Failed = 'FAILED',
+  | 'FAILED'
   /** Verification process has not started. */
-  Pending = 'PENDING',
+  | 'PENDING'
   /** Verification process is in progress. */
-  Started = 'STARTED',
+  | 'STARTED'
   /** Verification process finished successfully. */
-  Succeeded = 'SUCCEEDED'
-}
+  | 'SUCCEEDED';
 
 /** Verification status of a GPG, X.509 or SSH signature for a commit. */
-export enum VerificationStatus {
+export type VerificationStatus =
   /** multiple_signatures verification status. */
-  MultipleSignatures = 'MULTIPLE_SIGNATURES',
+  | 'MULTIPLE_SIGNATURES'
   /** other_user verification status. */
-  OtherUser = 'OTHER_USER',
+  | 'OTHER_USER'
   /** revoked_key verification status. */
-  RevokedKey = 'REVOKED_KEY',
+  | 'REVOKED_KEY'
   /** same_user_different_email verification status. */
-  SameUserDifferentEmail = 'SAME_USER_DIFFERENT_EMAIL',
+  | 'SAME_USER_DIFFERENT_EMAIL'
   /** unknown_key verification status. */
-  UnknownKey = 'UNKNOWN_KEY',
+  | 'UNKNOWN_KEY'
   /** unverified verification status. */
-  Unverified = 'UNVERIFIED',
+  | 'UNVERIFIED'
   /** unverified_author_email verification status. */
-  UnverifiedAuthorEmail = 'UNVERIFIED_AUTHOR_EMAIL',
+  | 'UNVERIFIED_AUTHOR_EMAIL'
   /** unverified_key verification status. */
-  UnverifiedKey = 'UNVERIFIED_KEY',
+  | 'UNVERIFIED_KEY'
   /** verified verification status. */
-  Verified = 'VERIFIED',
+  | 'VERIFIED'
   /** verified_ca verification status. */
-  VerifiedCa = 'VERIFIED_CA',
+  | 'VERIFIED_CA'
   /** verified_system verification status. */
-  VerifiedSystem = 'VERIFIED_SYSTEM'
-}
+  | 'VERIFIED_SYSTEM';
 
 export type VerificationStatusFilterInput = {
   /** Verification status of the work item. */
@@ -50747,31 +49282,28 @@ export type VerifiedNamespaceCreatePayload = {
   errors: Array<Scalars['String']['output']>;
 };
 
-export enum VisibilityLevelsEnum {
+export type VisibilityLevelsEnum =
   /** Internal visibility level. */
-  Internal = 'internal',
+  | 'internal'
   /** Private visibility level. */
-  Private = 'private',
+  | 'private'
   /** Public visibility level. */
-  Public = 'public'
-}
+  | 'public';
 
 /** Determines whether the pipeline list shows ID or IID */
-export enum VisibilityPipelineIdType {
+export type VisibilityPipelineIdType =
   /** Display pipeline ID. */
-  Id = 'ID',
+  | 'ID'
   /** Display pipeline IID. */
-  Iid = 'IID'
-}
+  | 'IID';
 
-export enum VisibilityScopesEnum {
+export type VisibilityScopesEnum =
   /** Snippet is visible for any logged in user except external users. */
-  Internal = 'internal',
+  | 'internal'
   /** Snippet is visible only to the snippet creator. */
-  Private = 'private',
+  | 'private'
   /** Snippet can be accessed without any authentication. */
-  Public = 'public'
-}
+  | 'public';
 
 /** Autogenerated input type of VulnerabilitiesArchive */
 export type VulnerabilitiesArchiveInput = {
@@ -51461,18 +49993,17 @@ export type VulnerabilityDismissPayload = {
 };
 
 /** The dismissal reason of the Vulnerability */
-export enum VulnerabilityDismissalReason {
+export type VulnerabilityDismissalReason =
   /** The vulnerability is known, and has not been remediated or mitigated, but is considered to be an acceptable business risk. */
-  AcceptableRisk = 'ACCEPTABLE_RISK',
+  | 'ACCEPTABLE_RISK'
   /** An error in reporting in which a test result incorrectly indicates the presence of a vulnerability in a system when the vulnerability is not present. */
-  FalsePositive = 'FALSE_POSITIVE',
+  | 'FALSE_POSITIVE'
   /** A management, operational, or technical control (that is, safeguard or countermeasure) employed by an organization that provides equivalent or comparable protection for an information system. */
-  MitigatingControl = 'MITIGATING_CONTROL',
+  | 'MITIGATING_CONTROL'
   /** The vulnerability is known, and has not been remediated or mitigated, but is considered to be in a part of the application that will not be updated. */
-  NotApplicable = 'NOT_APPLICABLE',
+  | 'NOT_APPLICABLE'
   /** The finding is not a vulnerability because it is part of a test or is test data. */
-  UsedInTests = 'USED_IN_TESTS'
-}
+  | 'USED_IN_TESTS';
 
 /** An edge in a connection. */
 export type VulnerabilityEdge = {
@@ -51592,30 +50123,27 @@ export type VulnerabilityExternalIssueLinkEdge = {
 };
 
 /** The external tracker of the external issue link related to a vulnerability */
-export enum VulnerabilityExternalIssueLinkExternalTracker {
+export type VulnerabilityExternalIssueLinkExternalTracker =
   /** Jira external tracker */
-  Jira = 'JIRA'
-}
+  | 'JIRA';
 
 /** The type of the external issue link related to a vulnerability */
-export enum VulnerabilityExternalIssueLinkType {
+export type VulnerabilityExternalIssueLinkType =
   /** Created link type. */
-  Created = 'CREATED'
-}
+  | 'CREATED';
 
 /** The grade of the vulnerable project */
-export enum VulnerabilityGrade {
+export type VulnerabilityGrade =
   /** A grade */
-  A = 'A',
+  | 'A'
   /** B grade */
-  B = 'B',
+  | 'B'
   /** C grade */
-  C = 'C',
+  | 'C'
   /** D grade */
-  D = 'D',
+  | 'D'
   /** F grade */
-  F = 'F'
-}
+  | 'F';
 
 /** Represents a vulnerability identifier */
 export type VulnerabilityIdentifier = {
@@ -51694,12 +50222,11 @@ export type VulnerabilityIssueLinkEdge = {
 };
 
 /** The type of the issue link related to a vulnerability */
-export enum VulnerabilityIssueLinkType {
+export type VulnerabilityIssueLinkType =
   /** Issue is created for the vulnerability */
-  Created = 'CREATED',
+  | 'CREATED'
   /** Has a related issue */
-  Related = 'RELATED'
-}
+  | 'RELATED';
 
 /** Represents a link related to a vulnerability */
 export type VulnerabilityLink = {
@@ -51869,125 +50396,67 @@ export type VulnerabilityManagementPolicyEdge = {
 };
 
 /** OwaspTop10 category of the vulnerability */
-export enum VulnerabilityOwaspTop10 {
-  /**
-   * A01:2021-Broken Access Control, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A01_2021 = 'A01_2021',
-  /**
-   * A02:2021-Cryptographic Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A02_2021 = 'A02_2021',
-  /**
-   * A03:2021-Injection, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A03_2021 = 'A03_2021',
-  /**
-   * A04:2021-Insecure Design, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A04_2021 = 'A04_2021',
-  /**
-   * A05:2021-Security Misconfiguration, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A05_2021 = 'A05_2021',
-  /**
-   * A06:2021-Vulnerable and Outdated Components, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A06_2021 = 'A06_2021',
-  /**
-   * A07:2021-Identification and Authentication Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A07_2021 = 'A07_2021',
-  /**
-   * A08:2021-Software and Data Integrity Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A08_2021 = 'A08_2021',
-  /**
-   * A09:2021-Security Logging and Monitoring Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A09_2021 = 'A09_2021',
+export type VulnerabilityOwaspTop10 =
+  /** A01:2021-Broken Access Control, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A01_2021'
+  /** A02:2021-Cryptographic Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A02_2021'
+  /** A03:2021-Injection, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A03_2021'
+  /** A04:2021-Insecure Design, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A04_2021'
+  /** A05:2021-Security Misconfiguration, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A05_2021'
+  /** A06:2021-Vulnerable and Outdated Components, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A06_2021'
+  /** A07:2021-Identification and Authentication Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A07_2021'
+  /** A08:2021-Software and Data Integrity Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A08_2021'
+  /** A09:2021-Security Logging and Monitoring Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A09_2021'
   /** A1:2017-Injection, OWASP top 10 category. */
-  A1_2017 = 'A1_2017',
-  /**
-   * A1:2021-Broken Access Control, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A1_2021 = 'A1_2021',
+  | 'A1_2017'
+  /** A1:2021-Broken Access Control, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A1_2021'
   /** A2:2017-Broken Authentication, OWASP top 10 category. */
-  A2_2017 = 'A2_2017',
-  /**
-   * A2:2021-Cryptographic Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A2_2021 = 'A2_2021',
+  | 'A2_2017'
+  /** A2:2021-Cryptographic Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A2_2021'
   /** A3:2017-Sensitive Data Exposure, OWASP top 10 category. */
-  A3_2017 = 'A3_2017',
-  /**
-   * A3:2021-Injection, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A3_2021 = 'A3_2021',
+  | 'A3_2017'
+  /** A3:2021-Injection, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A3_2021'
   /** A4:2017-XML External Entities (XXE), OWASP top 10 category. */
-  A4_2017 = 'A4_2017',
-  /**
-   * A4:2021-Insecure Design, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A4_2021 = 'A4_2021',
+  | 'A4_2017'
+  /** A4:2021-Insecure Design, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A4_2021'
   /** A5:2017-Broken Access Control, OWASP top 10 category. */
-  A5_2017 = 'A5_2017',
-  /**
-   * A5:2021-Security Misconfiguration, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A5_2021 = 'A5_2021',
+  | 'A5_2017'
+  /** A5:2021-Security Misconfiguration, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A5_2021'
   /** A6:2017-Security Misconfiguration, OWASP top 10 category. */
-  A6_2017 = 'A6_2017',
-  /**
-   * A6:2021-Vulnerable and Outdated Components, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A6_2021 = 'A6_2021',
+  | 'A6_2017'
+  /** A6:2021-Vulnerable and Outdated Components, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A6_2021'
   /** A7:2017-Cross-Site Scripting (XSS), OWASP top 10 category. */
-  A7_2017 = 'A7_2017',
-  /**
-   * A7:2021-Identification and Authentication Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A7_2021 = 'A7_2021',
+  | 'A7_2017'
+  /** A7:2021-Identification and Authentication Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A7_2021'
   /** A8:2017-Insecure Deserialization, OWASP top 10 category. */
-  A8_2017 = 'A8_2017',
-  /**
-   * A8:2021-Software and Data Integrity Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A8_2021 = 'A8_2021',
+  | 'A8_2017'
+  /** A8:2021-Software and Data Integrity Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A8_2021'
   /** A9:2017-Using Components with Known Vulnerabilities, OWASP top 10 category. */
-  A9_2017 = 'A9_2017',
-  /**
-   * A9:2021-Security Logging and Monitoring Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A9_2021 = 'A9_2021',
+  | 'A9_2017'
+  /** A9:2021-Security Logging and Monitoring Failures, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A9_2021'
   /** A10:2017-Insufficient Logging & Monitoring, OWASP top 10 category. */
-  A10_2017 = 'A10_2017',
-  /**
-   * A10:2021-Server-Side Request Forgery, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 16.8.
-   */
-  A10_2021 = 'A10_2021',
+  | 'A10_2017'
+  /** A10:2021-Server-Side Request Forgery, OWASP top 10 category. Introduced in GitLab 16.8: **Status**: Experiment. */
+  | 'A10_2021'
   /** No OWASP top 10 category. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 /** Check permissions for the current user on a vulnerability */
 export type VulnerabilityPermissions = {
@@ -52022,28 +50491,27 @@ export type VulnerabilityRemediationType = {
 };
 
 /** The type of the security scan that found the vulnerability */
-export enum VulnerabilityReportType {
+export type VulnerabilityReportType =
   /** API Fuzzing report */
-  ApiFuzzing = 'API_FUZZING',
+  | 'API_FUZZING'
   /** Cluster Image Scanning report */
-  ClusterImageScanning = 'CLUSTER_IMAGE_SCANNING',
+  | 'CLUSTER_IMAGE_SCANNING'
   /** Container Scanning report */
-  ContainerScanning = 'CONTAINER_SCANNING',
+  | 'CONTAINER_SCANNING'
   /** Container Scanning For Registry report */
-  ContainerScanningForRegistry = 'CONTAINER_SCANNING_FOR_REGISTRY',
+  | 'CONTAINER_SCANNING_FOR_REGISTRY'
   /** Coverage Fuzzing report */
-  CoverageFuzzing = 'COVERAGE_FUZZING',
+  | 'COVERAGE_FUZZING'
   /** DAST report */
-  Dast = 'DAST',
+  | 'DAST'
   /** Dependency Scanning report */
-  DependencyScanning = 'DEPENDENCY_SCANNING',
+  | 'DEPENDENCY_SCANNING'
   /** Generic report */
-  Generic = 'GENERIC',
+  | 'GENERIC'
   /** SAST report */
-  Sast = 'SAST',
+  | 'SAST'
   /** Secret Detection report */
-  SecretDetection = 'SECRET_DETECTION'
-}
+  | 'SECRET_DETECTION';
 
 /** Represents vulnerability information */
 export type VulnerabilityRepresentationInformation = {
@@ -52202,44 +50670,41 @@ export type VulnerabilitySeveritiesCount = {
 };
 
 /** The severity of the vulnerability */
-export enum VulnerabilitySeverity {
+export type VulnerabilitySeverity =
   /** Critical severity */
-  Critical = 'CRITICAL',
+  | 'CRITICAL'
   /** High severity */
-  High = 'HIGH',
+  | 'HIGH'
   /** Info severity */
-  Info = 'INFO',
+  | 'INFO'
   /** Low severity */
-  Low = 'LOW',
+  | 'LOW'
   /** Medium severity */
-  Medium = 'MEDIUM',
+  | 'MEDIUM'
   /** Unknown severity */
-  Unknown = 'UNKNOWN'
-}
+  | 'UNKNOWN';
 
 /** Vulnerability sort values */
-export enum VulnerabilitySort {
+export type VulnerabilitySort =
   /** Detection timestamp in ascending order. */
-  DetectedAsc = 'detected_asc',
+  | 'detected_asc'
   /** Detection timestamp in descending order. */
-  DetectedDesc = 'detected_desc',
+  | 'detected_desc'
   /** Severity in ascending order. */
-  SeverityAsc = 'severity_asc',
+  | 'severity_asc'
   /** Severity in descending order. */
-  SeverityDesc = 'severity_desc'
-}
+  | 'severity_desc';
 
 /** The state of the vulnerability */
-export enum VulnerabilityState {
+export type VulnerabilityState =
   /** For details, see [vulnerability status values](https://docs.gitlab.com/ee/user/application_security/vulnerabilities/#vulnerability-status-values). */
-  Confirmed = 'CONFIRMED',
+  | 'CONFIRMED'
   /** For details, see [vulnerability status values](https://docs.gitlab.com/ee/user/application_security/vulnerabilities/#vulnerability-status-values). */
-  Detected = 'DETECTED',
+  | 'DETECTED'
   /** For details, see [vulnerability status values](https://docs.gitlab.com/ee/user/application_security/vulnerabilities/#vulnerability-status-values). */
-  Dismissed = 'DISMISSED',
+  | 'DISMISSED'
   /** For details, see [vulnerability status values](https://docs.gitlab.com/ee/user/application_security/vulnerabilities/#vulnerability-status-values). */
-  Resolved = 'RESOLVED'
-}
+  | 'RESOLVED';
 
 /** Represents a state transition of a vulnerability */
 export type VulnerabilityStateTransitionType = {
@@ -52334,12 +50799,11 @@ export type VulnerableProjectsByGradeProjectsArgs = {
 };
 
 /** Weight ID wildcard values */
-export enum WeightWildcardId {
+export type WeightWildcardId =
   /** Weight is assigned. */
-  Any = 'ANY',
+  | 'ANY'
   /** No weight is assigned. */
-  None = 'NONE'
-}
+  | 'NONE';
 
 /** A wiki page */
 export type WikiPage = NoteableInterface & Todoable & {
@@ -52535,14 +50999,13 @@ export type WorkItemAddLinkedItemsPayload = {
 };
 
 /** Values for work item award emoji update enum */
-export enum WorkItemAwardEmojiUpdateAction {
+export type WorkItemAwardEmojiUpdateAction =
   /** Adds the emoji. */
-  Add = 'ADD',
+  | 'ADD'
   /** Removes the emoji. */
-  Remove = 'REMOVE',
+  | 'REMOVE'
   /** Toggles the status of the emoji. */
-  Toggle = 'TOGGLE'
-}
+  | 'TOGGLE';
 
 /** Autogenerated input type of WorkItemBulkUpdate */
 export type WorkItemBulkUpdateInput = {
@@ -52968,14 +51431,13 @@ export type WorkItemRelatedBranchEdge = {
 };
 
 /** Values for work item link types */
-export enum WorkItemRelatedLinkType {
+export type WorkItemRelatedLinkType =
   /** Blocked by type. */
-  BlockedBy = 'BLOCKED_BY',
+  | 'BLOCKED_BY'
   /** Blocks type. */
-  Blocks = 'BLOCKS',
+  | 'BLOCKS'
   /** Related type. */
-  Related = 'RELATED'
-}
+  | 'RELATED';
 
 /** Autogenerated input type of WorkItemRemoveLinkedItems */
 export type WorkItemRemoveLinkedItemsInput = {
@@ -53016,155 +51478,84 @@ export type WorkItemSelectFieldValue = WorkItemCustomFieldValue & {
 };
 
 /** Values for sorting work items */
-export enum WorkItemSort {
+export type WorkItemSort =
   /** Blocking items count by ascending order. */
-  BlockingItemsAsc = 'BLOCKING_ITEMS_ASC',
+  | 'BLOCKING_ITEMS_ASC'
   /** Blocking items count by descending order. */
-  BlockingItemsDesc = 'BLOCKING_ITEMS_DESC',
-  /**
-   * Closed time by ascending order. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  ClosedAtAsc = 'CLOSED_AT_ASC',
-  /**
-   * Closed time by descending order. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  ClosedAtDesc = 'CLOSED_AT_DESC',
+  | 'BLOCKING_ITEMS_DESC'
+  /** Closed time by ascending order. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'CLOSED_AT_ASC'
+  /** Closed time by descending order. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'CLOSED_AT_DESC'
   /** Created at ascending order. */
-  CreatedAsc = 'CREATED_ASC',
+  | 'CREATED_ASC'
   /** Created at descending order. */
-  CreatedDesc = 'CREATED_DESC',
-  /**
-   * Due date by ascending order. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  DueDateAsc = 'DUE_DATE_ASC',
-  /**
-   * Due date by descending order. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  DueDateDesc = 'DUE_DATE_DESC',
-  /**
-   * Status from triggered to resolved. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  EscalationStatusAsc = 'ESCALATION_STATUS_ASC',
-  /**
-   * Status from resolved to triggered. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  EscalationStatusDesc = 'ESCALATION_STATUS_DESC',
-  /**
-   * Health status by ascending order. Introduced in GitLab 17.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
-   */
-  HealthStatusAsc = 'HEALTH_STATUS_ASC',
-  /**
-   * Health status by descending order. Introduced in GitLab 17.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
-   */
-  HealthStatusDesc = 'HEALTH_STATUS_DESC',
+  | 'CREATED_DESC'
+  /** Due date by ascending order. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'DUE_DATE_ASC'
+  /** Due date by descending order. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'DUE_DATE_DESC'
+  /** Status from triggered to resolved. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'ESCALATION_STATUS_ASC'
+  /** Status from resolved to triggered. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'ESCALATION_STATUS_DESC'
+  /** Health status by ascending order. Introduced in GitLab 17.11: **Status**: Experiment. */
+  | 'HEALTH_STATUS_ASC'
+  /** Health status by descending order. Introduced in GitLab 17.11: **Status**: Experiment. */
+  | 'HEALTH_STATUS_DESC'
   /** Label priority by ascending order. */
-  LabelPriorityAsc = 'LABEL_PRIORITY_ASC',
+  | 'LABEL_PRIORITY_ASC'
   /** Label priority by descending order. */
-  LabelPriorityDesc = 'LABEL_PRIORITY_DESC',
+  | 'LABEL_PRIORITY_DESC'
   /** Milestone due date by ascending order. */
-  MilestoneDueAsc = 'MILESTONE_DUE_ASC',
+  | 'MILESTONE_DUE_ASC'
   /** Milestone due date by descending order. */
-  MilestoneDueDesc = 'MILESTONE_DUE_DESC',
-  /**
-   * Number of upvotes (awarded "thumbs up" emoji) by ascending order. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  PopularityAsc = 'POPULARITY_ASC',
-  /**
-   * Number of upvotes (awarded "thumbs up" emoji) by descending order. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  PopularityDesc = 'POPULARITY_DESC',
-  /**
-   * Priority by ascending order. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  PriorityAsc = 'PRIORITY_ASC',
-  /**
-   * Priority by descending order. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  PriorityDesc = 'PRIORITY_DESC',
-  /**
-   * Relative position by ascending order. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  RelativePositionAsc = 'RELATIVE_POSITION_ASC',
-  /**
-   * Severity from less critical to more critical. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  SeverityAsc = 'SEVERITY_ASC',
-  /**
-   * Severity from more critical to less critical. Introduced in GitLab 17.10: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.10.
-   */
-  SeverityDesc = 'SEVERITY_DESC',
-  /**
-   * Start date by ascending order. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  StartDateAsc = 'START_DATE_ASC',
-  /**
-   * Start date by descending order. Introduced in GitLab 17.9: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.9.
-   */
-  StartDateDesc = 'START_DATE_DESC',
+  | 'MILESTONE_DUE_DESC'
+  /** Number of upvotes (awarded "thumbs up" emoji) by ascending order. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'POPULARITY_ASC'
+  /** Number of upvotes (awarded "thumbs up" emoji) by descending order. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'POPULARITY_DESC'
+  /** Priority by ascending order. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'PRIORITY_ASC'
+  /** Priority by descending order. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'PRIORITY_DESC'
+  /** Relative position by ascending order. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'RELATIVE_POSITION_ASC'
+  /** Severity from less critical to more critical. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'SEVERITY_ASC'
+  /** Severity from more critical to less critical. Introduced in GitLab 17.10: **Status**: Experiment. */
+  | 'SEVERITY_DESC'
+  /** Start date by ascending order. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'START_DATE_ASC'
+  /** Start date by descending order. Introduced in GitLab 17.9: **Status**: Experiment. */
+  | 'START_DATE_DESC'
   /** Title by ascending order. */
-  TitleAsc = 'TITLE_ASC',
+  | 'TITLE_ASC'
   /** Title by descending order. */
-  TitleDesc = 'TITLE_DESC',
+  | 'TITLE_DESC'
   /** Updated at ascending order. */
-  UpdatedAsc = 'UPDATED_ASC',
+  | 'UPDATED_ASC'
   /** Updated at descending order. */
-  UpdatedDesc = 'UPDATED_DESC',
-  /**
-   * Weight by ascending order. Introduced in GitLab 17.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
-   */
-  WeightAsc = 'WEIGHT_ASC',
-  /**
-   * Weight by descending order. Introduced in GitLab 17.11: **Status**: Experiment.
-   * @deprecated **Status**: Experiment. Introduced in GitLab 17.11.
-   */
-  WeightDesc = 'WEIGHT_DESC',
-  /**
-   * Created at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  CreatedAsc = 'created_asc',
-  /**
-   * Created at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `CREATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  CreatedDesc = 'created_desc',
-  /**
-   * Updated at ascending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_ASC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedAsc = 'updated_asc',
-  /**
-   * Updated at descending order. Deprecated in GitLab 13.5: This was renamed.
-   * @deprecated This was renamed. Please use `UPDATED_DESC`. Deprecated in GitLab 13.5.
-   */
-  UpdatedDesc = 'updated_desc'
-}
+  | 'UPDATED_DESC'
+  /** Weight by ascending order. Introduced in GitLab 17.11: **Status**: Experiment. */
+  | 'WEIGHT_ASC'
+  /** Weight by descending order. Introduced in GitLab 17.11: **Status**: Experiment. */
+  | 'WEIGHT_DESC'
+  /** Created at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_asc'
+  /** Created at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'created_desc'
+  /** Updated at ascending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_asc'
+  /** Updated at descending order. Deprecated in GitLab 13.5: This was renamed. */
+  | 'updated_desc';
 
 /** State of a GitLab work item */
-export enum WorkItemState {
+export type WorkItemState =
   /** In closed state. */
-  Closed = 'CLOSED',
+  | 'CLOSED'
   /** In open state. */
-  Open = 'OPEN'
-}
+  | 'OPEN';
 
 /** Represents total number of work items for the represented states */
 export type WorkItemStateCountsType = {
@@ -53178,12 +51569,11 @@ export type WorkItemStateCountsType = {
 };
 
 /** Values for work item state events */
-export enum WorkItemStateEvent {
+export type WorkItemStateEvent =
   /** Closes the work item. */
-  Close = 'CLOSE',
+  | 'CLOSE'
   /** Reopens the work item. */
-  Reopen = 'REOPEN'
-}
+  | 'REOPEN';
 
 /** Represents status */
 export type WorkItemStatus = {
@@ -53287,12 +51677,11 @@ export type WorkItemTimelogEdge = {
 };
 
 /** Values for work item to-do update enum */
-export enum WorkItemTodoUpdateAction {
+export type WorkItemTodoUpdateAction =
   /** Adds the to-do. */
-  Add = 'ADD',
+  | 'ADD'
   /** Marks the to-do as done. */
-  MarkAsDone = 'MARK_AS_DONE'
-}
+  | 'MARK_AS_DONE';
 
 export type WorkItemType = {
   __typename?: 'WorkItemType';
@@ -54263,68 +52652,67 @@ export type WorkItemWidgetTimeTrackingTimelogInput = {
 };
 
 /** Type of a work item widget */
-export enum WorkItemWidgetType {
+export type WorkItemWidgetType =
   /** Assignees widget. */
-  Assignees = 'ASSIGNEES',
+  | 'ASSIGNEES'
   /** Award Emoji widget. */
-  AwardEmoji = 'AWARD_EMOJI',
+  | 'AWARD_EMOJI'
   /** Color widget. */
-  Color = 'COLOR',
+  | 'COLOR'
   /** Crm Contacts widget. */
-  CrmContacts = 'CRM_CONTACTS',
+  | 'CRM_CONTACTS'
   /** Current User Todos widget. */
-  CurrentUserTodos = 'CURRENT_USER_TODOS',
+  | 'CURRENT_USER_TODOS'
   /** Custom Fields widget. */
-  CustomFields = 'CUSTOM_FIELDS',
+  | 'CUSTOM_FIELDS'
   /** Description widget. */
-  Description = 'DESCRIPTION',
+  | 'DESCRIPTION'
   /** Designs widget. */
-  Designs = 'DESIGNS',
+  | 'DESIGNS'
   /** Development widget. */
-  Development = 'DEVELOPMENT',
+  | 'DEVELOPMENT'
   /** Email Participants widget. */
-  EmailParticipants = 'EMAIL_PARTICIPANTS',
+  | 'EMAIL_PARTICIPANTS'
   /** Error Tracking widget. */
-  ErrorTracking = 'ERROR_TRACKING',
+  | 'ERROR_TRACKING'
   /** Health Status widget. */
-  HealthStatus = 'HEALTH_STATUS',
+  | 'HEALTH_STATUS'
   /** Hierarchy widget. */
-  Hierarchy = 'HIERARCHY',
+  | 'HIERARCHY'
   /** Iteration widget. */
-  Iteration = 'ITERATION',
+  | 'ITERATION'
   /** Labels widget. */
-  Labels = 'LABELS',
+  | 'LABELS'
   /** Linked Items widget. */
-  LinkedItems = 'LINKED_ITEMS',
+  | 'LINKED_ITEMS'
   /** Linked Resources widget. */
-  LinkedResources = 'LINKED_RESOURCES',
+  | 'LINKED_RESOURCES'
   /** Milestone widget. */
-  Milestone = 'MILESTONE',
+  | 'MILESTONE'
   /** Notes widget. */
-  Notes = 'NOTES',
+  | 'NOTES'
   /** Notifications widget. */
-  Notifications = 'NOTIFICATIONS',
+  | 'NOTIFICATIONS'
   /** Participants widget. */
-  Participants = 'PARTICIPANTS',
+  | 'PARTICIPANTS'
   /** Progress widget. */
-  Progress = 'PROGRESS',
+  | 'PROGRESS'
   /** Requirement Legacy widget. */
-  RequirementLegacy = 'REQUIREMENT_LEGACY',
+  | 'REQUIREMENT_LEGACY'
   /** Start And Due Date widget. */
-  StartAndDueDate = 'START_AND_DUE_DATE',
+  | 'START_AND_DUE_DATE'
   /** Status widget. */
-  Status = 'STATUS',
+  | 'STATUS'
   /** Test Reports widget. */
-  TestReports = 'TEST_REPORTS',
+  | 'TEST_REPORTS'
   /** Time Tracking widget. */
-  TimeTracking = 'TIME_TRACKING',
+  | 'TIME_TRACKING'
   /** Verification Status widget. */
-  VerificationStatus = 'VERIFICATION_STATUS',
+  | 'VERIFICATION_STATUS'
   /** Vulnerabilities widget. */
-  Vulnerabilities = 'VULNERABILITIES',
+  | 'VULNERABILITIES'
   /** Weight widget. */
-  Weight = 'WEIGHT'
-}
+  | 'WEIGHT';
 
 /** Represents a verification status widget */
 export type WorkItemWidgetVerificationStatus = WorkItemWidget & {
@@ -54607,16 +52995,14 @@ export type WorkspaceVariableInput = {
 };
 
 /** Enum for the type of the variable to be injected in a workspace. */
-export enum WorkspaceVariableInputType {
+export type WorkspaceVariableInputType =
   /** Name type. */
-  Environment = 'ENVIRONMENT'
-}
+  | 'ENVIRONMENT';
 
 /** Enum for the type of the variable injected in a workspace. */
-export enum WorkspaceVariableType {
+export type WorkspaceVariableType =
   /** Environment type. */
-  Environment = 'ENVIRONMENT'
-}
+  | 'ENVIRONMENT';
 
 /** Represents a workspaces agent config */
 export type WorkspacesAgentConfig = {

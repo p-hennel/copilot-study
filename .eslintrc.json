@@ -44,6 +44,7 @@
         "groups": [[".*"]]
       }
     ],
+    "@typescript-eslint/no-explicit-any": "off",
     "simple-import-sort/exports": "error",
     "svelte/sort-attributes": "error",
     "svelte/block-lang": [

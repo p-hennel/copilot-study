@@ -1,5 +1,6 @@
 module.exports = {
-  apps: [{
+  apps: [
+    {
       name: "web",
       interpreter: "/bin/bash",
       script: "pm2-server.sh",
@@ -8,7 +9,7 @@ module.exports = {
       exec_mode: "fork",
       vizion: false,
       env: {
-        PATH: `/opt/homebrew/bin/bun:${process.env.PATH}`, // Add "~/.bun/bin/bun" to PATH
+        PATH: `/opt/homebrew/bin/bun:${process.env.PATH}` // Add "~/.bun/bin/bun" to PATH
       }
     }
   ]

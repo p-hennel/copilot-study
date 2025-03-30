@@ -12,7 +12,7 @@ cache
 /.svelte-kit
 /build
 logs/
-data/
+/data/
 
 # OS
 .DS_Store

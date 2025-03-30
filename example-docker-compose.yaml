@@ -1,6 +1,4 @@
 services:
-
-
   surveytool:
     container_name: surveytool
     image: phennel/copilot-study:latest
@@ -13,9 +11,9 @@ services:
       - BACKUP_PRIVATE_KEY= # !!! SSH PRIVATE KEY FPR BACKUP SERVICE !!!
       - DATA_ROOT=/home/bun/data
       - BETTER_AUTH_SECRET= # !!!! AUTHORIZATION SECRET FOR AUTHENTICATION !!!!
-#      - GITLAB_CLIENT_ID= # Will be added later
-#      - GITLAB_CLIENT_SECRET= # Will be added later
-#      - GITLAB_BASE_URL= # Will be added later
+      #      - GITLAB_CLIENT_ID= # Will be added later
+      #      - GITLAB_CLIENT_SECRET= # Will be added later
+      #      - GITLAB_BASE_URL= # Will be added later
       - HMAC_KEY= # !!!! HMAC KEY FOR CONSISTENT HASHES !!!
       - HASH_ALG=sha256
       - OTEL_EXPORTER_OTLP_ENDPOINT="http://134.102.23.170:5080/api/ai-study" # to keep tabs on the crawler, it loggs to a self-hosted openobserve instance in Bremen

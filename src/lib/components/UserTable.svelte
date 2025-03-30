@@ -1,28 +1,24 @@
 <script lang="ts">
-  import Time from "svelte-time";
-  import { Button } from "$ui/button";
-  import * as Table from "$lib/components/ui/table/index.js";
-  import { m } from "$paraglide";
-  import {
-    type UserInformation,
-    type AccountInformation,
-    dynamicHandleDownloadAsCSV
-  } from "$lib/utils";
-  import { Separator } from "$ui/separator";
-  import { FileDown } from "lucide-svelte";
+  import Time from "svelte-time"
+  import { Button } from "$ui/button"
+  import * as Table from "$lib/components/ui/table/index.js"
+  import { m } from "$paraglide"
+  import { type UserInformation, type AccountInformation, dynamicHandleDownloadAsCSV } from "$lib/utils"
+  import { Separator } from "$ui/separator"
+  import { FileDown } from "lucide-svelte"
 
-  type UserInformationWithAccounts = UserInformation & { accounts: AccountInformation[] };
+  type UserInformationWithAccounts = UserInformation & { accounts: AccountInformation[] }
   type PreparedUserInformation = UserInformationWithAccounts & {
-    firstAccount: AccountInformation | undefined;
-  };
+    firstAccount: AccountInformation | undefined
+  }
   type UserTableProps = {
-    users: UserInformationWithAccounts[];
-    format?: string;
-  };
+    users: UserInformationWithAccounts[]
+    format?: string
+  }
 
-  let data: UserTableProps = $props();
+  let data: UserTableProps = $props()
 
-  const format = $derived(data.format ?? "DD. MMM YY");
+  const format = $derived(data.format ?? "DD. MMM YY")
 
   const users: PreparedUserInformation[] = $derived.by(() => {
     return data.users.map((x: UserInformationWithAccounts) => {
@@ -31,22 +27,20 @@
           ...x,
           accounts: [...x.accounts].slice(1),
           firstAccount: x.accounts[0]
-        } as PreparedUserInformation;
+        } as PreparedUserInformation
       else {
         return {
           ...x,
           firstAccount: undefined
-        } as PreparedUserInformation;
+        } as PreparedUserInformation
       }
-    });
-  });
+    })
+  })
 
-  const maxNumAccounts = $derived(() =>
-    data.users.reduce((res, usr) => Math.max(res, usr.accounts.length), 0)
-  );
+  const maxNumAccounts = $derived(() => data.users.reduce((res, usr) => Math.max(res, usr.accounts.length), 0))
   const lessThanMaxAccounts = $derived(() =>
     data.users.reduce((res, usr) => res + (usr.accounts.length < maxNumAccounts() ? 1 : 0), 0)
-  );
+  )
 </script>
 
 <div class="flex flex-row flex-wrap items-center justify-between">
@@ -76,15 +70,11 @@
 <Table.Root>
   <Table.Header>
     <Table.Row>
-      <Table.Head rowspan={2} class="w-[4rem] text-right"
-        >{m["admin.dashboard.userTable.header.idx"]()}</Table.Head
-      >
+      <Table.Head rowspan={2} class="w-[4rem] text-right">{m["admin.dashboard.userTable.header.idx"]()}</Table.Head>
       <!--<Table.Head rowspan={2}>{m["admin.dashboard.userTable.header.name"]()}</Table.Head>-->
       <Table.Head rowspan={2}>{m["admin.dashboard.userTable.header.email"]()}</Table.Head>
       <Table.Head rowspan={2}>{m["admin.dashboard.userTable.header.created"]()}</Table.Head>
-      <Table.Head colspan={3} class="text-center"
-        >{m["admin.dashboard.userTable.header.accounts"]()}</Table.Head
-      >
+      <Table.Head colspan={3} class="text-center">{m["admin.dashboard.userTable.header.accounts"]()}</Table.Head>
     </Table.Row>
     <Table.Row>
       <Table.Head>{m["admin.dashboard.userTable.header.provider"]()}</Table.Head>
@@ -93,11 +83,9 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each users as user, idx}
+    {#each users as user, idx (idx)}
       <Table.Row>
-        <Table.Cell rowspan={user.accounts.length + 1} class="text-right"
-          >{users.length - idx}</Table.Cell
-        >
+        <Table.Cell rowspan={user.accounts.length + 1} class="text-right">{users.length - idx}</Table.Cell>
         <!--<Table.Cell rowspan={user.accounts.length + 1}>{user.name}</Table.Cell>-->
         <Table.Cell rowspan={user.accounts.length + 1}>
           {#if user.email.includes("@")}
@@ -106,18 +94,12 @@
             {user.email}
           {/if}
         </Table.Cell>
-        <Table.Cell rowspan={user.accounts.length + 1}
-          ><Time timestamp={user.createdAt} {format} /></Table.Cell
-        >
+        <Table.Cell rowspan={user.accounts.length + 1}><Time timestamp={user.createdAt} {format} /></Table.Cell>
         {#if !user.firstAccount}
-          <Table.Cell colspan={3} class="text-center"
-            >{m["admin.dashboard.userTable.no_accounts"]()}</Table.Cell
-          >
+          <Table.Cell colspan={3} class="text-center">{m["admin.dashboard.userTable.no_accounts"]()}</Table.Cell>
         {:else}
           <Table.Cell>{user.firstAccount.providerId}</Table.Cell>
-          <Table.Cell class="text-center"
-            ><Time timestamp={user.firstAccount.createdAt} {format} /></Table.Cell
-          >
+          <Table.Cell class="text-center"><Time timestamp={user.firstAccount.createdAt} {format} /></Table.Cell>
           <Table.Cell class="text-center">
             {#if !!user.firstAccount.refreshTokenExpiresAt}
               <Time timestamp={user.firstAccount.refreshTokenExpiresAt} {format} />
@@ -125,12 +107,10 @@
           </Table.Cell>
         {/if}
       </Table.Row>
-      {#each user.accounts as account}
+      {#each user.accounts as account (account)}
         <Table.Row>
           <Table.Cell>{account.providerId}</Table.Cell>
-          <Table.Cell class="text-center"
-            ><Time timestamp={account.createdAt} {format} /></Table.Cell
-          >
+          <Table.Cell class="text-center"><Time timestamp={account.createdAt} {format} /></Table.Cell>
           <Table.Cell class="text-center">
             {#if !!account.refreshTokenExpiresAt}
               <Time timestamp={account.refreshTokenExpiresAt} {format} />
