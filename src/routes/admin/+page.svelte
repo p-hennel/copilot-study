@@ -8,6 +8,7 @@
   import JobsTable from "$lib/components/JobsTable.svelte"
   import AreasTable from "$lib/components/AreasTable.svelte"
   import type { Snapshot } from "./$types"
+  import ProfileWidget from "$components/ProfileWidget.svelte"
   // Removed incorrect import from $lib/server/utils
 
   let { data }: PageProps = $props()
@@ -31,6 +32,7 @@
   const processesWithToken = $derived.by(() => Promise.all([data.processes, data.sessiontoken]))
 </script>
 
+<ProfileWidget user={data.user} class="mb-4" />
 <h1 class="mb-2 text-4xl font-extrabold">{m["admin.dashboard.title"]()}</h1>
 
 <Tabs.Root bind:value={selectedTab} class="w-full">

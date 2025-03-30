@@ -1,43 +1,44 @@
 <script lang="ts">
-  import { Separator } from "$lib/components/ui/separator/index.js";
-  import type { PageData } from "./$types"; // Use PageData from generated types
-  let { data }: { data: PageData } = $props(); // Use PageData
-  import Markdown from "svelte-exmarkdown";
-  import { authClient } from "$lib/auth-client";
-  import Gitlab from "$lib/components/Gitlab.svelte";
-  import Jira from "$lib/components/Jira.svelte";
+  import { Separator } from "$lib/components/ui/separator/index.js"
+  import type { PageData } from "./$types" // Use PageData from generated types
+  let { data }: { data: PageData } = $props() // Use PageData
+  import Markdown from "svelte-exmarkdown"
+  import { authClient } from "$lib/auth-client"
+  import Gitlab from "$lib/components/Gitlab.svelte"
+  import Jira from "$lib/components/Jira.svelte"
   // Removed: import AuthProvider from "$lib/components/AuthProvider.svelte";
-  import AuthProviderCard from "$lib/components/AuthProviderCard.svelte";
-  import { JobStatus, TokenProvider } from "$lib/utils";
+  import AuthProviderCard from "$lib/components/AuthProviderCard.svelte"
+  import { JobStatus, TokenProvider } from "$lib/utils"
   // Removed: import { number } from "$lib/paraglide/registry";
-  import AreaCard from "$lib/components/AreaCard.svelte";
-  import { m } from "$paraglide";
-  import * as Accordion from "$lib/components/ui/accordion/index.js";
-  import { page } from "$app/stores"; // Import page store
+  import AreaCard from "$lib/components/AreaCard.svelte"
+  import { m } from "$paraglide"
+  import * as Accordion from "$lib/components/ui/accordion/index.js"
+  import { page } from "$app/stores" // Import page store
+  import ProfileWidget from "$components/ProfileWidget.svelte"
 
   let pageState = $state({
     loading: true,
     linkedAccounts: [] as string[]
-  });
+  })
 
   authClient.listAccounts().then((x) => {
     if (!!x.data && x.data.length > 0) {
-      pageState.linkedAccounts = x.data.map((x) => x.provider);
+      pageState.linkedAccounts = x.data.map((x) => x.provider)
     }
-    pageState.loading = false;
-  });
+    pageState.loading = false
+  })
 
   const nicerCounts = (count: number) => {
-    if (count <= 0) return "no";
-    else return `${count}`;
-  };
+    if (count <= 0) return "no"
+    else return `${count}`
+  }
 
-  const isLoggedIn = $derived(!!$page.data.session && !!$page.data.session.userId); // Use $page store
+  const isLoggedIn = $derived(!!$page.data.session && !!$page.data.session.userId) // Use $page store
   const jobsSummary = $derived.by(() => {
     return data.jobs.reduce(
       (ctr, item) => {
-        if (item.status) ctr[item.status] = ctr[item.status] + 1;
-        return ctr;
+        if (item.status) ctr[item.status] = ctr[item.status] + 1
+        return ctr
       },
       {
         [JobStatus.failed]: 0,
@@ -46,11 +47,12 @@
         [JobStatus.running]: 0,
         [JobStatus.paused]: 0 // Add paused status
       }
-    );
-  });
+    )
+  })
 </script>
 
-<article class="prose dark:prose-invert mb-4">
+<article class="prose dark:prose-invert mb-4 items-center">
+  <ProfileWidget user={data.user} />
   <h1 class="text-4xl font-extrabold">{m["home.title"]()}</h1>
   <p class="mb-0">
     {m["home.intro"]()}
@@ -109,16 +111,17 @@
   </div>
 {:else}
   <p>
-    As soon as your account's areas (i.e., groups and projects) have been synchronized, you will see
-    more information here.
+    As soon as your account's areas (i.e., groups and projects) have been synchronized, you will see more information
+    here.
   </p>
 {/if}
 
 {#if !!data.jobs && data.jobs.length > 0}
   <Separator class="my-4" />
   <p>
-    Directly associated with your accounts, {nicerCounts(jobsSummary[JobStatus.finished])} jobs have
-    finished (and {nicerCounts(jobsSummary[JobStatus.finished])} have failed).
+    Directly associated with your accounts, {nicerCounts(jobsSummary[JobStatus.finished])} jobs have finished (and {nicerCounts(
+      jobsSummary[JobStatus.finished]
+    )} have failed).
   </p>
   {#if jobsSummary[JobStatus.running] > 0 || jobsSummary[JobStatus.queued] > 0}
     <p>
