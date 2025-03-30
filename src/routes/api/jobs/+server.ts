@@ -5,7 +5,7 @@ import { getAvailableJobs, spawnNewJobs } from "$lib/server/db/jobFactory"
 import { isAdmin, unauthorizedResponse, type AuthorizationScopesResult } from "$lib/server/utils" // Import AuthorizationScopesResult
 import { JobStatus, TokenProvider } from "$lib/utils"
 import { json } from "@sveltejs/kit"
-import { eq, gt } from "drizzle-orm/sql"
+import { eq } from "drizzle-orm/sql"
 import { getLogger } from "$lib/logging" // Import logtape helper
 
 // Define expected request body structure

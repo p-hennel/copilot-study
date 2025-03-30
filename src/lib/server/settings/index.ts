@@ -3,7 +3,35 @@ import yaml from "js-yaml"
 import { z } from "zod"
 import path from "node:path"
 
-const dataRoot = path.resolve(process.env.NODE_ENV === "development" ? "./" : path.join("/", "home", "bun", "data"))
+const getSettingsFilePath = () => {
+  const settingsFilePath = Bun.env.SETTINGS_FILE ?? process.env.SETTINGS_FILE
+  if (settingsFilePath && settingsFilePath.length > 0 && existsSync(settingsFilePath)) {
+    return settingsFilePath
+  }
+  if (process.env.NODE_ENV === "development") {
+    const candidate = path.resolve(process.cwd(), "config", "settings.yaml")
+    if (existsSync(candidate)) {
+      return candidate
+    } else {
+      return path.resolve(process.cwd(), "settings.yaml")
+    }
+  } else {
+    const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data", "settings.yaml"))
+    if (existsSync(candidate)) {
+      return candidate
+    }
+    const altCandidate = path.resolve(process.cwd(), "settings.yaml")
+    if (existsSync(altCandidate)) {
+      return altCandidate
+    } else {
+      return candidate
+    }
+  }
+}
+
+const dataRoot = path.resolve(
+  Bun.env.SETTINGS_PATH ?? (process.env.NODE_ENV === "development" ? "./" : path.join("/", "home", "bun", "data"))
+)
 
 // Define the Zod schema for your settings, including nested or array structures if needed.
 const settingsSchema = z.object({
@@ -173,10 +201,7 @@ class AppSettings {
    */
   public static getInstance(filePath?: string): AppSettings {
     if (!AppSettings.instance) {
-      if (!filePath || filePath.length <= 0)
-        filePath =
-          process.env.SETTINGS_FILE ??
-          (process.env.NODE_ENV === "development" ? "settings.yaml" : "/home/bun/data/settings.yaml")
+      if (!filePath || filePath.length <= 0) filePath = getSettingsFilePath()
       if (!filePath || filePath.length <= 0) {
         throw new Error("First-time initialization requires a file path.")
       }
