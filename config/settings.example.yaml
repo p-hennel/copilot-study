@@ -23,8 +23,8 @@ auth:
   providers:
     gitlab:
       baseUrl: https://gitlab.com
-      clientId: 
-      clientSecret: 
+      clientId:
+      clientSecret:
       scopes:
         - read:jira-work
         - read:jira-user

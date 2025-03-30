@@ -131,8 +131,8 @@
         <Skeleton class="col-span-2 mx-auto h-6 w-2/3" />
         <Skeleton class="col-span-2 mx-auto h-6 w-2/3" />
 
-        {#each loadingRows as row (row)}
-          {#each row as col (col)}
+        {#each loadingRows as row, idxR (idxR)}
+          {#each row as col, idxC (idxC)}
             <Skeleton class={col} />
           {/each}
         {/each}
