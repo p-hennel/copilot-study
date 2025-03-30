@@ -107,7 +107,7 @@
           </Table.Cell>
         {/if}
       </Table.Row>
-      {#each user.accounts as account (account)}
+      {#each user.accounts as account, idx2 (idx2)}
         <Table.Row>
           <Table.Cell>{account.providerId}</Table.Cell>
           <Table.Cell class="text-center"><Time timestamp={account.createdAt} {format} /></Table.Cell>

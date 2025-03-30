@@ -4,17 +4,8 @@
   import { m } from "$paraglide"
   import * as Tooltip from "$lib/components/ui/tooltip/index.js"
   import Button, { buttonVariants } from "$ui/button/button.svelte"
-  import {
-    CircleChevronDown,
-    CircleChevronUp,
-    Cpu,
-    MemoryStick,
-    MonitorPlay,
-    OctagonX,
-    Play,
-    RefreshCw
-  } from "lucide-svelte"
-  import { invalidate, invalidateAll } from "$app/navigation"
+  import { CircleChevronDown, CircleChevronUp, Cpu, MemoryStick, OctagonX, Play, RefreshCw } from "lucide-svelte"
+  import { invalidate } from "$app/navigation"
   import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js"
   import Separator from "$ui/separator/separator.svelte"
   import { cn, type pm2types } from "$lib/utils"
@@ -106,8 +97,6 @@
     }
     return []
   }
-
-  $inspect(data.processes)
 
   const alertDialogOpen = $derived(!!state.actionPid && `${state.actionPid}`.length > 0 && !!state.action)
 </script>
@@ -201,7 +190,7 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each pm2List as process (process.pm_id)}
+    {#each pm2List as process, idx (idx)}
       <!-- Use pm2List and add key -->
       <Table.Row>
         <Table.Cell class="text-right">{process.pm_id}</Table.Cell>
@@ -279,7 +268,7 @@
       </Table.Row>
     {:else}
       <Table.Row>
-        <Table.Cell colspan={7} class="text-center text-xl font-semibold">
+        <Table.Cell colspan={6} class="text-center text-xl font-semibold">
           {m["admin.dashboard.processesTable.no_processes"]()}
         </Table.Cell>
       </Table.Row>

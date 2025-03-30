@@ -1,26 +1,26 @@
 <script lang="ts">
-  import { cn } from "$lib/utils";
-  import { m } from "$paraglide";
-  import Button from "$ui/button/button.svelte";
-  import * as Card from "$ui/card/index";
-  import { Progress } from "$ui/progress";
-  import { FolderArchive, FolderOpen } from "lucide-svelte";
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+  import { cn } from "$lib/utils"
+  import { m } from "$paraglide"
+  import Button from "$ui/button/button.svelte"
+  import * as Card from "$ui/card/index"
+  import { Progress } from "$ui/progress"
+  import { FolderOpen } from "lucide-svelte"
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js"
 
   let {
     area,
     class: className
   }: {
     area: {
-      full_path: string;
-      name: string | null;
-      gitlab_id: string | null;
-      type: "group" | "project";
-      jobsFinished: number;
-      jobsTotal: number;
-    };
-    class?: string;
-  } = $props();
+      full_path: string
+      name: string | null
+      //      gitlab_id: string | null;
+      type: "group" | "project"
+      jobsFinished: number
+      jobsTotal: number
+    }
+    class?: string
+  } = $props()
 </script>
 
 <Card.Root class={cn("flex w-xs flex-col", className)}>

@@ -1,22 +1,22 @@
 <script lang="ts">
-  import Progress from "$ui/progress/progress.svelte";
-  import * as Card from "$lib/components/ui/card/index.js";
+  import Progress from "$ui/progress/progress.svelte"
+  import * as Card from "$lib/components/ui/card/index.js"
   // Removed: import type { PageProps } from "./$types"; // Use explicit types below
-  import Button from "$ui/button/button.svelte";
-  import { FolderOpen } from "lucide-svelte";
-  import * as Tooltip from "$ui/tooltip";
-  import type { Area } from "$lib/server/db/schema"; // Import Area type if needed, or define inline
+  import Button from "$ui/button/button.svelte"
+  import { FolderOpen } from "lucide-svelte"
+  import * as Tooltip from "$ui/tooltip"
+  import type { Area } from "$lib/server/db/schema" // Import Area type if needed, or define inline
 
   // Define types based on the load function's return value
-  type FileInfo = { type: string; size: number; name: string };
-  type AreaDetailsWithCounts = Area & { jobsTotal: number; jobsFinished: number }; // Assuming Area is imported or defined
+  type FileInfo = { type: string; size: number; name: string }
+  type AreaDetailsWithCounts = Area & { jobsTotal: number; jobsFinished: number } // Assuming Area is imported or defined
   type PageData = {
-    area: AreaDetailsWithCounts;
-    files: FileInfo[];
-  };
+    area: AreaDetailsWithCounts
+    files: FileInfo[]
+  }
 
-  let { data }: { data: PageData } = $props(); // Use the defined PageData type
-  const progressValue = $derived((data.area.jobsFinished / data.area.jobsTotal) * 100);
+  let { data }: { data: PageData } = $props() // Use the defined PageData type
+  const progressValue = $derived((data.area.jobsFinished / data.area.jobsTotal) * 100)
 </script>
 
 <div class="flex items-center justify-between">
@@ -36,7 +36,7 @@
 </Tooltip.Provider>
 
 <div class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 md:gap-2 xl:grid-cols-3">
-  {#each data.files as file}
+  {#each data.files as file, idx (idx)}
     <Card.Root class="w-full">
       <Card.Header>
         <Card.Title class="capitalize">{file.type}</Card.Title>

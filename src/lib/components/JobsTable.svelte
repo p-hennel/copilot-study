@@ -1,81 +1,72 @@
 <script lang="ts">
-  import Time from "svelte-time";
-  import * as Table from "$lib/components/ui/table/index.js";
-  import { m } from "$paraglide";
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
-  import { JobStatus } from "$lib/utils";
-  import type { AreaType, CrawlCommand } from "$lib/utils";
-  import { Check, Cross, Logs, Repeat } from "lucide-svelte";
+  import Time from "svelte-time"
+  import * as Table from "$lib/components/ui/table/index.js"
+  import { m } from "$paraglide"
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js"
+  import { JobStatus } from "$lib/utils"
+  import type { AreaType, CrawlCommand } from "$lib/utils"
+  import { Check, Cross, Logs, Repeat } from "lucide-svelte"
 
   type JobInformation = {
-    id: string;
-    provider: string;
-    created_at: Date;
-    full_path: string;
-    status: JobStatus;
-    command: CrawlCommand;
-    started_at: Date;
-    finished_at: Date;
-    branch: string;
-    childrenCount: number | null;
+    id: string
+    provider: string
+    created_at: Date
+    full_path: string
+    status: JobStatus
+    command: CrawlCommand
+    started_at: Date
+    finished_at: Date
+    branch: string
+    childrenCount: number | null
     fromJob: {
-      id: string;
-      command: CrawlCommand;
-      status: JobStatus;
-      started_at: Date;
-      finished_at: Date;
-    } | null;
+      id: string
+      command: CrawlCommand
+      status: JobStatus
+      started_at: Date
+      finished_at: Date
+    } | null
     forArea: {
-      full_path: string;
-      type: AreaType;
-      name: string;
-      gitlab_id: string;
-      created_at: Date;
-    } | null;
-    resumeState?: Record<
-      string,
-      { afterCursor?: string; errorCount?: number; lastAttempt?: number }
-    > | null; // Added resumeState
-  };
+      full_path: string
+      type: AreaType
+      name: string
+      gitlab_id: string
+      created_at: Date
+    } | null
+    resumeState?: Record<string, { afterCursor?: string; errorCount?: number; lastAttempt?: number }> | null // Added resumeState
+  }
 
   type JobsTableProps = {
-    jobs: JobInformation[];
-    format?: string;
-  };
+    jobs: JobInformation[]
+    format?: string
+  }
 
-  let data: JobsTableProps = $props();
-  const format = $derived(data.format ?? "DD. MMM, HH:mm");
+  let data: JobsTableProps = $props()
+  const format = $derived(data.format ?? "DD. MMM, HH:mm")
 
   const statusToIcon = (status: JobStatus) => {
     switch (status) {
       case JobStatus.queued:
-        return Logs;
+        return Logs
       case JobStatus.running:
-        return Repeat;
+        return Repeat
       case JobStatus.failed:
-        return Cross;
+        return Cross
       case JobStatus.finished:
-        return Check;
+        return Check
     }
-  };
+  }
 </script>
 
 <Table.Root class="w-full gap-0.5">
   <Table.Header>
     <Table.Row>
-      <Table.Head class="w-[2.5rem] text-right"
-        >{m["admin.dashboard.jobsTable.header.idx"]()}</Table.Head
-      >
+      <Table.Head class="w-[2.5rem] text-right">{m["admin.dashboard.jobsTable.header.idx"]()}</Table.Head>
       <Table.Head>{m["admin.dashboard.jobsTable.header.id"]()}</Table.Head>
       <Table.Head>{m["admin.dashboard.jobsTable.header.command"]()}</Table.Head>
       <Table.Head>{m["admin.dashboard.jobsTable.header.provider"]()}</Table.Head>
       <Table.Head>{m["admin.dashboard.jobsTable.header.status"]()}</Table.Head>
-      <Table.Head class="text-center"
-        >{m["admin.dashboard.jobsTable.header.created_at"]()}</Table.Head
-      >
-      <Table.Head class="text-center"
-        >{m["admin.dashboard.jobsTable.header.finished_at"]()}</Table.Head
-      >
+      <Table.Head class="text-center">{m["admin.dashboard.jobsTable.header.created_at"]()}</Table.Head>
+      <Table.Head class="text-center">{m["admin.dashboard.jobsTable.header.finished_at"]()}</Table.Head>
       <Table.Head class="text-center"></Table.Head>
       <!--
       <Table.Head class="text-end">{m["admin.dashboard.jobsTable.header.from_job"]()}</Table.Head>
@@ -85,7 +76,7 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each data.jobs as job, idx (job.id)}
+    {#each data.jobs as job, idx (idx)}
       <!-- Add key -->
       <Table.Row>
         <Table.Cell class="text-right">{data.jobs.length - idx}</Table.Cell>

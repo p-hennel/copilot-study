@@ -104,7 +104,7 @@
 
 {#if !!data.areas && data.areas.length > 0}
   <div class="flex flex-wrap gap-4">
-    {#each data.areas as area (area.full_path)}
+    {#each data.areas as area, idx (idx)}
       <!-- Add key -->
       <AreaCard {area} />
     {/each}

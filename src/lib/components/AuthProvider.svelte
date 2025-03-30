@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, type ButtonVariant } from "$ui/button"
-  import { BadgeCheck, KeyRound, LoaderCircle } from "lucide-svelte"
+  import { BadgeCheck, KeyRound } from "lucide-svelte"
   import { m } from "$paraglide"
   import { linkAccount, signIn } from "$lib/auth-client"
   import { Skeleton } from "$lib/components/ui/skeleton/index.js"

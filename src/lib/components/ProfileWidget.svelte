@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button"
+  import { Button, buttonVariants } from "$lib/components/ui/button"
   import {
     DropdownMenu,
     DropdownMenuContent,
@@ -35,15 +35,17 @@
 {#if user}
   <div class={cn("float-end inline-block", className)}>
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <!-- Button acts as the trigger -->
-        <Button variant="ghost" class="relative w-auto cursor-pointer justify-start space-x-2 px-3 py-6">
-          <Avatar class="h-8 w-8">
-            <AvatarImage src={user.image ?? undefined} alt={user.name ?? "User"} class="mt-0" />
-            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-          </Avatar>
-          <span class="hidden pr-1 sm:inline-block">{user.name ?? "Account"}</span>
-        </Button>
+      <DropdownMenuTrigger
+        class={cn(
+          buttonVariants({ variant: "ghost" }),
+          "relative w-auto cursor-pointer justify-start space-x-2 px-3 py-6 "
+        )}
+      >
+        <Avatar class="h-8 w-8">
+          <AvatarImage src={user.image ?? undefined} alt={user.name ?? "User"} class="mt-0" />
+          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+        </Avatar>
+        <span class="hidden pr-1 sm:inline-block">{user.name ?? "Account"}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent class="w-56" align="end">
         <DropdownMenuLabel class="flex w-full items-center font-normal">
@@ -56,7 +58,7 @@
             {#if isAdminArea}
               <a href="/" class="flex w-full items-center">
                 <Home class="mr-2 h-4 w-4" />
-                <span>Back Home</span>
+                <span>Back</span>
               </a>
             {:else}
               <a href="/admin" class="flex w-full items-center">
