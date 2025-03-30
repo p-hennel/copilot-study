@@ -9,11 +9,14 @@
     DropdownMenuTrigger
   } from "$lib/components/ui/dropdown-menu"
   import { Avatar, AvatarFallback, AvatarImage } from "$lib/components/ui/avatar"
-  import { LogOut, Mail, UserCog } from "lucide-svelte" // Import icons
+  import { Home, LogOut, Mail, UserCog } from "lucide-svelte" // Import icons
   import type { User } from "better-auth/types"
   import { cn } from "$lib/utils"
+  import { page } from "$app/state"
 
   let { user, class: className }: { user: User & { role: string }; class?: string } = $props() // Use standard Svelte export for user data
+
+  const isAdminArea = page.url.pathname.startsWith("/admin") // Check if the current URL is in the admin area
 
   // Function to get initials for avatar fallback
   function getInitials(name: string | undefined | null): string {
@@ -50,10 +53,17 @@
         <DropdownMenuSeparator />
         {#if user.role === "admin"}
           <DropdownMenuItem>
-            <a href="/admin" class="flex w-full items-center">
-              <UserCog class="mr-2 h-4 w-4" />
-              <span>Administration</span>
-            </a>
+            {#if isAdminArea}
+              <a href="/" class="flex w-full items-center">
+                <Home class="mr-2 h-4 w-4" />
+                <span>Back Home</span>
+              </a>
+            {:else}
+              <a href="/admin" class="flex w-full items-center">
+                <UserCog class="mr-2 h-4 w-4" />
+                <span>Administration</span>
+              </a>
+            {/if}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
         {/if}

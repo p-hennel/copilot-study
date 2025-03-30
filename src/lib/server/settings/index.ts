@@ -34,7 +34,7 @@ const dataRoot = path.resolve(
 )
 
 // Define the Zod schema for your settings, including nested or array structures if needed.
-const settingsSchema = z.object({
+export const settingsSchema = z.object({
   paths: z
     .object({
       dataRoot: z.string().nonempty().default(dataRoot),
@@ -126,7 +126,7 @@ const settingsSchema = z.object({
 
 export type Settings = z.infer<typeof settingsSchema>
 
-class AppSettings {
+export class AppSettings {
   // The singleton instance.
   private static instance: AppSettings
   private settings: Settings
