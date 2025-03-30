@@ -1,10 +1,12 @@
 <script lang="ts">
   import type { PageProps } from "./$types"
+  import * as Card from "$lib/components/ui/card/index.js"
   import { m } from "$paraglide"
   import UserTable from "$lib/components/UserTable.svelte"
   import { Skeleton } from "$ui/skeleton"
   import * as Tabs from "$lib/components/ui/tabs/index.js"
-  import ProcesTable from "$lib/components/ProcesTable.svelte"
+  import CircleAlert from "@lucide/svelte/icons/circle-alert"
+  import * as Alert from "$lib/components/ui/alert/index.js"
   import JobsTable from "$lib/components/JobsTable.svelte"
   import AreasTable from "$lib/components/AreasTable.svelte"
   import type { Snapshot } from "./$types"
@@ -13,6 +15,10 @@
   import { Textarea } from "$ui/textarea"
   import { Button } from "$ui/button"
   import { toast } from "svelte-sonner"
+  import Time from "svelte-time/Time.svelte"
+  import { invalidate } from "$app/navigation"
+  import { CircleDashed, Pause, Play, PlayCircle, RefreshCw } from "lucide-svelte"
+  import type { CrawlerStatus } from "../../crawler/types"
 
   let { data }: PageProps = $props()
 
@@ -90,7 +96,51 @@
     capture: () => selectedTab,
     restore: (value) => (selectedTab = value)
   }
-  const processesWithToken = $derived.by(() => Promise.all([data.processes, data.sessiontoken]))
+  //const processesWithToken = $derived.by(() => Promise.all([data.processes, data.sessiontoken]))
+
+  let loading = $state(true)
+  data.crawler.then(() => {
+    loading = false
+  })
+
+  function afterCommand() {
+    loading = false
+    invalidate("/api/admin/crawler")
+  }
+
+  async function toggleCrawler(crawler: CrawlerStatus | null) {
+    if (!crawler) crawler = await data.crawler
+    if (!crawler) return
+    if (crawler.state !== "running" && crawler.state !== "paused") return
+    if (loading) return
+    loading = true
+    if (crawler.state === "running") {
+      // Pause the crawler
+      fetch("/api/admin/crawler/pause", { method: "POST" })
+        .then(afterCommand)
+        .catch((error) => console.error("Error pausing crawler:", error))
+        .finally(() => (loading = false))
+    } else if (crawler.state === "paused") {
+      // Resume the crawler
+      fetch("/api/admin/crawler/resume", { method: "POST" })
+        .then(afterCommand)
+        .catch((error) => console.error("Error resuming crawler:", error))
+        .finally(() => (loading = false))
+    }
+  }
+
+  async function pushCrawler(crawler: CrawlerStatus | null) {
+    if (!crawler) crawler = await data.crawler
+    if (!crawler) return
+    crawler.state = "error"
+    if (!!crawler.currentJobId && crawler.state !== "error") return
+    if (loading) return
+    loading = true
+    fetch("/api/admin/crawler/push", { method: "POST" })
+      .then(afterCommand)
+      .catch((error) => console.error("Error pushing crawler:", error))
+      .finally(() => (loading = false))
+  }
 </script>
 
 <ProfileWidget user={data.user} class="mb-4" />
@@ -156,10 +206,92 @@
     {/await}
   </Tabs.Content>
   <Tabs.Content value="processes">
-    {#await processesWithToken}
+    {#await data.crawler}
       Loading
-    {:then [processes, token]}
-      <ProcesTable processes={processes as any} sessionToken={token ?? ""} />
+    {:then crawler}
+      <div class="justify-center">
+        {#if crawler}
+          {#if crawler.error}
+            <Alert.Root variant="destructive">
+              <CircleAlert class="size-4" />
+              <Alert.Title>Error</Alert.Title>
+              <Alert.Description>
+                {crawler.error}
+                {#if crawler.lastHeartbeat}
+                  <br />
+                  <Time timestamp={crawler.lastHeartbeat} format="DD. MMM YYYY, HH:mm:ss" />
+                  (
+                  <Time timestamp={crawler.lastHeartbeat} relative />
+                  )
+                {/if}
+              </Alert.Description>
+            </Alert.Root>
+          {/if}
+          <Card.Root>
+            <Card.Header>
+              <Card.Title>Crawler: {crawler.state}</Card.Title>
+              <Card.Description>
+                Last heartbeat: <Time timestamp={crawler.lastHeartbeat} format="DD. MMM YYYY, HH:mm:ss" />
+              </Card.Description>
+            </Card.Header>
+            <Card.Content>
+              <div class="mb-4 grid grid-cols-2 items-center justify-center gap-2">
+                <strong class="text-end">Queue Size:</strong>
+                <span class="text-start">{crawler.queueSize}</span>
+                <strong class="text-end">Current Job ID:</strong>
+                <span class="text-start">{crawler.currentJobId ?? "[none]"}</span>
+              </div>
+            </Card.Content>
+            <Card.Footer class="flex flex-wrap justify-between gap-4">
+              <Button
+                variant="default"
+                disabled={loading || (!!crawler.currentJobId && crawler.state !== "error")}
+                onclick={() => pushCrawler(crawler)}
+                class="justify-self-start"
+              >
+                <PlayCircle />
+                Push/Restart Job
+              </Button>
+              <Button
+                variant="default"
+                disabled={loading || (crawler.state !== "paused" && crawler.state !== "running")}
+                onclick={() => toggleCrawler(crawler)}
+                class="justify-self-start"
+              >
+                {#if crawler.state === "running"}
+                  <Pause />
+                {:else if crawler.state === "paused"}
+                  <Play />
+                {:else}
+                  <CircleDashed />
+                {/if}
+                {#if crawler.state === "running"}
+                  Pause
+                {:else if crawler.state === "paused"}
+                  Resume
+                {:else}
+                  Start/Pause
+                {/if}
+              </Button>
+              <Button
+                disabled={loading}
+                variant="secondary"
+                onclick={() => invalidate("/api/admin/crawler")}
+                class="justify-self-end"
+              >
+                <RefreshCw />
+                Refresh
+              </Button>
+            </Card.Footer>
+          </Card.Root>
+        {:else}
+          <Alert.Root variant="destructive">
+            <CircleAlert class="size-4" />
+            <Alert.Title>Error</Alert.Title>
+            <Alert.Description>No Crawler Information Available</Alert.Description>
+          </Alert.Root>
+        {/if}
+      </div>
     {/await}
   </Tabs.Content>
   <Tabs.Content value="settings">

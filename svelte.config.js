@@ -6,7 +6,9 @@ import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 const config = {
   preprocess: [vitePreprocess()],
   kit: {
-    adapter: adapter(),
+    adapter: adapter({
+      out: "build/web"
+    }),
     alias: {
       $components: "./src/lib/components",
       $ui: "./src/lib/components/ui",

@@ -12,4 +12,15 @@ ssh-keyscan "${BACKUP_USER}.your-storagebox.de" >> ~/.ssh/known_hosts
 cron
 autorestic check
 
-bun pm2-runtime start ecosystem.config.cjs
+if [[ "$SUPERVUSOR" == "pm2" ]]; then
+  bun pm2-runtime start ecosystem.config.cjs
+elif [ -f "index.js" ]; then
+  bun --bun index.js
+elif [ -f "build/index.js" ]; then
+  bun --bun build/index.js
+elif [ -f "$1" ]; then
+  bun --bun "$1"
+else
+  echo "No index.js or build/index.js or file at first parameter ($1) found. Please provide a valid entry point."
+  exit 1
+fi

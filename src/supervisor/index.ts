@@ -1,13 +1,45 @@
 // supervisor.ts
+import { parseArgs } from "util"
 import { spawn, type Subprocess, type FileSink } from "bun"
 import { z } from "zod" // For message validation
 import { configureLogging } from "$lib/logging" // Import logtape helpers
 import type { Logger } from "@logtape/logtape"
+import { existsSync } from "fs"
+import path from "path"
+
+const { values } = parseArgs({
+  args: Bun.argv,
+  options: {
+    crawler: {
+      type: "string",
+      short: "c",
+      default: path.join("crawler", "index.js"),
+      multiple: false
+    },
+    web: {
+      type: "string",
+      short: "w",
+      default: path.join("web", "index.js"),
+      multiple: false
+    }
+  },
+  strict: true,
+  allowPositionals: true
+})
+
+if (!existsSync(values.crawler)) {
+  console.error(`Crawler entry point not found: ${values.crawler}`)
+  if (existsSync(path.join("build", "crawler", "index.js"))) values.crawler = path.join("build", "crawler", "index.js")
+  else process.exit(1)
+}
+
+if (!existsSync(values.web)) {
+  console.error(`Web entry point not found: ${values.web}`)
+  if (existsSync(path.join("build", "web", "index.js"))) values.web = path.join("build", "web", "index.js")
+  else process.exit(1)
+}
 
 // --- Configuration ---
-const CRAWLER_ENTRY = "src/crawler/index.ts"
-// TODO: Determine the correct command for production vs development
-const BACKEND_COMMAND = process.env.NODE_ENV === "production" ? ["bun", "index.js"] : ["bun", "run", "dev"] // For development
 const MAX_RESTARTS = 20
 const RESTART_BACKOFF_MS = 1000 // Initial backoff
 const MAX_BACKOFF_MS = 30000 // Maximum backoff time (30 seconds)
@@ -51,7 +83,9 @@ async function sendMessage(targetProcess: Subprocess | null, message: Message) {
     if (typeof targetProcess.stdin === "object" && targetProcess.stdin !== null && "write" in targetProcess.stdin) {
       await (targetProcess.stdin as FileSink).write(messageString)
       // Avoid logging potentially large payloads by default
-      logger.info(`Sent message type '${validatedMessage.type}' to ${validatedMessage.target}`)
+      logger.info(`Sent message type '${validatedMessage.type}' to ${validatedMessage.target}`, {
+        message: messageString
+      })
     } else {
       logger.warn(`Cannot send message to ${message.target}, stdin is not writable`, {
         stdin: targetProcess.stdin
@@ -91,11 +125,12 @@ function handleIPCMessage(processName: "crawler" | "backend", data: Buffer | str
         if (message.target === "supervisor") {
           // Handle messages for the supervisor itself (e.g., status requests)
           logger.info(`Handling supervisor command: ${message.type}`, { payload: message.payload })
-          // TODO: Implement supervisor-specific commands if needed
         } else if (message.target === "broadcast") {
           // Avoid sending back to the source
-          if (processName !== "crawler") sendMessage(crawlerProcess, { ...message, target: "crawler" })
-          if (processName !== "backend") sendMessage(backendProcess, { ...message, target: "backend" })
+          if (processName !== "crawler")
+            sendMessage(crawlerProcess, { ...(message.payload ?? message), target: "crawler" })
+          if (processName !== "backend")
+            sendMessage(backendProcess, { ...(message.payload ?? message), target: "backend" })
         } else if (message.target === "crawler") {
           sendMessage(crawlerProcess, message)
         } else if (message.target === "backend") {
@@ -124,10 +159,14 @@ function handleIPCMessage(processName: "crawler" | "backend", data: Buffer | str
   }) // End of rawData.split().forEach()
 }
 
+function getRunCommand(name: "crawler" | "backend") {
+  return ["bun", "--bun", name === "crawler" ? values.crawler : values.web]
+}
+
 async function startProcess(name: "crawler" | "backend"): Promise<Subprocess | null> {
   if (shuttingDown) return null
 
-  const command = name === "crawler" ? ["bun", CRAWLER_ENTRY] : BACKEND_COMMAND
+  const command = getRunCommand(name)
   const restarts = name === "crawler" ? crawlerRestarts : backendRestarts
 
   if (restarts >= MAX_RESTARTS) {

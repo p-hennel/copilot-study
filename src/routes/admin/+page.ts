@@ -1,4 +1,5 @@
 import { authClient } from "$lib/auth-client"
+import type { CrawlerStatus } from "../../crawler/types"
 
 export async function load(event) {
   const token = authClient.getSession().then((response) => response.data?.session.token)
@@ -7,7 +8,8 @@ export async function load(event) {
     users: fetchAdminData(event.fetch, "users", token),
     areas: fetchAdminData(event.fetch, "areas", token),
     jobs: fetchAdminData(event.fetch, "jobs", token),
-    processes: fetchAdminData(event.fetch, "processes", token),
+    //processes: fetchAdminData(event.fetch, "processes", token),
+    crawler: fetchAdminData(event.fetch, "crawler", token) as Promise<CrawlerStatus | null>,
     sessiontoken: token
   }
 }

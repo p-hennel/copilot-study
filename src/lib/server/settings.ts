@@ -3,35 +3,63 @@ import yaml from "js-yaml"
 import { z } from "zod"
 import path from "node:path"
 
-const getSettingsFilePath = () => {
-  const settingsFilePath = Bun.env.SETTINGS_FILE ?? process.env.SETTINGS_FILE
-  if (settingsFilePath && settingsFilePath.length > 0 && existsSync(settingsFilePath)) {
-    return settingsFilePath
-  }
-  if (process.env.NODE_ENV === "development") {
-    const candidate = path.resolve(process.cwd(), "config", "settings.yaml")
-    if (existsSync(candidate)) {
-      return candidate
-    } else {
-      return path.resolve(process.cwd(), "settings.yaml")
-    }
+const getLocalSettingsFilePath = () => {
+  let candidate = path.resolve(process.cwd(), "config", "settings.yaml")
+  if (existsSync(candidate)) {
+    return candidate
   } else {
-    const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data", "settings.yaml"))
-    if (existsSync(candidate)) {
-      return candidate
-    }
-    const altCandidate = path.resolve(process.cwd(), "settings.yaml")
-    if (existsSync(altCandidate)) {
-      return altCandidate
-    } else {
-      return candidate
-    }
+    candidate = path.resolve(process.cwd(), "settings.yaml")
+    return existsSync(candidate) ? candidate : undefined
   }
 }
 
-const dataRoot = path.resolve(
-  Bun.env.SETTINGS_PATH ?? (process.env.NODE_ENV === "development" ? "./" : path.join("/", "home", "bun", "data"))
-)
+const getHomeSettingsFilePath = () => {
+  const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data", "settings.yaml"))
+  if (existsSync(candidate)) {
+    return candidate
+  }
+  const altCandidate = path.resolve(process.cwd(), "settings.yaml")
+  if (existsSync(altCandidate)) {
+    return altCandidate
+  } else {
+    return candidate
+  }
+}
+
+const getHomeDataPath = () => {
+  const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data"))
+  if (existsSync(candidate)) {
+    return candidate
+  }
+  const altCandidate = path.resolve(process.cwd(), "data")
+  if (existsSync(altCandidate)) {
+    return altCandidate
+  } else {
+    return candidate
+  }
+}
+
+const getSettingsFilePath = () => {
+  const settingsFilePath = Bun.env.SETTINGS_FILE ?? process.env.SETTINGS_FILE
+  if (!!settingsFilePath && settingsFilePath.length > 0 && existsSync(settingsFilePath)) {
+    return settingsFilePath
+  }
+  const homeSettingsFilePath = getHomeSettingsFilePath()
+  if (existsSync(homeSettingsFilePath)) {
+    return homeSettingsFilePath
+  }
+  return getLocalSettingsFilePath() ?? homeSettingsFilePath
+}
+
+const getDataRoot = () => {
+  const dataPath = Bun.env.DATA_ROOT ?? process.env.DATA_ROOT
+  if (!!dataPath && dataPath.length > 0 && existsSync(dataPath)) {
+    return dataPath
+  }
+  return getHomeDataPath()
+}
+
+const dataRoot = getDataRoot()
 
 // Define the Zod schema for your settings, including nested or array structures if needed.
 export const settingsSchema = z.object({

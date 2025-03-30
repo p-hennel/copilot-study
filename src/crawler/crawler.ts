@@ -4,6 +4,7 @@ import { JobManager } from "./jobManager"
 import { Storage } from "./storage"
 import type { CrawlerCommand } from "./types"
 import { getLogger } from "$lib/logging" // Import logtape helper
+import { CrawlerCommand } from "./types"
 
 const logger = getLogger(["crawler", "main"]) // Create a logger for this module
 
@@ -11,13 +12,14 @@ export async function startCrawler() {
   logger.info("Initializing crawler components...")
 
   const storage = new Storage("./crawled_data") // Define base path for crawled data
-  const jobManager = new JobManager(storage)
+  const jobManager = new JobManager(logger.getChild("Job Manager"), storage)
 
   // Setup IPC communication using the new stdin/stdout mechanism
-  const ipc = setupIPC({
-    onCommand: (command: CrawlerCommand) => {
-      logger.info("Received command", { type: command.type })
+  const ipc = setupIPC(logger, {
+    onCommand: (command: CrawlerCommand | { payload: CrawlerCommand }) => {
+      logger.info("Received command", { command })
       // Handle commands like start, pause, resume, new job, etc.
+      if ("payload" in command) command = command.payload
       jobManager.handleCommand(command)
     },
     // Add the required onShutdown handler

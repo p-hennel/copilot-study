@@ -1,6 +1,3 @@
-// src/crawler/gitlab/client.ts
-import type { Job } from "../types" // Assuming Job type includes API URL and token
-
 // Import generated GraphQL types
 // Adjust path and imported types as necessary based on actual generated file content
 // src/crawler/gitlab/client.ts

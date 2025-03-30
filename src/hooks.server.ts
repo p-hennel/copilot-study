@@ -196,16 +196,16 @@ async function handleJobUpdate(update: JobCompletionUpdate) {
  */
 export function sendCommandToCrawler(command: CrawlerCommand): boolean {
   if (!messageBusClientInstance) {
-    logger?.error("Cannot send command: MessageBusClient not available (not running under supervisor?).")
+    logger?.error("Cannot send command: MessageBusClient not available (not running under supervisor?).", { command })
     return false
   }
 
   try {
-    logger?.info(`Sending command to crawler via MessageBusClient: ${command.type}`)
+    logger?.info(`Sending command to crawler via MessageBusClient: ${command.type}`, { command })
     messageBusClientInstance.sendCommandToCrawler(command)
     return true
   } catch (error) {
-    logger?.error("Failed to send command to crawler via MessageBusClient:", { error })
+    logger?.error("Failed to send command to crawler via MessageBusClient:", { error, command })
     return false
   }
 }
@@ -213,6 +213,7 @@ export function sendCommandToCrawler(command: CrawlerCommand): boolean {
 // --- Export Functions for API Routes etc. ---
 
 export async function startJob(params: Omit<StartJobCommand, "type" | "progress">) {
+  console.log("starting job:", params)
   let existingProgress: Record<string, JobDataTypeProgress> | undefined = undefined
   try {
     const jobRecord = await db.query.job.findFirst({
@@ -252,6 +253,10 @@ export function resumeCrawler() {
  */
 export function getCrawlerStatus(): CrawlerStatus | null {
   return currentCrawlerStatus
+}
+
+export function getLastHeartbeat(): number {
+  return lastHeartbeat
 }
 
 // --- Setup Event Listeners and Heartbeat Monitor ---
@@ -310,6 +315,9 @@ if (logger) {
       )
     }
   }, HEARTBEAT_TIMEOUT / 2)
+} else {
+  console.error("CRITICAL: Logger initialization failed. Cannot set up event listeners.")
+  throw new Error("Logger initialization failed")
 }
 
 // --- Existing Hook Logic (Keep as is) ---

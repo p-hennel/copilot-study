@@ -12,6 +12,7 @@ import { Storage } from "./storage"
 import { GitlabClient } from "./gitlab/client"
 import type { ProjectSchema, GroupSchema } from "@gitbeaker/rest"
 import { getLogger } from "$lib/logging" // Import logtape helper
+import type { Logger } from "@logtape/logtape"
 
 const logger = getLogger(["crawler", "jobManager"]) // Logger for this module
 
@@ -24,7 +25,7 @@ function generateJobId(targetPath: string, dataTypes: string[]): string {
 
 // IPC communication functions - will be set during initialization
 // These are now primarily for status/heartbeat, job updates use the generic sender
-let sendStatusUpdate: (status: CrawlerStatus) => void = () => {}
+let sendStatusUpdate: (logger: Logger, status: CrawlerStatus) => void = () => {}
 let sendHeartbeat: () => void = () => {}
 // Removed module-level sendJobCompletionUpdate, will use class member sendMessage
 
@@ -45,10 +46,11 @@ export class JobManager {
   private activeJob: Job | null = null
   private state: CrawlerState = "idle"
   private heartbeatInterval: Timer | null = null
+  private logger: Logger
   // Add class member to hold the generic sendMessage function from IPC
-  private sendMessage: (args: SendMessageArgs) => void = () => {}
+  private sendMessage: (logger: Logger, args: SendMessageArgs) => void = () => {}
 
-  constructor(storage: Storage) {
+  constructor(logger: Logger, storage: Storage) {
     this.storage = storage
     logger.info("JobManager initialized.") // Use logger
     this.startHeartbeat()
@@ -56,10 +58,10 @@ export class JobManager {
 
   // Method to be called by crawler.ts to inject IPC functions
   setIPCFunctions(
-    statusUpdater: (status: CrawlerStatus) => void,
+    statusUpdater: (logger: Logger, status: CrawlerStatus) => void,
     heartbeater: () => void,
     // Accept the generic sendMessage function
-    messageSender: (args: SendMessageArgs) => void
+    messageSender: (logger: Logger, args: SendMessageArgs) => void
   ) {
     sendStatusUpdate = statusUpdater
     sendHeartbeat = heartbeater
@@ -105,7 +107,7 @@ export class JobManager {
       // error: this.activeJob?.error,
     }
     if (typeof sendStatusUpdate === "function") {
-      sendStatusUpdate(status)
+      sendStatusUpdate(this.logger, status)
     }
   }
 
@@ -128,7 +130,7 @@ export class JobManager {
         timestamp: Date.now()
       }
       // Call the generic sender with appropriate args
-      this.sendMessage({
+      this.sendMessage(this.logger, {
         target: "supervisor", // Job updates typically go to supervisor
         type: "jobUpdate",
         payload: payload
@@ -168,7 +170,10 @@ export class JobManager {
   // Add job to queue. Assumes fresh start unless progress is part of Job type definition
   // and passed in jobCommand (which it currently isn't explicitly defined for IPC)
   private addJob(jobCommand: StartJobCommand) {
-    if (this.activeJob?.id === jobCommand.jobId || this.jobQueue.some((job) => job.id === jobCommand.jobId)) {
+    if (
+      !!this.activeJob &&
+      (this.activeJob?.id === jobCommand.jobId || this.jobQueue.some((job) => job.id === jobCommand.jobId))
+    ) {
       logger.warn(`Job with ID ${jobCommand.jobId} already exists or is active. Ignoring.`) // Use logger
       return
     }
@@ -221,7 +226,7 @@ export class JobManager {
         timestamp: Date.now()
       }
       // Call the generic sender with appropriate args
-      this.sendMessage({
+      this.sendMessage(this.logger, {
         target: "supervisor", // Job updates typically go to supervisor
         type: "jobUpdate",
         payload: payload
@@ -344,6 +349,7 @@ export class JobManager {
       const jobId = this.activeJob.id // Store ID
 
       try {
+        console.log(this.activeJob)
         gitlabClient = new GitlabClient(this.activeJob.gitlabApiUrl, this.activeJob.gitlabToken)
         await this.executeJob(this.activeJob, gitlabClient)
 

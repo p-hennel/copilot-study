@@ -1,15 +1,15 @@
-import { json } from "@sveltejs/kit";
-import { db } from "$lib/server/db";
-import { eq, desc } from "drizzle-orm";
-import { job } from "$lib/server/db/base-schema";
+import { json } from "@sveltejs/kit"
+import { db } from "$lib/server/db"
+import { eq, desc } from "drizzle-orm"
+import { job } from "$lib/server/db/base-schema"
 
-export async function GET({ request, locals }) {
+export async function GET({ locals }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
-    return json({ error: "Unauthorized!" }, { status: 401 });
+    return json({ error: "Unauthorized!" }, { status: 401 })
   }
 
-  const jobs = await getJobs();
-  return json(jobs);
+  const jobs = await getJobs()
+  return json(jobs)
 }
 
 const getJobs = async () => {
@@ -41,12 +41,12 @@ const getJobs = async () => {
       orderBy: [desc(job.id)]
     })
   ).map((x) => {
-    const { usingAccount, ...rest } = x;
+    const { usingAccount, ...rest } = x
     return {
       ...rest,
       provider: usingAccount?.providerId ?? undefined
-    };
-  });
+    }
+  })
 
-  return result;
-};
+  return result
+}
