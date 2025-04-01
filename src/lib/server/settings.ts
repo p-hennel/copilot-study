@@ -108,12 +108,14 @@ export const settingsSchema = z.object({
           gitlab: z
             .object({
               baseUrl: z.string().nonempty().default("https://gitlab.devops.de"),
-              tokenUrl: z.string().default("https://gitlab.devops.de/oauth/token"),
-              authorizationUrl: z.string().default("https://gitlab.devops.de/oauth/authorize"),
-              userInfoUrl:  z.string().default("https://gitlab.devops.de/oauth/userinfo"),
               clientId: z.string().optional(),
               clientSecret: z.string().optional(),
-              discoveryUrl: z.string().optional(),
+              userInfoUrl: z.string().optional(),
+              authorizationUrl: z.string().optional(),
+              authorizationUrlParams: z.record(z.string()).optional(),
+              tokenUrl: z.string().optional(),
+              type: z.enum(["oauth2", "oidc"]).default("oidc"),
+              discoveryUrl: z.string().optional().default("https://gitlab.devops.de/.well-known/openid-configuration"),
               scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
               redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
             })

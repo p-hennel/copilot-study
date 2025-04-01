@@ -108,11 +108,12 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "gitlab-onprem",
+          type: (settings.auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
           clientId: settings.auth.providers.gitlab.clientId!, // Add non-null assertion
           clientSecret: settings.auth.providers.gitlab.clientSecret!, // Add non-null assertion
-          authorizationUrl: settings.auth.providers.gitlab.authorizationUrl,
-          tokenUrl: settings.auth.providers.gitlab.tokenUrl,
-          userInfoUrl:  settings.auth.providers.gitlab.userInfoUrl,
+          authorizationUrl: settings.auth.providers.gitlab.authorizationUrl ?? undefined,
+          tokenUrl: settings.auth.providers.gitlab.tokenUrl ?? undefined,
+          userInfoUrl:  settings.auth.providers.gitlab.userInfoUrl ?? undefined,
           scopes: settings.auth.providers.gitlab.scopes,
           redirectURI: settings.auth.providers.gitlab.redirectURI,
         },
