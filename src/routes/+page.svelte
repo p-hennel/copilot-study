@@ -5,7 +5,6 @@
   import Markdown from "svelte-exmarkdown"
   import { authClient } from "$lib/auth-client"
   import Gitlab from "$lib/components/Gitlab.svelte"
-  import Jira from "$lib/components/Jira.svelte"
   // Removed: import AuthProvider from "$lib/components/AuthProvider.svelte";
   import AuthProviderCard from "$lib/components/AuthProviderCard.svelte"
   import { JobStatus, TokenProvider } from "$lib/utils"
@@ -15,7 +14,10 @@
   import * as Accordion from "$lib/components/ui/accordion/index.js"
   import { page } from "$app/stores" // Import page store
   import ProfileWidget from "$components/ProfileWidget.svelte"
-
+  import { Progress } from "$components/ui/progress"
+  import { FolderGit2, RefreshCw, UsersRound } from "lucide-svelte"
+  import Button from "$components/ui/button/button.svelte"
+  import { goto } from "$app/navigation"
   let pageState = $state({
     loading: true,
     linkedAccounts: [] as string[]
@@ -53,10 +55,12 @@
 
 <article class="prose dark:prose-invert mb-4 items-center">
   <ProfileWidget user={data.user} />
+
   <h1 class="text-4xl font-extrabold">{m["home.title"]()}</h1>
   <p class="mb-0">
     {m["home.intro"]()}
   </p>
+
   {#if !!$page.data.user && !!$page.data.session}
     <!-- Use $page store -->
     <Accordion.Root type="single" class="mt-0 w-full text-lg">
@@ -76,25 +80,13 @@
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
   <AuthProviderCard
     iconSize={10}
-    class="xl:col-span-2"
+    class="md:col-span-2 xl:col-span-5"
     linkedAccounts={pageState.linkedAccounts}
     bind:loading={pageState.loading}
     textId="auth.login.action"
     doneTextId="auth.login.action_done"
     Icon={Gitlab}
     provider={TokenProvider.gitlab}
-    {isLoggedIn}
-    nextUrl="/"
-  />
-  <AuthProviderCard
-    iconSize={10}
-    class="xl:col-span-2"
-    linkedAccounts={pageState.linkedAccounts}
-    bind:loading={pageState.loading}
-    textId="auth.login.action"
-    doneTextId="auth.login.action_done"
-    Icon={Jira}
-    provider={TokenProvider.jiraCloud}
     {isLoggedIn}
     nextUrl="/"
   />
@@ -110,10 +102,38 @@
     {/each}
   </div>
 {:else}
-  <p>
-    As soon as your account's areas (i.e., groups and projects) have been synchronized, you will see more information
-    here.
-  </p>
+  <div class="flex items-center justify-between">
+    <p>
+      As soon as your account's areas (i.e., groups and projects) have been synchronized, you will see more information
+      here.
+    </p>
+    <Button
+      variant="outline"
+      onclick={() => {
+        goto("/recheck")
+      }}
+    >
+      <RefreshCw />
+      Refresh
+    </Button>
+  </div>
+  {#await data.jobInfo then jobInfo}
+    <div class="mt-6 flex w-full flex-wrap items-center gap-4">
+      <span class="italic">Initial job: {jobInfo.status}</span>
+      <div class="flex w-full items-center gap-4">
+        <UsersRound class="h-8 w-8" />
+        <div class="flex-1">
+          <Progress value={jobInfo.collectedGroups} max={jobInfo.totalGroups} />
+        </div>
+      </div>
+      <div class="flex w-full items-center gap-4">
+        <FolderGit2 class="h-8 w-8" />
+        <div class="flex-1">
+          <Progress value={jobInfo.collectedProjects} max={jobInfo.totalProjects} />
+        </div>
+      </div>
+    </div>
+  {/await}
 {/if}
 
 {#if !!data.jobs && data.jobs.length > 0}

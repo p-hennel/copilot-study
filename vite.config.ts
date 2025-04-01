@@ -17,6 +17,10 @@ export default defineConfig({
       strategy: ["url", "cookie", "baseLocale"]
     })
   ],
+  server: {
+    port: 3000
+  }
+  /*
   optimizeDeps: {
     exclude: ["bun", "bun:*"]
   },
@@ -26,6 +30,7 @@ export default defineConfig({
   resolve: {
     external: ["bun", "bun:*"]
   }
+  */
   // test: {
   //   workspace: [
   //     {

@@ -1,0 +1,768 @@
+2025-03-31 21:33:31.213 [INF] backend: Logging configured for backend.
+2025-03-31 21:33:31.215 [INF] backend: AppSettings initialized successfully.
+2025-03-31 21:33:31.215 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 21:33:32.216 [INF] backend: Synchronizing admin roles...
+2025-03-31 21:33:32.217 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 21:33:32.217 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 21:33:32.217 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 21:33:32.218 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 21:33:32.218 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 21:33:32.218 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 21:33:32.218 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-03-31 23:19:40.378 [INF] backend: Logging configured for backend.
+2025-03-31 23:19:40.381 [INF] backend: AppSettings initialized successfully.
+2025-03-31 23:19:40.381 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 23:19:41.382 [INF] backend: Synchronizing admin roles...
+2025-03-31 23:19:41.383 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:19:41.385 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:19:41.385 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 23:19:41.386 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 23:19:41.386 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 23:19:41.386 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 23:19:41.387 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-03-31 23:20:14.608 [INF] backend: Logging configured for backend.
+2025-03-31 23:20:14.610 [INF] backend: AppSettings initialized successfully.
+2025-03-31 23:20:14.611 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 23:20:15.612 [INF] backend: Synchronizing admin roles...
+2025-03-31 23:20:15.612 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:20:15.613 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:20:15.613 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 23:20:15.614 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 23:20:15.614 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 23:20:15.614 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 23:20:15.614 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-03-31 23:33:13.780 [INF] backend: Logging configured for backend.
+2025-03-31 23:33:13.783 [INF] backend: AppSettings initialized successfully.
+2025-03-31 23:33:13.783 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 23:33:14.784 [INF] backend: Synchronizing admin roles...
+2025-03-31 23:33:14.785 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:33:14.785 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:33:14.786 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 23:33:14.786 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 23:33:14.786 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 23:33:14.787 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 23:33:14.787 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-03-31 23:34:45.286 [INF] backend: Logging configured for backend.
+2025-03-31 23:34:45.288 [INF] backend: AppSettings initialized successfully.
+2025-03-31 23:34:45.288 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 23:34:46.290 [INF] backend: Synchronizing admin roles...
+2025-03-31 23:34:46.290 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:34:46.291 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:34:46.291 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 23:34:46.291 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 23:34:46.292 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 23:34:46.292 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 23:34:46.292 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-03-31 23:35:10.340 [INF] backend: Logging configured for backend.
+2025-03-31 23:35:10.343 [INF] backend: AppSettings initialized successfully.
+2025-03-31 23:35:10.343 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 23:35:11.346 [INF] backend: Synchronizing admin roles...
+2025-03-31 23:35:11.347 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:35:11.347 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:35:11.347 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 23:35:11.348 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 23:35:11.348 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 23:35:11.348 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 23:35:11.349 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-03-31 23:35:53.477 [INF] backend: Logging configured for backend.
+2025-03-31 23:35:53.479 [INF] backend: AppSettings initialized successfully.
+2025-03-31 23:35:53.479 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 23:35:54.480 [INF] backend: Synchronizing admin roles...
+2025-03-31 23:35:54.481 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:35:54.481 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:35:54.482 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 23:35:54.482 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 23:35:54.483 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 23:35:54.483 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 23:35:54.483 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-03-31 23:37:12.860 [INF] backend: Logging configured for backend.
+2025-03-31 23:37:12.863 [INF] backend: AppSettings initialized successfully.
+2025-03-31 23:37:12.864 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 23:37:13.866 [INF] backend: Synchronizing admin roles...
+2025-03-31 23:37:13.867 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:37:13.867 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:37:13.868 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 23:37:13.868 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 23:37:13.869 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 23:37:13.869 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 23:37:13.869 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-03-31 23:38:53.764 [INF] backend: Logging configured for backend.
+2025-03-31 23:38:53.765 [INF] backend: AppSettings initialized successfully.
+2025-03-31 23:38:53.766 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-03-31 23:38:54.767 [INF] backend: Synchronizing admin roles...
+2025-03-31 23:38:54.768 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:38:54.768 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-03-31 23:38:54.768 [INF] backend: [AdminSync] Querying for users to demote...
+2025-03-31 23:38:54.769 [INF] backend: [AdminSync] No users found to demote.
+2025-03-31 23:38:54.769 [INF] backend: [AdminSync] Querying for users to promote...
+2025-03-31 23:38:54.770 [INF] backend: [AdminSync] No users found to promote.
+2025-03-31 23:38:54.770 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 05:35:21.590 [INF] backend: Logging configured for backend.
+2025-04-01 05:35:21.592 [INF] backend: AppSettings initialized successfully.
+2025-04-01 05:35:21.592 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 05:35:22.592 [INF] backend: Synchronizing admin roles...
+2025-04-01 05:35:22.592 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 05:35:22.593 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 05:35:22.593 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 05:35:22.594 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 05:35:22.594 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 05:35:22.594 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 05:35:22.594 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 05:36:19.141 [INF] backend: Logging configured for backend.
+2025-04-01 05:36:19.143 [INF] backend: AppSettings initialized successfully.
+2025-04-01 05:36:19.143 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 05:36:20.144 [INF] backend: Synchronizing admin roles...
+2025-04-01 05:36:20.145 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 05:36:20.146 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 05:36:20.146 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 05:36:20.146 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 05:36:20.147 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 05:36:20.147 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 05:36:20.147 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 05:51:04.327 [INF] backend: Logging configured for backend.
+2025-04-01 05:51:04.330 [INF] backend: AppSettings initialized successfully.
+2025-04-01 05:51:04.331 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 05:51:05.331 [INF] backend: Synchronizing admin roles...
+2025-04-01 05:51:05.332 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 05:51:05.333 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 05:51:05.333 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 05:51:05.333 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 05:51:05.334 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 05:51:05.334 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 05:51:05.334 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 08:44:46.012 [INF] backend: Logging configured for backend.
+2025-04-01 08:44:46.015 [INF] backend: AppSettings initialized successfully.
+2025-04-01 08:44:46.015 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 08:44:47.018 [INF] backend: Synchronizing admin roles...
+2025-04-01 08:44:47.019 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 08:44:47.020 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 08:44:47.020 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 08:44:47.021 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 08:44:47.023 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 08:44:47.023 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 08:44:47.023 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 08:50:22.861 [INF] backend: Logging configured for backend.
+2025-04-01 08:50:22.863 [INF] backend: AppSettings initialized successfully.
+2025-04-01 08:50:22.863 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 08:50:23.864 [INF] backend: Synchronizing admin roles...
+2025-04-01 08:50:23.864 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 08:50:23.865 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 08:50:23.865 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 08:50:23.865 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 08:50:23.865 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 08:50:23.866 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 08:50:23.866 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 09:31:38.450 [INF] backend: Logging configured for backend.
+2025-04-01 09:31:38.453 [INF] backend: AppSettings initialized successfully.
+2025-04-01 09:31:38.453 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 09:31:39.454 [INF] backend: Synchronizing admin roles...
+2025-04-01 09:31:39.454 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 09:31:39.456 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 09:31:39.456 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 09:31:39.456 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 09:31:39.457 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 09:31:39.457 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 09:31:39.457 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 09:32:21.029 [INF] backend: Logging configured for backend.
+2025-04-01 09:32:21.031 [INF] backend: AppSettings initialized successfully.
+2025-04-01 09:32:21.031 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 09:32:22.032 [INF] backend: Synchronizing admin roles...
+2025-04-01 09:32:22.032 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 09:32:22.033 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 09:32:22.033 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 09:32:22.033 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 09:32:22.034 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 09:32:22.034 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 09:32:22.034 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 09:45:19.716 [INF] backend: Logging configured for backend.
+2025-04-01 09:45:19.718 [INF] backend: AppSettings initialized successfully.
+2025-04-01 09:45:19.718 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 09:45:20.721 [INF] backend: Synchronizing admin roles...
+2025-04-01 09:45:20.722 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 09:45:20.722 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 09:45:20.722 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 09:45:20.723 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 09:45:20.723 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 09:45:20.723 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 09:45:20.723 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:00:50.683 [INF] backend: Logging configured for backend.
+2025-04-01 13:00:50.686 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:00:50.686 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:00:51.686 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:00:51.687 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:00:51.688 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:00:51.688 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:00:51.689 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:00:51.689 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:00:51.689 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:00:51.690 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:01:44.143 [INF] backend: Logging configured for backend.
+2025-04-01 13:01:44.145 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:01:44.146 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:01:45.146 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:01:45.147 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:01:45.148 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:01:45.148 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:01:45.149 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:01:45.149 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:01:45.149 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:01:45.149 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:02:22.383 [INF] backend: Logging configured for backend.
+2025-04-01 13:02:22.385 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:02:22.386 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:02:23.387 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:02:23.387 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:02:23.387 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:02:23.387 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:02:23.388 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:02:23.388 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:02:23.389 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:02:23.389 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:08:30.256 [INF] backend: Logging configured for backend.
+2025-04-01 13:08:30.259 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:08:30.259 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:08:31.260 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:08:31.260 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:08:31.261 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:08:31.261 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:08:31.261 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:08:31.262 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:08:31.262 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:08:31.262 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:29:25.882 [INF] backend: Logging configured for backend.
+2025-04-01 13:29:25.885 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:29:25.885 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:29:26.903 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:29:26.903 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:29:26.905 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:29:26.905 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:29:26.906 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:29:26.906 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:29:26.906 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:29:26.907 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:30:21.909 [INF] backend: Logging configured for backend.
+2025-04-01 13:30:21.911 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:30:21.911 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:30:22.912 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:30:22.913 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:30:22.913 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:30:22.914 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:30:22.914 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:30:22.915 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:30:22.915 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:30:22.915 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:32:32.375 [INF] backend: Logging configured for backend.
+2025-04-01 13:32:32.377 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:32:32.378 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:32:33.383 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:32:33.383 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:32:33.384 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:32:33.384 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:32:33.385 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:32:33.385 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:32:33.386 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:32:33.386 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:34:16.021 [INF] backend: Logging configured for backend.
+2025-04-01 13:34:16.023 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:34:16.023 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:34:17.027 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:34:17.028 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:34:17.028 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:34:17.028 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:34:17.029 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:34:17.029 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:34:17.030 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:34:17.030 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:34:57.032 [INF] backend: Logging configured for backend.
+2025-04-01 13:34:57.035 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:34:57.035 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:34:58.038 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:34:58.038 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:34:58.039 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:34:58.039 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:34:58.039 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:34:58.040 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:34:58.040 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:34:58.040 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:35:35.855 [INF] backend: Logging configured for backend.
+2025-04-01 13:35:35.857 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:35:35.857 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:35:36.862 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:35:36.863 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:35:36.863 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:35:36.863 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:35:36.864 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:35:36.865 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:35:36.865 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:35:36.865 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:36:38.522 [INF] backend: Logging configured for backend.
+2025-04-01 13:36:38.525 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:36:38.525 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:36:39.532 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:36:39.533 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:36:39.533 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:36:39.533 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:36:39.534 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:36:39.534 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:36:39.534 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:36:39.534 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:37:45.277 [INF] backend: Logging configured for backend.
+2025-04-01 13:37:45.280 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:37:45.280 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:37:46.281 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:37:46.282 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:37:46.282 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:37:46.282 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:37:46.283 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:37:46.283 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:37:46.283 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:37:46.284 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:42:50.513 [INF] backend: Logging configured for backend.
+2025-04-01 13:42:50.516 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:42:50.517 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:42:51.519 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:42:51.519 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:42:51.520 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:42:51.520 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:42:51.521 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:42:51.521 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:42:51.522 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:42:51.522 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:43:46.854 [INF] backend: Logging configured for backend.
+2025-04-01 13:43:46.856 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:43:46.856 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:43:47.859 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:43:47.859 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:43:47.859 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:43:47.859 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:43:47.860 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:43:47.860 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:43:47.861 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:43:47.861 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:47:01.934 [INF] backend: Logging configured for backend.
+2025-04-01 13:47:01.937 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:47:01.937 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:47:02.938 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:47:02.939 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:47:02.939 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:47:02.939 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:47:02.940 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:47:02.940 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:47:02.941 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:47:02.941 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:47:43.487 [INF] backend: Logging configured for backend.
+2025-04-01 13:47:43.489 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:47:43.490 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:47:44.494 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:47:44.494 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:47:44.495 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:47:44.495 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:47:44.496 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:47:44.496 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:47:44.496 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:47:44.496 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:50:42.713 [INF] backend: Logging configured for backend.
+2025-04-01 13:50:42.715 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:50:42.715 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:50:43.718 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:50:43.719 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:50:43.719 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:50:43.719 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:50:43.720 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:50:43.720 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:50:43.721 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:50:43.721 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:51:09.904 [INF] backend: Logging configured for backend.
+2025-04-01 13:51:09.906 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:51:09.907 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:51:10.907 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:51:10.908 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:51:10.908 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:51:10.908 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:51:10.909 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:51:10.909 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:51:10.909 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:51:10.909 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:51:55.487 [INF] backend: Logging configured for backend.
+2025-04-01 13:51:55.489 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:51:55.490 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:51:56.491 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:51:56.491 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:51:56.491 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:51:56.491 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:51:56.492 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:51:56.492 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:51:56.493 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:51:56.493 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:52:16.185 [INF] backend: Logging configured for backend.
+2025-04-01 13:52:16.187 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:52:16.188 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:52:17.189 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:52:17.190 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:52:17.191 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:52:17.191 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:52:17.192 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:52:17.192 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:52:17.192 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:52:17.193 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:52:44.567 [INF] backend: Logging configured for backend.
+2025-04-01 13:52:44.570 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:52:44.570 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:52:45.571 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:52:45.574 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:52:45.575 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:52:45.575 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:52:45.576 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:52:45.576 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:52:45.577 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:52:45.577 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:54:07.604 [INF] backend: Logging configured for backend.
+2025-04-01 13:54:07.607 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:54:07.607 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:54:08.608 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:54:08.609 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:54:08.609 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:54:08.610 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:54:08.611 [ERR] backend: Error during admin role synchronization:
+{
+  error:  6 |     rawCode;
+ 7 |     constructor(message, code, rawCode, cause) {
+ 8 |         if (code !== undefined) {
+ 9 |             message = `${code}: ${message}`;
+10 |         }
+11 |         super(message, { cause });
+             ^
+LibsqlError: SQLITE_ERROR: no such table: user
+ rawCode: 1,
+    code: "SQLITE_ERROR"
+
+      at new LibsqlError (/Users/philhennel/Code/sst-copilot-study/node_modules/@libsql/core/lib-esm/api.js:11:9)
+      at mapSqliteError (/Users/philhennel/Code/sst-copilot-study/node_modules/@libsql/client/lib-esm/sqlite3.js:380:16)
+      at executeStmt (/Users/philhennel/Code/sst-copilot-study/node_modules/@libsql/client/lib-esm/sqlite3.js:285:15)
+      at execute (/Users/philhennel/Code/sst-copilot-study/node_modules/@libsql/client/lib-esm/sqlite3.js:69:19)
+      at values (/Users/philhennel/Code/sst-copilot-study/node_modules/drizzle-orm/libsql/session.js:182:59)
+      at <anonymous> (/Users/philhennel/Code/sst-copilot-study/node_modules/drizzle-orm/libsql/session.js:126:29)
+      at all (/Users/philhennel/Code/sst-copilot-study/node_modules/drizzle-orm/libsql/session.js:118:13)
+      at execute (/Users/philhennel/Code/sst-copilot-study/node_modules/drizzle-orm/sqlite-core/query-builders/select.js:596:19)
+      at then (/Users/philhennel/Code/sst-copilot-study/node_modules/drizzle-orm/query-promise.js:21:17)
+,
+}
+2025-04-01 13:54:42.983 [INF] backend: Logging configured for backend.
+2025-04-01 13:54:42.985 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:54:42.985 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:54:44.005 [INF] backend: Synchronizing admin roles...
+2025-04-01 13:54:44.006 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:54:44.006 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 13:54:44.006 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 13:54:44.007 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 13:54:44.007 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 13:54:44.007 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 13:54:44.007 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 13:58:28.849 [INF] backend: Logging configured for backend.
+2025-04-01 13:58:28.851 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:58:28.852 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:59:07.499 [INF] backend: Logging configured for backend.
+2025-04-01 13:59:07.502 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:59:07.502 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 13:59:44.897 [INF] backend: Logging configured for backend.
+2025-04-01 13:59:44.900 [INF] backend: AppSettings initialized successfully.
+2025-04-01 13:59:44.900 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:00:32.506 [INF] backend: Logging configured for backend.
+2025-04-01 14:00:32.508 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:00:32.508 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:01:14.852 [INF] backend: Logging configured for backend.
+2025-04-01 14:01:14.854 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:01:14.854 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:01:37.336 [INF] backend: Logging configured for backend.
+2025-04-01 14:01:37.339 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:01:37.339 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:02:24.400 [INF] backend: Logging configured for backend.
+2025-04-01 14:02:24.403 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:02:24.403 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:03:10.186 [INF] backend: Logging configured for backend.
+2025-04-01 14:03:10.188 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:03:10.189 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:03:38.459 [INF] backend: Logging configured for backend.
+2025-04-01 14:03:38.462 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:03:38.462 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:04:03.319 [INF] backend: Logging configured for backend.
+2025-04-01 14:04:03.321 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:04:03.322 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:05:20.677 [INF] backend: Logging configured for backend.
+2025-04-01 14:05:20.680 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:05:20.680 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:05:21.687 [INF] backend: Synchronizing admin roles...
+2025-04-01 14:05:21.687 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 14:05:21.688 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 14:05:21.688 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 14:05:21.688 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 14:05:21.688 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 14:05:21.689 [INF] backend: [AdminSync] Found 1 users to promote
+{
+  emailsToPromote: [ "phil.hennel@outlook.com" ],
+}
+2025-04-01 14:05:21.690 [INF] backend: [AdminSync] Successfully promoted 1 users.
+2025-04-01 14:05:21.690 [INF] backend: [AdminSync] Admin role synchronization complete.
+2025-04-01 14:35:46.162 [INF] backend: Logging configured for backend.
+2025-04-01 14:35:46.165 [INF] backend: AppSettings initialized successfully.
+2025-04-01 14:35:46.165 [WRN] backend: MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.
+2025-04-01 14:35:47.180 [INF] backend: Synchronizing admin roles...
+2025-04-01 14:35:47.180 [INF] backend: Admin emails from settings:
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 14:35:47.182 [INF] backend: [AdminSync] Starting sync.
+{
+  adminEmails: [ "hennel@uni-bremen.de", "phil.hennel@outlook.com" ],
+}
+2025-04-01 14:35:47.182 [INF] backend: [AdminSync] Querying for users to demote...
+2025-04-01 14:35:47.182 [INF] backend: [AdminSync] No users found to demote.
+2025-04-01 14:35:47.183 [INF] backend: [AdminSync] Querying for users to promote...
+2025-04-01 14:35:47.183 [INF] backend: [AdminSync] No users found to promote.
+2025-04-01 14:35:47.183 [INF] backend: [AdminSync] Admin role synchronization complete.

@@ -7,7 +7,7 @@
       "action": "Confirm"
     },
     "title": "The Real Impact of AI on Programming Work",
-    "intro": "We’re conducting a research study on how AI tools are changing the everyday work of software developers. Our goal is to go beyond opinions and surface-level observations to really understand what’s happening — how behaviors, routines, and practices are evolving when programmers work alongside AI tools.\nTo do this, we’re inviting you to contribute digital trace data from tools you’re already using: GitLab and Jira."
+    "intro": "We’re conducting a research study on how AI tools are changing the everyday work of software developers. Our goal is to go beyond opinions and surface-level observations to really understand what’s happening — how behaviors, routines, and practices are evolving when programmers work alongside AI tools.\nTo do this, we’re inviting you to contribute digital trace data from a tool you’re already using: GitLab."
   },
   "auth": {
     "signOut": "Sign Out",

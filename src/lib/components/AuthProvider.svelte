@@ -16,7 +16,8 @@
     provider,
     linkedAccounts,
     nextUrl = $page.url.pathname, // Add default value
-    isLoggedIn = false
+    isLoggedIn = false,
+    forceDisabled = false
   }: {
     loading: boolean
     onclick?: () => void | Promise<void>
@@ -27,6 +28,7 @@
     linkedAccounts?: string[]
     nextUrl?: string
     isLoggedIn: boolean
+    forceDisabled: boolean
   } = $props()
   let accountState = $derived.by(() => {
     const isAuthenticated = !!linkedAccounts && linkedAccounts.includes(provider)
@@ -52,7 +54,7 @@
     <Skeleton class="h-8 w-full" />
   {:else}
     <Button
-      disabled={loading}
+      disabled={loading || forceDisabled}
       onclick={onclick ?? fallbackClickHandler}
       variant={accountState.variant}
       class="w-full cursor-pointer"
