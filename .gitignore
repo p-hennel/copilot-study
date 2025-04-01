@@ -11,7 +11,6 @@ cache
 .wrangler
 /.svelte-kit
 /build
-logs/
 data/
 
 # OS
@@ -35,6 +34,5 @@ vite.config.ts.timestamp-*
 src/lib/paraglide
 
 *.bun-build
-logs/
 config/settings.yaml
 .DS_Store
