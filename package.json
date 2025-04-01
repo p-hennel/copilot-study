@@ -81,7 +81,7 @@
   },
   "dependencies": {
     "@gitbeaker/rest": "^42.2.0",
-    "@libsql/client": "^0.14.0",
+    "@libsql/client": "^0.15.2",
     "@logtape/file": "^0.9.0",
     "@logtape/logtape": "^0.9.0",
     "@logtape/otel": "^0.3.0",
