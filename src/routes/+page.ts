@@ -3,7 +3,7 @@ import { browser } from "$app/environment"
 import { authClient } from "$lib/auth-client"
 
 let jobProgressTimer: Timer | null = null
-const token = authClient.getSession().then((response) => response.data?.session.token)
+const token = authClient.getSession().then((response) => response.data?.session?.token)
 export async function load(event) {
   return {
     jobInfo: fetchPrefetch(event),
@@ -12,11 +12,15 @@ export async function load(event) {
 }
 
 const fetchPrefetch = async (event: any) => {
+  const _token = await token
+  if (!_token || _token.length <= 0)
+    return
+
   let result: any = null
   const data: any = await event.fetch("/api/prefetch", {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${await token}`
+      Authorization: `Bearer ${_token}`
     }
   })
   if (!data.ok) {
@@ -32,6 +36,6 @@ const fetchPrefetch = async (event: any) => {
       }, 30000)
     }
   }
-  console.log(result)
+  
   return result
 }

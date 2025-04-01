@@ -51,6 +51,7 @@ COPY --from=prerelease \
   /usr/src/app \
   ./
 
+RUN chown -R bun:bun /usr/src/app
 
 # /usr/src/app/build \
 # /usr/src/app/package.json \
@@ -66,7 +67,7 @@ COPY --from=prerelease \
 
 #RUN crontab -u bun /usr/src/app/backup.cron
 RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
-RUN chown -R bun:bun /home/bun/data /usr/src/app
+RUN chown -R bun:bun /home/bun/data
 # /home/bun/.ssh
 
 # run the app

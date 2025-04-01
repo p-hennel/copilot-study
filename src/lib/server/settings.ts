@@ -93,7 +93,7 @@ export const settingsSchema = z.object({
       trustedOrigins: z
         .array(z.string().nonempty())
         .default(["http://localhost:3000", "http://localhost:4173", "http://localhost:5173"]),
-      trustedProviders: z.array(z.string().nonempty()).default(["gitlab", "jira"]),
+      trustedProviders: z.array(z.string().nonempty()).default(["gitlab", "jira", "jiraCloud", "gitlabCloud"]),
       allowDifferentEmails: z.boolean().default(true),
       admins: z
         .array(
@@ -107,7 +107,10 @@ export const settingsSchema = z.object({
         .object({
           gitlab: z
             .object({
-              baseUrl: z.string().nonempty().default("https://gitlab.com"),
+              baseUrl: z.string().nonempty().default("https://gitlab.devops.de"),
+              tokenUrl: z.string().default("https://gitlab.devops.de/oauth/token"),
+              authorizationUrl: z.string().default("https://gitlab.devops.de/oauth/authorize"),
+              userInfoUrl:  z.string().default("https://gitlab.devops.de/oauth/userinfo"),
               clientId: z.string().optional(),
               clientSecret: z.string().optional(),
               discoveryUrl: z.string().optional(),
@@ -115,6 +118,16 @@ export const settingsSchema = z.object({
               redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
             })
             .default({}),
+            gitlabCloud: z
+              .object({
+                baseUrl: z.string().nonempty().default("https://gitlab.com"),
+                clientId: z.string().optional(),
+                clientSecret: z.string().optional(),
+                discoveryUrl: z.string().optional(),
+                scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
+                redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
+              })
+              .default({}),
           jiracloud: z
             .object({
               baseUrl: z.string().nonempty().default("https://api.atlassian.com"),

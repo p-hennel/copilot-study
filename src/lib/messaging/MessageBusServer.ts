@@ -3,6 +3,9 @@ import { job, type Job, type UpdateJobType } from "$lib/server/db/base-schema"
 import { getAvailableJobs, spawnNewJobs } from "$lib/server/db/jobFactory"
 import { CrawlCommand, JobStatus, TokenProvider } from "$lib/utils"
 import { eq } from "drizzle-orm/sql"
+import { getLogger } from "@logtape/logtape";
+
+const logger = getLogger(["MessageBus", "Server"])
 
 /**
  * MessageBusServer acts as the server-side central message handler.
@@ -26,7 +29,7 @@ export class MessageBusServer {
             await this.handleJobProgress(msg.data)
             break
           default:
-            console.debug("[MessageBusServer] Unrecognized message type:", msg.type)
+            logger.debug("[MessageBusServer] Unrecognized message type:", msg.type)
         }
       }
     })
@@ -55,7 +58,7 @@ export class MessageBusServer {
         }
       }
     } catch (error: any) {
-      console.error("[MessageBusServer] Error handling job request:", error)
+      logger.error("[MessageBusServer] Error handling job request:", error)
       if (process.send) {
         process.send({ type: "job", data: null, error: error?.message })
       }
@@ -75,15 +78,15 @@ export class MessageBusServer {
         where: (table, { eq }) => eq(table.id, data.jobId)
       })
       if (!currentJob) {
-        console.error("[MessageBusServer] Job not found:", data.jobId)
+        logger.error("[MessageBusServer] Job not found:", data.jobId)
         return
       }
       if (currentJob.status === data.status) {
-        console.warn("[MessageBusServer] Job status did not change:", data.jobId)
+        logger.warn("[MessageBusServer] Job status did not change:", data.jobId)
         return
       }
       if (currentJob.status === JobStatus.finished) {
-        console.warn("[MessageBusServer] Job already finished:", data.jobId)
+        logger.warn("[MessageBusServer] Job already finished:", data.jobId)
         return
       }
 
@@ -103,12 +106,12 @@ export class MessageBusServer {
       }
       const result = await db.update(job).set(updates).where(eq(job.id, data.jobId))
       if (result.rowsAffected < 1) {
-        console.error("[MessageBusServer] Could not update job in DB:", data.jobId)
+        logger.error("[MessageBusServer] Could not update job in DB:", data.jobId)
       } else {
-        console.info("[MessageBusServer] Job updated successfully:", data.jobId)
+        logger.info("[MessageBusServer] Job updated successfully:", data.jobId)
       }
     } catch (error) {
-      console.error("[MessageBusServer] Error handling job progress:", error)
+      logger.error("[MessageBusServer] Error handling job progress:", error)
     }
   }
 }

@@ -23,7 +23,8 @@ export enum JobStatus {
 export enum TokenProvider {
   jira = "jiralocal",
   jiraCloud = "jiracloud",
-  gitlab = "gitlab"
+  gitlab = "gitlab-onprem",
+  gitlabCloud = "gitlab"
 }
 
 type CSVbaseType = { [key: string | number]: number | string | boolean | null | undefined };

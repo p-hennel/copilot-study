@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Separator } from "$lib/components/ui/separator/index.js"
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import type { PageData } from "./$types" // Use PageData from generated types
   let { data }: { data: PageData } = $props() // Use PageData
   import Markdown from "svelte-exmarkdown"
@@ -23,11 +24,17 @@
     linkedAccounts: [] as string[]
   })
 
-  authClient.listAccounts().then((x) => {
-    if (!!x.data && x.data.length > 0) {
-      pageState.linkedAccounts = x.data.map((x) => x.provider)
+  $effect(() => {
+    if (data.session && data.user && data.user.id) {
+      authClient.listAccounts().then((x) => {
+        if (!!x.data && x.data.length > 0) {
+          pageState.linkedAccounts = x.data.map((x) => x.provider)
+        }
+        pageState.loading = false
+      })
+    } else {
+      pageState.loading = false
     }
-    pageState.loading = false
   })
 
   const nicerCounts = (count: number) => {
@@ -118,36 +125,59 @@
     </Button>
   </div>
   {#await data.jobInfo then jobInfo}
-    <div class="mt-6 flex w-full flex-wrap items-center gap-4">
-      <span class="italic">Initial job: {jobInfo.status}</span>
-      <div class="flex w-full items-center gap-4">
-        <UsersRound class="h-8 w-8" />
-        <div class="flex-1">
-          <Progress value={jobInfo.collectedGroups} max={jobInfo.totalGroups} />
-        </div>
+    {#if jobInfo}
+      <div class="mt-6 flex w-full flex-wrap items-center gap-4">
+        <span class="italic">Initial job: {jobInfo.status}</span>
+        <Tooltip.Provider>
+          <Tooltip.Root>
+            <Tooltip.Trigger class="flex w-full items-center gap-4">
+              <UsersRound class="h-8 w-8" />
+              <div class="flex-1">
+                <Progress value={jobInfo.isComplete ? 100 : jobInfo.collectedGroups} max={jobInfo.isComplete ? 100 : jobInfo.totalGroups} />
+              </div>
+            </Tooltip.Trigger>
+            <Tooltip.Content side="top" sideOffset={-10}>
+              {jobInfo.collectedGroups}{jobInfo.totalGroups ? "/" : ""}{jobInfo.totalGroups} Groups
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+        <Tooltip.Provider delayDuration={0}>
+          <Tooltip.Root>
+            <Tooltip.Trigger class="flex w-full items-center gap-4">
+              <FolderGit2 class="h-8 w-8" />
+              <div class="flex-1">
+                <Progress value={jobInfo.isComplete ? 100 : jobInfo.collectedProjects} max={jobInfo.isComplete ? 100 : jobInfo.totalProjects} />
+              </div>
+            </Tooltip.Trigger>
+            <Tooltip.Content side="bottom" sideOffset={-10}>
+              {jobInfo.collectedProjects}{jobInfo.totalProjects ? "/" : ""}{jobInfo.totalProjects} Projects
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
       </div>
-      <div class="flex w-full items-center gap-4">
-        <FolderGit2 class="h-8 w-8" />
-        <div class="flex-1">
-          <Progress value={jobInfo.collectedProjects} max={jobInfo.totalProjects} />
-        </div>
-      </div>
-    </div>
+    {/if}
   {/await}
 {/if}
 
 {#if !!data.jobs && data.jobs.length > 0}
   <Separator class="my-4" />
-  <p>
-    Directly associated with your accounts, {nicerCounts(jobsSummary[JobStatus.finished])} jobs have finished (and {nicerCounts(
-      jobsSummary[JobStatus.finished]
-    )} have failed).
-  </p>
-  {#if jobsSummary[JobStatus.running] > 0 || jobsSummary[JobStatus.queued] > 0}
-    <p>
-      Currently, {nicerCounts(jobsSummary[JobStatus.running])} jobs are running, while {nicerCounts(
-        jobsSummary[JobStatus.queued]
-      )} are queued.
-    </p>
-  {/if}
+  <Accordion.Root type="single" class="mt-0 w-full text-sm">
+    <Accordion.Item value="explainer">
+      <Accordion.Trigger class="pb-2 text-sm">More details</Accordion.Trigger>
+      <Accordion.Content class="m-0 p-0">
+        <p>
+          Directly associated with your accounts, {nicerCounts(jobsSummary[JobStatus.finished])} jobs have finished (and {nicerCounts(
+            jobsSummary[JobStatus.finished]
+          )} have failed).
+        </p>
+        {#if jobsSummary[JobStatus.running] > 0 || jobsSummary[JobStatus.queued] > 0}
+          <p>
+            Currently, {nicerCounts(jobsSummary[JobStatus.running])} jobs are running, while {nicerCounts(
+              jobsSummary[JobStatus.queued]
+            )} are queued.
+          </p>
+        {/if}
+      </Accordion.Content>
+    </Accordion.Item>
+  </Accordion.Root>
 {/if}

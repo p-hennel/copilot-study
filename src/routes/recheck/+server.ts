@@ -13,6 +13,8 @@ import { manageOAuthToken } from "$lib/server/mini-crawler/token-check"
 // TODO: Encrypted Mail Tokens
 
 export const GET: RequestHandler = async ({ locals, fetch }) => {
+  if (!locals.session || !locals.user || !locals.user.id)
+    return redirect(301, "/")
   const _job = (
     await db
       .select({

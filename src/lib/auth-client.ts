@@ -34,20 +34,18 @@ export async function signIn(arg: TokenProvider | Credentials, nextUrl?: string)
     } else {
       // Provider flow using a TokenProvider
       const provider = arg as TokenProvider;
-      if (provider === TokenProvider.jira || provider === TokenProvider.jiraCloud) {
-        // For Jira (using Generic OAuth)
-        await authClient.signIn.oauth2({
-          providerId: provider, // Make sure your genericOAuth plugin is configured with these IDs
-          callbackURL: nextUrl
-        });
-      } else if (provider === TokenProvider.gitlab) {
+      if (provider === TokenProvider.gitlabCloud) {
         // For GitLab (using Social sign-in)
         await authClient.signIn.social({
           provider,
           callbackURL: nextUrl
         });
       } else {
-        throw new Error(`Unsupported provider: ${provider}`);
+        // For Jira (using Generic OAuth)
+        await authClient.signIn.oauth2({
+          providerId: provider, // Make sure your genericOAuth plugin is configured with these IDs
+          callbackURL: nextUrl
+        });
       }
     }
   } catch (error) {
@@ -59,19 +57,17 @@ export async function signIn(arg: TokenProvider | Credentials, nextUrl?: string)
 export async function linkAccount(provider: TokenProvider, nextUrl: string): Promise<void> {
   try {
     // For GitLab, use the social linking method
-    if (provider === TokenProvider.gitlab) {
+    if (provider === TokenProvider.gitlabCloud) {
       await authClient.linkSocial({
         provider, // Social provider (e.g., 'gitlab')
         callbackURL: nextUrl
       });
-    } else if (provider === TokenProvider.jira || provider === TokenProvider.jiraCloud) {
+    } else {
       // For Jira providers, use Generic OAuth linking
       await authClient.oauth2.link({
         providerId: provider, // Ensure your Generic OAuth plugin is configured with these IDs
         callbackURL: nextUrl
       });
-    } else {
-      throw new Error(`Unsupported provider for linking: ${provider}`);
     }
   } catch (error) {
     console.error(`Error linking account with provider ${provider}:`, error);

@@ -4,8 +4,7 @@
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "ESNext",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
+    "moduleDetection": "auto",
     "allowJs": true,
 
     //"types": ["bun"],

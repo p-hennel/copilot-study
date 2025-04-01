@@ -16,6 +16,10 @@
         "name": "Gitlab",
         "description": "Based on the (anonymized) data from Gitlab, we will be able to better understand changes in, for example how pull requests are structured, how things change over time. Given this, we can better isolate Copilot's effects from \"natural\" effects."
       },
+      "gitlab-onprem": {
+        "name": "Gitlab",
+        "description": "Based on the (anonymized) data from Gitlab, we will be able to better understand changes in, for example how pull requests are structured, how things change over time. Given this, we can better isolate Copilot's effects from \"natural\" effects."
+      },
       "jiralocal": {
         "name": "Jira",
         "description": "Using the (anonymized) data from Jira, we can identify external events, such as requirement changes, better and therefore better isolate how things changed due to the introduction of Copilot."

@@ -448,6 +448,8 @@ export const providerToBaseURL = (provider: TokenProvider | string) => {
   switch (provider) {
     case "gitlab":
       return AppSettings().auth.providers.gitlab.baseUrl
+    case "gitlabCloud":
+      return AppSettings().auth.providers.gitlabCloud.baseUrl
     case "jira":
       return AppSettings().auth.providers.jira.baseUrl
     case "jiracloud":

@@ -107,6 +107,16 @@ export const auth = betterAuth({
     genericOAuth({
       config: [
         {
+          providerId: "gitlab-onprem",
+          clientId: settings.auth.providers.gitlab.clientId!, // Add non-null assertion
+          clientSecret: settings.auth.providers.gitlab.clientSecret!, // Add non-null assertion
+          authorizationUrl: settings.auth.providers.gitlab.authorizationUrl,
+          tokenUrl: settings.auth.providers.gitlab.tokenUrl,
+          userInfoUrl:  settings.auth.providers.gitlab.userInfoUrl,
+          scopes: settings.auth.providers.gitlab.scopes,
+          redirectURI: settings.auth.providers.gitlab.redirectURI,
+        },
+        {
           providerId: "jiracloud",
           clientId: settings.auth.providers.jiracloud.clientId!, // Add non-null assertion
           clientSecret: settings.auth.providers.jiracloud.clientSecret!, // Add non-null assertion
