@@ -11,14 +11,11 @@ permissions:
 
 
 on:
-  label:
-    types:
-      - created
   push:
     branches:
       - 'releases/**'
     tags:
-      - 'v*'
+      - 'v**'
 
 jobs:
   docker:
