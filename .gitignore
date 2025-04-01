@@ -36,4 +36,3 @@ src/lib/paraglide
 
 *.bun-build
 config/settings.yaml
-.DS_Store

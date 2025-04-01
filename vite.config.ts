@@ -22,18 +22,26 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
     cors: true
-  }
-  /*
+  },
+  build: {
+    target: "modules",
+    sourcemap: true
+  },
+  preview: {
+    host: true,
+    allowedHosts: true,
+    port: 3000,
+    cors: true,
+  },
   optimizeDeps: {
-    exclude: ["bun", "bun:*"]
+    exclude: ["bun"]
   },
   ssr: {
-    external: ["bun", "bun:*"]
+    external: ["bun"]
   },
   resolve: {
-    external: ["bun", "bun:*"]
+    external: ["bun"]
   }
-  */
   // test: {
   //   workspace: [
   //     {

@@ -7,7 +7,7 @@
     "moduleDetection": "auto",
     "allowJs": true,
 
-    //"types": ["bun"],
+    "types": ["bun"],
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,

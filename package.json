@@ -5,12 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --bun x vite dev",
-    "build:web": "bun --bun x vite build",
-    "build:hasher": "bun run build:hasher:unix64 && bun run build:hasher:win64 && bun run build:hasher:darwinx64 && bun run build:hasher:darwinarm",
-    "build:hasher:unix64": "bun build --compile --target=bun-linux-x64-modern ./src/lib/hasher.ts --outfile ./build/hasher-unix-x64",
-    "build:hasher:win64": "bun build --compile --target=bun-windows-x64-modern ./src/lib/hasher.ts --outfile ./build/hasher-win-x64",
-    "build:hasher:darwinx64": "bun build --compile --target=bun-darwin-x64 ./src/lib/hasher.ts --outfile ./build/hasher-darwin-x64",
-    "build:hasher:darwinarm": "bun build --compile --target=bun-darwin-arm64 ./src/lib/hasher.ts --outfile ./build/hasher-darwin-arm64",
+    "build": "bun --bun x vite build",
     "preview": "bun --bun x vite preview",
     "serve": "bun --bun ./build/index.js",
     "prepare": "bun --bun x svelte-kit sync || echo ''",
