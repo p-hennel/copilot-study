@@ -139,6 +139,9 @@ export const auth = betterAuth({
   },
   socialProviders: {
     gitlab: {
+      authorizationUrl: settings.auth.providers.gitlab.authorizationUrl,
+      authorizationUrlParams: settings.auth.providers.gitlab.authorizationUrlParams,
+      tokenUrl: settings.auth.providers.gitlab.tokenUrl,
       clientId: settings.auth.providers.gitlab.clientId!, // Add non-null assertion
       clientSecret: settings.auth.providers.gitlab.clientSecret!, // Add non-null assertion
       discoveryUrl: settings.auth.providers.gitlab.discoveryUrl,
