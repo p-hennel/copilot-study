@@ -15,7 +15,7 @@ on:
     branches:
       - 'releases/**'
     tags:
-      - 'v**'
+      - '*.*.*'
 
 jobs:
   docker:
