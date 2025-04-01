@@ -36,5 +36,5 @@ src/lib/paraglide
 
 *.bun-build
 logs/
-config/
+config/settings.yaml
 .DS_Store
