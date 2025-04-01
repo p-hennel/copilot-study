@@ -11,6 +11,7 @@ cache
 .wrangler
 /.svelte-kit
 /build
+logs/
 data/
 
 # OS
