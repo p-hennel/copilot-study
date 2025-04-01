@@ -73,4 +73,4 @@ RUN chown -R bun:bun /home/bun/data /usr/src/app
 USER bun
 EXPOSE 3000/tcp
 #ENTRYPOINT [ "./startup.sh" ]
-ENTRYPOINT ["bun", "run", "dev", "--port", "3000", ";", "/bin/bash"]
+ENTRYPOINT ["bun", "run", "dev", "--port", "3000", "--host", ";", "/bin/bash"]
