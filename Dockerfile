@@ -2,20 +2,22 @@
 # see all versions at https://hub.docker.com/r/oven/bun/tags
 FROM oven/bun:1 AS base
 WORKDIR /usr/src/app
+ENV DATA_ROOT=/home/bun/data
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get upgrade -qq -y && \
-    apt-get install -qq -y nano htop cifs-utils bash wget bzip2 curl procps cron
+  apt-get upgrade -qq -y && \
+  apt-get install -qq -y nano htop cifs-utils bash wget bzip2 curl procps cron ssh
 
 RUN mkdir -p /home/bun/.ssh/config.d
+RUN touch /home/bun/.ssh/storagebox && chmod 600 /home/bun/.ssh/storagebox
 RUN echo $'Include config.d/*\n\
-\n\
-Host storagebox\n\
+  \n\
+  Host storagebox\n\
   Hostname \$BACKUP_USER.your-storagebox.de\n\
   Port 23\n\
   User \$BACKUP_USER\n\
-  IdentityFile ~/.ssh/storagebox\n' >> /home/bun/.ssh/config && touch /home/bun/.ssh/storagebox && chmod 600 ~/.ssh/storagebox
+  IdentityFile ~/.ssh/storagebox\n' >> /home/bun/.ssh/config
 RUN echo 'modprobe cifs\necho 0 > /proc/fs/cifs/OplockEnabled' >> /etc/rc.local
 RUN wget -qO - https://raw.githubusercontent.com/cupcakearmy/autorestic/master/install.sh | bash
 
@@ -41,20 +43,22 @@ RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config /h
 
 # build for production
 ENV NODE_ENV=production
+RUN mkdir .svelte-kit
+RUN bun run prepare
 RUN bun run build:all
 
 # copy production dependencies and source code into final image
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease \
-    /usr/src/app/build \
-    /usr/src/app/package.json \
-    /usr/src/app/ecosystem.config.cjs \
-    /usr/src/app/pm2-server.sh \
-    /usr/src/app/startup.sh \
-    /usr/src/app/.autorest.config \
-    /usr/src/app/backup.cron \
-    ./
+#COPY --from=prerelease \
+COPY --from=prerelease /usr/src/app/build ./
+COPY --from=prerelease /usr/src/app/package.json ./
+COPY --from=prerelease /usr/src/app/ecosystem.config.cjs ./
+COPY --from=prerelease /usr/src/app/pm2-server.sh ./
+COPY --from=prerelease /usr/src/app/startup.sh ./
+COPY --from=prerelease /usr/src/app/.autorestic.yml ./
+COPY --from=prerelease /usr/src/app/backup.cron ./
+#  ./
 
 COPY --from=prerelease \
   /usr/src/app/config/settings.example.yaml \
@@ -63,6 +67,7 @@ COPY --from=prerelease \
 RUN crontab -u bun /usr/src/app/backup.cron
 RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
 RUN chown -R bun:bun /home/bun/data /home/bun/.ssh
+RUN chown -R bun:bun /usr/src/app /var/run
 
 # run the app
 USER bun

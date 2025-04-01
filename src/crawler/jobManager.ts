@@ -11,7 +11,7 @@ import type { SendMessageArgs } from "./ipc" // Import the type for the generic 
 import { Storage } from "./storage"
 import { GitlabClient } from "./gitlab/client"
 import type { ProjectSchema, GroupSchema } from "@gitbeaker/rest"
-import { getLogger } from "$lib/logging" // Import logtape helper
+import { getLogger } from "../lib/logging" // Import logtape helper
 import type { Logger } from "@logtape/logtape"
 
 const logger = getLogger(["crawler", "jobManager"]) // Logger for this module
@@ -51,6 +51,7 @@ export class JobManager {
   private sendMessage: (logger: Logger, args: SendMessageArgs) => void = () => {}
 
   constructor(logger: Logger, storage: Storage) {
+    this.logger = logger
     this.storage = storage
     logger.info("JobManager initialized.") // Use logger
     this.startHeartbeat()
@@ -170,6 +171,7 @@ export class JobManager {
   // Add job to queue. Assumes fresh start unless progress is part of Job type definition
   // and passed in jobCommand (which it currently isn't explicitly defined for IPC)
   private addJob(jobCommand: StartJobCommand) {
+    if (Object.keys(jobCommand).includes("payload")) jobCommand = (jobCommand as any).payload as StartJobCommand // Extract payload if wrapped
     if (
       !!this.activeJob &&
       (this.activeJob?.id === jobCommand.jobId || this.jobQueue.some((job) => job.id === jobCommand.jobId))
@@ -288,7 +290,11 @@ export class JobManager {
         const jobId = this.activeJob.id // Store ID
 
         try {
-          gitlabClient = new GitlabClient(this.activeJob.gitlabApiUrl, this.activeJob.gitlabToken)
+          gitlabClient = new GitlabClient(
+            this.logger.getChild("GitLab Client"),
+            this.activeJob.gitlabApiUrl,
+            this.activeJob.gitlabToken
+          )
           await this.executeJob(this.activeJob, gitlabClient)
 
           // Check status after executeJob returns (it might have been paused again or failed)
@@ -349,8 +355,11 @@ export class JobManager {
       const jobId = this.activeJob.id // Store ID
 
       try {
-        console.log(this.activeJob)
-        gitlabClient = new GitlabClient(this.activeJob.gitlabApiUrl, this.activeJob.gitlabToken)
+        gitlabClient = new GitlabClient(
+          this.logger.getChild("GitLab Client"),
+          this.activeJob.gitlabApiUrl,
+          this.activeJob.gitlabToken
+        )
         await this.executeJob(this.activeJob, gitlabClient)
 
         // Check status after executeJob returns

@@ -14,7 +14,7 @@ const getLocalSettingsFilePath = () => {
 }
 
 const getHomeSettingsFilePath = () => {
-  const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data", "settings.yaml"))
+  const candidate = path.resolve(path.join("home", "bun", "data", "settings.yaml"))
   if (existsSync(candidate)) {
     return candidate
   }
@@ -27,7 +27,7 @@ const getHomeSettingsFilePath = () => {
 }
 
 const getHomeDataPath = () => {
-  const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data"))
+  const candidate = path.resolve(path.join("home", "bun", "data"))
   if (existsSync(candidate)) {
     return candidate
   }
@@ -65,14 +65,11 @@ const dataRoot = getDataRoot()
 export const settingsSchema = z.object({
   paths: z
     .object({
-      dataRoot: z.string().nonempty().default(dataRoot),
-      config: z.string().nonempty().default(path.join(dataRoot, "config")),
-      database: z
-        .string()
-        .nonempty()
-        .default(`file://${path.join(dataRoot, "config", "main.db")}`),
-      archive: z.string().nonempty().default(path.join(dataRoot, "archive")),
-      logs: z.string().nonempty().default(path.join(dataRoot, "logs"))
+      dataRoot: z.string().default(dataRoot),
+      config: z.string().default(path.join(dataRoot, "config")),
+      database: z.string().default(`file://${path.join(dataRoot, "config", "main.db")}`),
+      archive: z.string().default(path.join(dataRoot, "archive")),
+      logs: z.string().default(path.join(dataRoot, "logs"))
     })
     .default({}),
   hashing: z

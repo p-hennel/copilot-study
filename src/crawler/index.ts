@@ -2,7 +2,7 @@
 // Main entry point for the crawler
 
 import { startCrawler } from "./crawler"
-import { configureLogging } from "$lib/logging" // Import logtape helpers
+import { configureLogging } from "../lib/logging" // Import logtape helpers
 import type { Logger } from "@logtape/logtape"
 
 let logger: Logger

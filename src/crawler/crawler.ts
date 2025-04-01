@@ -2,9 +2,8 @@
 import { setupIPC } from "./ipc"
 import { JobManager } from "./jobManager"
 import { Storage } from "./storage"
+import { getLogger } from "../lib/logging" // Import logtape helper
 import type { CrawlerCommand } from "./types"
-import { getLogger } from "$lib/logging" // Import logtape helper
-import { CrawlerCommand } from "./types"
 
 const logger = getLogger(["crawler", "main"]) // Create a logger for this module
 

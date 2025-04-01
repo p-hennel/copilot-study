@@ -112,6 +112,7 @@
     "build-url-ts": "^6.1.8",
     "csv-parse": "^5.6.0",
     "csv-stringify": "^6.5.2",
+    "devalue": "^5.1.1",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.1",
     "eslint-plugin-drizzle": "^0.2.3",
@@ -126,6 +127,7 @@
     "svelte-time": "^2.0.1",
     "ts-node": "^10.9.2",
     "tx2": "^1.0.5",
-    "ulid": "^2.4.0"
+    "ulid": "^2.4.0",
+    "urql": "^4.2.2"
   }
 }

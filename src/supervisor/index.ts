@@ -2,7 +2,7 @@
 import { parseArgs } from "util"
 import { spawn, type Subprocess, type FileSink } from "bun"
 import { z } from "zod" // For message validation
-import { configureLogging } from "$lib/logging" // Import logtape helpers
+import { configureLogging } from "../lib/logging" // Import logtape helpers
 import type { Logger } from "@logtape/logtape"
 import { existsSync } from "fs"
 import path from "path"

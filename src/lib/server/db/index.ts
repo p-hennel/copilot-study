@@ -13,6 +13,13 @@ function getDbClient(): Client {
       throw new Error("Database path is not defined in settings.")
     }
     console.log(`Initializing database client with URL: ${AppSettings().paths.database}`)
+    if (
+      !AppSettings().paths.database.startsWith("file://") &&
+      !AppSettings().paths.database.startsWith("http://") &&
+      !AppSettings().paths.database.startsWith("https://") &&
+      !AppSettings().paths.database.startsWith("pg://")
+    )
+      AppSettings().paths.database = `file://${AppSettings().paths.database}`
     client = createClient({ url: AppSettings().paths.database })
   }
   return client

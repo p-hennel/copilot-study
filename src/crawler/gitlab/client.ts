@@ -38,6 +38,8 @@ import type {
 } from "../gql/graphql" // Corrected relative path
 
 import type { ProjectSchema, GroupSchema } from "@gitbeaker/rest" // Import REST types
+import type { Logger } from "@logtape/logtape"
+import { graphql } from "../gql/gql"
 
 // Define a simplified structure for the commit data we care about
 interface SimpleCommit {
@@ -125,8 +127,10 @@ export class GitlabClient {
   private token: string
   private headers: Record<string, string>
   private restClient: InstanceType<typeof Gitlab> // Added: Gitbeaker REST client instance
+  private logger: Logger
 
-  constructor(apiUrl: string, token: string) {
+  constructor(logger: Logger, apiUrl: string, token: string) {
+    this.logger = logger
     // apiUrl here is expected to be the GraphQL endpoint, e.g., https://gitlab.com/api/graphql
     // Gitbeaker needs the base host, e.g., https://gitlab.com
     if (!apiUrl || !token) {
@@ -150,7 +154,7 @@ export class GitlabClient {
       // Add other options like requestTimeout if needed
     })
 
-    console.log(`GitlabClient initialized for GraphQL API URL: ${this.graphqlApiUrl} and Host: ${host}`)
+    this.logger.info(`GitlabClient initialized for GraphQL API URL: ${this.graphqlApiUrl} and Host: ${host}`)
   }
 
   private async executeGraphQL<T = any>(query: string, variables?: Record<string, any>): Promise<T> {
@@ -178,7 +182,7 @@ export class GitlabClient {
         errors?: Array<{ message: string; [key: string]: any }>
       }
       if (result.errors) {
-        console.error("GitLab API returned errors:", JSON.stringify(result.errors, null, 2))
+        this.logger.error("GitLab API returned errors:", { errors: result.errors })
         throw new Error(`GitLab API Error: ${result.errors[0]?.message || "Unknown GraphQL error"}`)
       }
       if (!result.data) {
@@ -186,7 +190,7 @@ export class GitlabClient {
       }
       return result.data as T
     } catch (error) {
-      console.error("Error during GraphQL execution:", error)
+      this.logger.error("Error during GraphQL execution:", { error })
       throw error
     }
   }
@@ -209,7 +213,7 @@ export class GitlabClient {
       perPage?: number
     } = {}
   ): Promise<SimpleCommit[]> {
-    console.log(`Fetching commits for project '${fullPath}' via REST...`)
+    this.logger.info(`Fetching commits for project '${fullPath}' via REST...`)
     const projectId = encodeURIComponent(fullPath) // URL-encode the full path for REST API
     const allCommits: SimpleCommit[] = []
     let page = 1
@@ -218,7 +222,7 @@ export class GitlabClient {
 
     try {
       while (keepFetching) {
-        console.log(`Fetching page ${page} of commits for ${fullPath}...`)
+        this.logger.debug(`Fetching page ${page} of commits for ${fullPath}...`)
         const commitsPage = await this.restClient.Commits.all(projectId, {
           ...options, // Include ref_name, since, until if provided
           page: page,
@@ -257,14 +261,14 @@ export class GitlabClient {
 
         // Safety break (optional, adjust limit as needed)
         if (page > 1000) {
-          console.warn(`Commit fetch limit (1000 pages) reached for ${fullPath}. Stopping.`)
+          this.logger.warn(`Commit fetch limit (1000 pages) reached for ${fullPath}. Stopping.`)
           keepFetching = false
         }
       }
-      console.log(`Fetched ${allCommits.length} commits in total for project '${fullPath}'.`)
+      this.logger.info(`Fetched ${allCommits.length} commits in total for project '${fullPath}'.`)
     } catch (fetchError) {
       // Rename error variable
-      console.error(`Error fetching commits for project ${fullPath} via REST:`, fetchError)
+      this.logger.error(`Error fetching commits for project ${fullPath} via REST:`, { fetchError })
       // Decide how to handle errors - throw or return empty array?
       // Returning empty for now to match GraphQL error handling pattern
     }
@@ -282,7 +286,9 @@ export class GitlabClient {
   ): Promise<{ data: any[]; pageInfo?: PageInfo; totalItems?: number }> {
     // Allow optional pageInfo and totalItems
     // Return type uses imported PageInfo
-    console.log(`Fetching data type '${dataType}' for path '${targetPath}' (cursor: ${pageInfo?.after ?? "start"})`)
+    this.logger.debug(
+      `Fetching data type '${dataType}' for path '${targetPath}' (cursor: ${pageInfo?.after ?? "start"})`
+    )
     const isGroup = !targetPath.includes("/") // Simple heuristic
     // Define a default PageInfo object satisfying the imported type
     const defaultPageInfo: PageInfo = {
@@ -297,7 +303,7 @@ export class GitlabClient {
         // --- Discovery Data Types ---
         case "groupProjects": {
           if (!isGroup) {
-            console.warn(`fetchData: Cannot fetch projects for a project path: ${targetPath}`)
+            this.logger.warn(`fetchData: Cannot fetch projects for a project path: ${targetPath}`)
             return { data: [], totalItems: 0 }
           }
           const projects = await this.fetchGroupProjects(targetPath)
@@ -305,7 +311,7 @@ export class GitlabClient {
         } // Close brace for case 'groupProjects'
         case "groupSubgroups": {
           if (!isGroup) {
-            console.warn(`fetchData: Cannot fetch subgroups for a project path: ${targetPath}`)
+            this.logger.warn(`fetchData: Cannot fetch subgroups for a project path: ${targetPath}`)
             return { data: [], totalItems: 0 }
           }
           const subgroups = await this.fetchGroupSubgroups(targetPath)
@@ -331,7 +337,7 @@ export class GitlabClient {
             : await this.fetchProjectMilestones(targetPath, pageInfo?.after)
         case "branches":
           if (isGroup) {
-            console.warn(`fetchData: Branches are project-specific. Skipping for group ${targetPath}.`)
+            this.logger.warn(`fetchData: Branches are project-specific. Skipping for group ${targetPath}.`)
             return { data: [], pageInfo: defaultPageInfo }
           }
           return await this.fetchProjectBranches(targetPath, pageInfo?.after)
@@ -341,13 +347,13 @@ export class GitlabClient {
             : await this.fetchProjectMergeRequests(targetPath, pageInfo?.after)
         case "releases":
           if (isGroup) {
-            console.warn(`fetchData: Releases are project-specific. Skipping for group ${targetPath}.`)
+            this.logger.warn(`fetchData: Releases are project-specific. Skipping for group ${targetPath}.`)
             return { data: [], pageInfo: defaultPageInfo }
           }
           return await this.fetchProjectReleases(targetPath, pageInfo?.after)
         case "pipelines":
           if (isGroup) {
-            console.warn(`fetchData: Pipelines are project-specific. Skipping for group ${targetPath}.`)
+            this.logger.warn(`fetchData: Pipelines are project-specific. Skipping for group ${targetPath}.`)
             return { data: [], pageInfo: defaultPageInfo }
           }
           return await this.fetchProjectPipelines(targetPath, pageInfo?.after)
@@ -357,7 +363,7 @@ export class GitlabClient {
             : await this.fetchProjectTimelogs(targetPath, pageInfo?.after)
         case "vulnerabilities":
           if (isGroup) {
-            console.warn(
+            this.logger.warn(
               `fetchData: Vulnerabilities query at group level not implemented. Skipping for group ${targetPath}.`
             )
             return { data: [], pageInfo: defaultPageInfo }
@@ -366,7 +372,7 @@ export class GitlabClient {
         case "commits": {
           // Added case for commits + braces
           if (isGroup) {
-            console.warn(`fetchData: Commits are project-specific. Skipping for group ${targetPath}.`)
+            this.logger.warn(`fetchData: Commits are project-specific. Skipping for group ${targetPath}.`)
             return { data: [], totalItems: 0 } // Return empty, no pageInfo needed for REST fetch-all
           }
           // Note: REST pagination is handled inside fetchProjectCommits
@@ -377,16 +383,16 @@ export class GitlabClient {
         case "codeQualityReports":
         case "securityReportFindings":
         case "testSuites":
-          console.warn(
+          this.logger.warn(
             `fetchData: Direct fetching for '${dataType}' not implemented (may require pipeline context). Skipping.`
           )
           return { data: [], pageInfo: defaultPageInfo }
         default:
-          console.error(`Unsupported data type requested: ${dataType}`)
+          this.logger.error(`Unsupported data type requested: ${dataType}`)
           throw new Error(`Unsupported data type: ${dataType}`)
       }
     } catch (error) {
-      console.error(`Error fetching ${dataType} for ${targetPath}:`, error)
+      this.logger.error(`Error fetching ${dataType} for ${targetPath}:`, { error })
       // Return empty on error, adjust structure based on expected return type
       return {
         data: [],
@@ -402,13 +408,31 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: ProjectMember[]; pageInfo: PageInfo }> {
-    const query = `
+    const query = graphql(/* GraphQL */ `
       query GetProjectMembers($fullPath: ID!, $after: String) {
         project(fullPath: $fullPath) {
           projectMembers(first: 100, after: $after) {
-            nodes { id user { id username name state webUrl } accessLevel { stringValue } }
-            pageInfo { hasNextPage endCursor }
-          } } }`
+            nodes {
+              id
+              user {
+                id
+                username
+                name
+                state
+                webUrl
+              }
+              accessLevel {
+                stringValue
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectMembersResponse>(query, variables)
     const members = result?.project?.projectMembers
@@ -423,13 +447,31 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: GroupMember[]; pageInfo: PageInfo }> {
-    const query = `
+    const query = graphql(/* GraphQL */ `
       query GetGroupMembers($fullPath: ID!, $after: String) {
         group(fullPath: $fullPath) {
           groupMembers(first: 100, after: $after) {
-            nodes { id user { id username name state webUrl } accessLevel { stringValue } }
-            pageInfo { hasNextPage endCursor }
-          } } }`
+            nodes {
+              id
+              user {
+                id
+                username
+                name
+                state
+                webUrl
+              }
+              accessLevel {
+                stringValue
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<GroupMembersResponse>(query, variables)
     const members = result?.group?.groupMembers
@@ -443,29 +485,86 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Issue[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetProjectIssues($fullPath: ID!, $after: String) {
-          project(fullPath: $fullPath) {
-            issues(first: 50, after: $after, includeSubgroups: false) {
-              nodes {
-                id iid title state createdAt updatedAt closedAt webUrl author { id username name }
-                assignees(first: 10) { nodes { id username name } }
-                labels(first: 20) { nodes { id title color } }
-                discussions(first: 50) { # Fetch discussions (and their notes)
-                  nodes {
-                    id
-                    replyId
-                    resolved
-                    notes(first: 100) { # Fetch notes within discussion
-                      nodes { id body system createdAt updatedAt author { id username name } resolvable resolved resolvedAt resolvedBy { id username name } }
-                      pageInfo { hasNextPage endCursor } # Notes pagination
-                    }
-                  }
-                  pageInfo { hasNextPage endCursor } # Discussions pagination
+    const query = graphql(/* GraphQL */ `
+      query GetProjectIssues($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          issues(first: 50, after: $after, includeSubgroups: false) {
+            nodes {
+              id
+              iid
+              title
+              state
+              createdAt
+              updatedAt
+              closedAt
+              webUrl
+              author {
+                id
+                username
+                name
+              }
+              assignees(first: 10) {
+                nodes {
+                  id
+                  username
+                  name
                 }
               }
-              pageInfo { hasNextPage endCursor } # Issues pagination
-            } } }`
+              labels(first: 20) {
+                nodes {
+                  id
+                  title
+                  color
+                }
+              }
+              discussions(first: 50) {
+                # Fetch discussions (and their notes)
+                nodes {
+                  id
+                  replyId
+                  resolved
+                  notes(first: 100) {
+                    # Fetch notes within discussion
+                    nodes {
+                      id
+                      body
+                      system
+                      createdAt
+                      updatedAt
+                      author {
+                        id
+                        username
+                        name
+                      }
+                      resolvable
+                      resolved
+                      resolvedAt
+                      resolvedBy {
+                        id
+                        username
+                        name
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    } # Notes pagination
+                  }
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                } # Discussions pagination
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            } # Issues pagination
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectIssuesResponse>(query, variables)
     const issues = result?.project?.issues
@@ -479,29 +578,86 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Issue[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetGroupIssues($fullPath: ID!, $after: String) {
-          group(fullPath: $fullPath) {
-            issues(first: 50, after: $after, includeSubgroups: true) {
-              nodes {
-                id iid title state createdAt updatedAt closedAt webUrl author { id username name }
-                assignees(first: 10) { nodes { id username name } }
-                labels(first: 20) { nodes { id title color } }
-                discussions(first: 50) { # Fetch discussions (and their notes)
-                  nodes {
-                    id
-                    replyId
-                    resolved
-                    notes(first: 100) { # Fetch notes within discussion
-                      nodes { id body system createdAt updatedAt author { id username name } resolvable resolved resolvedAt resolvedBy { id username name } }
-                      pageInfo { hasNextPage endCursor } # Notes pagination
-                    }
-                  }
-                  pageInfo { hasNextPage endCursor } # Discussions pagination
+    const query = graphql(/* GraphQL */ `
+      query GetGroupIssues($fullPath: ID!, $after: String) {
+        group(fullPath: $fullPath) {
+          issues(first: 50, after: $after, includeSubgroups: true) {
+            nodes {
+              id
+              iid
+              title
+              state
+              createdAt
+              updatedAt
+              closedAt
+              webUrl
+              author {
+                id
+                username
+                name
+              }
+              assignees(first: 10) {
+                nodes {
+                  id
+                  username
+                  name
                 }
               }
-              pageInfo { hasNextPage endCursor } # Issues pagination
-            } } }`
+              labels(first: 20) {
+                nodes {
+                  id
+                  title
+                  color
+                }
+              }
+              discussions(first: 50) {
+                # Fetch discussions (and their notes)
+                nodes {
+                  id
+                  replyId
+                  resolved
+                  notes(first: 100) {
+                    # Fetch notes within discussion
+                    nodes {
+                      id
+                      body
+                      system
+                      createdAt
+                      updatedAt
+                      author {
+                        id
+                        username
+                        name
+                      }
+                      resolvable
+                      resolved
+                      resolvedAt
+                      resolvedBy {
+                        id
+                        username
+                        name
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    } # Notes pagination
+                  }
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                } # Discussions pagination
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            } # Issues pagination
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<GroupIssuesResponse>(query, variables)
     const issues = result?.group?.issues
@@ -515,13 +671,27 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Label[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetProjectLabels($fullPath: ID!, $after: String) {
-          project(fullPath: $fullPath) {
-            labels(first: 100, after: $after) {
-              nodes { id title description color textColor createdAt updatedAt }
-              pageInfo { hasNextPage endCursor }
-            } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetProjectLabels($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          labels(first: 100, after: $after) {
+            nodes {
+              id
+              title
+              description
+              color
+              textColor
+              createdAt
+              updatedAt
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectLabelsResponse>(query, variables)
     const labels = result?.project?.labels
@@ -535,13 +705,27 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Label[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetGroupLabels($fullPath: ID!, $after: String) {
-          group(fullPath: $fullPath) {
-            labels(first: 100, after: $after, includeAncestorGroups: false) {
-              nodes { id title description color textColor createdAt updatedAt }
-              pageInfo { hasNextPage endCursor }
-            } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetGroupLabels($fullPath: ID!, $after: String) {
+        group(fullPath: $fullPath) {
+          labels(first: 100, after: $after, includeAncestorGroups: false) {
+            nodes {
+              id
+              title
+              description
+              color
+              textColor
+              createdAt
+              updatedAt
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<GroupLabelsResponse>(query, variables)
     const labels = result?.group?.labels
@@ -555,13 +739,30 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Milestone[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetProjectMilestones($fullPath: ID!, $after: String) {
-          project(fullPath: $fullPath) {
-            milestones(first: 100, after: $after, includeDescendants: false, state: all) {
-              nodes { id iid title description state startDate dueDate createdAt updatedAt webUrl }
-              pageInfo { hasNextPage endCursor }
-            } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetProjectMilestones($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          milestones(first: 100, after: $after, includeDescendants: false, state: all) {
+            nodes {
+              id
+              iid
+              title
+              description
+              state
+              startDate
+              dueDate
+              createdAt
+              updatedAt
+              webUrl
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectMilestonesResponse>(query, variables)
     const milestones = result?.project?.milestones
@@ -575,13 +776,30 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Milestone[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetGroupMilestones($fullPath: ID!, $after: String) {
-          group(fullPath: $fullPath) {
-            milestones(first: 100, after: $after, includeDescendants: true, state: all) {
-              nodes { id iid title description state startDate dueDate createdAt updatedAt webUrl }
-              pageInfo { hasNextPage endCursor }
-            } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetGroupMilestones($fullPath: ID!, $after: String) {
+        group(fullPath: $fullPath) {
+          milestones(first: 100, after: $after, includeDescendants: true, state: all) {
+            nodes {
+              id
+              iid
+              title
+              description
+              state
+              startDate
+              dueDate
+              createdAt
+              updatedAt
+              webUrl
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<GroupMilestonesResponse>(query, variables)
     const milestones = result?.group?.milestones
@@ -596,14 +814,48 @@ export class GitlabClient {
     afterCursor?: string
   ): Promise<{ data: any[]; pageInfo: PageInfo }> {
     // Use any[] for data
-    const query = `
-        query GetProjectBranches($fullPath: ID!, $after: String) {
-          project(fullPath: $fullPath) {
-            repository {
-              branches(first: 100, after: $after) {
-                nodes { name webUrl protected developersCanPush developersCanMerge commit { id authoredDate committedDate message webUrl author { name email user { username } } committer { name email user { username } } } }
-                pageInfo { hasNextPage endCursor }
-              } } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetProjectBranches($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          repository {
+            branches(first: 100, after: $after) {
+              nodes {
+                name
+                webUrl
+                protected
+                developersCanPush
+                developersCanMerge
+                commit {
+                  id
+                  authoredDate
+                  committedDate
+                  message
+                  webUrl
+                  author {
+                    name
+                    email
+                    user {
+                      username
+                    }
+                  }
+                  committer {
+                    name
+                    email
+                    user {
+                      username
+                    }
+                  }
+                }
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectBranchesResponse>(query, variables)
     const branches = result?.project?.repository?.branches
@@ -614,29 +866,100 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: MergeRequest[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetProjectMergeRequests($fullPath: ID!, $after: String) {
-          project(fullPath: $fullPath) {
-            mergeRequests(first: 50, after: $after, state: all, sort: UPDATED_DESC) {
-              nodes {
-                id iid title state sourceBranch targetBranch createdAt updatedAt mergedAt closedAt webUrl author { id username name }
-                assignees(first: 10) { nodes { id username name } }
-                reviewers(first: 10) { nodes { id username name } }
-                labels(first: 20) { nodes { id title color } }
-                milestone { id title }
-                discussions(first: 50) { # Fetch discussions
-                  nodes {
-                    id replyId resolved
-                    notes(first: 100) { # Fetch notes
-                      nodes { id body system createdAt updatedAt author { id username name } resolvable resolved resolvedAt resolvedBy { id username name } }
-                      pageInfo { hasNextPage endCursor } # Notes pagination
-                    }
-                  }
-                  pageInfo { hasNextPage endCursor } # Discussions pagination
+    const query = graphql(/* GraphQL */ `
+      query GetProjectMergeRequests($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          mergeRequests(first: 50, after: $after, state: all, sort: UPDATED_DESC) {
+            nodes {
+              id
+              iid
+              title
+              state
+              sourceBranch
+              targetBranch
+              createdAt
+              updatedAt
+              mergedAt
+              closedAt
+              webUrl
+              author {
+                id
+                username
+                name
+              }
+              assignees(first: 10) {
+                nodes {
+                  id
+                  username
+                  name
                 }
               }
-              pageInfo { hasNextPage endCursor } # MR pagination
-            } } }`
+              reviewers(first: 10) {
+                nodes {
+                  id
+                  username
+                  name
+                }
+              }
+              labels(first: 20) {
+                nodes {
+                  id
+                  title
+                  color
+                }
+              }
+              milestone {
+                id
+                title
+              }
+              discussions(first: 50) {
+                # Fetch discussions
+                nodes {
+                  id
+                  replyId
+                  resolved
+                  notes(first: 100) {
+                    # Fetch notes
+                    nodes {
+                      id
+                      body
+                      system
+                      createdAt
+                      updatedAt
+                      author {
+                        id
+                        username
+                        name
+                      }
+                      resolvable
+                      resolved
+                      resolvedAt
+                      resolvedBy {
+                        id
+                        username
+                        name
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    } # Notes pagination
+                  }
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                } # Discussions pagination
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            } # MR pagination
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectMergeRequestsResponse>(query, variables)
     const mergeRequests = result?.project?.mergeRequests
@@ -650,29 +973,100 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: MergeRequest[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetGroupMergeRequests($fullPath: ID!, $after: String) {
-          group(fullPath: $fullPath) {
-            mergeRequests(first: 50, after: $after, state: all, sort: UPDATED_DESC, includeSubgroups: true) {
-              nodes {
-                id iid title state sourceBranch targetBranch createdAt updatedAt mergedAt closedAt webUrl author { id username name }
-                assignees(first: 10) { nodes { id username name } }
-                reviewers(first: 10) { nodes { id username name } }
-                labels(first: 20) { nodes { id title color } }
-                milestone { id title }
-                discussions(first: 50) { # Fetch discussions
-                  nodes {
-                    id replyId resolved
-                    notes(first: 100) { # Fetch notes
-                      nodes { id body system createdAt updatedAt author { id username name } resolvable resolved resolvedAt resolvedBy { id username name } }
-                      pageInfo { hasNextPage endCursor } # Notes pagination
-                    }
-                  }
-                  pageInfo { hasNextPage endCursor } # Discussions pagination
+    const query = graphql(/* GraphQL */ `
+      query GetGroupMergeRequests($fullPath: ID!, $after: String) {
+        group(fullPath: $fullPath) {
+          mergeRequests(first: 50, after: $after, state: all, sort: UPDATED_DESC, includeSubgroups: true) {
+            nodes {
+              id
+              iid
+              title
+              state
+              sourceBranch
+              targetBranch
+              createdAt
+              updatedAt
+              mergedAt
+              closedAt
+              webUrl
+              author {
+                id
+                username
+                name
+              }
+              assignees(first: 10) {
+                nodes {
+                  id
+                  username
+                  name
                 }
               }
-              pageInfo { hasNextPage endCursor } # MR pagination
-            } } }`
+              reviewers(first: 10) {
+                nodes {
+                  id
+                  username
+                  name
+                }
+              }
+              labels(first: 20) {
+                nodes {
+                  id
+                  title
+                  color
+                }
+              }
+              milestone {
+                id
+                title
+              }
+              discussions(first: 50) {
+                # Fetch discussions
+                nodes {
+                  id
+                  replyId
+                  resolved
+                  notes(first: 100) {
+                    # Fetch notes
+                    nodes {
+                      id
+                      body
+                      system
+                      createdAt
+                      updatedAt
+                      author {
+                        id
+                        username
+                        name
+                      }
+                      resolvable
+                      resolved
+                      resolvedAt
+                      resolvedBy {
+                        id
+                        username
+                        name
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    } # Notes pagination
+                  }
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                } # Discussions pagination
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            } # MR pagination
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<GroupMergeRequestsResponse>(query, variables)
     const mergeRequests = result?.group?.mergeRequests
@@ -686,13 +1080,55 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Release[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetProjectReleases($fullPath: ID!, $after: String) {
-          project(fullPath: $fullPath) {
-            releases(first: 50, after: $after, orderBy: RELEASED_AT, sort: DESC) {
-              nodes { tagName name createdAt releasedAt commit { id } author { id username name } assets { count sources(first: 10) { nodes { format url } } links(first: 10) { nodes { id name url linkType } } } milestones(first: 10) { nodes { id title } } }
-              pageInfo { hasNextPage endCursor }
-            } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetProjectReleases($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          releases(first: 50, after: $after, orderBy: RELEASED_AT, sort: DESC) {
+            nodes {
+              tagName
+              name
+              createdAt
+              releasedAt
+              commit {
+                id
+              }
+              author {
+                id
+                username
+                name
+              }
+              assets {
+                count
+                sources(first: 10) {
+                  nodes {
+                    format
+                    url
+                  }
+                }
+                links(first: 10) {
+                  nodes {
+                    id
+                    name
+                    url
+                    linkType
+                  }
+                }
+              }
+              milestones(first: 10) {
+                nodes {
+                  id
+                  title
+                }
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectReleasesResponse>(query, variables)
     const releases = result?.project?.releases
@@ -706,29 +1142,74 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Pipeline[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetProjectPipelines($fullPath: ID!, $after: String) {
-          project(fullPath: $fullPath) {
-            pipelines(first: 50, after: $after, orderBy: UPDATED_AT, sort: DESC) {
-              nodes {
-                id iid sha status source createdAt updatedAt startedAt finishedAt duration queuedDuration user { id username name }
-                detailedStatus { icon text label group }
-                # Add report fields
-                codeQualityReports { count } # Example: Just get count, or nodes if needed
-                securityReportSummary { # Example structure, adjust based on actual API
-                   dast { vulnerabilitiesCount }
-                   sast { vulnerabilitiesCount }
-                   dependencyScanning { vulnerabilitiesCount }
-                   containerScanning { vulnerabilitiesCount }
-                }
-                testReportSummary { # Example structure
-                   total { time count success failed skipped error }
-                   # testSuites(first: 5) { nodes { name totalCount successCount failedCount } } # Optionally fetch suite summaries
-                }
-                # jobs(first: 10) { nodes { id name status stage { name } testSuite { totalCount successCount } } } # Fetch job test counts?
+    const query = graphql(/* GraphQL */ `
+      query GetProjectPipelines($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          pipelines(first: 50, after: $after, orderBy: UPDATED_AT, sort: DESC) {
+            nodes {
+              id
+              iid
+              sha
+              status
+              source
+              createdAt
+              updatedAt
+              startedAt
+              finishedAt
+              duration
+              queuedDuration
+              user {
+                id
+                username
+                name
               }
-              pageInfo { hasNextPage endCursor }
-            } } }`
+              detailedStatus {
+                icon
+                text
+                label
+                group
+              }
+              # Add report fields
+              codeQualityReports {
+                count
+              } # Example: Just get count, or nodes if needed
+              securityReportSummary {
+                # Example structure, adjust based on actual API
+                dast {
+                  vulnerabilitiesCount
+                }
+                sast {
+                  vulnerabilitiesCount
+                }
+                dependencyScanning {
+                  vulnerabilitiesCount
+                }
+                containerScanning {
+                  vulnerabilitiesCount
+                }
+              }
+              testReportSummary {
+                # Example structure
+                total {
+                  time
+                  count
+                  success
+                  failed
+                  skipped
+                  error
+                }
+                # testSuites(first: 5) { nodes { name totalCount successCount failedCount } } # Optionally fetch suite summaries
+              }
+              # jobs(first: 10) { nodes { id name status stage { name } testSuite { totalCount successCount } } } # Fetch job test counts?
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectPipelinesResponse>(query, variables)
     const pipelines = result?.project?.pipelines
@@ -742,13 +1223,42 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Timelog[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetProjectTimelogs($fullPath: ID!, $after: String) {
-          project(fullPath: $fullPath) {
-            timelogs(first: 100, after: $after) {
-              nodes { timeSpent user { id username name } issue { id iid title } mergeRequest { id iid title } note { id body } spentAt summary }
-              pageInfo { hasNextPage endCursor }
-            } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetProjectTimelogs($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          timelogs(first: 100, after: $after) {
+            nodes {
+              timeSpent
+              user {
+                id
+                username
+                name
+              }
+              issue {
+                id
+                iid
+                title
+              }
+              mergeRequest {
+                id
+                iid
+                title
+              }
+              note {
+                id
+                body
+              }
+              spentAt
+              summary
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectTimelogsResponse>(query, variables)
     const timelogs = result?.project?.timelogs
@@ -762,13 +1272,42 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Timelog[]; pageInfo: PageInfo }> {
-    const query = `
-        query GetGroupTimelogs($fullPath: ID!, $after: String) {
-          group(fullPath: $fullPath) {
-            timelogs(first: 100, after: $after) {
-              nodes { timeSpent user { id username name } issue { id iid title } mergeRequest { id iid title } note { id body } spentAt summary }
-              pageInfo { hasNextPage endCursor }
-            } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetGroupTimelogs($fullPath: ID!, $after: String) {
+        group(fullPath: $fullPath) {
+          timelogs(first: 100, after: $after) {
+            nodes {
+              timeSpent
+              user {
+                id
+                username
+                name
+              }
+              issue {
+                id
+                iid
+                title
+              }
+              mergeRequest {
+                id
+                iid
+                title
+              }
+              note {
+                id
+                body
+              }
+              spentAt
+              summary
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<GroupTimelogsResponse>(query, variables)
     const timelogs = result?.group?.timelogs
@@ -786,13 +1325,55 @@ export class GitlabClient {
     fullPath: string,
     afterCursor?: string
   ): Promise<{ data: Vulnerability[]; pageInfo: PageInfo }> {
-    const query = `
-         query GetProjectVulnerabilities($fullPath: ID!, $after: String) {
-           project(fullPath: $fullPath) {
-             vulnerabilities(first: 50, after: $after, state: [DETECTED, CONFIRMED]) {
-               nodes { id title state severity confidence reportType scanner { id name vendor } identifiers { externalType externalId name url } location { file startLine endLine blobPath } project { id name fullPath } pipeline { id iid } detectedAt resolvedAt dismissedAt }
-               pageInfo { hasNextPage endCursor }
-             } } }`
+    const query = graphql(/* GraphQL */ `
+      query GetProjectVulnerabilities($fullPath: ID!, $after: String) {
+        project(fullPath: $fullPath) {
+          vulnerabilities(first: 50, after: $after, state: [DETECTED, CONFIRMED]) {
+            nodes {
+              id
+              title
+              state
+              severity
+              confidence
+              reportType
+              scanner {
+                id
+                name
+                vendor
+              }
+              identifiers {
+                externalType
+                externalId
+                name
+                url
+              }
+              location {
+                file
+                startLine
+                endLine
+                blobPath
+              }
+              project {
+                id
+                name
+                fullPath
+              }
+              pipeline {
+                id
+                iid
+              }
+              detectedAt
+              resolvedAt
+              dismissedAt
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      }
+    `)
     const variables = { fullPath, after: afterCursor }
     const result = await this.executeGraphQL<ProjectVulnerabilitiesResponse>(query, variables)
     const vulnerabilities = result?.project?.vulnerabilities
@@ -813,7 +1394,7 @@ export class GitlabClient {
    * @returns An array of project data objects.
    */
   async fetchGroupProjects(groupPath: string): Promise<ProjectSchema[]> {
-    console.log(`Fetching projects for group '${groupPath}' via REST...`)
+    this.logger.info(`Fetching projects for group '${groupPath}' via REST...`)
     const groupId = encodeURIComponent(groupPath)
     const allProjects: any[] = [] // Use any[] to simplify type handling
     let page = 1
@@ -840,13 +1421,13 @@ export class GitlabClient {
         }
         if (page > 100) {
           // Safety break
-          console.warn(`Project fetch limit (100 pages) reached for group ${groupPath}. Stopping.`)
+          this.logger.warn(`Project fetch limit (100 pages) reached for group ${groupPath}. Stopping.`)
           keepFetching = false
         }
       }
-      console.log(`Fetched ${allProjects.length} projects for group '${groupPath}'.`)
+      this.logger.info(`Fetched ${allProjects.length} projects for group '${groupPath}'.`)
     } catch (error) {
-      console.error(`Error fetching projects for group ${groupPath} via REST:`, error)
+      this.logger.error(`Error fetching projects for group ${groupPath} via REST:`, { error })
     }
     return allProjects
   }
@@ -858,7 +1439,7 @@ export class GitlabClient {
    * @returns An array of group data objects.
    */
   async fetchGroupSubgroups(groupPath: string): Promise<GroupSchema[]> {
-    console.log(`Fetching subgroups for group '${groupPath}' via REST...`)
+    this.logger.info(`Fetching subgroups for group '${groupPath}' via REST...`)
     const groupId = encodeURIComponent(groupPath)
     const allSubgroups: any[] = [] // Use any[] to simplify type handling
     let page = 1
@@ -884,13 +1465,13 @@ export class GitlabClient {
         }
         if (page > 100) {
           // Safety break
-          console.warn(`Subgroup fetch limit (100 pages) reached for group ${groupPath}. Stopping.`)
+          this.logger.warn(`Subgroup fetch limit (100 pages) reached for group ${groupPath}. Stopping.`)
           keepFetching = false
         }
       }
-      console.log(`Fetched ${allSubgroups.length} subgroups for group '${groupPath}'.`)
+      this.logger.info(`Fetched ${allSubgroups.length} subgroups for group '${groupPath}'.`)
     } catch (error) {
-      console.error(`Error fetching subgroups for group ${groupPath} via REST:`, error)
+      this.logger.error(`Error fetching subgroups for group ${groupPath} via REST:`, { error })
     }
     return allSubgroups
   }
