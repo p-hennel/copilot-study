@@ -2,13 +2,15 @@ import { eq, and, inArray, gt } from "drizzle-orm" // Added gt
 import { db } from "."
 import { account } from "./auth-schema"
 import { area, job, type JobInsert, type Job as JobType } from "./base-schema"
-import { AreaType, CrawlCommand } from "$lib/utils"
+import { AreaType } from "$lib/types"
+import { CrawlCommand } from "$lib/types"
 import type { AreaInformation, AuthorizationScopesResult } from "../utils"
 import type { ResultSet } from "@libsql/client"
 import { ulid } from "ulid"
 import { getLogger } from "@logtape/logtape"
 import path from "node:path"
-import { JobStatus, type TokenProvider } from "$lib/utils"
+import { type TokenProvider } from "$lib/types"
+import { JobStatus } from "$lib/types"
 import AppSettings from "$lib/server/settings"
 
 const logger = getLogger(["backend", "db", "jobFactory"]) // Align category with hooks.server.ts

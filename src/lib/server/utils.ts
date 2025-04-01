@@ -158,7 +158,7 @@ import { and, count, eq } from "drizzle-orm"
 import { account, apikey, area_authorization, job } from "./db/schema"
 import { db } from "./db"
 import { auth } from "$lib/auth"
-import { JobStatus } from "$lib/utils"
+import { JobStatus } from "$lib/types"
 import AppSettings from "./settings"
 
 export const getApiToken = async (userId: string): Promise<string | undefined> => {

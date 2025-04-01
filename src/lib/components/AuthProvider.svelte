@@ -4,7 +4,7 @@
   import { m } from "$paraglide"
   import { linkAccount, signIn } from "$lib/auth-client"
   import { Skeleton } from "$lib/components/ui/skeleton/index.js"
-  import type { TokenProvider } from "$lib/utils"
+    import type { TokenProvider } from "$lib/types"
   import { page } from "$app/stores" // Import page store
 
   let {

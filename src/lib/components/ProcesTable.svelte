@@ -8,7 +8,8 @@
   import { invalidate } from "$app/navigation"
   import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js"
   import Separator from "$ui/separator/separator.svelte"
-  import { cn, type pm2types } from "$lib/utils"
+  import { cn } from "$lib/utils"
+  import { type pm2types } from "$lib/types"
   import { Ellipsis } from "$ui/breadcrumb"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import * as Card from "$lib/components/ui/card/index.js" // Added for crawler status display

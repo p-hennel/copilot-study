@@ -3,7 +3,7 @@ import { db } from "$lib/server/db"
 import { area, job } from "$lib/server/db/schema"
 import { eq, and, count, sql } from "drizzle-orm" // Added sql import
 import { canAccessAreaFiles, areAreaJobsFinished, fileToCollectionType } from "$lib/server/utils"
-import { JobStatus } from "$lib/utils"
+import { JobStatus } from "$lib/types"
 import AppSettings from "$lib/server/settings" // Assuming settings has dataRoot path
 import path from "node:path"
 import fs from "node:fs/promises" // For reading directory

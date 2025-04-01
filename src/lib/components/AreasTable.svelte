@@ -3,7 +3,8 @@
   import * as Table from "$lib/components/ui/table/index.js";
   import { m } from "$paraglide";
   import * as Tooltip from "$lib/components/ui/tooltip/index.js";
-  import { JobStatus, AreaType } from "$lib/utils";
+    import { JobStatus } from "$lib/types";
+  import { AreaType } from "$lib/types";
   import { Check, Cross, FolderGit2, Logs, Repeat, UsersRound } from "lucide-svelte";
 
   // Updated type to match API response from /api/admin/areas

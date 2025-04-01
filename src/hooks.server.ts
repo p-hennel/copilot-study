@@ -19,13 +19,16 @@ import type { Logger } from "@logtape/logtape"
 let settings: Settings | null = null
 let logger: Logger | null = null // Initialize logger to null
 
+import doMigration from '$lib/server/db/migration'
+
 // --- Top-Level Async Initialization ---
 // SvelteKit supports top-level await in hooks.server.ts
 try {
+  settings = AppSettings() // Ensure settings are loaded on server start
+  doMigration(settings.paths.database)
   // Assign the configured logger instance
   logger = await configureLogging("backend")
   logger?.info("Logging configured for backend.") // Use optional chaining
-  settings = AppSettings() // Ensure settings are loaded on server start
   logger?.info("AppSettings initialized successfully.") // Use optional chaining
 
   // --- Admin Role Synchronization ---
@@ -124,7 +127,7 @@ import messageBusClientInstance from "$lib/messaging/MessageBusClient"
 // Crawler specific imports (keep as needed)
 import { db } from "$lib/server/db"
 import { job as jobSchema } from "$lib/server/db/schema"
-import { JobStatus } from "$lib/utils"
+import { JobStatus } from "$lib/types"
 // eq is already imported above
 import type { CrawlerCommand, CrawlerStatus, StartJobCommand, JobDataTypeProgress } from "./crawler/types"
 import type { JobCompletionUpdate } from "./crawler/jobManager"

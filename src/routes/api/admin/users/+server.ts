@@ -2,7 +2,8 @@ import { json } from "@sveltejs/kit"
 import { account, user } from "$lib/server/db/auth-schema"
 import { db } from "$lib/server/db"
 import { eq, desc } from "drizzle-orm"
-import type { AccountInformation, UserInformation } from "$lib/utils"
+import type { UserInformation } from "$lib/types"
+import type { AccountInformation } from "$lib/types"
 import { computeHash } from "$lib/server/CryptoHash"
 
 export async function GET({ locals }) {

@@ -1,7 +1,9 @@
 import { db } from "$lib/server/db"
 import { job, type Job, type UpdateJobType } from "$lib/server/db/base-schema"
 import { getAvailableJobs, spawnNewJobs } from "$lib/server/db/jobFactory"
-import { CrawlCommand, JobStatus, TokenProvider } from "$lib/utils"
+import { TokenProvider } from "$lib/types"
+import { JobStatus } from "$lib/types"
+import { CrawlCommand } from "$lib/types"
 import { eq } from "drizzle-orm/sql"
 import { getLogger } from "@logtape/logtape";
 

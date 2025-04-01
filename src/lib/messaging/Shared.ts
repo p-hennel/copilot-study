@@ -1,4 +1,4 @@
-import type { JobStatus } from "$lib/utils";
+import type { JobStatus } from "$lib/types";
 
 export interface JobMessage {
   type: "job";

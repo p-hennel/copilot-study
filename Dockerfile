@@ -37,35 +37,40 @@ RUN cd /temp/prod && bun install --frozen-lockfile --production
 FROM base AS prerelease
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
-
 RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config /home/bun/.ssh/config.d
 
+COPY drizzle /usr/src/app/drizzle/
+
 # build for production
-#ENV NODE_ENV=production
-#RUN bun run build:web
+ARG HOME=/home/bun
+ENV NODE_ENV=production
+RUN BETTER_AUTH_SECRET=BETTER_AUTH_SECRET_FOR_BUILD_ONLY \
+  DATA_ROOT=/home/bun/data \
+  SETTINGS_FILE=/home/bun/data/config/settings.yaml \
+  bun run build
 
 # copy production dependencies and source code into final image
 FROM base AS release
-#COPY --from=install /temp/prod/node_modules node_modules
+COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease \
-  /usr/src/app \
-  ./
+  /usr/src/app/drizzle \
+  /usr/src/app/build \
+  /usr/src/app/package.json \
+  /usr/src/app/ecosystem.config.cjs \
+  /usr/src/app/pm2-server.sh \
+  /usr/src/app/startup.sh \
+  /usr/src/app/.autorestic.yml \
+  /usr/src/app/backup.cron \
+  .
+  
+COPY drizzle /usr/src/app/
 
-RUN chown -R bun:bun /usr/src/app
+#COPY --from=prerelease \
+#  /usr/src/app/config/settings.example.yaml \
+#  /home/bun/data/config/settings.yaml
 
-# /usr/src/app/build \
-# /usr/src/app/package.json \
-# /usr/src/app/ecosystem.config.cjs \
-# /usr/src/app/pm2-server.sh \
-# /usr/src/app/startup.sh \
-# /usr/src/app/.autorest.config \
-# /usr/src/app/backup.cron \
-
-COPY --from=prerelease \
-  /usr/src/app/config/settings.example.yaml \
-  /home/bun/data/config/settings.yaml
-
-#RUN crontab -u bun /usr/src/app/backup.cron
+RUN crontab -u bun /usr/src/app/backup.cron
+#RUN rm -f /home/bun/data/config/main.db;
 RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
 RUN chown -R bun:bun /home/bun/data
 # /home/bun/.ssh
@@ -73,5 +78,7 @@ RUN chown -R bun:bun /home/bun/data
 # run the app
 USER bun
 EXPOSE 3000/tcp
-#ENTRYPOINT [ "./startup.sh" ]
-ENTRYPOINT ["bun", "run", "dev", "--port", "3000", "--host", ";", "/bin/bash"]
+#ENTRYPOINT [ "/bin/sh", "-c", "while :; do sleep 2073600; done", ";", "/bin/bash" ]
+ENTRYPOINT [ "/bin/bash" ]
+CMD [ "./startup.sh", "./web/index.js" ]
+# ./startup.sh

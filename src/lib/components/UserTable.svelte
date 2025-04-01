@@ -3,7 +3,9 @@
   import { Button } from "$ui/button"
   import * as Table from "$lib/components/ui/table/index.js"
   import { m } from "$paraglide"
-  import { type UserInformation, type AccountInformation, dynamicHandleDownloadAsCSV } from "$lib/utils"
+  import { dynamicHandleDownloadAsCSV } from "$lib/utils"
+  import { type UserInformation } from "$lib/types"
+  import { type AccountInformation } from "$lib/types"
   import { Separator } from "$ui/separator"
   import { FileDown } from "lucide-svelte"
 

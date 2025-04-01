@@ -13,7 +13,8 @@ export { getLogger }
 import { getOpenTelemetrySink } from "@logtape/otel"
 import { getRotatingFileSink } from "@logtape/file"
 import { AsyncLocalStorage } from "node:async_hooks"
-import { mkdir } from "node:fs/promises"
+import path from "node:path"
+import AppSettings from "./server/settings"
 
 export const complexFormatter = (
   formatterFactory: (options?: object) => (record: any) => string,
@@ -70,7 +71,8 @@ export async function configureLogging(id: string | string[], verbose?: boolean,
     formatter: plainFormatter
   }
 
-  await mkdir("logs", { recursive: true })
+  //await mkdir("logs", { recursive: true })
+  const basePath = AppSettings().paths.logs
 
   const consoleLogLevel = debug ? "debug" : verbose ? "info" : "warning"
   const fileLogLevel = debug ? "debug" : "info"
@@ -90,13 +92,13 @@ export async function configureLogging(id: string | string[], verbose?: boolean,
         }),
         (log) => compareLogLevel(log.level, consoleLogLevel) >= 0
       ),
-      meta: getRotatingFileSink(`logs/${id.join("-")}.meta.log`, logfileOptions),
+      meta: getRotatingFileSink(path.join(basePath, `${id.join("-")}.meta.log`), logfileOptions),
       logFile: withFilter(
-        getRotatingFileSink(`logs/${id.join("-")}.log`, logfileOptions),
+        getRotatingFileSink(path.join(basePath, `${id.join("-")}.log`), logfileOptions),
         (log) => compareLogLevel(log.level, fileLogLevel) >= 0
       ),
       errorFile: withFilter(
-        getRotatingFileSink(`logs/${id.join("-")}.error.log`, logfileOptions),
+        getRotatingFileSink(path.join(basePath, `${id.join("-")}.error.log`), logfileOptions),
         (log) => compareLogLevel(log.level, "error") >= 0
       ),
       otel: getOpenTelemetrySink({

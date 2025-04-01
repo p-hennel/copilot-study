@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm"
 import fetchAllGroupsAndProjects from "$lib/server/mini-crawler/main"
 import AppSettings from "$lib/server/settings"
 import type { Group, Project } from "$lib/server/mini-crawler"
-import { AreaType } from "$lib/utils"
+import { AreaType } from "$lib/types"
 import { getLogger } from "@logtape/logtape"
 import { manageOAuthToken } from "$lib/server/mini-crawler/token-check"
 

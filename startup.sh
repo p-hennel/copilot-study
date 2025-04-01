@@ -1,18 +1,15 @@
-#!/bin/bash
-
-mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
-chown -R bun:bun /home/bun/data
+#!/bin/sh
 
 export PATH=$HOME/.bun/bin:$PATH
 
 # to generate: echo "$(openssl enc -base64 -in storagebox.private | tr -d '\n')"
-$(openssl enc -base64 -d <<< "${BACKUP_PRIVATE_KEY}") > ~/.ssh/storagebox
-ssh-keyscan "${BACKUP_USER}.your-storagebox.de" >> ~/.ssh/known_hosts
+#$(openssl enc -base64 -d <<< "${BACKUP_PRIVATE_KEY}") > ~/.ssh/storagebox
+#ssh-keyscan "${BACKUP_USER}.your-storagebox.de" >> ~/.ssh/known_hosts
 
-cron
-autorestic check
+#cron
+#autorestic check
 
-if [[ "$SUPERVUSOR" == "pm2" ]]; then
+if [ "$SUPERVUSOR" -eq "pm2" ]; then
   bun pm2-runtime start ecosystem.config.cjs
 elif [ -f "index.js" ]; then
   bun --bun index.js

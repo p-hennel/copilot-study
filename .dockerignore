@@ -1,0 +1,13 @@
+.github
+.vscode
+build
+config
+logs
+node_modules
+.gitignore
+.dockerignore
+*.code-workspace
+Dockerfile
+*example*
+*.md
+*.private*

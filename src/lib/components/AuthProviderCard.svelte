@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { cn, TokenProvider } from "$lib/utils"
+  import { cn } from "$lib/utils"
+  import { TokenProvider } from "$lib/types"
   import { m } from "$paraglide"
   import * as Card from "$ui/card/index"
   import AuthProvider from "./AuthProvider.svelte"

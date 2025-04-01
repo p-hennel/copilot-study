@@ -13,9 +13,6 @@ import { getLogger } from "$lib/logging" // Import logtape helper
 
 const logger = getLogger(["backend", "auth"]) // Logger for this module
 
-// Get settings instance
-const settings = AppSettings()
-
 // Define simple interfaces for expected Jira API responses
 interface JiraUserResponse {
   emailAddress?: string
@@ -88,7 +85,8 @@ const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User
 }
 
 export const auth = betterAuth({
-  trustedOrigins: settings.auth.trustedOrigins,
+  trustedOrigins: AppSettings()
+  .auth.trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: schema
@@ -96,8 +94,10 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: settings.auth.trustedProviders,
-      allowDifferentEmails: settings.auth.allowDifferentEmails
+      trustedProviders: AppSettings()
+      .auth.trustedProviders,
+      allowDifferentEmails: AppSettings()
+      .auth.allowDifferentEmails
     }
   },
   plugins: [
@@ -108,35 +108,35 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "gitlab-onprem",
-          type: (settings.auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
-          clientId: settings.auth.providers.gitlab.clientId!, // Add non-null assertion
-          clientSecret: settings.auth.providers.gitlab.clientSecret!, // Add non-null assertion
-          authorizationUrl: settings.auth.providers.gitlab.authorizationUrl ?? undefined,
-          tokenUrl: settings.auth.providers.gitlab.tokenUrl ?? undefined,
-          userInfoUrl:  settings.auth.providers.gitlab.userInfoUrl ?? undefined,
-          scopes: settings.auth.providers.gitlab.scopes,
-          redirectURI: settings.auth.providers.gitlab.redirectURI,
+          type: (AppSettings().auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
+          clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
+          clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
+          authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
+          tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
+          userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
+          scopes: AppSettings().auth.providers.gitlab.scopes,
+          redirectURI: AppSettings().auth.providers.gitlab.redirectURI,
         },
         {
           providerId: "jiracloud",
-          clientId: settings.auth.providers.jiracloud.clientId!, // Add non-null assertion
-          clientSecret: settings.auth.providers.jiracloud.clientSecret!, // Add non-null assertion
-          authorizationUrl: settings.auth.providers.jiracloud.authorizationUrl,
-          authorizationUrlParams: settings.auth.providers.jiracloud.authorizationUrlParams,
-          tokenUrl: settings.auth.providers.jiracloud.tokenUrl,
-          scopes: settings.auth.providers.jiracloud.scopes,
-          redirectURI: settings.auth.providers.jiracloud.redirectURI,
+          clientId: AppSettings().auth.providers.jiracloud.clientId!, // Add non-null assertion
+          clientSecret: AppSettings().auth.providers.jiracloud.clientSecret!, // Add non-null assertion
+          authorizationUrl: AppSettings().auth.providers.jiracloud.authorizationUrl,
+          authorizationUrlParams: AppSettings().auth.providers.jiracloud.authorizationUrlParams,
+          tokenUrl: AppSettings().auth.providers.jiracloud.tokenUrl,
+          scopes: AppSettings().auth.providers.jiracloud.scopes,
+          redirectURI: AppSettings().auth.providers.jiracloud.redirectURI,
           getUserInfo: getUserFromJiraCloud
         },
         {
           providerId: "jiralocal",
-          clientId: settings.auth.providers.jira.clientId!, // Add non-null assertion
-          clientSecret: settings.auth.providers.jira.clientSecret!, // Add non-null assertion
-          authorizationUrl: settings.auth.providers.jira.authorizationUrl,
-          authorizationUrlParams: settings.auth.providers.jira.authorizationUrlParams,
-          tokenUrl: settings.auth.providers.jira.tokenUrl,
-          scopes: settings.auth.providers.jira.scopes,
-          redirectURI: settings.auth.providers.jira.redirectURI,
+          clientId: AppSettings().auth.providers.jira.clientId!, // Add non-null assertion
+          clientSecret: AppSettings().auth.providers.jira.clientSecret!, // Add non-null assertion
+          authorizationUrl: AppSettings().auth.providers.jira.authorizationUrl,
+          authorizationUrlParams: AppSettings().auth.providers.jira.authorizationUrlParams,
+          tokenUrl: AppSettings().auth.providers.jira.tokenUrl,
+          scopes: AppSettings().auth.providers.jira.scopes,
+          redirectURI: AppSettings().auth.providers.jira.redirectURI,
           //`${jiraBaseURL}/plugins/servlet/oauth/access-token`,
           //'RSA-SHA1',
           //discoveryUrl: `${jiraBaseURL}/.well-known/openid-configuration`,
@@ -150,14 +150,14 @@ export const auth = betterAuth({
   },
   socialProviders: {
     gitlab: {
-      authorizationUrl: settings.auth.providers.gitlab.authorizationUrl,
-      authorizationUrlParams: settings.auth.providers.gitlab.authorizationUrlParams,
-      tokenUrl: settings.auth.providers.gitlab.tokenUrl,
-      clientId: settings.auth.providers.gitlab.clientId!, // Add non-null assertion
-      clientSecret: settings.auth.providers.gitlab.clientSecret!, // Add non-null assertion
-      discoveryUrl: settings.auth.providers.gitlab.discoveryUrl,
-      scopes: settings.auth.providers.gitlab.scopes,
-      redirectURI: settings.auth.providers.gitlab.redirectURI
+      authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl,
+      authorizationUrlParams: AppSettings().auth.providers.gitlab.authorizationUrlParams,
+      tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl,
+      clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
+      clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
+      discoveryUrl: AppSettings().auth.providers.gitlab.discoveryUrl,
+      scopes: AppSettings().auth.providers.gitlab.scopes,
+      redirectURI: AppSettings().auth.providers.gitlab.redirectURI
     }
   },
   // Add event hooks

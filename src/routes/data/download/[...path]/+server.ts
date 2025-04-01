@@ -4,7 +4,7 @@ import { env } from "$env/dynamic/private"
 import { db } from "$lib/server/db"
 import { account, area, area_authorization, job } from "$lib/server/db/schema"
 import { count, eq, and } from "drizzle-orm"
-import { JobStatus } from "$lib/utils"
+import { JobStatus } from "$lib/types"
 import { areAreaJobsFinished, canAccessAreaFiles, fileForAreaPart } from "$lib/server/utils"
 
 export async function GET({ locals, params }) {

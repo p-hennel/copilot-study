@@ -8,7 +8,8 @@
   import Gitlab from "$lib/components/Gitlab.svelte"
   // Removed: import AuthProvider from "$lib/components/AuthProvider.svelte";
   import AuthProviderCard from "$lib/components/AuthProviderCard.svelte"
-  import { JobStatus, TokenProvider } from "$lib/utils"
+    import { TokenProvider } from "$lib/types";
+  import { JobStatus } from "$lib/types";
   // Removed: import { number } from "$lib/paraglide/registry";
   import AreaCard from "$lib/components/AreaCard.svelte"
   import { m } from "$paraglide"

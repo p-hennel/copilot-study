@@ -9,7 +9,10 @@ import {
   blob // Added blob for json
 } from "drizzle-orm/sqlite-core"
 import { monotonicFactory } from "ulid"
-import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "../../utils"
+import { TokenProvider } from "$lib/types"
+import { JobStatus } from "$lib/types"
+import { AreaType } from "$lib/types"
+import { CrawlCommand } from "$lib/types"
 import { account, user } from "./auth-schema"
 
 const ulid = monotonicFactory()

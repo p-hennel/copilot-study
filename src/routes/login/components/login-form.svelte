@@ -4,7 +4,7 @@
   import { signIn } from "$lib/auth-client"
   import { m } from "$paraglide"
   import { page } from "$app/stores" // Import page store
-  import { TokenProvider } from "$lib/utils" // Import TokenProvider
+  import { TokenProvider } from "$lib/types"
 
   const currentPath = $page.url.pathname // Get pathname from store
 </script>

@@ -5,7 +5,7 @@ import {
   adminClient,
   apiKeyClient
 } from "better-auth/client/plugins";
-import { TokenProvider } from "./utils";
+import { TokenProvider } from "./types";
 
 export const authClient = createAuthClient({
   plugins: [genericOAuthClient(), jwtClient(), adminClient(), apiKeyClient()]

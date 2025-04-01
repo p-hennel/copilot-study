@@ -3,8 +3,9 @@
   import * as Table from "$lib/components/ui/table/index.js"
   import { m } from "$paraglide"
   import * as Tooltip from "$lib/components/ui/tooltip/index.js"
-  import { JobStatus } from "$lib/utils"
-  import type { AreaType, CrawlCommand } from "$lib/utils"
+    import { JobStatus } from "$lib/types"
+    import type { AreaType } from "$lib/types"
+  import type { CrawlCommand } from "$lib/types"
   import { Check, Cross, Logs, Repeat } from "lucide-svelte"
 
   type JobInformation = {
