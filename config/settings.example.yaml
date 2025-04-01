@@ -23,6 +23,7 @@ auth:
   providers:
     gitlab:
       baseUrl: https://gitlab.devops.de
+      type: oidc
 #      tokenUrl: https://gitlab.devops.de/oauth/token
 #      userInfoUrl: https://gitlab.devops.de/oauth/userinfo
 #      authorizationUrl: https://gitlab.devops.de/oauth/authorize
