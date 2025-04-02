@@ -7,7 +7,6 @@
     "moduleDetection": "auto",
     "allowJs": true,
 
-    "types": ["bun"],
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -32,7 +31,8 @@
         "schema": "./schema.graphql",
         "tadaOutputLocation": "./src/graphql-env.d.ts"
       }
-    ]
+    ],
+    "types": ["bun-types/globals", "bun-types"],
   }
   // Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
   // except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
