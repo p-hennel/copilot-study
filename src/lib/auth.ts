@@ -117,9 +117,9 @@ export const auth = betterAuth({
           clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
           clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
           discoveryUrl: AppSettings().auth.providers.gitlab.discoveryUrl,
-          authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
-          tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
-          userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
+// authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
+// tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
+// userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
           scopes: AppSettings().auth.providers.gitlab.scopes,
           redirectURI: AppSettings().auth.providers.gitlab.redirectURI,
         },
