@@ -35,7 +35,7 @@
     "@inlang/paraglide-js": "^2.0.8",
     "@internationalized/date": "^3.7.0",
     "@lucide/svelte": "^0.486.0",
-    "@sveltejs/adapter-auto": "^5.0.0",
+    "@sveltejs/adapter-auto": "^6.0.0",
     "@sveltejs/adapter-node": "^5.2.12",
     "@sveltejs/enhanced-img": "^0.4.4",
     "@sveltejs/kit": "^2.20.2",
