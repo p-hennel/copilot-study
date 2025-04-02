@@ -1,3 +1,5 @@
+Thank you for completing the survey and sharing your thoughts on GitHub Copilot. To gain a deeper and more accurate understanding of how GitHub Copilot is shaping the everyday work of developers, we’re now taking the next step. Beyond perceptions, we want to see how real work practices and routines evolve when developers collaborate with AI tools. For this, we kindly invite you to contribute digital trace data from a tool you already use: GitLab. With your consent, this data will help us uncover meaningful patterns and changes that surveys alone cannot capture. We appreciate your support.
+
 ## ✅ What We’re Collecting — and Why
 
 We are only interested in behavioral data — such as when and how often code is committed, issues are updated, or tasks are completed — not in the actual code, project content, or any sensitive information.
@@ -20,7 +22,7 @@ We do **not** collect:
 We know that trust is earned. Here’s what we’re doing to ensure your data is treated with the respect and care it deserves:
 
 - **You are always in control**: You decide if you want to participate, and you can revoke access at any time.
-- **Read-only access**: We only request read permissions from GitLab. We will never change or write anything.
+- **Read-only access**: We only request read permissions from GitLab and Jira. We will never change or write anything.
 - **Immediate pseudonymization**: Any names or email addresses encountered are automatically and irreversibly hashed — making it impossible to trace data back to any individual.
 - **Full transparency**: After the data is collected, you can view and download exactly what we’ve gathered through the self-service portal.
 
