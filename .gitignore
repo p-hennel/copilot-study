@@ -36,3 +36,7 @@ src/lib/paraglide
 
 *.bun-build
 config/settings.yaml
+src/hooks.server.ts
+
+*.private
+*.log
