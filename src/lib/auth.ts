@@ -117,7 +117,7 @@ export const auth = betterAuth({
           responseType: "code",
           responseMode: "query",
           prompt: "consent",
-          pkce: false,
+          pkce: true,
           disableImplicitSignUp: false,
           disableSignUp: false,
           authentication: "post",
