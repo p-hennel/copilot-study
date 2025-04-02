@@ -88,6 +88,7 @@ const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User
 logger.warn(AppSettings().auth.providers.gitlab.discoveryUrl ?? "empty")
 
 export const auth = betterAuth({
+  secret: AppSettings().auth.secret,
   baseURL: AppSettings().baseUrl,
   trustedOrigins: AppSettings()
   .auth.trustedOrigins,
