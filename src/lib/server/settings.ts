@@ -2,27 +2,32 @@ import { existsSync, readFileSync, writeFileSync, watch, type FSWatcher } from "
 import yaml from "js-yaml"
 import { z } from "zod"
 import path from "node:path"
+import { DefaultGitLabScopes } from "./db/base-schema"
+import { getLogger } from "@logtape/logtape"
+
+const logger = getLogger("settings")
 
 const getLocalSettingsFilePath = () => {
-  let candidate = path.resolve(process.cwd(), "config", "settings.yaml")
+  return getSettingsFileInConfigOrHere(process.cwd())
+}
+
+const getSettingsFileInConfigOrHere = (basePath: string) => {
+  let candidate = path.resolve(basePath, "config", "settings.yaml")
   if (existsSync(candidate)) {
     return candidate
   } else {
-    candidate = path.resolve(process.cwd(), "settings.yaml")
+    candidate = path.resolve(basePath, "settings.yaml")
     return existsSync(candidate) ? candidate : undefined
   }
 }
 
 const getHomeSettingsFilePath = () => {
-  const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data", "settings.yaml"))
-  if (existsSync(candidate)) {
+  const base = path.resolve(path.join(process.env.HOME ?? "~", "data"))
+  const candidate = getSettingsFileInConfigOrHere(base)
+  if (candidate && existsSync(candidate)) {
     return candidate
-  }
-  const altCandidate = path.resolve(process.cwd(), "settings.yaml")
-  if (existsSync(altCandidate)) {
-    return altCandidate
   } else {
-    return candidate
+    return path.join(base, "config", "settings.yaml")
   }
 }
 
@@ -108,7 +113,7 @@ export const settingsSchema = z.object({
         .object({
           gitlab: z
             .object({
-              baseUrl: z.string().nonempty().default("https://gitlab.devops.de"),
+              baseUrl: z.string().optional(),
               clientId: z.string().optional(),
               clientSecret: z.string().optional(),
               userInfoUrl: z.string().optional(),
@@ -116,8 +121,8 @@ export const settingsSchema = z.object({
               authorizationUrlParams: z.record(z.string()).optional(),
               tokenUrl: z.string().optional(),
               type: z.enum(["oauth2", "oidc"]).default("oidc"),
-              discoveryUrl: z.string().optional().default("https://gitlab.devops.de/.well-known/openid-configuration"),
-              scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
+              discoveryUrl: z.string().optional(),
+              scopes: z.array(z.string()).default(DefaultGitLabScopes.map(x => `${x}`)),
               redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
             })
             .default({}),
@@ -133,7 +138,7 @@ export const settingsSchema = z.object({
               .default({}),
           jiracloud: z
             .object({
-              baseUrl: z.string().nonempty().default("https://api.atlassian.com"),
+              baseUrl: z.string().optional().default("https://api.atlassian.com"),
               clientId: z.string().optional(),
               clientSecret: z.string().optional(),
               authorizationUrl: z.string().default("https://auth.atlassian.com/authorize"),
@@ -146,7 +151,7 @@ export const settingsSchema = z.object({
             .default({}),
           jira: z
             .object({
-              baseUrl: z.string().nonempty().default("https://api.atlassian.com"),
+              baseUrl: z.string().optional(),
               clientId: z.string().optional(),
               clientSecret: z.string().optional(),
               authorizationUrl: z.string().default("/authorize"),
@@ -180,6 +185,8 @@ export class AppSettings {
 
   // Private constructor to enforce singleton pattern.
   private constructor(filePath: string) {
+    logger.info("Loading Settings from: {filePath} ({exists})", {filePath, exists: existsSync(filePath)})
+    console.error("Loading Settings from: {filePath} ({exists})", {filePath, exists: existsSync(filePath), env: Bun.env})
     this.filePath = filePath
     // Read and parse the YAML file synchronously.
     const fileContents = readFileSync(this.filePath, "utf8")

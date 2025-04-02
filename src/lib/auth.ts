@@ -85,6 +85,8 @@ const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User
   return getJiraAccountInfo(cloudId, headers, accountId, 2)
 }
 
+logger.warn(AppSettings().auth.providers.gitlab.discoveryUrl ?? "empty")
+
 export const auth = betterAuth({
   baseURL: AppSettings().baseUrl,
   trustedOrigins: AppSettings()

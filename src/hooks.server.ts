@@ -24,12 +24,21 @@ import doMigration from '$lib/server/db/migration'
 // --- Top-Level Async Initialization ---
 // SvelteKit supports top-level await in hooks.server.ts
 try {
-  settings = AppSettings() // Ensure settings are loaded on server start
-  doMigration(settings.paths.database)
   // Assign the configured logger instance
-  logger = await configureLogging("backend")
+
+  const bunHomeData = path.join("/home/bun/data/logs")
+  logger = await configureLogging("backend", existsSync(bunHomeData) ? bunHomeData : process.cwd())
   logger?.info("Logging configured for backend.") // Use optional chaining
   logger?.info("AppSettings initialized successfully.") // Use optional chaining
+
+  settings = AppSettings() // Ensure settings are loaded on server start
+  console.error(settings.auth.providers.gitlab.discoveryUrl)
+  if (settings.baseUrl) {
+    logger = await configureLogging("backend", settings.baseUrl)
+    logger?.info("Logging reconfigured for backend.") // Use optional chaining
+    logger?.info("AppSettings reinitialized successfully.") // Use optional chaining
+  }
+  doMigration(settings.paths.database)
 
   // --- Admin Role Synchronization ---
   const syncAdminRoles = async () => {
@@ -131,6 +140,8 @@ import { JobStatus } from "$lib/types"
 // eq is already imported above
 import type { CrawlerCommand, CrawlerStatus, StartJobCommand, JobDataTypeProgress } from "./crawler/types"
 import type { JobCompletionUpdate } from "./crawler/jobManager"
+import { existsSync } from "node:fs";
+import path from "node:path"
 
 // --- State Variables ---
 // These are now defined after potential logger initialization
