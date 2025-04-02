@@ -114,6 +114,13 @@ export const auth = betterAuth({
         {
           providerId: "gitlab-onprem",
           type: (AppSettings().auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
+          responseType: "code",
+          responseMode: "query",
+          prompt: "consent",
+          pkce: false,
+          disableImplicitSignUp: false,
+          disableSignUp: false,
+          authentication: "post",
           clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
           clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
           discoveryUrl: AppSettings().auth.providers.gitlab.discoveryUrl,
