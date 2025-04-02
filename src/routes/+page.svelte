@@ -115,6 +115,7 @@
       As soon as your account's areas (i.e., groups and projects) have been synchronized, you will see more information
       here.
     </p>
+    <!--
     <Button
       variant="outline"
       onclick={() => {
@@ -124,6 +125,7 @@
       <RefreshCw />
       Refresh
     </Button>
+    -->
   </div>
   {#await data.jobInfo then jobInfo}
     {#if jobInfo}

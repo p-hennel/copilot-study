@@ -25,6 +25,7 @@ export const load: PageServerLoad = async ({ params, locals, depends, fetch }) =
     jobsTotal: number
   }[]
 
+  /*
   if (ensureUserIsAuthenticated(locals)) {
     const accounts = await getAccounts(locals.user!.id!)
     linkedAccounts = accounts.map((x) => x.provider)
@@ -60,6 +61,7 @@ export const load: PageServerLoad = async ({ params, locals, depends, fetch }) =
       .orderBy(area.full_path)
       .where(and(eq(account.userId, locals.user!.id!), isNotNull(area.full_path), isNotNull(area.type)))
   }
+  */
 
   return {
     content: await getMD("start", depends, locals),
