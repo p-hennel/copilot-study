@@ -31,6 +31,7 @@
         "bits-ui": "^1.3.16",
         "build-url-ts": "^6.1.8",
         "bun": "^1.2.7",
+        "clsx": "^2.1.1",
         "dotenv": "^16.4.7",
         "drizzle-kit": "^0.30.6",
         "drizzle-orm": "^0.41.0",
@@ -39,6 +40,7 @@
         "formsnap": "^2.0.0",
         "graphql": "^16.10.0",
         "js-yaml": "^4.1.0",
+        "nodemailer": "^6.10.0",
         "rollup": "^4.38.0",
         "socket.io": "^4.8.1",
         "socket.io-client": "^4.8.1",
@@ -1650,6 +1652,8 @@
     "node-int64": ["node-int64@0.4.0", "", {}, "sha512-O5lz91xSOeoXP6DulyHfllpq+Eg00MWitZIbtPfoSEvqIHdl5gfcY6hYzDWnj0qD5tz52PI08u9qUvSVeUBeHw=="],
 
     "node-releases": ["node-releases@2.0.19", "", {}, "sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw=="],
+
+    "nodemailer": ["nodemailer@6.10.0", "", {}, "sha512-SQ3wZCExjeSatLE/HBaXS5vqUOQk6GtBdIIKxiFdmm01mOQZX/POJkO3SUX1wDiYcwUOJwT23scFSC9fY2H8IA=="],
 
     "normalize-path": ["normalize-path@3.0.0", "", {}, "sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA=="],
 
