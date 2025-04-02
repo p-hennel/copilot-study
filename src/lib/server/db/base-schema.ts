@@ -35,7 +35,7 @@ export type UpdateJobType = {
   finishedAt?: Date | null
 }
 
-export enum Scopes {
+export enum GitLabScopes {
   api = "api",
   readUser = "read_user",
   readApi = "read_api",
@@ -52,7 +52,15 @@ export enum Scopes {
   k8sProxy = "k8s_proxy"
 }
 
-export const DefaultScopes = [Scopes.readApi, Scopes.openid, Scopes.email]
+export const DefaultGitLabScopes = [
+  GitLabScopes.readApi,
+  GitLabScopes.readRegistry,
+  GitLabScopes.readRepository,
+  GitLabScopes.readUser,
+  GitLabScopes.openid,
+  GitLabScopes.email,
+  GitLabScopes.profile
+]
 
 function toDBEnum<T extends Record<any, string>>(data: T): [T[keyof T], ...T[keyof T][]] {
   return Object.values(data) as [T[keyof T], ...T[keyof T][]]

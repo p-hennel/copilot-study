@@ -1,21 +1,16 @@
 services:
   surveytool:
     container_name: surveytool
-    image: phennel/copilot-study:latest
+#    image: phennel/copilot-study:latest
+    build: .
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /mnt/data:/home/bun/data # This is the main storage location, which should be mirrored to / mounted from a persistent volume
     environment:
-      - AUTORESTIC_FOO_RESTIC_PASSWORD= # !!! ENCRYPTION KEY FOR BACKUP !!!
-      - BACKUP_USER= # !!! USER FOR BACKUP SERVICE !!!
-      - BACKUP_PRIVATE_KEY= # !!! SSH PRIVATE KEY FPR BACKUP SERVICE !!!
-      - DATA_ROOT=/home/bun/data
-      - BETTER_AUTH_SECRET= # !!!! AUTHORIZATION SECRET FOR AUTHENTICATION !!!!
-      #      - GITLAB_CLIENT_ID= # Will be added later
-      #      - GITLAB_CLIENT_SECRET= # Will be added later
-      #      - GITLAB_BASE_URL= # Will be added later
-      - HMAC_KEY= # !!!! HMAC KEY FOR CONSISTENT HASHES !!!
-      - HASH_ALG=sha256
-      - OTEL_EXPORTER_OTLP_ENDPOINT="http://134.102.23.170:5080/api/ai-study" # to keep tabs on the crawler, it loggs to a self-hosted openobserve instance in Bremen
+      - OTEL_EXPORTER_OTLP_ENDPOINT="HOST/api/project" # to keep tabs on the crawler, it loggs to a self-hosted openobserve instance in Bremen
       - OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic " # !!!! OPEN OBSERVE TOKEN !!!!
       - OTEL_EXPORTER_OTLP_PROTOCOL="http/json"
+      - LOG_LEVEL=info
+#      - AUTORESTIC_STORAGEBOX_RESTIC_PASSWORD= # !!! ENCRYPTION KEY FOR BACKUP !!!
+#      - BACKUP_USER= # !!! USER FOR BACKUP SERVICE !!!
+#      - BACKUP_PRIVATE_KEY= # !!! SSH PRIVATE KEY FPR BACKUP SERVICE !!!

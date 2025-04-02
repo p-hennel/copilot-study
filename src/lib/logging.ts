@@ -14,7 +14,7 @@ import { getOpenTelemetrySink } from "@logtape/otel"
 import { getRotatingFileSink } from "@logtape/file"
 import { AsyncLocalStorage } from "node:async_hooks"
 import path from "node:path"
-import AppSettings from "./server/settings"
+import { mkdir } from "node:fs/promises"
 
 export const complexFormatter = (
   formatterFactory: (options?: object) => (record: any) => string,
@@ -57,7 +57,24 @@ export const complexFormatter = (
   }
 }
 
-export async function configureLogging(id: string | string[], verbose?: boolean, debug?: boolean) {
+function getLogLevelFromEnv(): "info" | "debug" | "warning" | "error" | "fatal" | undefined {
+  const envKeys = Object.keys(Bun.env)
+  if (envKeys.includes("LOG_LEVEL")) {
+    const val = Bun.env["LOG_LEVEL"]
+    if (val && val.length > 0) {
+      const possibleValues = ["info", "debug", "warning", "error", "fatal"]
+      if (possibleValues.includes(val.toLowerCase())) return val as "info" | "debug" | "warning" | "error" | "fatal"
+    }
+    return undefined
+  }
+  if (envKeys.includes("DEBUG")) {
+    const val = Bun.env["BUN"]
+    return val && (val.toLowerCase() === "true" || val.toLowerCase() === "yes" || val.toLowerCase() === "1") ? "debug" : undefined
+  }
+  return undefined
+}
+
+export async function configureLogging(id: string | string[], basePath: string, verbose?: boolean, debug?: boolean) {
   if (!Array.isArray(id)) id = [id]
   if (verbose === undefined) verbose = false
   if (debug === undefined) debug = false
@@ -71,8 +88,9 @@ export async function configureLogging(id: string | string[], verbose?: boolean,
     formatter: plainFormatter
   }
 
-  //await mkdir("logs", { recursive: true })
-  const basePath = AppSettings().paths.logs
+  try {
+    await mkdir("logs", { recursive: true })
+  } catch { /* */ }
 
   const consoleLogLevel = debug ? "debug" : verbose ? "info" : "warning"
   const fileLogLevel = debug ? "debug" : "info"

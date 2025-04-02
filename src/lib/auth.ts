@@ -85,6 +85,8 @@ const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User
   return getJiraAccountInfo(cloudId, headers, accountId, 2)
 }
 
+logger.warn(AppSettings().auth.providers.gitlab.discoveryUrl ?? "empty")
+
 export const auth = betterAuth({
   baseURL: AppSettings().baseUrl,
   trustedOrigins: AppSettings()
@@ -113,6 +115,7 @@ export const auth = betterAuth({
           //type: (AppSettings().auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
           clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
           clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
+          discoveryUrl: AppSettings().auth.providers.gitlab.discoveryUrl,
           authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
           tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
           userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
@@ -152,14 +155,10 @@ export const auth = betterAuth({
   },
   socialProviders: {
     gitlab: {
-      authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl,
-      authorizationUrlParams: AppSettings().auth.providers.gitlab.authorizationUrlParams,
-      tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl,
-      clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
-      clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
-      discoveryUrl: AppSettings().auth.providers.gitlab.discoveryUrl,
-      scopes: AppSettings().auth.providers.gitlab.scopes,
-      redirectURI: AppSettings().auth.providers.gitlab.redirectURI
+      clientId: AppSettings().auth.providers.gitlabCloud.clientId!, // Add non-null assertion
+      clientSecret: AppSettings().auth.providers.gitlabCloud.clientSecret!, // Add non-null assertion
+      scopes: AppSettings().auth.providers.gitlabCloud.scopes,
+      redirectURI: AppSettings().auth.providers.gitlabCloud.redirectURI
     }
   },
   advanced: {
