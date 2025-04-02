@@ -10,6 +10,7 @@ import { genericOAuth } from "better-auth/plugins"
 import { type OAuth2Tokens } from "better-auth/oauth2"
 import AppSettings from "./server/settings" // Use named import
 import { getLogger } from "$lib/logging" // Import logtape helper
+import { createLogtapeAdapter } from "./authLoggerAdapter"
 
 const logger = getLogger(["backend", "auth"]) // Logger for this module
 
@@ -85,6 +86,7 @@ const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User
 }
 
 export const auth = betterAuth({
+  baseURL: AppSettings().baseUrl,
   trustedOrigins: AppSettings()
   .auth.trustedOrigins,
   database: drizzleAdapter(db, {
@@ -108,7 +110,7 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "gitlab-onprem",
-          type: (AppSettings().auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
+          //type: (AppSettings().auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
           clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
           clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
           authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
@@ -160,6 +162,10 @@ export const auth = betterAuth({
       redirectURI: AppSettings().auth.providers.gitlab.redirectURI
     }
   },
+  advanced: {
+    disableCSRFCheck: true
+  },
+  logger: createLogtapeAdapter(logger.getChild("auth")),
   // Add event hooks
   events: {
     onUserCreate: async (user: User) => {
