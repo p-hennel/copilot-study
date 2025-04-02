@@ -16,12 +16,14 @@ const statements = await generateSQLiteMigration(previous, current);
 const migration = statements.join("\n");
 
 export default async function doMigration(filePath: string) {
-  console.error(`migrating: ${filePath} with ${migration}`)
-  const client = createClient({ url: filePath })
-  for (const migration of statements) {
-    await client.execute(migration)
-  }
-  //const result = await .execute(migration)
-  console.error(`finished migration `) //${Bun.inspect(result)}
-  //return result
+  try {
+    console.log(`migrating: ${filePath} with ${migration}`)
+    const client = createClient({ url: filePath })
+    for (const migration of statements) {
+      await client.execute(migration)
+    }
+    //const result = await .execute(migration)
+    console.log(`finished migration `) //${Bun.inspect(result)}
+    //return result
+  } catch (err:any) { /* empty */ }
 }
