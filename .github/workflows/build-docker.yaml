@@ -21,8 +21,14 @@ jobs:
   docker:
     strategy:
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
-    runs-on: ${{ matrix.os }}
+        data:
+          - os: 'ubuntu-24.04'
+            arch: 'x86'
+            imageSuffix: ''
+          - os: 'ubuntu-24.04-arm'
+            arch: 'arm64'
+            imageSuffix: '-arm64'
+    runs-on: ${{ matrix.data.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,7 +47,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            phennel/copilot-study
+            phennel/copilot-study${{ matrix.data.imageSuffix }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -53,7 +59,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/p-hennel/copilot-study
+            ghcr.io/p-hennel/copilot-study${{ matrix.data.imageSuffix }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -88,7 +94,7 @@ jobs:
         run: |
           docker buildx imagetools create \
             --tag ${{ join(fromJSON(steps.metaghcr.outputs.json).tags, ' --tag ') }} \
-            phennel/copilot-study:latest
+            phennel/copilot-study${{ matrix.data.imageSuffix }}:latest
 #            --annotation ${{ join(fromJSON(steps.metaghcr.outputs.json).annotations, ' --annotation ') }} \
 
 #      - name: Generate artifact attestation
