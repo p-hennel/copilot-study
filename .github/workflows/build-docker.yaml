@@ -56,7 +56,6 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr,
             type=edge,branch=main,
-            type=raw,value={{branch}},
             type=sha,
 
       - name: Login to GHCR
@@ -72,6 +71,13 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate output
+        id: gen_output
+        run: |
+          tags="${{ join(fromJSON(steps.meta.outputs.json).tags, ',') }}"
+          arch="${{ matrix.data.arch }}"
+          echo "tags_${arch}=${tags}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         id: build_and_push
         uses: docker/build-push-action@v6
@@ -86,13 +92,6 @@ jobs:
           provenance: false
           outputs: type=registry,oci-mediatypes=true,oci-artifact=true
           # provenance: mode=max
-
-      - name: Generate output
-        id: gen_output
-        run: |
-          tags="${{ join(fromJSON(steps.meta.outputs.json).tags, ',') }}"
-          arch="${{ matrix.data.arch }}"
-          echo "tags_${arch}=${tags}" >> "$GITHUB_OUTPUT"
 
       - name: Shoutrrr
         uses: containrrr/shoutrrr-action@v1
