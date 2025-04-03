@@ -10,6 +10,7 @@ permissions:
   deployments: write
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*.*.*'
