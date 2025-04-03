@@ -78,8 +78,8 @@ jobs:
       - name: Generate output
         id: gen_output
         run: |
-          tags_hub="${{ join(steps.metahub.json.tags, ',') }}"
-          tags_ghcr="${{ join(steps.metaghcr.outputs.json.tags, ',') }}"
+          tags_hub="${{ join(fromJSON(steps.metahub.json).tags, ',') }}"
+          tags_ghcr="${{ join(fromJSON(steps.metaghcr.outputs.json).tags, ',') }}"
           arch="${{ matrix.data.arch }}"
           echo "tags_hub_${arch}=${tags_hub}" >> "$GITHUB_OUTPUT"
           echo "tags_ghcr_${arch}=${tags_ghcr}" >> "$GITHUB_OUTPUT"
