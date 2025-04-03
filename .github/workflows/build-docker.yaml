@@ -98,7 +98,9 @@ jobs:
         with:
           url: ${{ secrets.SHOUTRRR_URL }}
           title: Built and pushed phennel/copilot-study (${{ matrix.data.arch }})
-          message: ${{ env.DOCKER_METADATA_OUTPUT_LABELS }}
+          message: |
+            ${{ env.DOCKER_METADATA_OUTPUT_TAGS }}
+            ${{ env.GITHUB_SERVER_URL}}/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}
 
   manifest_merge:
     runs-on: ubuntu-24.04
@@ -119,8 +121,8 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
       - name: Create and push manifest images
-        uses: Noelware/docker-manifest-action@master # or use a pinned version in the Releases tab
+        uses: Noelware/docker-manifest-action@master 
         with:
           inputs: ${{ join(fromJSON(steps.meta.outputs.json).tags, ',') }}
-          images: ${{ needs.docker_build.outputs }}
+          images: ${{ needs.docker_build.outputs.tags }}
           push: true
