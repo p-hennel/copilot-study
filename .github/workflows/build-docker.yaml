@@ -74,7 +74,7 @@ jobs:
       - name: Generate output
         id: gen_output
         run: |
-          tags="${{ join(steps.meta.outputs.json.tags, ',') }}"
+          tags="${{ join(fromJSON($DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}"
           arch="${{ matrix.data.arch }}"
           echo "tags_${arch}=${tags}" >> "$GITHUB_OUTPUT"
 
@@ -86,8 +86,8 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: $DOCKER_METADATA_OUTPUT_LABELS
+          labels: $DOCKER_METADATA_OUTPUT_ANNOTATIONS
           sbom: true
           provenance: false
           outputs: type=registry,oci-mediatypes=true,oci-artifact=true
@@ -97,8 +97,8 @@ jobs:
         uses: containrrr/shoutrrr-action@v1
         with:
           url: ${{ secrets.SHOUTRRR_URL }}
-          title: Built and pushed phennel/copilot-study${{ matrix.data.imageSuffix }}
-          message: ${{ steps.meta.outputs.tags }}
+          title: Built and pushed phennel/copilot-study (${{ matrix.data.arch }})
+          message: $DOCKER_METADATA_OUTPUT_LABELS
 
   manifest_merge:
     runs-on: ubuntu-24.04
