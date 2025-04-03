@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.data.os }}
     outputs:
       tags_hub: "${{ join(steps.gen_output.outputs.tags_hub_x86, ',') }},${{ join(steps.gen_output.outputs.tags_hub_arm64, ',') }}"
-      tags_ghcr: "${{ join([join(steps.gen_output.outputs.tags_ghcr_x86, ',') }},${{ join(steps.gen_output.outputs.tags_ghcr_arm64, ',') }}"
+      tags_ghcr: "${{ [oin(steps.gen_output.outputs.tags_ghcr_x86, ',') }},${{ join(steps.gen_output.outputs.tags_ghcr_arm64, ',') }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
