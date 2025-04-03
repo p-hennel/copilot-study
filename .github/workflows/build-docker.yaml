@@ -88,7 +88,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ env.DOCKER_METADATA_OUTPUT_TAGS }}
           labels: ${{ env.DOCKER_METADATA_OUTPUT_LABELS }}
-          sbom: true
+          #sbom: true
           provenance: false
           outputs: type=registry,oci-mediatypes=true,oci-artifact=true
           # provenance: mode=max
