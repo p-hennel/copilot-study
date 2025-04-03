@@ -78,11 +78,11 @@ jobs:
       - name: Generate output
         id: gen_output
         run: |
-          tags_hub="${{ join(steps.metahub.outputs.tags, ',') }}"
-          tags_ghcr="${{ join(steps.metaghcr.outputs.tags, ',') }}"
+          tags_hub="${{ join(steps.metahub.outputs.json.tags, ',') }}"
+          tags_ghcr="${{ join(steps.metaghcr.outputs.json.tags, ',') }}"
           arch="${{ matrix.data.arch }}"
-          echo "tags_hub_${arch}=\"${tags_hub}\"" >> "$GITHUB_OUTPUT"
-          echo "tags_ghcr_${arch}=\"${tags_ghcr}\"" >> "$GITHUB_OUTPUT"
+          echo "tags_hub_${arch}=${tags_hub}" >> "$GITHUB_OUTPUT"
+          echo "tags_ghcr_${arch}=${tags_ghcr}" >> "$GITHUB_OUTPUT"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
