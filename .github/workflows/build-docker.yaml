@@ -58,6 +58,13 @@ jobs:
             type=edge,branch=main,
             type=sha,
 
+      - name: Generate output
+        id: gen_output
+        run: |
+          tags="${{ join(fromJSON($DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}"
+          arch="${{ matrix.data.arch }}"
+          echo "tags_${arch}=${tags}" >> "$GITHUB_OUTPUT"
+
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -70,13 +77,6 @@ jobs:
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Generate output
-        id: gen_output
-        run: |
-          tags="${{ join(fromJSON($DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}"
-          arch="${{ matrix.data.arch }}"
-          echo "tags_${arch}=${tags}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         id: build_and_push
