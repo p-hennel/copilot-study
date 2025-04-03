@@ -114,16 +114,10 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=ref,event=branch
             type=ref,event=pr
+            
       - name: Create and push manifest images
         uses: Noelware/docker-manifest-action@master 
         with:
-          inputs: ${{ join(fromJSON(steps.metahub.outputs.json).tags, ',') }}
+          inputs: ${{ join(fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}
           images: ${{ needs.docker_build.outputs.tags_hub }}
-          push: true
-      
-      - name: Create and push manifest images
-        uses: Noelware/docker-manifest-action@master 
-        with:
-          inputs: ${{ join(fromJSON(steps.metaghcr.outputs.json).tags, ',') }}
-          images: ${{ needs.docker_build.outputs.tags_ghcr }}
           push: true
