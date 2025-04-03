@@ -9,62 +9,58 @@ permissions:
   checks: write
   deployments: write
 
-
 on:
   push:
-    branches:
-      - 'releases/**'
     tags:
       - '*.*.*'
 
 jobs:
-  docker:
+  docker_build:
     strategy:
       matrix:
         data:
           - os: 'ubuntu-24.04'
-            arch: 'x86'
-            imageSuffix: ''
+            arch: 'amd64'
           - os: 'ubuntu-24.04-arm'
             arch: 'arm64'
-            imageSuffix: '-arm64'
     runs-on: ${{ matrix.data.os }}
+    outputs:
+      tags: ${{ join(steps.gen_output.outputs.*, ',') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+#      - uses: actions/cache@v4
+#        with:
+#          path: |
+#            ~/.bun/install/cache
+#          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
   
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Docker meta
-        id: meta
+        id: metaarch
         uses: docker/metadata-action@v5
         with:
+          flavor: |
+            latest=auto
+            suffix=${{ matrix.data.arch }}
           images: |
-            phennel/copilot-study${{ matrix.data.imageSuffix }}
+            phennel/copilot-study
+            ghcr.io/p-hennel/copilot-study
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=ref,event=branch
             type=ref,event=pr
 
-      - name: Docker meta
-        id: metaghcr
-        uses: docker/metadata-action@v5
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          images: |
-            ghcr.io/p-hennel/copilot-study${{ matrix.data.imageSuffix }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=branch
-            type=ref,event=pr
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -75,31 +71,53 @@ jobs:
       - name: Build and push
         id: build_and_push
         uses: docker/build-push-action@v6
+        env:
+          SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           sbom: true
-#          provenance: false
+          provenance: false
+          outputs: type=registry,oci-mediatypes=true,oci-artifact=true
+          # provenance: mode=max
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Push image to GHCR
+      - name: Generate output
+        id: gen_output
         run: |
-          docker buildx imagetools create \
-            --tag ${{ join(fromJSON(steps.metaghcr.outputs.json).tags, ' --tag ') }} \
-            phennel/copilot-study${{ matrix.data.imageSuffix }}:latest
-#            --annotation ${{ join(fromJSON(steps.metaghcr.outputs.json).annotations, ' --annotation ') }} \
+          tags="${{ fromJSON(steps.meta.outputs.json).tags.join(',') }}"
+          arch="${{ matrix.data.arch }}"
+          echo "tags_${arch}=${tags}" >> "$GITHUB_OUTPUT"
 
-#      - name: Generate artifact attestation
-#        uses: actions/attest-build-provenance@v2
-#        with:
-#          subject-name: phennel/copilot-study
-#          subject-digest: ${{ steps.build_and_push.outputs.digest }}
-#          push-to-registry: true
+      - name: Shoutrrr
+        uses: containrrr/shoutrrr-action@v1
+        with:
+          url: ${{ secrets.SHOUTRRR_URL }}
+          title: Built and pushed phennel/copilot-study${{ matrix.data.imageSuffix }}
+          message: ${{ steps.meta.outputs.tags }}
+
+  manifest_merge:
+    runs-on: ubuntu-24.04
+    needs: [docker_build]
+    steps:
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          flavor: |
+            latest=auto
+          images: |
+            phennel/copilot-study
+            ghcr.io/p-hennel/copilot-study
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=ref,event=pr
+      - name: Create and push manifest images
+        uses: Noelware/docker-manifest-action@master # or use a pinned version in the Releases tab
+        with:
+          inputs: ${{ join(fromJSON(steps.meta.outputs.json).tags, ',') }}
+          images: ${{ needs.docker_build.outputs }}
+          push: true
