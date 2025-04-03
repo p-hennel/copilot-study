@@ -28,6 +28,11 @@ jobs:
     outputs:
       tags_hub: "${{ join(steps.gen_output.outputs.tags_hub_x86, ',') }},${{ join(steps.gen_output.outputs.tags_hub_arm64, ',') }}"
       tags_ghcr: "${{ join(steps.gen_output.outputs.tags_ghcr_x86, ',') }},${{ join(steps.gen_output.outputs.tags_ghcr_arm64, ',') }}"
+    env:
+      tags_hub_x86: ""
+      tags_hub_arm64: ""
+      tags_ghcr_x86: ""
+      tags_ghcr_arm64: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,6 +62,13 @@ jobs:
             type=ref,event=pr,
             type=edge,branch=main,
             type=sha,
+
+      - name: Extract tags hub
+        id: gen-output-hub
+        run: |
+          tags_hub="${{ join(fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}"
+          arch="${{ matrix.data.arch }}"
+          echo "tags_hub_${arch}=${tags_hub}" >> "$GITHUB_OUTPUT"
             
       - name: Docker meta
         id: metaghcr
@@ -75,13 +87,12 @@ jobs:
             type=edge,branch=main,
             type=sha,
 
-      - name: Generate output
-        id: gen_output
+      
+      - name: Extract tags ghcr
+        id: gen-output-ghcr
         run: |
-          tags_hub="${{ join(fromJSON(steps.metahub.json).tags, ',') }}"
-          tags_ghcr="${{ join(fromJSON(steps.metaghcr.outputs.json).tags, ',') }}"
+          tags_ghcr="${{ join(fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}"
           arch="${{ matrix.data.arch }}"
-          echo "tags_hub_${arch}=${tags_hub}" >> "$GITHUB_OUTPUT"
           echo "tags_ghcr_${arch}=${tags_ghcr}" >> "$GITHUB_OUTPUT"
 
       - name: Login to GHCR
