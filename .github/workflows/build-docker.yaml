@@ -26,7 +26,8 @@ jobs:
             arch: 'arm64'
     runs-on: ${{ matrix.data.os }}
     outputs:
-      tags: ${{ join(steps.gen_output.outputs.*, ',') }}
+      tags_hub: ${{ join(steps.gen_output.outputs.tags_hub_*, ',') }}
+      tags_ghcr: ${{ join(steps.gen_output.outputs.tags_ghcr_*, ',') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,7 +42,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Docker meta
-        id: metaarch
+        id: metahub
         uses: docker/metadata-action@v5
         with:
           flavor: |
@@ -49,6 +50,22 @@ jobs:
             suffix=-${{ matrix.data.arch }}
           images: |
             phennel/copilot-study
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=ref,event=pr,
+            type=edge,branch=main,
+            type=sha,
+            
+      - name: Docker meta
+        id: metaghcr
+        uses: docker/metadata-action@v5
+        with:
+          flavor: |
+            latest=auto
+            suffix=-${{ matrix.data.arch }}
+          images: |
             ghcr.io/p-hennel/copilot-study
           tags: |
             type=semver,pattern={{version}}
@@ -61,9 +78,11 @@ jobs:
       - name: Generate output
         id: gen_output
         run: |
-          tags="${{ join(fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}"
+          tags_hub="${{ join(steps.metahub.outputs.tags, ',') }}"
+          tags_ghcr="${{ join(steps.metaghcr.outputs.tags, ',') }}"
           arch="${{ matrix.data.arch }}"
-          echo "tags_${arch}=${tags}" >> "$GITHUB_OUTPUT"
+          echo "tags_hub_${arch}=${tags_hub}" >> "$GITHUB_OUTPUT"
+          echo "tags_ghcr_${arch}=${tags_ghcr}" >> "$GITHUB_OUTPUT"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -107,13 +126,32 @@ jobs:
     needs: [docker_build]
     steps:
       - name: Docker meta
-        id: meta
+        id: metahub
         uses: docker/metadata-action@v5
         with:
           flavor: |
             latest=auto
           images: |
             phennel/copilot-study
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=ref,event=pr
+      - name: Create and push manifest images
+        uses: Noelware/docker-manifest-action@master 
+        with:
+          inputs: ${{ join(fromJSON(steps.metahub.outputs.json).tags, ',') }}
+          images: ${{ needs.docker_build.outputs.tags_hub_* }}
+          push: true
+      
+      - name: Docker meta
+        id: metaghcr
+        uses: docker/metadata-action@v5
+        with:
+          flavor: |
+            latest=auto
+          images: |
             ghcr.io/p-hennel/copilot-study
           tags: |
             type=semver,pattern={{version}}
@@ -123,6 +161,6 @@ jobs:
       - name: Create and push manifest images
         uses: Noelware/docker-manifest-action@master 
         with:
-          inputs: ${{ join(fromJSON(steps.meta.outputs.json).tags, ',') }}
-          images: ${{ needs.docker_build.outputs.tags }}
+          inputs: ${{ join(fromJSON(steps.metaghcr.outputs.json).tags, ',') }}
+          images: ${{ needs.docker_build.outputs.tags_ghcr_* }}
           push: true
