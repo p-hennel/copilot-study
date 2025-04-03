@@ -26,13 +26,10 @@ jobs:
             arch: 'arm64'
     runs-on: ${{ matrix.data.os }}
     outputs:
-      tags_hub: "${{ join(steps.gen_output.outputs.tags_hub_x86, ',') }},${{ join(steps.gen_output.outputs.tags_hub_arm64, ',') }}"
-      tags_ghcr: "${{ join(steps.gen_output.outputs.tags_ghcr_x86, ',') }},${{ join(steps.gen_output.outputs.tags_ghcr_arm64, ',') }}"
+      tags_hub: "${tags_hub_x86},${tags_hub_arm64}"
     env:
       tags_hub_x86: ""
       tags_hub_arm64: ""
-      tags_ghcr_x86: ""
-      tags_ghcr_arm64: ""
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,44 +60,12 @@ jobs:
             type=edge,branch=main,
             type=sha,
 
-      - name: Extract tags hub
-        id: gen-output-hub
+      - name: Extract tags
+        id: gen-output
         run: |
           tags_hub="${{ join(fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}"
           arch="${{ matrix.data.arch }}"
           echo "tags_hub_${arch}=${tags_hub}" >> "$GITHUB_OUTPUT"
-            
-      - name: Docker meta
-        id: metaghcr
-        uses: docker/metadata-action@v5
-        with:
-          flavor: |
-            latest=auto
-            suffix=-${{ matrix.data.arch }}
-          images: |
-            ghcr.io/p-hennel/copilot-study
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=branch
-            type=ref,event=pr,
-            type=edge,branch=main,
-            type=sha,
-
-      
-      - name: Extract tags ghcr
-        id: gen-output-ghcr
-        run: |
-          tags_ghcr="${{ join(fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags, ',') }}"
-          arch="${{ matrix.data.arch }}"
-          echo "tags_ghcr_${arch}=${tags_ghcr}" >> "$GITHUB_OUTPUT"
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: "${{ github.actor }}"
-          password: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -156,19 +121,6 @@ jobs:
           images: ${{ needs.docker_build.outputs.tags_hub }}
           push: true
       
-      - name: Docker meta
-        id: metaghcr
-        uses: docker/metadata-action@v5
-        with:
-          flavor: |
-            latest=auto
-          images: |
-            ghcr.io/p-hennel/copilot-study
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=branch
-            type=ref,event=pr
       - name: Create and push manifest images
         uses: Noelware/docker-manifest-action@master 
         with:
