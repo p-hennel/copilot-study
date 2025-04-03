@@ -87,7 +87,7 @@ jobs:
       - name: Generate output
         id: gen_output
         run: |
-          tags="${{ fromJSON(steps.meta.outputs.json).tags.join(',') }}"
+          tags="${{ join(fromJSON(steps.meta.outputs.json).tags, ',') }}"
           arch="${{ matrix.data.arch }}"
           echo "tags_${arch}=${tags}" >> "$GITHUB_OUTPUT"
 
