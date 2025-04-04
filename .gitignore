@@ -39,4 +39,5 @@ config/settings.yaml
 src/hooks.server.ts
 
 *.private
+*.private.*
 *.log
