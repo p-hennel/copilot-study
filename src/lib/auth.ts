@@ -88,6 +88,7 @@ const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User
 logger.warn(AppSettings().auth.providers.gitlab.discoveryUrl ?? "empty")
 
 export const auth = betterAuth({
+  secret: AppSettings().auth.secret,
   baseURL: AppSettings().baseUrl,
   trustedOrigins: AppSettings()
   .auth.trustedOrigins,
@@ -112,13 +113,20 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "gitlab-onprem",
-          //type: (AppSettings().auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
+          type: (AppSettings().auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
+          responseType: "code",
+          responseMode: "query",
+          prompt: "consent",
+          pkce: true,
+          disableImplicitSignUp: false,
+          disableSignUp: false,
+          authentication: "post",
           clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
           clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
           discoveryUrl: AppSettings().auth.providers.gitlab.discoveryUrl,
-          authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
-          tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
-          userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
+// authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
+// tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
+// userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
           scopes: AppSettings().auth.providers.gitlab.scopes,
           redirectURI: AppSettings().auth.providers.gitlab.redirectURI,
         },

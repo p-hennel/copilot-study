@@ -57,12 +57,12 @@
       disabled={loading || forceDisabled}
       onclick={onclick ?? fallbackClickHandler}
       variant={accountState.variant}
-      class="w-full cursor-pointer"
+      class="w-full cursor-pointer text-2xl py-6"
     >
       {#if accountState.isAuthenticated}
         <BadgeCheck class="mr-0 size-4" />
       {:else if !!Icon}
-        <Icon class="mr-2 size-4" />
+        <Icon class="mr-2 size-8" />
       {:else}
         <KeyRound class="mr-2 size-4" />
       {/if}

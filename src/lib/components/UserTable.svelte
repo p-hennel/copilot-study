@@ -46,7 +46,7 @@
 </script>
 
 <div class="flex flex-row flex-wrap items-center justify-between">
-  <p class="prose dark:prose-invert justify-between">
+  <p class="prose justify-between">
     {m["admin.dashboard.summary.total"]({ user_count: data.users.length })}<br />
     {m["admin.dashboard.summary.lessThanMaxAccounts"]({
       maxAccounts: maxNumAccounts(),

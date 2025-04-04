@@ -25,6 +25,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "sourceMap": true,
+    
     "plugins": [
       {
         "name": "gql.tada/ts-plugin",
