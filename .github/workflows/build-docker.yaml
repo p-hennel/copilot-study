@@ -49,7 +49,7 @@ jobs:
         with:
           flavor: |
             latest=auto
-            suffix=-${{ matrix.data.arch }}
+#            suffix=-${{ matrix.data.arch }}
           images: |
             phennel/copilot-study
           tags: |
