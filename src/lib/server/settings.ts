@@ -69,6 +69,26 @@ const dataRoot = getDataRoot()
 // Define the Zod schema for your settings, including nested or array structures if needed.
 export const settingsSchema = z.object({
   baseUrl: z.string().optional(),
+  email: z.object({
+    encryptionPassword: z.string().nonempty().default("1234567890!?"),
+    defaultReceiver: z.array(z.string().email()).optional().or(z.string().email()).optional(),
+    sender: z.string().email().optional(),
+    subject: z.string().optional().default("AUTOMATED BACKUP ({date})"),
+    smtp: z.object({
+      host: z.string(),
+      port: z.number().gt(0),
+      user: z.string(),
+      pass: z.string(),
+      secure: z.boolean().optional().default(true),
+      authMethod: z.string().optional()
+    }).optional().default({
+      host: "",
+      port: 465,
+      user: "",
+      pass: "",
+      secure: true
+    })
+  }).optional().default({}),
   paths: z
     .object({
       dataRoot: z.string().nonempty().default(dataRoot),

@@ -4,14 +4,20 @@ import { account, user } from "./auth-schema"
 import { computeHash } from "../CryptoHash"
 import * as crypto from "crypto"
 import nodemailer from "nodemailer";
+import { getLogger } from "@logtape/logtape"
+import { json2csv } from "json-2-csv"
+import AppSettings from "../settings"
+import { type CipherKey } from "crypto"
+
+const logger = getLogger(["exporter", "mailer"])
 
 const hashAndExtract = (x: { email: string|undefined|null } ) => {
   const emailParts = x.email ? x.email.split("@") : undefined
   if (!x.email || !emailParts || emailParts.length <= 0) {
     return { email: undefined, email0: undefined, email1: undefined}
   }
-  const last = emailParts[-1]
-  const first = emailParts[0]
+  const last = emailParts.at(-1)
+  const first = emailParts.at(0)
   return {
     email: computeHash(x.email),
     email0: first ? computeHash(first) : undefined,
@@ -36,38 +42,32 @@ export const extract = async () => {
   }))
 }
 
-export const encrypt = async (passwd: string, unencrypted: string) => {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv("aes192", passwd, iv);
+const algBits = {
+  "aes-256-cbc": 256,
+  "aes-128-cbc": 128
+}
+
+type Algorithms = keyof typeof algBits
+const defaultAlgorithm = "aes-128-cbc"
+
+const getAlgBytes = (alg: Algorithms) => {
+  return algBits[alg]/8
+}
+
+const passwordToKey = async (passwd: string, keylen?: number) => {
+  const hash = await Bun.password.hash(passwd); 
+  return Buffer.from(!keylen ? hash : hash.substring(0, keylen > 48 ? keylen/8 : keylen))
+}
+
+export const encrypt = async (passwd: string, unencrypted: string, alg: Algorithms = defaultAlgorithm) => {
+  const bits = algBits[alg]
+  const bytes = getAlgBytes(alg)
+  const key: CipherKey = await passwordToKey(passwd, bits)
+  const iv = crypto.randomBytes(bytes);
+  const cipher = crypto.createCipheriv(alg, key, iv);
   let encrypted = cipher.update(unencrypted, "utf8", "hex");
   encrypted += cipher.final("hex");
   return iv.toString('hex') + encrypted;
-}
-
-// https://java2s.com/example/nodejs/string/convert-hex-string-to-byte-array.html
-function hexStringToByteArray(hexString: string): Uint8Array {
-  if (hexString.length % 2 !== 0) {
-      throw "Must have an even number of hex digits to convert to bytes";
-  }
-  const numBytes = hexString.length / 2;
-  const byteArray = new Uint8Array(numBytes);
-  for (let i=0; i<numBytes; i++) {
-      byteArray[i] = parseInt(hexString.substr(i*2, 2), 16);
-  }
-  return byteArray;
-}
-
-export const decrypt = async (passwd: string, encrypted: string) => {
-  // Pull the iv and encrypted data from the URL (first 32 bytes is the iv)
-  const iv = encrypted.substr(0, 32);
-  const ivArray = hexStringToByteArray(iv);
-  // create a decipher object to decrypt the data
-  const decipher = crypto.createDecipheriv("aes192", passwd, ivArray);
-  // capture the rest of the string as our encrypted data
-  const theData = encrypted.substr(32);
-  let decrypted = decipher.update(theData, "hex", "utf8");
-  decrypted += decipher.final("utf8");
-  return decrypted
 }
 
 export type Message = {
@@ -81,7 +81,46 @@ export type SMTPSettings = {
   secure: boolean,
   user: string,
   pass: string,
-  sender?: string
+  sender?: string,
+  authMethod?: string
+}
+
+export async function sendBackupMail(): Promise<void>;
+export async function sendBackupMail(password: string): Promise<void>;
+export async function sendBackupMail(subject: string, password: string): Promise<void>;
+export async function sendBackupMail(subject: string, password: string, receiver: string[]|string, smtpSettings: SMTPSettings): Promise<void>
+export async function sendBackupMail(subject?: string, password?: string, receiver?: string[]|string, smtpSettings?: SMTPSettings): Promise<void> {
+  if (!subject || subject.length <= 0)
+    subject = AppSettings().email.subject
+  subject = subject.replace("{date}", (new Date()).toISOString().split('T')[0] ?? "no date")
+  if (!receiver || receiver.length <= 0)
+    receiver = AppSettings().email.defaultReceiver ?? AppSettings().auth.admins.map(x => x.email)
+  if (Array.isArray(receiver))
+    receiver = receiver.join(",")
+  if (!password || password.length <= 0)
+    password = AppSettings().email.encryptionPassword
+  if (!smtpSettings)
+    smtpSettings = {} as SMTPSettings
+  
+  smtpSettings = {
+    ...smtpSettings,
+    ...{
+      host: AppSettings().email.smtp.host,
+      port: AppSettings().email.smtp.port,
+      secure: AppSettings().email.smtp.secure,
+      user: AppSettings().email.smtp.user,
+      pass: AppSettings().email.smtp.pass,
+      sender: AppSettings().email.sender,
+      authMethod: AppSettings().email.smtp.authMethod
+    } as SMTPSettings
+  }
+  const rawContent = await extract()
+  const csvContent = json2csv(rawContent, {checkSchemaDifferences: true, emptyFieldValue: "", excelBOM: true, prependHeader: true})
+  await sendEncryptedMail(password, {
+    receiver,
+    subject,
+    content: csvContent
+  }, smtpSettings)
 }
 
 export const sendEncryptedMail = async (password: string, message: Message, smtpSettings: SMTPSettings) => {
@@ -90,13 +129,14 @@ export const sendEncryptedMail = async (password: string, message: Message, smtp
     host: smtpSettings.host,
     port: smtpSettings.port,
     secure: smtpSettings.secure,
+    authMethod: smtpSettings.authMethod,
     auth: {
         user: smtpSettings.user,
         pass: smtpSettings.pass
     },
   });
-  const sent = new Promise((resolve, reject) => {
-    await transporter.sendMail({
+  const sent = await (new Promise<{success: boolean, error: Error|null}>((resolve) => {
+    transporter.sendMail({
       from: smtpSettings.sender ?? smtpSettings.user,
       to: message.receiver,
       subject: message.subject,
@@ -106,12 +146,13 @@ export const sendEncryptedMail = async (password: string, message: Message, smtp
         content: content,
         contentType: 'text/plain'
       }]
-    }, (err: Error, info) => {
-      if (err) {
-        return reject(err)
-      }
-      resolve()
+    }, (err: Error|null) => {
+      return resolve({success: !err, error: err})
     });
-  })
-  if (sent)
+  }))
+  if (!sent.success || sent.error) {
+    logger.error("sending mail failed (success: {success}: {error}", sent)
+  } else {
+    logger.info("sent mail successfully")
+  }
 }

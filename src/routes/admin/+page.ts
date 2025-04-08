@@ -19,6 +19,7 @@ async function fetchAdminData(
   token: string | undefined | Promise<string | undefined>
 ) {
   if (typeof token !== "string") token = await token
+  console.log("token", token)
   try {
     const response = await _fetch(`/api/admin/${part}`, {
       method: "GET",

@@ -7,7 +7,10 @@
   import { type UserInformation } from "$lib/types"
   import { type AccountInformation } from "$lib/types"
   import { Separator } from "$ui/separator"
-  import { FileDown } from "lucide-svelte"
+  import { ArchiveRestore, FileDown } from "lucide-svelte"
+    import LoadingButton from "./LoadingButton.svelte";
+    import { authClient } from "$lib/auth-client";
+    import { goto } from "$app/navigation";
 
   type UserInformationWithAccounts = UserInformation & { accounts: AccountInformation[] }
   type PreparedUserInformation = UserInformationWithAccounts & {
@@ -53,18 +56,33 @@
       user_count: lessThanMaxAccounts() <= 0 ? "None" : lessThanMaxAccounts()
     })}
   </p>
-  <Button
-    variant="default"
-    onclick={dynamicHandleDownloadAsCSV(() =>
-      data.users.map((x) => ({
-        email: x.email,
-        accounts: x.accounts.map((x) => x.providerId).join(",")
-      }))
-    )}
-  >
-    <FileDown />
-    CSV Export
-  </Button>
+  <div class="flex flex-row gap-4">
+    <LoadingButton variant="secondary" icon={ArchiveRestore}
+      fn={async () => {
+        const token = (await authClient.getSession())?.data?.session.token
+        if (!token)
+          return goto("/admin/sign-in")
+        await fetch("/api/admin/backup", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+      }}>
+      Backup
+    </LoadingButton>
+    <Button
+      variant="default"
+      onclick={dynamicHandleDownloadAsCSV(() =>
+        data.users.map((x) => ({
+          email: x.email,
+          accounts: x.accounts.map((x) => x.providerId).join(",")
+        }))
+      )}
+    >
+      <FileDown />
+      CSV Export
+    </Button>
+  </div>
 </div>
 
 <Separator class="my-4" />
