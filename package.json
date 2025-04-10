@@ -46,7 +46,7 @@
     "@types/bun": "^1.2.8",
     "@types/eslint": "^9.6.1",
     "@types/node": "^22.13.17",
-    "embla-carousel-svelte": "^8.5.2",
+    "embla-carousel-svelte": "^8.6.0",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
