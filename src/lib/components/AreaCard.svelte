@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { cn } from "$lib/utils"
-  import { m } from "$paraglide"
-  import Button from "$ui/button/button.svelte"
-  import * as Card from "$ui/card/index"
-  import { Progress } from "$ui/progress"
-  import { FolderOpen } from "lucide-svelte"
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js"
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+  import { cn } from "$lib/utils";
+  import Button from "$ui/button/button.svelte";
+  import * as Card from "$ui/card/index";
+  import { Progress } from "$ui/progress";
+  import { FolderOpen } from "lucide-svelte";
 
   let {
     area,
@@ -21,38 +20,39 @@
     }
     class?: string
   } = $props()
+  const finished = $derived(area.jobsTotal && area.jobsTotal > 0 && area.jobsFinished && area.jobsFinished > 0 && area.jobsFinished >= area.jobsTotal)
 </script>
 
-<Card.Root class={cn("flex w-xs flex-col", className)}>
-  <Card.Header class="flex flex-row flex-wrap place-items-center">
-    <Card.Title class="flex-1 text-2xl">
+<Card.Root class={cn("flex w-md flex-col", className)}>
+  <Card.Header>
+    <Card.Title class="text-xl">
       {area.name ?? area.full_path}
     </Card.Title>
+  </Card.Header>
+  <Card.Content class="grow border-b-1 pt-2 pb-4 flex flex-row flex-wrap place-items-top">
+    <p class="flex-1">{area.full_path}</p>
     <Card.Description>
       {`${area.type.substring(0, 1).toUpperCase()}${area.type.substring(1)}`}
     </Card.Description>
-  </Card.Header>
-  <Card.Content class="border-b-1 pt-2 pb-4">
-    {area.full_path}
   </Card.Content>
-  <Card.Footer class="flex gap-4 pt-2">
+  <Card.Footer class="flex gap-4 pt-2 place-items-center mt-3 mb-0">
     <div class="flex-1">
       <Tooltip.Provider delayDuration={0}>
         <Tooltip.Root>
           <Tooltip.Trigger class="w-full">
-            <Progress value={area.jobsFinished / area.jobsTotal} max={1} />
+            <Progress value={area.jobsTotal && area.jobsTotal > 0 ? area.jobsFinished / area.jobsTotal : 0} max={1} />
           </Tooltip.Trigger>
           <Tooltip.Content>
-            {area.jobsFinished} of {area.jobsTotal} finished. More jobs might be added.
+            {area.jobsFinished} {area.jobsTotal && area.jobsTotal > 0 ? `of ${area.jobsTotal}`: ""} jobs finished. More jobs might be added.
           </Tooltip.Content>
         </Tooltip.Root>
       </Tooltip.Provider>
     </div>
     <Button
       variant="outline"
-      disabled={area.jobsFinished < area.jobsTotal}
+      disabled={!finished}
       target="_blank"
-      href={area.jobsFinished < area.jobsTotal ? undefined : `/data/${area.full_path}`}
+      href={!finished ? undefined : `/data/${area.full_path}`}
     >
       <FolderOpen class="mr-2 size-4" />
       Open

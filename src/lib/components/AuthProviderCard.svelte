@@ -1,14 +1,15 @@
 <script lang="ts">
-  import { cn } from "$lib/utils"
-  import { TokenProvider } from "$lib/types"
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
-  import { m } from "$paraglide"
-  import * as Card from "$ui/card/index"
-  import AuthProvider from "./AuthProvider.svelte"
-  import { Checkbox } from "$lib/components/ui/checkbox/index.js"
+  import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+  import { Label } from "$lib/components/ui/label/index.js";
   import { Switch } from "$lib/components/ui/switch/index.js";
-  import { Label } from "$lib/components/ui/label/index.js"
-    import AuroraText from "./ui-mod/AuroraText.svelte";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+  import { TokenProvider } from "$lib/types";
+  import { cn } from "$lib/utils";
+  import { m } from "$paraglide";
+  import * as Card from "$ui/card/index";
+  import { Skeleton } from "@/skeleton";
+  import AuthProvider from "./AuthProvider.svelte";
+  import AuroraText from "./ui-mod/AuroraText.svelte";
 
   let {
     iconSize = 12,
@@ -51,9 +52,19 @@
     }
   }
 
-  let acceptedConditions = $state(isLoggedIn)
+  const authorizedProvider = $derived(isLoggedIn && linkedAccounts && linkedAccounts.includes(provider))
+  let acceptedConditions = $state(null as (boolean|null))
+  $effect(() => {
+    if (authorizedProvider) {
+      acceptedConditions = true
+    } else if (acceptedConditions == null) {
+      acceptedConditions = false
+    }
+  })
 
   const useSwitch = true
+  const pulseColor = "oklch(0.21 0.0399 265.73 / 0.9)"
+  const duration = "1.67s"
 </script>
 
 <Card.Root class={cn("flex w-full flex-col", className)}>
@@ -70,44 +81,64 @@
       {providerName.description}
     </p>
     <div class="mt-3 flex items-center space-x-2">
-      {#if useSwitch}
-        <Switch disabled={isLoggedIn} id={`terms-${provider}`} class="rounded-2xl" bind:checked={acceptedConditions} />
-        <Label for={`terms-${provider}`} class="text-md leading-tight">
-          I willingly participate in this study and I am aware that participation is absolutely voluntarily and that I can leave this page if I do not want to participate. By checking this box and clicking on authorize below, I confirm my participation.
-        </Label>
-      {:else}
-        <Checkbox disabled={isLoggedIn} id={`terms-${provider}`} class="rounded-2xl" bind:checked={acceptedConditions} />
-        <div class="grid gap-1.5 leading-none">
-          <Label for={`terms-${provider}`} class="text-md leading-tight">
-            I willingly participate in this study and I am aware that participation is absolutely voluntarily and that I
-            can leave this page if I do not want to participate. By checking this box and clicking on authorize below, I
-            confirm my participation.
+      {#if acceptedConditions != null}
+        {#if useSwitch}
+          <Switch
+            disabled={authorizedProvider}
+            id={`terms-${provider}`}
+            class={cn(
+              "rounded-2xl",
+              "relative flex items-center bg-blue-500 dark:bg-blue-500",
+              "mr-4"
+            )} bind:checked={acceptedConditions}
+            --pulse-color={pulseColor}
+            --duration={duration}
+            >
+            <div
+              class="absolute top-1/2 left-1/2 size-full rounded-lg bg-inherit animate-pulse -translate-x-1/2 -translate-y-1/2"
+            ></div>
+          </Switch>
+          <Label for={`terms-${provider}`} class="text-md leading-tight font-normal">
+            <strong>I willingly participate in this study</strong> and I am aware that participation is <em>absolutely voluntarily</em> and that I can <em>leave this page if I do not want to participate</em>. By checking this box and clicking on authorize below, I confirm my participation.
           </Label>
-        </div>
+        {:else}
+          <Checkbox disabled={authorizedProvider} id={`terms-${provider}`} class="rounded-2xl" bind:checked={acceptedConditions} />
+          <div class="grid gap-1.5 leading-none">
+            <Label for={`terms-${provider}`} class="text-md leading-tight">
+              I willingly participate in this study and I am aware that participation is absolutely voluntarily and that I
+              can leave this page if I do not want to participate. By checking this box and clicking on authorize below, I
+              confirm my participation.
+            </Label>
+          </div>
+        {/if}
+      {:else}
+      <Skeleton class="h-8 w-full" />
       {/if}
     </div>
   </Card.Content>
   <Card.Footer>
     <Tooltip.Provider delayDuration={0}>
       <Tooltip.Root>
-        <Tooltip.Trigger class="w-full" disabled={acceptedConditions}>
-    <AuthProvider
-      {linkedAccounts}
-      bind:loading
-      {onclick}
-      {textId}
-      {isLoggedIn}
-      {doneTextId}
-      {Icon}
-      {provider}
-      {nextUrl}
-      forceDisabled={!acceptedConditions}
-    />
-  </Tooltip.Trigger>
-  <Tooltip.Content side="top" sideOffset={5} class="text-sm">
-    Please check the disclaimer-box to indicate your voluntary participation — thank you!
-  </Tooltip.Content>
-</Tooltip.Root>
-</Tooltip.Provider>
+        <Tooltip.Trigger class="w-full">
+          <AuthProvider
+            {linkedAccounts}
+            bind:loading
+            {onclick}
+            {textId}
+            {isLoggedIn}
+            {doneTextId}
+            {Icon}
+            {provider}
+            {nextUrl}
+            forceDisabled={!acceptedConditions}
+          />
+        </Tooltip.Trigger>
+        {#if !acceptedConditions}
+        <Tooltip.Content side="top" sideOffset={5} class="text-sm">
+          Please check the disclaimer-box to indicate your voluntary participation — thank you!
+        </Tooltip.Content>
+        {/if}
+      </Tooltip.Root>
+    </Tooltip.Provider>
   </Card.Footer>
 </Card.Root>

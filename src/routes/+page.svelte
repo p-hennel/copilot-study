@@ -1,31 +1,29 @@
 <script lang="ts">
-  import { Separator } from "$lib/components/ui/separator/index.js"
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
-  import type { PageData } from "./$types" // Use PageData from generated types
-  let { data }: { data: PageData } = $props() // Use PageData
-  import Markdown from "svelte-exmarkdown"
-  import { authClient } from "$lib/auth-client"
-  import Gitlab from "$lib/components/Gitlab.svelte"
-  // Removed: import AuthProvider from "$lib/components/AuthProvider.svelte";
-  import AuthProviderCard from "$lib/components/AuthProviderCard.svelte"
-  import { TokenProvider } from "$lib/types";
-  import { JobStatus } from "$lib/types";
-  // Removed: import { number } from "$lib/paraglide/registry";
-  import AreaCard from "$lib/components/AreaCard.svelte"
-  import { m } from "$paraglide"
-  import * as Accordion from "$lib/components/ui/accordion/index.js"
-  import { page } from "$app/stores" // Import page store
-  import ProfileWidget from "$components/ProfileWidget.svelte"
-  import { Progress } from "$components/ui/progress"
-  import { FolderGit2, Gift, RefreshCw, UsersRound } from "lucide-svelte"
-  import * as Alert from "$lib/components/ui/alert/index.js";;
-  import AuroraText from "$components/ui-mod/AuroraText.svelte";
+  import { dev } from '$app/environment';
+  import ProfileWidget from "$components/ProfileWidget.svelte";
+  import BorderBeam from "$components/ui-mod/BorderBeam.svelte";
   import SparklesText from "$components/ui-mod/SparklesText.svelte";
-    import BorderBeam from "$components/ui-mod/BorderBeam.svelte";
+  import { Progress } from "$components/ui/progress";
+  import { authClient } from "$lib/auth-client";
+  import AreaCard from "$lib/components/AreaCard.svelte";
+  import AuthProviderCard from "$lib/components/AuthProviderCard.svelte";
+  import Gitlab from "$lib/components/Gitlab.svelte";
+  import * as Accordion from "$lib/components/ui/accordion/index.js";
+  import * as Alert from "$lib/components/ui/alert/index.js";
+  import { Separator } from "$lib/components/ui/separator/index.js";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+  import { JobStatus, TokenProvider } from "$lib/types";
+  import { m } from "$paraglide";
+  import { FolderGit2, Gift, UsersRound } from "lucide-svelte";
+  import Markdown from "svelte-exmarkdown";
+  import Time from "svelte-time/Time.svelte";
+  import type { PageProps } from "./$types";
   let pageState = $state({
     loading: true,
     linkedAccounts: [] as string[]
   })
+
+  let { data }: PageProps = $props()
 
   $effect(() => {
     if (data.session && data.user && data.user.id) {
@@ -45,7 +43,7 @@
     else return `${count}`
   }
 
-  const isLoggedIn = $derived(!!$page.data.session && !!$page.data.session.userId) // Use $page store
+  const isLoggedIn = $derived(!!data.session && !!data.session.userId)
   const jobsSummary = $derived.by(() => {
     return data.jobs.reduce(
       (ctr, item) => {
@@ -61,6 +59,34 @@
       }
     )
   })
+
+  const getProgressParams = (isComplete: boolean, count: number|null, total: number|null) => {
+    const _total = normalizedTotal(count, total)
+    if (isComplete)
+      return {
+        value: 100,
+        max: 100
+      }
+    return {
+      value: _total > 0 ? count : 0,
+      max: _total > 0 ? _total : undefined
+    }
+  }
+
+  const normalizedTotal = (count: number | null, total: number|null) => {
+    if (!count || count <= 0 || !total || total <= 0 || count < total)
+      return 0
+    return total
+  }
+
+  const getCountInfo = (count: number | null, total: number|null) => {
+    if (!count || count <= 0)
+      count = 0
+    total = normalizedTotal(count, total)
+    if (total <= 0 || count > total)
+      return `${count}`
+    return `${count} / ${total}`
+  }
 </script>
 
 <article class="prose mb-4 items-center">
@@ -84,7 +110,7 @@
     <Alert.Description class="ml-12 md:text-lg lg:text-xl text-center">As a thank you, you will be entered into a draw for a chance to win a prize!</Alert.Description>
   </Alert.Root>
   
-  {#if !!$page.data.user && !!$page.data.session}
+  {#if !!data.user && !!data.session}
     <!-- Use $page store -->
     <Accordion.Root type="single" class="mt-0 w-full text-lg">
       <Accordion.Item value="explainer">
@@ -113,12 +139,26 @@
     {isLoggedIn}
     nextUrl="/"
   />
+  {#if dev}
+  <AuthProviderCard
+    iconSize={12}
+    class="md:col-span-2 xl:col-span-5"
+    linkedAccounts={pageState.linkedAccounts}
+    bind:loading={pageState.loading}
+    textId="auth.login.action"
+    doneTextId="auth.login.action_done"
+    Icon={Gitlab}
+    provider={TokenProvider.gitlabCloud}
+    {isLoggedIn}
+    nextUrl="/"
+  />
+  {/if}
 </div>
 
 {#if !!data.areas && data.areas.length > 0}
   <Separator class="my-4" />
 
-  <div class="flex flex-wrap gap-4">
+  <div class="flex flex-wrap gap-4 justify-between">
     {#each data.areas as area, idx (idx)}
       <!-- Add key -->
       <AreaCard {area} />
@@ -143,20 +183,34 @@
     </Button>
     -->
   </div>
-  {#await data.jobInfo then jobInfo}
-    {#if jobInfo}
+  {#await data.jobInfo then jobInfos}
+    {#each jobInfos as jobInfo (jobInfo.provider) }
       <div class="mt-6 flex w-full flex-wrap items-center gap-4">
-        <span class="italic">Initial job: {jobInfo.status}</span>
+        <Tooltip.Provider>
+          <Tooltip.Root>
+            <Tooltip.Trigger class="flex w-full items-center gap-4">
+              <span class="italic">
+                Initializing {jobInfo.provider}: {jobInfo.isComplete ? "Done" : "Processing..."}
+              </span>
+            </Tooltip.Trigger>
+            <Tooltip.Content side="top" sideOffset={-10}>
+              <p>
+                updated at: <Time timestamp={jobInfo.updated_at} relative={true} />
+                created at: <Time timestamp={jobInfo.createdAt} relative={true}/>
+              </p>
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
         <Tooltip.Provider>
           <Tooltip.Root>
             <Tooltip.Trigger class="flex w-full items-center gap-4">
               <UsersRound class="h-8 w-8" />
               <div class="flex-1">
-                <Progress value={jobInfo.isComplete ? 100 : jobInfo.collectedGroups} max={jobInfo.isComplete ? 100 : jobInfo.totalGroups} />
+                <Progress {...getProgressParams(jobInfo.isComplete, jobInfo.groupCount, jobInfo.groupTotal)} />
               </div>
             </Tooltip.Trigger>
             <Tooltip.Content side="top" sideOffset={-10}>
-              {jobInfo.collectedGroups}{jobInfo.totalGroups ? "/" : ""}{jobInfo.totalGroups} Groups
+              {getCountInfo(jobInfo.groupCount, jobInfo.groupTotal)} Groups
             </Tooltip.Content>
           </Tooltip.Root>
         </Tooltip.Provider>
@@ -165,16 +219,16 @@
             <Tooltip.Trigger class="flex w-full items-center gap-4">
               <FolderGit2 class="h-8 w-8" />
               <div class="flex-1">
-                <Progress value={jobInfo.isComplete ? 100 : jobInfo.collectedProjects} max={jobInfo.isComplete ? 100 : jobInfo.totalProjects} />
+                <Progress {...getProgressParams(jobInfo.isComplete, jobInfo.projectCount, jobInfo.projectTotal)} />
               </div>
             </Tooltip.Trigger>
             <Tooltip.Content side="bottom" sideOffset={-10}>
-              {jobInfo.collectedProjects}{jobInfo.totalProjects ? "/" : ""}{jobInfo.totalProjects} Projects
+              {getCountInfo(jobInfo.projectCount, jobInfo.projectTotal)} Projects
             </Tooltip.Content>
           </Tooltip.Root>
         </Tooltip.Provider>
       </div>
-    {/if}
+    {/each}
   {/await}
 {/if}
 

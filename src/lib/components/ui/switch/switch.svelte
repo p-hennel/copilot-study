@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { Switch as SwitchPrimitive, type WithoutChildrenOrChild } from "bits-ui";
   import { cn } from "$lib/utils.js";
-    import BorderBeam from "$components/ui-mod/BorderBeam.svelte";
+  import { Switch as SwitchPrimitive, type WithoutChildrenOrChild } from "bits-ui";
 
   let {
     ref = $bindable(null),
     checked = $bindable(false),
     class: className,
+    children,
     ...restProps
   }: WithoutChildrenOrChild<SwitchPrimitive.RootProps> = $props();
 </script>
@@ -22,12 +22,12 @@
 >
   <SwitchPrimitive.Thumb
     class={cn(
-      "bg-background pointer-events-none block size-5 rounded-full shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+      "bg-background pointer-events-none block size-5 rounded-full shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
+      "relative z-10"
     )}
   >
-      
-    {#if !checked}
-      <BorderBeam duration={1.15} size={30} borderWidth={3.5} />
-    {/if}
   </SwitchPrimitive.Thumb>
+  {#if !checked}
+    {@render children?.()}
+  {/if}
 </SwitchPrimitive.Root>

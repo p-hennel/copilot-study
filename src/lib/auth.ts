@@ -1,16 +1,13 @@
-import { betterAuth, type User } from "better-auth"
-import { admin } from "better-auth/plugins"
-import { apiKey } from "better-auth/plugins"
-import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { db } from "./server/db/index"
-import { eq, count } from "drizzle-orm" // Import count
-import { jwt } from "better-auth/plugins"
-import * as schema from "./server/db/schema"
-import { genericOAuth } from "better-auth/plugins"
-import { type OAuth2Tokens } from "better-auth/oauth2"
-import AppSettings from "./server/settings" // Use named import
-import { getLogger } from "$lib/logging" // Import logtape helper
-import { createLogtapeAdapter } from "./authLoggerAdapter"
+import { getLogger } from "$lib/logging"; // Import logtape helper
+import { betterAuth, type User } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { type OAuth2Tokens } from "better-auth/oauth2";
+import { admin, apiKey, genericOAuth, jwt } from "better-auth/plugins";
+import { count, eq } from "drizzle-orm"; // Import count
+import { createLogtapeAdapter } from "./authLoggerAdapter";
+import { db } from "./server/db/index";
+import * as schema from "./server/db/schema";
+import AppSettings from "./server/settings"; // Use named import
 
 const logger = getLogger(["backend", "auth"]) // Logger for this module
 
@@ -129,6 +126,39 @@ export const auth = betterAuth({
 // userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
           scopes: AppSettings().auth.providers.gitlab.scopes,
           redirectURI: AppSettings().auth.providers.gitlab.redirectURI,
+        },
+        {
+          providerId: "gitlab-cloud",
+          type: "oidc",
+          responseType: "code",
+          responseMode: "query",
+          prompt: "consent",
+          pkce: true,
+          disableImplicitSignUp: false,
+          disableSignUp: false,
+          authentication: "post",
+          clientId: AppSettings().auth.providers.gitlabCloud.clientId!, // Add non-null assertion
+          clientSecret: AppSettings().auth.providers.gitlabCloud.clientSecret!, // Add non-null assertion
+          discoveryUrl: AppSettings().auth.providers.gitlabCloud.discoveryUrl,
+// authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
+// tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
+// userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
+          //authorizationUrl: `https://gitlab.com/oauth/authorize`,
+          //tokenUrl: `https://gitlab.com/oauth/token`,
+          //userInfoUrl: `https://gitlab.com/oauth/userinfo`,
+          scopes: AppSettings().auth.providers.gitlabCloud.scopes,
+          redirectURI: AppSettings().auth.providers.gitlabCloud.redirectURI,
+          getUserInfo:  async (tokens: OAuth2Tokens) => {
+            const result = await fetch(`https://gitlab.com/api/v4/user?access_token=${tokens.accessToken}`)
+            const data = await result.json() as any
+            const usr = {
+              id: data.id,
+              name: data.name,
+              email: data.email,
+              image: data.avatar_url
+            } as User
+            return usr
+          }
         },
         {
           providerId: "jiracloud",

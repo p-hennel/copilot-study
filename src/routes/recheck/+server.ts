@@ -1,14 +1,13 @@
-import { redirect, type RequestHandler } from "@sveltejs/kit"
 import { db } from "$lib/server/db"
 import { account } from "$lib/server/db/auth-schema"
-import { job, area } from "$lib/server/db/base-schema"
-import { eq } from "drizzle-orm"
+import { area, job } from "$lib/server/db/base-schema"
+import type { Group, Project } from "$lib/server/mini-crawler"
 import fetchAllGroupsAndProjects from "$lib/server/mini-crawler/main"
 import AppSettings from "$lib/server/settings"
-import type { Group, Project } from "$lib/server/mini-crawler"
 import { AreaType } from "$lib/types"
 import { getLogger } from "@logtape/logtape"
-import { manageOAuthToken } from "$lib/server/mini-crawler/token-check"
+import { redirect, type RequestHandler } from "@sveltejs/kit"
+import { eq } from "drizzle-orm"
 
 // TODO: Encrypted Mail Tokens
 
@@ -40,14 +39,6 @@ export const GET: RequestHandler = async ({ locals, fetch }) => {
       access: _job.tokenExpiresAt,
       refresh: _job.refreshTokenExpiresAt
     })
-    /*
-    const oauth = await manageOAuthToken(_job.token, _job.refresher, {
-      verifyUrl: `${AppSettings().auth.providers.gitlab.baseUrl}/oauth/verify`,
-      refreshUrl: `${AppSettings().auth.providers.gitlab.baseUrl}/oauth/token`,
-      clientId: AppSettings().auth.providers.gitlab.clientId,
-      clientSecret: AppSettings().auth.providers.gitlab.clientSecret
-    })
-    */
     fetchAllGroupsAndProjects(
       locals.user.id,
       `${AppSettings().auth.providers.gitlab.baseUrl}/api/graphql`,

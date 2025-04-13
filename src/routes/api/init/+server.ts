@@ -1,12 +1,10 @@
-import { json, text } from "@sveltejs/kit"
-import { error } from "@sveltejs/kit"
 import { auth } from "$lib/auth"
-import { account, user } from "../../../lib/server/db/auth-schema"
 import { db } from "$lib/server/db"
-import { count, eq } from "drizzle-orm"
 import { apikey } from "$lib/server/db/auth-schema"
 import AppSettings from "$lib/server/settings"
-import { generateId } from "better-auth"
+import { error, json, text } from "@sveltejs/kit"
+import { count, eq } from "drizzle-orm"
+import { user } from "../../../lib/server/db/auth-schema"
 
 export async function GET({ url }) {
   try {
@@ -16,15 +14,12 @@ export async function GET({ url }) {
     const code = url.searchParams.get("code") || ""
 
     if (code !== AppSettings().auth.initCode) {
-      console.error("Not Authorized")
       return error(401, "Not Authorized")
     }
     const userCount = (await db.select({ count: count() }).from(user).where(eq(user.email, email))).reduce(
       (prev, now) => prev + now.count,
       0
     )
-
-    console.log("users:", userCount)
 
     const ctx = await auth.$context
     
