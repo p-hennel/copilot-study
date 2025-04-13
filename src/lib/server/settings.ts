@@ -1,9 +1,9 @@
-import { existsSync, readFileSync, writeFileSync, watch, type FSWatcher } from "node:fs" // Import watch and FSWatcher
-import yaml from "js-yaml"
-import { z } from "zod"
-import path from "node:path"
-import { DefaultGitLabScopes } from "./db/base-schema"
-import { getLogger } from "@logtape/logtape"
+import { getLogger } from "@logtape/logtape";
+import yaml from "js-yaml";
+import { existsSync, readFileSync, watch, writeFileSync, type FSWatcher } from "node:fs"; // Import watch and FSWatcher
+import path from "node:path";
+import { z } from "zod";
+import { DefaultGitLabScopes } from "./db/base-schema";
 
 const logger = getLogger("settings")
 
@@ -69,6 +69,26 @@ const dataRoot = getDataRoot()
 // Define the Zod schema for your settings, including nested or array structures if needed.
 export const settingsSchema = z.object({
   baseUrl: z.string().optional(),
+  email: z.object({
+    encryptionPassword: z.string().nonempty().default("1234567890!?"),
+    defaultReceiver: z.array(z.string().email()).optional().or(z.string().email()).optional(),
+    sender: z.string().email().optional(),
+    subject: z.string().optional().default("AUTOMATED BACKUP ({date})"),
+    smtp: z.object({
+      host: z.string(),
+      port: z.number().gt(0),
+      user: z.string(),
+      pass: z.string(),
+      secure: z.boolean().optional().default(true),
+      authMethod: z.string().optional()
+    }).optional().default({
+      host: "",
+      port: 465,
+      user: "",
+      pass: "",
+      secure: true
+    })
+  }).optional().default({}),
   paths: z
     .object({
       dataRoot: z.string().nonempty().default(dataRoot),
@@ -99,7 +119,7 @@ export const settingsSchema = z.object({
       trustedOrigins: z
         .array(z.string().nonempty())
         .default(["http://localhost:3000", "http://localhost:4173", "http://localhost:5173"]),
-      trustedProviders: z.array(z.string().nonempty()).default(["gitlab", "jira", "jiraCloud", "gitlabCloud"]),
+      trustedProviders: z.array(z.string().nonempty()).default(["gitlab", "jira", "jiraCloud", "gitlabCloud", "gitlab-cloud", "gitlab-onprem"]),
       allowDifferentEmails: z.boolean().default(true),
       admins: z
         .array(
@@ -126,16 +146,16 @@ export const settingsSchema = z.object({
               redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
             })
             .default({}),
-            gitlabCloud: z
-              .object({
-                baseUrl: z.string().nonempty().default("https://gitlab.com"),
-                clientId: z.string().optional(),
-                clientSecret: z.string().optional(),
-                discoveryUrl: z.string().optional(),
-                scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
-                redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
-              })
-              .default({}),
+          gitlabCloud: z
+            .object({
+              baseUrl: z.string().nonempty().default("https://gitlab.com"),
+              clientId: z.string().optional(),
+              clientSecret: z.string().optional(),
+              discoveryUrl: z.string().optional(),
+              scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
+              redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
+            })
+            .default({}),
           jiracloud: z
             .object({
               baseUrl: z.string().optional().default("https://api.atlassian.com"),
@@ -186,7 +206,6 @@ export class AppSettings {
   // Private constructor to enforce singleton pattern.
   private constructor(filePath: string) {
     logger.info("Loading Settings from: {filePath} ({exists})", {filePath, exists: existsSync(filePath)})
-    console.error("Loading Settings from: {filePath} ({exists})", {filePath, exists: existsSync(filePath), env: Bun.env})
     this.filePath = filePath
     // Read and parse the YAML file synchronously.
     const fileContents = readFileSync(this.filePath, "utf8")

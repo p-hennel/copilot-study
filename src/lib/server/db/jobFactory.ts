@@ -1,17 +1,14 @@
-import { eq, and, inArray, gt } from "drizzle-orm" // Added gt
-import { db } from "."
-import { account } from "./auth-schema"
-import { area, job, type JobInsert, type Job as JobType } from "./base-schema"
-import { AreaType } from "$lib/types"
-import { CrawlCommand } from "$lib/types"
-import type { AreaInformation, AuthorizationScopesResult } from "../utils"
-import type { ResultSet } from "@libsql/client"
-import { ulid } from "ulid"
-import { getLogger } from "@logtape/logtape"
-import path from "node:path"
-import { type TokenProvider } from "$lib/types"
-import { JobStatus } from "$lib/types"
-import AppSettings from "$lib/server/settings"
+import AppSettings from "$lib/server/settings";
+import { AreaType, CrawlCommand, JobStatus, type TokenProvider } from "$lib/types";
+import type { ResultSet } from "@libsql/client";
+import { getLogger } from "@logtape/logtape";
+import { and, eq, gt, inArray } from "drizzle-orm"; // Added gt
+import path from "node:path";
+import { ulid } from "ulid";
+import { db } from ".";
+import type { AreaInformation, AuthorizationScopesResult } from "../utils";
+import { account } from "./auth-schema";
+import { area, job, type JobInsert, type Job as JobType } from "./base-schema";
 
 const logger = getLogger(["backend", "db", "jobFactory"]) // Align category with hooks.server.ts
 
@@ -447,10 +444,13 @@ export async function updateJobResumeState(jobId: string, newState: Record<strin
 }
 
 export const providerToBaseURL = (provider: TokenProvider | string) => {
-  switch (provider) {
-    case "gitlab":
+  switch (provider.toLowerCase()) {
+    case "gitlab-onprem":
+    case "gitlabonprem":
       return AppSettings().auth.providers.gitlab.baseUrl
-    case "gitlabCloud":
+    case "gitlab":
+    case "gitlabcloud":
+    case "gitlab-cloud":
       return AppSettings().auth.providers.gitlabCloud.baseUrl
     case "jira":
       return AppSettings().auth.providers.jira.baseUrl

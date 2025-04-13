@@ -35,7 +35,7 @@ export enum TokenProvider {
   jira = "jiralocal",
   jiraCloud = "jiracloud",
   gitlab = "gitlab-onprem",
-  gitlabCloud = "gitlab"
+  gitlabCloud = "gitlab-cloud"
 }
 
 export namespace pm2types {

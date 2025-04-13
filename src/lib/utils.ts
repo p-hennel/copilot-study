@@ -1,7 +1,39 @@
-import { type ClassValue, clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
+import { download, generateCsv, mkConfig, type ConfigOptions } from "export-to-csv";
+import { getLogger } from "nodemailer/lib/shared";
 import { twMerge } from "tailwind-merge";
-import { mkConfig, generateCsv, download, type ConfigOptions } from "export-to-csv";
+import type { TokenProvider } from "./types";
 //import type { getAvailableJobs } from "./server/db/jobFactory";
+
+export interface ProviderCallback<T> {
+  gitlabCloud?: () => T
+  gitlabOnPrem?: () => T
+  jiraCloud?: () => T
+  jiraOnPrem?: () => T
+}
+export function forProvider<T = void>(provider: TokenProvider | string, cbs: ProviderCallback<T>, logger = getLogger()): T|undefined {
+  switch (provider.toLowerCase()) {
+    case "gitlab-onprem":
+    case "gitlabonprem":
+      return cbs.gitlabOnPrem?.()
+    case "gitlab":
+    case "gitlabcloud":
+    case "gitlab-cloud":
+      return cbs.gitlabCloud?.()
+    case "jiralocal":
+    case "jira":
+      return cbs.jiraOnPrem?.()
+    case "jiracloud":
+      return cbs.jiraCloud?.()
+    default:
+      logger.warn("No base URL found for provider {provider}", { provider })
+      return undefined
+  }
+}
+
+export function uniqueFilter<T>(value: T, index: number, self: T[]) {
+  return self.indexOf(value) === index;
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

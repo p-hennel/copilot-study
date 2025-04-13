@@ -35,9 +35,9 @@ export interface TokenManagerOptions {
 /**
  * Check if an access token is still valid by making a request to the verification endpoint
  */
-export async function verifyAccessToken(accessToken: string, options: TokenManagerOptions): Promise<boolean> {
+export async function verifyAccessToken(accessToken: string, options: TokenManagerOptions, _fetch: typeof fetch = fetch): Promise<boolean> {
   try {
-    const response = await fetch(options.verifyUrl, {
+    const response = await _fetch(options.verifyUrl, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -57,7 +57,8 @@ export async function verifyAccessToken(accessToken: string, options: TokenManag
  */
 export async function refreshAccessToken(
   refreshToken: string,
-  options: TokenManagerOptions
+  options: TokenManagerOptions,
+  _fetch: typeof fetch = fetch
 ): Promise<TokenResponse | null> {
   try {
     const headers: Record<string, string> = {
@@ -81,18 +82,20 @@ export async function refreshAccessToken(
       params.append("client_id", options.clientId)
     }
 
-    const response = await fetch(options.refreshUrl, {
+    const response = await _fetch(options.refreshUrl, {
       method: "POST",
       headers,
       body: params
     })
 
     if (!response.ok) {
-      throw new Error(`Failed to refresh token: ${response.statusText}`)
+      console.error(response.text())
+      //throw new Error(`Failed to refresh token: ${response.statusText}`)
+      return null
+    } else {
+      const data = await response.json()
+      return data as TokenResponse
     }
-
-    const data = await response.json()
-    return data as TokenResponse
   } catch (error) {
     console.error("Error refreshing token:", error)
     return null
@@ -110,10 +113,11 @@ export async function refreshAccessToken(
 export async function manageOAuthToken(
   accessToken: string,
   refreshToken: string,
-  options: TokenManagerOptions
+  options: TokenManagerOptions,
+  _fetch: typeof fetch = fetch
 ): Promise<TokenSet | null> {
   // Check if the current access token is valid
-  const isValid = await verifyAccessToken(accessToken, options)
+  const isValid = await verifyAccessToken(accessToken, options, _fetch)
 
   // If access token is valid, return the current tokens
   if (isValid) {
@@ -124,7 +128,7 @@ export async function manageOAuthToken(
   }
 
   // If access token is invalid, try to refresh it
-  const refreshedTokens = await refreshAccessToken(refreshToken, options)
+  const refreshedTokens = await refreshAccessToken(refreshToken, options, _fetch)
 
   if (!refreshedTokens) {
     return null // Token refresh failed
@@ -146,34 +150,34 @@ export async function manageOAuthToken(
 }
 
 /**
- * Example usage:
- *
- * const tokenManager = async () => {
- *   const currentTokens = {
- *     accessToken: "current-access-token",
- *     refreshToken: "current-refresh-token"
- *   };
- *
- *   const options = {
- *     verifyUrl: "https://api.example.com/oauth/verify",
- *     refreshUrl: "https://api.example.com/oauth/token",
- *     clientId: "your-client-id",
- *     clientSecret: "your-client-secret"
- *   };
- *
- *   const updatedTokens = await manageOAuthToken(
- *     currentTokens.accessToken,
- *     currentTokens.refreshToken,
- *     options
- *   );
- *
- *   if (updatedTokens) {
- *     // Save the updated tokens for later use
- *     saveTokens(updatedTokens);
- *     return updatedTokens.accessToken;
- *   } else {
- *     // Handle failed token refresh (e.g., redirect to login)
- *     throw new Error("Failed to refresh token");
- *   }
- * };
- */
+  Example usage:
+
+  const tokenManager = async () => {
+    const currentTokens = {
+      accessToken: "current-access-token",
+      refreshToken: "current-refresh-token"
+    };
+
+    const options = {
+      verifyUrl: "https://api.example.com/oauth/verify",
+      refreshUrl: "https://api.example.com/oauth/token",
+      clientId: "your-client-id",
+      clientSecret: "your-client-secret"
+    };
+
+    const updatedTokens = await manageOAuthToken(
+      currentTokens.accessToken,
+      currentTokens.refreshToken,
+      options
+    );
+
+    if (updatedTokens) {
+      // Save the updated tokens for later use
+      saveTokens(updatedTokens);
+      return updatedTokens.accessToken;
+    } else {
+      // Handle failed token refresh (e.g., redirect to login)
+      throw new Error("Failed to refresh token");
+    }
+  };
+*/

@@ -1,16 +1,66 @@
-import { invalidate } from "$app/navigation"
 import { browser } from "$app/environment"
+import { invalidate } from "$app/navigation"
 import { authClient } from "$lib/auth-client"
 
 let jobProgressTimer: Timer | null = null
+let scopingUrls: string[]|undefined = []
 const token = authClient.getSession().then((response) => response.data?.session?.token)
 export async function load(event) {
+  scopingUrls = getUrls(event.data.linkedAccounts)
   return {
-    jobInfo: fetchPrefetch(event),
+    jobInfo: fetchScopingInfo(event.fetch),
     ...event.data
   }
 }
 
+export type ScopingJob = {
+  provider: string,
+  createdAt: Date,
+  updated_at: Date,
+  isComplete: boolean,
+  groupCount: number,
+  projectCount: number,
+  groupTotal: number|null,
+  projectTotal: number|null
+}
+
+const getUrls = (linkedAccounts?: string[]) => {
+  if (!linkedAccounts || linkedAccounts.length <= 0)
+    return undefined
+  return linkedAccounts.filter(x => x != "credential").map(x => (new URL(`http://localhost/api/scoping/${x}`)).pathname)
+}
+
+const fetchScopingInfo = async (_fetch: typeof fetch = fetch) => {
+  const _token = await token
+  if (!_token || _token.length <= 0 || !scopingUrls || scopingUrls.length <= 0)
+    return []
+
+  const results = (await Promise.all(scopingUrls.map(async (url) => {
+    const data = await _fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${_token}`
+      }
+    })
+    if (!data.ok) {
+      return undefined
+    } else {
+      return (await data.json()) as ScopingJob
+    }
+  }))).filter(x => x != undefined && x != null)
+
+  if (browser) {
+    if (!jobProgressTimer) {
+      jobProgressTimer = setInterval(() => {
+        invalidate((url) => (scopingUrls != undefined && scopingUrls.includes(url.pathname)))
+      }, 30000)
+    }
+  }
+  
+  return results
+}
+
+/*
 const fetchPrefetch = async (event: any) => {
   const _token = await token
   if (!_token || _token.length <= 0)
@@ -39,3 +89,4 @@ const fetchPrefetch = async (event: any) => {
   
   return result
 }
+*/

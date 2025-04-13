@@ -1,9 +1,9 @@
 import { createAuthClient } from "better-auth/client";
 import {
-  genericOAuthClient,
-  jwtClient,
   adminClient,
-  apiKeyClient
+  apiKeyClient,
+  genericOAuthClient,
+  jwtClient
 } from "better-auth/client/plugins";
 import { TokenProvider } from "./types";
 
@@ -34,19 +34,10 @@ export async function signIn(arg: TokenProvider | Credentials, nextUrl?: string)
     } else {
       // Provider flow using a TokenProvider
       const provider = arg as TokenProvider;
-      if (provider === TokenProvider.gitlabCloud) {
-        // For GitLab (using Social sign-in)
-        await authClient.signIn.social({
-          provider,
-          callbackURL: nextUrl
-        });
-      } else {
-        // For Jira (using Generic OAuth)
-        await authClient.signIn.oauth2({
-          providerId: provider, // Make sure your genericOAuth plugin is configured with these IDs
-          callbackURL: nextUrl
-        });
-      }
+      await authClient.signIn.oauth2({
+        providerId: provider,
+        callbackURL: nextUrl
+      });
     }
   } catch (error) {
     console.error("Error during sign in:", error);
@@ -56,19 +47,10 @@ export async function signIn(arg: TokenProvider | Credentials, nextUrl?: string)
 
 export async function linkAccount(provider: TokenProvider, nextUrl: string): Promise<void> {
   try {
-    // For GitLab, use the social linking method
-    if (provider === TokenProvider.gitlabCloud) {
-      await authClient.linkSocial({
-        provider, // Social provider (e.g., 'gitlab')
-        callbackURL: nextUrl
-      });
-    } else {
-      // For Jira providers, use Generic OAuth linking
-      await authClient.oauth2.link({
-        providerId: provider, // Ensure your Generic OAuth plugin is configured with these IDs
-        callbackURL: nextUrl
-      });
-    }
+    await authClient.oauth2.link({
+      providerId: provider,
+      callbackURL: nextUrl
+    });
   } catch (error) {
     console.error(`Error linking account with provider ${provider}:`, error);
     throw error;

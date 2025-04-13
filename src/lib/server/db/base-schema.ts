@@ -1,18 +1,20 @@
+import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types"
 import { relations, sql } from "drizzle-orm"
 import {
-  sqliteTable,
-  text,
+  blob // Added blob for json
+  ,
+
+
+
+
+  index,
   integer,
   primaryKey,
-  index,
-  uniqueIndex,
-  blob // Added blob for json
+  sqliteTable,
+  text,
+  uniqueIndex
 } from "drizzle-orm/sqlite-core"
 import { monotonicFactory } from "ulid"
-import { TokenProvider } from "$lib/types"
-import { JobStatus } from "$lib/types"
-import { AreaType } from "$lib/types"
-import { CrawlCommand } from "$lib/types"
 import { account, user } from "./auth-schema"
 
 const ulid = monotonicFactory()
@@ -76,11 +78,11 @@ export const tokenScopeJob = sqliteTable(
     accountId: text().notNull(),
     createdAt: integer({ mode: "timestamp" })
       .notNull()
-      .default(sql`(CURRENT_TIMESTAMP)`), // Use SQL default
+      .default(sql`current_timestamp`), // Use SQL default
     updated_at: integer({ mode: "timestamp" })
       .notNull()
-      .default(sql`(CURRENT_TIMESTAMP)`)
-      .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`), // Use SQL default
+      .default(sql`current_timestamp`)
+      .$onUpdate(() => sql`current_timestamp`), // Use SQL default
     isComplete: integer({ mode: "boolean" }).notNull().default(false),
     groupCursor: text(),
     projectCursor: text(),

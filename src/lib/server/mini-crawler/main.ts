@@ -1,5 +1,7 @@
+import { AreaType, TokenProvider } from "$lib/types"
+import { and, eq } from "drizzle-orm"
 import { db } from "../db"
-import { tokenScopeJob } from "../db/base-schema"
+import { area, area_authorization, tokenScopeJob, tokenScopeJobArea } from "../db/base-schema"
 import type {
   BatchProcessCallback,
   GraphQLGroupResponse,
@@ -9,6 +11,27 @@ import type {
   ProgressStatus,
   Project
 } from "./types"
+
+export async function updateGroupsAndProjects(items: Group[] | Project[], itemType: "groups" | "projects", userId: string, accountId: string, provider?: TokenProvider) {
+  let type
+  if (itemType === "groups") {
+    type = AreaType.group
+  } else if (itemType === "projects") {
+    type = AreaType.project
+  } else {
+    throw new Error(`Unsupported ITEM TYPE: ${itemType}`)
+  }
+  const areaIds = items.map(x => x.fullPath)
+  const _items = items.map(x => ({
+    name: x.name,
+    full_path: x.fullPath,
+    gitlab_id: x.id,
+    type
+  }))
+  await db.insert(area).values(_items).onConflictDoNothing();
+  await db.insert(tokenScopeJobArea).values(areaIds.map(x => ({ full_path: x, userId, provider }))).onConflictDoNothing()
+  await db.insert(area_authorization).values(areaIds.map(x => ({ area_id: x, accountId }))).onConflictDoNothing()
+}
 
 export async function updateScopingJob(data: ProgressStatus, userId: string) {
   if (!userId) return
@@ -31,6 +54,7 @@ export async function updateScopingJob(data: ProgressStatus, userId: string) {
     projectCount: data.collectedProjects,
     groupTotal: data.totalGroups,
     projectTotal: data.totalProjects,
+    updated_at: new Date(),
     ...cursor
   })
 }
@@ -46,13 +70,43 @@ export async function updateScopingJob(data: ProgressStatus, userId: string) {
  */
 async function fetchAllGroupsAndProjects(
   userId: string,
+  accountId: string,
+  provider: TokenProvider,
   gitlabGraphQLEndpoint: string,
   personalAccessToken: string,
-  onBatchProcess: BatchProcessCallback,
-  first: number | undefined = 40,
   _fetch: typeof fetch = fetch,
+  first: number | undefined = 40,
+  onBatchProcess: BatchProcessCallback = updateGroupsAndProjects,
   onProgress: ProgressCallback = updateScopingJob
 ): Promise<void> {
+
+  const job = await db.query.tokenScopeJob.findFirst({
+    where: and(eq(tokenScopeJob.userId, userId), eq(tokenScopeJob.provider, provider))
+  })
+
+  let groupsCursor = null
+  let projectsCursor = null
+
+  if (job) {
+    const lastUpdateAgo = Date.now() - job.updated_at.getTime()
+    if (job.isComplete || (lastUpdateAgo < 2 * 60 * 1000)) {
+      return
+    }
+    await db.update(tokenScopeJob).set({
+      updated_at: new Date()
+    }).where(and(eq(tokenScopeJob.userId, userId), eq(tokenScopeJob.provider, provider)))
+    groupsCursor = job.groupCursor
+    projectsCursor = job.projectCursor
+  } else {
+    await db.insert(tokenScopeJob).values({
+      userId,
+      provider,
+      accountId,
+      createdAt: new Date(),
+      updated_at: new Date()
+    }).onConflictDoNothing()
+  }
+
   // Initialize tracking variables
   let groupsPage = 0
   let projectsPage = 0
@@ -65,11 +119,12 @@ async function fetchAllGroupsAndProjects(
   const loadingGroups = fetchAllGroups(
     gitlabGraphQLEndpoint,
     personalAccessToken,
+    groupsCursor,
     (groups, page, hasMoreGroups, cursor: string | null, total: number | null) => {
       if (!groups || groups.length <= 0) return
       groupsPage = page
       collectedGroups += groups?.length ?? 0
-      if (total > totalGroups) totalGroups = total
+      if (total && total > totalGroups) totalGroups = total
 
       // Update progress after each group page
       onProgress(
@@ -88,7 +143,7 @@ async function fetchAllGroupsAndProjects(
       )
 
       // Process this batch of groups
-      return onBatchProcess(groups, "groups")
+      return onBatchProcess(groups, "groups", userId, accountId, provider)
     },
     first,
     _fetch
@@ -98,11 +153,12 @@ async function fetchAllGroupsAndProjects(
   const loadingProjects = fetchAllProjects(
     gitlabGraphQLEndpoint,
     personalAccessToken,
+    projectsCursor,
     (projects, page, hasMoreProjects, cursor: string | null, total: number | null) => {
       if (!projects || projects.length <= 0) return
       projectsPage = page
       collectedProjects += projects?.length ?? 0
-      if (total > totalProjects) totalProjects = total
+      if (total && total > totalProjects) totalProjects = total
 
       // Update progress after each project page
       onProgress(
@@ -121,7 +177,7 @@ async function fetchAllGroupsAndProjects(
       )
 
       // Process this batch of projects
-      return onBatchProcess(projects, "projects")
+      return onBatchProcess(projects, "projects", userId, accountId, provider)
     },
     first,
     _fetch
@@ -143,18 +199,18 @@ async function fetchAllGroupsAndProjects(
 async function fetchAllGroups(
   endpoint: string,
   token: string,
+  cursor: string | null,
   callback: (
     groups: Group[],
     page: number,
     hasMorePages: boolean,
     cursor: string | null,
     total: number | null
-  ) => Promise<void>,
+  ) => Promise<void> | undefined,
   first: number | undefined = 40,
   _fetch: typeof fetch = fetch
 ): Promise<void> {
   let hasNextPage = true
-  let cursor: string | null = null
   let currentPage = 0
 
   // GraphQL query for groups only
@@ -162,15 +218,15 @@ async function fetchAllGroups(
     query GetGroups($after: String, $first: Int) {
       groups(allAvailable: true, sort: "id_asc", after: $after, first: $first) {
         pageInfo {
-            endCursor
-            hasNextPage
-          }
-          nodes {
-            id
-            name
-            fullPath
-            webUrl
-          }
+          endCursor
+          hasNextPage
+        }
+        nodes {
+          id
+          name
+          fullPath
+          webUrl
+        }
       }
     }
   `
@@ -191,9 +247,7 @@ async function fetchAllGroups(
     let total = null
     try {
       total = data?.totalCount ?? data?.count ?? null
-    } catch {
-      console.log("catch")
-    }
+    } catch { ; }
 
     // Call the callback with this batch of groups
     await callback(nodes, currentPage, hasNextPage, cursor, total)
@@ -210,18 +264,18 @@ async function fetchAllGroups(
 async function fetchAllProjects(
   endpoint: string,
   token: string,
+  cursor: string | null,
   callback: (
     projects: Project[],
     page: number,
     hasMorePages: boolean,
     cursor: string | null,
     total: number | null
-  ) => Promise<void>,
+  ) => Promise<void>|undefined,
   first: number | undefined = 40,
   _fetch: typeof fetch = fetch
 ): Promise<void> {
   let hasNextPage = true
-  let cursor: string | null = null
   let currentPage = 0
 
   // GraphQL query for projects onlys
@@ -229,15 +283,16 @@ async function fetchAllProjects(
     query GetProjects($after: String) {
       projects(searchNamespaces: true, includeHidden: true, sort: "id_asc", after: $after, first: 5) {
         pageInfo {
-            endCursor
-            hasNextPage
-          }
-          nodes {
-            id
-            name
-            fullPath
-            webUrl
-          }
+          endCursor
+          hasNextPage
+        }
+        count
+        nodes {
+          id
+          name
+          fullPath
+          webUrl
+        }
       }
     }
   `
@@ -266,6 +321,13 @@ async function fetchAllProjects(
   }
 }
 
+function getHeaders(token: string) {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`
+  }
+}
+
 /**
  * Helper function to fetch a single page of GraphQL data
  */
@@ -279,10 +341,8 @@ async function fetchGraphQLPage<T>(
 ): Promise<T | undefined> {
   const response = await _fetch(endpoint, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
+    headers: getHeaders(token),
+    signal: AbortSignal.timeout(60*1000),
     body: JSON.stringify({
       query,
       variables: { after, first }
@@ -328,10 +388,8 @@ export async function fetchProjectsForGroup(
 
   const response = await _fetch(endpoint, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
+    headers: getHeaders(token),
+    signal: AbortSignal.timeout(60*1000),
     body: JSON.stringify({
       query,
       variables: { groupId }

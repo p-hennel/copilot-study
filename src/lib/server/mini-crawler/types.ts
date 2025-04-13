@@ -4,10 +4,12 @@ export interface PageInfo {
   hasNextPage: boolean
 }
 
-export interface Project {
+export interface AreaBase {
   id: string
   name: string
   fullPath: string
+}
+export interface Project extends AreaBase {
   webUrl: string
   path: string
   description: string | null
@@ -17,10 +19,7 @@ export interface Project {
   }
 }
 
-export interface Group {
-  id: string
-  name: string
-  fullPath: string
+export interface Group extends AreaBase {
   webUrl: string
 }
 
@@ -65,4 +64,4 @@ export interface ProgressStatus {
 
 // Type definitions for the callback functions
 export type ProgressCallback = (status: ProgressStatus, userId: string) => void
-export type BatchProcessCallback = (items: Group[] | Project[], itemType: "groups" | "projects") => Promise<void>
+export type BatchProcessCallback = (items: Group[] | Project[], itemType: "groups" | "projects", userId: string, accountId: string, provider?: TokenProvider) => Promise<void>
