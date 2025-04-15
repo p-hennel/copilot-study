@@ -1,5 +1,3 @@
-Thank you for completing the survey and sharing your thoughts on GitHub Copilot. To gain a deeper and more accurate understanding of how GitHub Copilot is shaping the everyday work of developers, we’re now taking the next step. Beyond perceptions, we want to see how real work practices and routines evolve when developers collaborate with AI tools. For this, we kindly invite you to contribute digital trace data from a tool you already use: GitLab. With your consent, this data will help us uncover meaningful patterns and changes that surveys alone cannot capture. We appreciate your support.
-
 ## ✅ What We’re Collecting — and Why
 
 We are only interested in behavioral data — such as when and how often code is committed, issues are updated, or tasks are completed — not in the actual code, project content, or any sensitive information.

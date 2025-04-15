@@ -7,7 +7,11 @@
       "action": "Confirm"
     },
     "title": "The Real Impact of AI on Programming Work",
-    "intro": "We’re conducting a research study on how AI tools are changing the everyday work of software developers. Our goal is to go beyond opinions and surface-level observations to really understand what’s happening — how behaviors, routines, and practices are evolving when programmers work alongside AI tools.\nTo do this, we’re inviting you to contribute digital trace data from a tool you’re already using: GitLab."
+    "intro": "Thank you for completing the survey and sharing your thoughts on GitHub Copilot. To gain a deeper and more accurate understanding of how GitHub Copilot is shaping the everyday work of developers, we’re now taking the next step. Beyond perceptions, we want to see how real work practices and routines evolve when developers collaborate with AI tools. For this, we kindly invite you to contribute digital trace data from a tool you already use: GitLab. With your consent, this data will help us uncover meaningful patterns and changes that surveys alone cannot capture. We appreciate your support.",
+    "prize": {
+      "title": "Win a Prize!",
+      "content": "As a thank you, you will be entered into a draw for a chance to win a prize!"
+    }
   },
   "auth": {
     "signOut": "Sign Out",

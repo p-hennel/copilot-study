@@ -5,8 +5,9 @@ import { getAccounts } from "$lib/server/db/jobFactory"
 import fetchAllGroupsAndProjects from "$lib/server/mini-crawler/main"
 import { manageOAuthToken, type TokenManagerOptions } from "$lib/server/mini-crawler/token-check"
 import { ensureUserIsAuthenticated, getMD } from "$lib/server/utils"
-import { AreaType, JobStatus, TokenProvider } from "$lib/types"
+import { AreaType, ContentType, JobStatus, TokenProvider, type AlertContent, type MarkdownContent } from "$lib/types"
 import { forProvider } from "$lib/utils"
+import { m } from "$paraglide"
 import { and, count, eq, isNotNull, sql } from "drizzle-orm"
 import AppSettings from "../lib/server/settings"
 import type { PageServerLoad } from "./$types"
@@ -156,13 +157,33 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
   }
   */
 
+  const contents = await Promise.all([
+    _getMD("what", depends, locals),
+    _getMD("responsibility", depends, locals),
+    _getMD("for-you", depends, locals),
+    {
+      type: ContentType.Alert,
+      icon: "Gift",
+      title: m["home.prize.title"](),
+      content: m["home.prize.content"]()
+    } as AlertContent,
+    _getMD("questions", depends, locals),
+  ])
+
   return {
     userId: locals.user?.id,
     content: await getMD("start", depends, locals),
+    contents,
     linkedAccounts,
     jobs,
     areas
   }
 }
 
-
+async function _getMD(slug: string, depends: (dep: string) => void, locals: App.Locals): Promise<MarkdownContent> {
+  const content = await getMD(slug, depends, locals)
+  return {
+    type: ContentType.Markdown,
+    content
+  } as MarkdownContent
+}
