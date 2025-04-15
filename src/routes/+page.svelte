@@ -1,21 +1,18 @@
 <script lang="ts">
   import { dev } from '$app/environment';
   import ProfileWidget from "$components/ProfileWidget.svelte";
-  import BorderBeam from "$components/ui-mod/BorderBeam.svelte";
-  import SparklesText from "$components/ui-mod/SparklesText.svelte";
+  import StudyInfo from '$components/StudyInfo.svelte';
   import { Progress } from "$components/ui/progress";
   import { authClient } from "$lib/auth-client";
   import AreaCard from "$lib/components/AreaCard.svelte";
   import AuthProviderCard from "$lib/components/AuthProviderCard.svelte";
   import Gitlab from "$lib/components/Gitlab.svelte";
   import * as Accordion from "$lib/components/ui/accordion/index.js";
-  import * as Alert from "$lib/components/ui/alert/index.js";
   import { Separator } from "$lib/components/ui/separator/index.js";
   import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { JobStatus, TokenProvider } from "$lib/types";
   import { m } from "$paraglide";
-  import { FolderGit2, Gift, UsersRound } from "lucide-svelte";
-  import Markdown from "svelte-exmarkdown";
+  import { FolderGit2, UsersRound } from "lucide-svelte";
   import Time from "svelte-time/Time.svelte";
   import type { PageProps } from "./$types";
   let pageState = $state({
@@ -93,22 +90,9 @@
   <ProfileWidget user={data.user} />
 
   <h1 class="text-4xl font-extrabold">{m["home.title"]()}</h1>
-  <p class="mb-0">
-    {m["home.intro"]()}
-  </p>
+  
 
-  <Alert.Root class="relative mx-auto rounded-3xl my-12 max-w-200">
-    {#if !data.user}
-      <BorderBeam duration={4} borderWidth={2.5} />
-    {/if}
-    <Gift class="mt-2.5" color="#581c87" strokeWidth={2} size={64} />
-    <Alert.Title>
-      <h1 class="ml-12 text-3xl font-bold tracking-tighter text-center md:text-4xl lg:text-6xl mb-0">
-        <SparklesText colors={{first: "#fcd34d", second: "#fda4af"}} sparklesCount={8} lifespanMin={12} lifespanFactor={22} textClass="bg-gradient-to-tl from-slate-900 via-purple-900 to-slate-900 bg-clip-text text-transparent" text="Win a Prize!" />
-      </h1>
-    </Alert.Title>
-    <Alert.Description class="ml-12 md:text-lg lg:text-xl text-center">As a thank you, you will be entered into a draw for a chance to win a prize!</Alert.Description>
-  </Alert.Root>
+
   
   {#if !!data.user && !!data.session}
     <!-- Use $page store -->
@@ -116,12 +100,12 @@
       <Accordion.Item value="explainer">
         <Accordion.Trigger class="pb-2 text-lg font-semibold">Read more...</Accordion.Trigger>
         <Accordion.Content class="prose m-0 p-0">
-          <Markdown md={data.content} />
+          <StudyInfo contents={data.contents} user={data.user} />
         </Accordion.Content>
       </Accordion.Item>
     </Accordion.Root>
   {:else}
-    <Markdown md={data.content} />
+    <StudyInfo contents={data.contents} user={data.user} />
     <Separator class="mt-8 mb-10" />
   {/if}
 </article>
