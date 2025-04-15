@@ -13,17 +13,17 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - '*.*.*'
+      - "*.*.*"
 
 jobs:
   docker_build:
     strategy:
       matrix:
         data:
-          - os: 'ubuntu-24.04'
-            arch: 'amd64'
-#          - os: 'ubuntu-24.04-arm'
-#            arch: 'arm64'
+          - os: "ubuntu-24.04"
+            arch: "amd64"
+    #          - os: 'ubuntu-24.04-arm'
+    #            arch: 'arm64'
     runs-on: ${{ matrix.data.os }}
     outputs:
       tags_hub: "${tags_hub_x86},${tags_hub_arm64}"
@@ -34,12 +34,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-#      - uses: actions/cache@v4
-#        with:
-#          path: |
-#            ~/.bun/install/cache
-#          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
-  
+      #      - uses: actions/cache@v4
+      #        with:
+      #          path: |
+      #            ~/.bun/install/cache
+      #          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -49,7 +49,7 @@ jobs:
         with:
           flavor: |
             latest=auto
-#            suffix=-${{ matrix.data.arch }}
+          #            suffix=-${{ matrix.data.arch }}
           images: |
             phennel/copilot-study
           tags: |

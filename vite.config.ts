@@ -1,10 +1,10 @@
-import { paraglideVitePlugin } from "@inlang/paraglide-js"
-import tailwindcss from "@tailwindcss/vite"
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
+import tailwindcss from "@tailwindcss/vite";
 //import { svelteTesting } from "@testing-library/svelte/vite";
-import { sveltekit } from "@sveltejs/kit/vite"
-import { enhancedImages } from "@sveltejs/enhanced-img"
+import { sveltekit } from "@sveltejs/kit/vite";
+import { enhancedImages } from "@sveltejs/enhanced-img";
 //import autoprefixer from 'autoprefixer'
-import { defineConfig } from "vite"
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [
@@ -31,7 +31,7 @@ export default defineConfig({
     host: true,
     allowedHosts: true,
     port: 3000,
-    cors: true,
+    cors: true
   },
   optimizeDeps: {
     exclude: ["bun"]
@@ -67,4 +67,4 @@ export default defineConfig({
   //     }
   //   ]
   // }
-})
+});

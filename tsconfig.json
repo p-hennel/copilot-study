@@ -25,7 +25,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "sourceMap": true,
-    
+
     "plugins": [
       {
         "name": "gql.tada/ts-plugin",
@@ -33,7 +33,7 @@
         "tadaOutputLocation": "./src/graphql-env.d.ts"
       }
     ],
-    "types": ["bun-types/globals", "bun-types"],
+    "types": ["bun-types/globals", "bun-types"]
   }
   // Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
   // except $lib which is handled by https://svelte.dev/docs/kit/configuration#files

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { buttonVariants } from "$lib/components/ui/button"
+  import { buttonVariants } from "$lib/components/ui/button";
   import {
     DropdownMenu,
     DropdownMenuContent,
@@ -7,27 +7,27 @@
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger
-  } from "$lib/components/ui/dropdown-menu"
-  import { Avatar, AvatarFallback, AvatarImage } from "$lib/components/ui/avatar"
-  import { Home, LogOut, Mail, UserCog } from "lucide-svelte" // Import icons
-  import type { User } from "better-auth/types"
-  import { cn } from "$lib/utils"
-  import { page } from "$app/state"
+  } from "$lib/components/ui/dropdown-menu";
+  import { Avatar, AvatarFallback, AvatarImage } from "$lib/components/ui/avatar";
+  import { Home, LogOut, Mail, UserCog } from "lucide-svelte"; // Import icons
+  import type { User } from "better-auth/types";
+  import { cn } from "$lib/utils";
+  import { page } from "$app/state";
 
-  let { user, class: className }: { user: User & { role: string }; class?: string } = $props() // Use standard Svelte export for user data
+  let { user, class: className }: { user: User & { role: string }; class?: string } = $props(); // Use standard Svelte export for user data
 
-  const isAdminArea = page.url.pathname.startsWith("/admin") // Check if the current URL is in the admin area
+  const isAdminArea = page.url.pathname.startsWith("/admin"); // Check if the current URL is in the admin area
 
   // Function to get initials for avatar fallback
   function getInitials(name: string | undefined | null): string {
-    if (!name) return "?"
-    const names = name.trim().split(/\s+/) // Trim and split by whitespace
-    if (names.length === 0 || !names[0]) return "?" // Handle empty or whitespace-only names
-    if (names.length === 1) return names[0].charAt(0).toUpperCase()
+    if (!name) return "?";
+    const names = name.trim().split(/\s+/); // Trim and split by whitespace
+    if (names.length === 0 || !names[0]) return "?"; // Handle empty or whitespace-only names
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
     // Ensure the last name part exists before accessing charAt
-    const lastNamePart = names[names.length - 1]
-    if (!lastNamePart) return names[0].charAt(0).toUpperCase() // Fallback if last part is empty
-    return (names[0].charAt(0) + lastNamePart.charAt(0)).toUpperCase()
+    const lastNamePart = names[names.length - 1];
+    if (!lastNamePart) return names[0].charAt(0).toUpperCase(); // Fallback if last part is empty
+    return (names[0].charAt(0) + lastNamePart.charAt(0)).toUpperCase();
   }
 </script>
 

@@ -9,17 +9,17 @@ import { db } from "./server/db/index";
 import * as schema from "./server/db/schema";
 import AppSettings from "./server/settings"; // Use named import
 
-const logger = getLogger(["backend", "auth"]) // Logger for this module
+const logger = getLogger(["backend", "auth"]); // Logger for this module
 
 // Define simple interfaces for expected Jira API responses
 interface JiraUserResponse {
-  emailAddress?: string
-  displayName?: string
+  emailAddress?: string;
+  displayName?: string;
   // Add other fields if needed
 }
 
 interface JiraAccessibleResource {
-  id: string // Expecting at least an ID
+  id: string; // Expecting at least an ID
   // Add other fields if needed
 }
 
@@ -29,16 +29,19 @@ export const getJiraAccountInfo = async (
   accountId?: string,
   retriesLeft: number = 0
 ): Promise<User | null> => {
-  const response = await fetch(`https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/user?accountId=${accountId}`, {
-    method: "GET",
-    headers: headers
-  })
+  const response = await fetch(
+    `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/user?accountId=${accountId}`,
+    {
+      method: "GET",
+      headers: headers
+    }
+  );
 
-  if (!accountId) accountId = response.headers.get("X-AACCOUNTID") ?? undefined
+  if (!accountId) accountId = response.headers.get("X-AACCOUNTID") ?? undefined;
 
   if (response.ok) {
     // Assert the type of the JSON response
-    const data = (await response.json()) as JiraUserResponse
+    const data = (await response.json()) as JiraUserResponse;
     return {
       id: accountId,
       email: data.emailAddress ?? "", // Use nullish coalescing for safety
@@ -46,49 +49,50 @@ export const getJiraAccountInfo = async (
       name: data.displayName ?? "" // Use nullish coalescing for safety
       //createdAt: new Date(),
       //updatedAt: new Date()
-    } as User
+    } as User;
   } else {
-    return retriesLeft > 0 ? await getJiraAccountInfo(cloudId, headers, accountId, retriesLeft - 1) : null
+    return retriesLeft > 0
+      ? await getJiraAccountInfo(cloudId, headers, accountId, retriesLeft - 1)
+      : null;
   }
-}
+};
 
 export const getUserFromJiraCloud = async (tokens: OAuth2Tokens): Promise<User | null> => {
-  return _getUserFromJira(AppSettings().auth.providers.jiracloud.accessibleResourcesUrl, tokens)
-}
+  return _getUserFromJira(AppSettings().auth.providers.jiracloud.accessibleResourcesUrl, tokens);
+};
 export const getUserFromJira = async (tokens: OAuth2Tokens): Promise<User | null> => {
-  return _getUserFromJira(AppSettings().auth.providers.jira.accessibleResourcesUrl, tokens)
-}
+  return _getUserFromJira(AppSettings().auth.providers.jira.accessibleResourcesUrl, tokens);
+};
 const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User | null> => {
-  const headers: HeadersInit = new Headers()
-  headers.set("Accept", "application/json")
-  headers.set("Authorization", `Bearer ${tokens.accessToken}`)
+  const headers: HeadersInit = new Headers();
+  headers.set("Accept", "application/json");
+  headers.set("Authorization", `Bearer ${tokens.accessToken}`);
 
   const response = await fetch(url, {
     method: "GET",
     headers: headers
-  })
+  });
 
   // Assert the type of the JSON response (expecting an array)
-  const accessibleResources = (await response.json()) as JiraAccessibleResource[]
-  const cloudId = accessibleResources?.[0]?.id // Use optional chaining
-  const accountId = response.headers.get("X-AACCOUNTID") ?? undefined
+  const accessibleResources = (await response.json()) as JiraAccessibleResource[];
+  const cloudId = accessibleResources?.[0]?.id; // Use optional chaining
+  const accountId = response.headers.get("X-AACCOUNTID") ?? undefined;
 
   // Ensure cloudId was found before proceeding
   if (!cloudId) {
-    logger.error("Could not determine cloudId from accessible resources for Jira user.")
-    return null
+    logger.error("Could not determine cloudId from accessible resources for Jira user.");
+    return null;
   }
 
-  return getJiraAccountInfo(cloudId, headers, accountId, 2)
-}
+  return getJiraAccountInfo(cloudId, headers, accountId, 2);
+};
 
-logger.warn(AppSettings().auth.providers.gitlab.discoveryUrl ?? "empty")
+logger.warn(AppSettings().auth.providers.gitlab.discoveryUrl ?? "empty");
 
 export const auth = betterAuth({
   secret: AppSettings().auth.secret,
   baseURL: AppSettings().baseUrl,
-  trustedOrigins: AppSettings()
-  .auth.trustedOrigins,
+  trustedOrigins: AppSettings().auth.trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: schema
@@ -96,10 +100,8 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: AppSettings()
-      .auth.trustedProviders,
-      allowDifferentEmails: AppSettings()
-      .auth.allowDifferentEmails
+      trustedProviders: AppSettings().auth.trustedProviders,
+      allowDifferentEmails: AppSettings().auth.allowDifferentEmails
     }
   },
   plugins: [
@@ -110,7 +112,10 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "gitlab-onprem",
-          type: (AppSettings().auth.providers.gitlab.type ?? undefined) as ("oidc" | "oauth2" | undefined),
+          type: (AppSettings().auth.providers.gitlab.type ?? undefined) as
+            | "oidc"
+            | "oauth2"
+            | undefined,
           responseType: "code",
           responseMode: "query",
           prompt: "consent",
@@ -121,11 +126,11 @@ export const auth = betterAuth({
           clientId: AppSettings().auth.providers.gitlab.clientId!, // Add non-null assertion
           clientSecret: AppSettings().auth.providers.gitlab.clientSecret!, // Add non-null assertion
           discoveryUrl: AppSettings().auth.providers.gitlab.discoveryUrl,
-// authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
-// tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
-// userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
+          // authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
+          // tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
+          // userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
           scopes: AppSettings().auth.providers.gitlab.scopes,
-          redirectURI: AppSettings().auth.providers.gitlab.redirectURI,
+          redirectURI: AppSettings().auth.providers.gitlab.redirectURI
         },
         {
           providerId: "gitlab-cloud",
@@ -140,24 +145,26 @@ export const auth = betterAuth({
           clientId: AppSettings().auth.providers.gitlabCloud.clientId!, // Add non-null assertion
           clientSecret: AppSettings().auth.providers.gitlabCloud.clientSecret!, // Add non-null assertion
           discoveryUrl: AppSettings().auth.providers.gitlabCloud.discoveryUrl,
-// authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
-// tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
-// userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
+          // authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
+          // tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
+          // userInfoUrl:  AppSettings().auth.providers.gitlab.userInfoUrl ?? undefined,
           //authorizationUrl: `https://gitlab.com/oauth/authorize`,
           //tokenUrl: `https://gitlab.com/oauth/token`,
           //userInfoUrl: `https://gitlab.com/oauth/userinfo`,
           scopes: AppSettings().auth.providers.gitlabCloud.scopes,
           redirectURI: AppSettings().auth.providers.gitlabCloud.redirectURI,
-          getUserInfo:  async (tokens: OAuth2Tokens) => {
-            const result = await fetch(`https://gitlab.com/api/v4/user?access_token=${tokens.accessToken}`)
-            const data = await result.json() as any
+          getUserInfo: async (tokens: OAuth2Tokens) => {
+            const result = await fetch(
+              `https://gitlab.com/api/v4/user?access_token=${tokens.accessToken}`
+            );
+            const data = (await result.json()) as any;
             const usr = {
               id: data.id,
               name: data.name,
               email: data.email,
               image: data.avatar_url
-            } as User
-            return usr
+            } as User;
+            return usr;
           }
         },
         {
@@ -207,22 +214,22 @@ export const auth = betterAuth({
   events: {
     onUserCreate: async (user: User) => {
       // Add User type annotation
-      logger.info(`User created: ${user.id}, checking if first user...`)
+      logger.info(`User created: ${user.id}, checking if first user...`);
       try {
         // Check if this is the first user
-        const userCountResult = await db.select({ value: count() }).from(schema.user)
-        const userCount = userCountResult[0]?.value ?? 0
+        const userCountResult = await db.select({ value: count() }).from(schema.user);
+        const userCount = userCountResult[0]?.value ?? 0;
 
-        logger.info(`Current user count: ${userCount}`)
+        logger.info(`Current user count: ${userCount}`);
         if (userCount === 1) {
-          logger.info(`Promoting user ${user.id} to admin.`)
-          await db.update(schema.user).set({ role: "admin" }).where(eq(schema.user.id, user.id))
-          logger.info(`Invalidating sessions for user ${user.id} after role promotion.`)
-          await auth.api.revokeUserSessions({ body: { userId: user.id } }) // Pass argument as { body: { userId: ... } }
+          logger.info(`Promoting user ${user.id} to admin.`);
+          await db.update(schema.user).set({ role: "admin" }).where(eq(schema.user.id, user.id));
+          logger.info(`Invalidating sessions for user ${user.id} after role promotion.`);
+          await auth.api.revokeUserSessions({ body: { userId: user.id } }); // Pass argument as { body: { userId: ... } }
         }
       } catch (error) {
-        logger.error("Error during onUserCreate hook:", { error })
+        logger.error("Error during onUserCreate hook:", { error });
       }
     }
   }
-})
+});

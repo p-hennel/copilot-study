@@ -24,11 +24,11 @@ auth:
     gitlab:
       baseUrl: https://gitlab.devops.de
       type: oidc
-#      tokenUrl: https://gitlab.devops.de/oauth/token
-#      userInfoUrl: https://gitlab.devops.de/oauth/userinfo
-#      authorizationUrl: https://gitlab.devops.de/oauth/authorize
+      #      tokenUrl: https://gitlab.devops.de/oauth/token
+      #      userInfoUrl: https://gitlab.devops.de/oauth/userinfo
+      #      authorizationUrl: https://gitlab.devops.de/oauth/authorize
       discoveryUrl: https://gitlab.devops.de/.well-known/openid-configuration
-#      authorizationUrlParams:
+      #      authorizationUrlParams:
       clientId: adfslkjasdfjasldfkjaflkdsfs
       clientSecret: asdfklfnsldfksdfl
       scopes:

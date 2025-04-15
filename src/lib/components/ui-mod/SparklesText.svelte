@@ -11,13 +11,13 @@
     lifespan: number;
   }
 
-  export let duration: number = 0.9
-  export let lifespanFactor: number = 15
-  export let lifespanMin: number = 6
+  export let duration: number = 0.9;
+  export let lifespanFactor: number = 15;
+  export let lifespanMin: number = 6;
   export let text: string = "Hello World";
   export let colors = {
     first: "#f97316",
-    second: "#f97316",
+    second: "#f97316"
   };
   export let sparklesCount = 10;
 
@@ -31,8 +31,8 @@
   import Sparkle from "./Sparkle.svelte";
 
   let generateStar = () => {
-    let starX = `${Math.random() * 102-5}%`;
-    let starY = `${Math.random() * 110-20}%`;
+    let starX = `${Math.random() * 102 - 5}%`;
+    let starY = `${Math.random() * 110 - 20}%`;
     let color = Math.random() > 0.5 ? colors.first : colors.second;
     let delay = Math.random() * duration * 4;
     let scale = Math.random() * 1.05 + 0.3;
@@ -61,7 +61,7 @@
   const startAnimation = () => {
     initializeStars();
     interval = setInterval(updateStars, 100);
-  }
+  };
   onMount(startAnimation);
   onDestroy(() => clearInterval(interval));
 </script>
@@ -79,7 +79,7 @@
         animate={{
           opacity: [0, 1, 0],
           scale: [0, item.scale, 0],
-          rotate: [75, 120, 150],
+          rotate: [75, 120, 150]
         }}
         transition={{ duration, repeat: Infinity, delay: item.delay }}
         let:motion

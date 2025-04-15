@@ -1,145 +1,150 @@
 <script lang="ts">
-  import type { PageProps } from "./$types"
-  import * as Card from "$lib/components/ui/card/index.js"
-  import { m } from "$paraglide"
-  import UserTable from "$lib/components/UserTable.svelte"
-  import { Skeleton } from "$ui/skeleton"
-  import * as Tabs from "$lib/components/ui/tabs/index.js"
-  import CircleAlert from "@lucide/svelte/icons/circle-alert"
-  import * as Alert from "$lib/components/ui/alert/index.js"
-  import JobsTable from "$lib/components/JobsTable.svelte"
-  import AreasTable from "$lib/components/AreasTable.svelte"
-  import type { Snapshot } from "./$types"
-  import ProfileWidget from "$components/ProfileWidget.svelte"
-  import { onMount } from "svelte"
-  import { Textarea } from "$ui/textarea"
-  import { Button } from "$ui/button"
-  import { toast } from "svelte-sonner"
-  import Time from "svelte-time/Time.svelte"
-  import { invalidate } from "$app/navigation"
-  import { CircleDashed, Pause, Play, PlayCircle, RefreshCw } from "lucide-svelte"
-  import type { CrawlerStatus } from "../../crawler/types"
+  import type { PageProps } from "./$types";
+  import * as Card from "$lib/components/ui/card/index.js";
+  import { m } from "$paraglide";
+  import UserTable from "$lib/components/UserTable.svelte";
+  import { Skeleton } from "$ui/skeleton";
+  import * as Tabs from "$lib/components/ui/tabs/index.js";
+  import CircleAlert from "@lucide/svelte/icons/circle-alert";
+  import * as Alert from "$lib/components/ui/alert/index.js";
+  import JobsTable from "$lib/components/JobsTable.svelte";
+  import AreasTable from "$lib/components/AreasTable.svelte";
+  import type { Snapshot } from "./$types";
+  import ProfileWidget from "$components/ProfileWidget.svelte";
+  import { onMount } from "svelte";
+  import { Textarea } from "$ui/textarea";
+  import { Button } from "$ui/button";
+  import { toast } from "svelte-sonner";
+  import Time from "svelte-time/Time.svelte";
+  import { invalidate } from "$app/navigation";
+  import { CircleDashed, Pause, Play, PlayCircle, RefreshCw } from "lucide-svelte";
+  import type { CrawlerStatus } from "../../crawler/types";
 
-  let { data }: PageProps = $props()
+  let { data }: PageProps = $props();
 
   // --- Settings Tab State ---
-  let settingsYaml = $state("")
-  let isLoadingSettings = $state(false)
-  let settingsError = $state<string | null>(null)
+  let settingsYaml = $state("");
+  let isLoadingSettings = $state(false);
+  let settingsError = $state<string | null>(null);
 
   async function fetchSettings() {
-    isLoadingSettings = true
-    settingsError = null
+    isLoadingSettings = true;
+    settingsError = null;
     try {
-      const response = await fetch("/api/admin/settings")
+      const response = await fetch("/api/admin/settings");
       if (!response.ok) {
-        throw new Error(`Failed to fetch settings: ${response.statusText}`)
+        throw new Error(`Failed to fetch settings: ${response.statusText}`);
       }
-      const result = (await response.json()) as { yaml?: string; error?: string } // Type assertion
+      const result = (await response.json()) as { yaml?: string; error?: string }; // Type assertion
       if (result.yaml) {
-        settingsYaml = result.yaml
+        settingsYaml = result.yaml;
       } else {
-        throw new Error(result.error || "Received invalid response from server")
+        throw new Error(result.error || "Received invalid response from server");
       }
     } catch (error: any) {
-      settingsError = error.message || "An unknown error occurred"
-      toast.error("Failed to load settings", { description: settingsError ?? "" }) // Handle null
+      settingsError = error.message || "An unknown error occurred";
+      toast.error("Failed to load settings", { description: settingsError ?? "" }); // Handle null
     } finally {
-      isLoadingSettings = false
+      isLoadingSettings = false;
     }
   }
 
   async function saveSettings() {
-    isLoadingSettings = true
-    settingsError = null
+    isLoadingSettings = true;
+    settingsError = null;
     try {
       const response = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ yaml: settingsYaml })
-      })
-      const result = (await response.json()) as { success?: boolean; message?: string; error?: string; details?: any } // Type assertion
+      });
+      const result = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+        error?: string;
+        details?: any;
+      }; // Type assertion
       if (!response.ok || !result.success) {
-        throw new Error(result.error || `Failed to save settings: ${response.statusText}`)
+        throw new Error(result.error || `Failed to save settings: ${response.statusText}`);
       }
-      toast.success(result.message || "Settings saved successfully!")
+      toast.success(result.message || "Settings saved successfully!");
       // Optionally re-fetch settings to confirm changes or rely on the API response
       // await fetchSettings(); // Uncomment if re-fetch is desired
     } catch (error: any) {
-      settingsError = error.message || "An unknown error occurred"
-      toast.error("Failed to save settings", { description: settingsError ?? "" }) // Handle null
+      settingsError = error.message || "An unknown error occurred";
+      toast.error("Failed to save settings", { description: settingsError ?? "" }); // Handle null
     } finally {
-      isLoadingSettings = false
+      isLoadingSettings = false;
     }
   }
 
   onMount(() => {
     // Fetch settings initially when the component mounts
     // Alternatively, fetch when the 'settings' tab is selected
-    fetchSettings()
-  })
+    fetchSettings();
+  });
   // --- End Settings Tab State ---
 
-  const randomWidths = ["w-1/2", "w-2/3", "w-3/4", "w-5/6", "w-7/12", "w-10/12", "w-11/12"]
+  const randomWidths = ["w-1/2", "w-2/3", "w-3/4", "w-5/6", "w-7/12", "w-10/12", "w-11/12"];
   const getLoadingClassForColumn = (idx: number) => {
-    if (idx === 0) return "h-4 w-3/4 ml-auto"
-    const randomWidth = randomWidths[Math.floor(Math.random() * randomWidths.length)]
-    return `col-span-${idx === 2 ? "4" : "2"} h-4 ${idx > 4 ? "mx-auto " : ""}${randomWidth}`
-  }
+    if (idx === 0) return "h-4 w-3/4 ml-auto";
+    const randomWidth = randomWidths[Math.floor(Math.random() * randomWidths.length)];
+    return `col-span-${idx === 2 ? "4" : "2"} h-4 ${idx > 4 ? "mx-auto " : ""}${randomWidth}`;
+  };
   const loadingRows = Array.from({ length: 20 }, () =>
     Array.from({ length: 7 }, (_, idx) => getLoadingClassForColumn(idx))
-  )
+  );
 
-  let selectedTab = $state("accounts")
+  let selectedTab = $state("accounts");
 
   export const snapshot: Snapshot<string> = {
     capture: () => selectedTab,
     restore: (value) => (selectedTab = value)
-  }
+  };
   //const processesWithToken = $derived.by(() => Promise.all([data.processes, data.sessiontoken]))
 
-  let loading = $state(true)
+  let loading = $state(true);
   data.crawler.then(() => {
-    loading = false
-  })
+    loading = false;
+  });
 
   function afterCommand() {
-    loading = false
-    invalidate("/api/admin/crawler")
+    loading = false;
+    invalidate("/api/admin/crawler");
   }
 
   async function toggleCrawler(crawler: CrawlerStatus | null) {
-    if (!crawler) crawler = await data.crawler
-    if (!crawler) return
-    if (crawler.state !== "running" && crawler.state !== "paused") return
-    if (loading) return
-    loading = true
+    if (!crawler) crawler = await data.crawler;
+    if (!crawler) return;
+    if (crawler.state !== "running" && crawler.state !== "paused") return;
+    if (loading) return;
+    loading = true;
     if (crawler.state === "running") {
       // Pause the crawler
       fetch("/api/admin/crawler/pause", { method: "POST" })
         .then(afterCommand)
         .catch((error) => console.error("Error pausing crawler:", error))
-        .finally(() => (loading = false))
+        .finally(() => (loading = false));
     } else if (crawler.state === "paused") {
       // Resume the crawler
       fetch("/api/admin/crawler/resume", { method: "POST" })
         .then(afterCommand)
         .catch((error) => console.error("Error resuming crawler:", error))
-        .finally(() => (loading = false))
+        .finally(() => (loading = false));
     }
   }
 
   async function pushCrawler(crawler: CrawlerStatus | null) {
-    if (!crawler) crawler = await data.crawler
-    if (!crawler) return
-    crawler.state = "error"
-    if (!!crawler.currentJobId && crawler.state !== "error") return
-    if (loading) return
-    loading = true
+    if (!crawler) crawler = await data.crawler;
+    if (!crawler) return;
+    crawler.state = "error";
+    if (!!crawler.currentJobId && crawler.state !== "error") return;
+    if (loading) return;
+    loading = true;
     fetch("/api/admin/crawler/push", { method: "POST" })
       .then(afterCommand)
       .catch((error) => console.error("Error pushing crawler:", error))
-      .finally(() => (loading = false))
+      .finally(() => (loading = false));
   }
 </script>
 
@@ -231,7 +236,10 @@
             <Card.Header>
               <Card.Title>Crawler: {crawler.state}</Card.Title>
               <Card.Description>
-                Last heartbeat: <Time timestamp={crawler.lastHeartbeat} format="DD. MMM YYYY, HH:mm:ss" />
+                Last heartbeat: <Time
+                  timestamp={crawler.lastHeartbeat}
+                  format="DD. MMM YYYY, HH:mm:ss"
+                />
               </Card.Description>
             </Card.Header>
             <Card.Content>

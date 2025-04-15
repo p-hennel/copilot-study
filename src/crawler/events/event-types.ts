@@ -1,21 +1,21 @@
 // src/events/event-types.ts
-import { Job, JobType } from '../types/job-types';
+import { Job, JobType } from "../types/job-types";
 
 /**
  * Event types emitted by the crawler
  */
 export enum EventType {
-  JOB_COMPLETED = 'job_completed',
-  JOB_FAILED = 'job_failed',
-  JOB_STARTED = 'job_started',
-  RESOURCE_DISCOVERED = 'resource_discovered',
-  PROGRESS_UPDATE = 'progress_update',
-  PAGE_COMPLETED = 'page_completed',
-  CRAWLER_STARTED = 'crawler_started',
-  CRAWLER_STOPPED = 'crawler_stopped',
-  CRAWLER_PAUSED = 'crawler_paused',
-  CRAWLER_RESUMED = 'crawler_resumed',
-  ERROR = 'error',
+  JOB_COMPLETED = "job_completed",
+  JOB_FAILED = "job_failed",
+  JOB_STARTED = "job_started",
+  RESOURCE_DISCOVERED = "resource_discovered",
+  PROGRESS_UPDATE = "progress_update",
+  PAGE_COMPLETED = "page_completed",
+  CRAWLER_STARTED = "crawler_started",
+  CRAWLER_STOPPED = "crawler_stopped",
+  CRAWLER_PAUSED = "crawler_paused",
+  CRAWLER_RESUMED = "crawler_resumed",
+  ERROR = "error"
 }
 
 /**
@@ -102,7 +102,11 @@ export interface PageCompletedEvent extends CrawlerEvent {
  * Crawler lifecycle events
  */
 export interface CrawlerLifecycleEvent extends CrawlerEvent {
-  type: EventType.CRAWLER_STARTED | EventType.CRAWLER_STOPPED | EventType.CRAWLER_PAUSED | EventType.CRAWLER_RESUMED;
+  type:
+    | EventType.CRAWLER_STARTED
+    | EventType.CRAWLER_STOPPED
+    | EventType.CRAWLER_PAUSED
+    | EventType.CRAWLER_RESUMED;
 }
 
 /**
@@ -117,15 +121,15 @@ export interface ErrorEvent extends CrawlerEvent {
 /**
  * Union type of all event types
  */
-export type CrawlerEventUnion = 
-  JobCompletedEvent |
-  JobFailedEvent |
-  JobStartedEvent |
-  ResourceDiscoveredEvent |
-  ProgressUpdateEvent |
-  PageCompletedEvent |
-  CrawlerLifecycleEvent |
-  ErrorEvent;
+export type CrawlerEventUnion =
+  | JobCompletedEvent
+  | JobFailedEvent
+  | JobStartedEvent
+  | ResourceDiscoveredEvent
+  | ProgressUpdateEvent
+  | PageCompletedEvent
+  | CrawlerLifecycleEvent
+  | ErrorEvent;
 
 /**
  * Event listener type

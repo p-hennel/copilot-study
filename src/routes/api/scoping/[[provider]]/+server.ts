@@ -6,25 +6,23 @@ import { json } from "@sveltejs/kit";
 import { and, eq } from "drizzle-orm";
 
 export async function GET({ params: { provider }, locals }) {
-  if (!locals.session || !locals.user || !locals.user.id)
-    return unauthorizedResponse()
-  
-  if (!provider || provider.length <= 0)
-    return json(undefined, { status: 400 })
+  if (!locals.session || !locals.user || !locals.user.id) return unauthorizedResponse();
 
-  provider = provider.toLowerCase()
-  let _provider: TokenProvider
+  if (!provider || provider.length <= 0) return json(undefined, { status: 400 });
+
+  provider = provider.toLowerCase();
+  let _provider: TokenProvider;
   if (provider === "gitlab" || provider === "gitlab-cloud") {
-    _provider = TokenProvider.gitlabCloud
+    _provider = TokenProvider.gitlabCloud;
   } else if (provider === "gitlab-onprem") {
-    _provider = TokenProvider.gitlab
+    _provider = TokenProvider.gitlab;
   } else if (provider === "jira") {
-    _provider = TokenProvider.jira
+    _provider = TokenProvider.jira;
   } else if (provider === "jiraCloud") {
-    _provider = TokenProvider.jiraCloud
+    _provider = TokenProvider.jiraCloud;
   } else {
-    console.log("unknown provider", provider)
-    return json(undefined, { status: 400 })
+    console.log("unknown provider", provider);
+    return json(undefined, { status: 400 });
   }
 
   const job = await db.query.tokenScopeJob.findFirst({
@@ -39,10 +37,8 @@ export async function GET({ params: { provider }, locals }) {
       projectTotal: true
     },
     where: and(eq(tokenScopeJob.userId, locals.user.id), eq(tokenScopeJob.provider, _provider))
-  })
+  });
 
-  if (!job)
-    return json(undefined, { status: 404 })
-  else
-    return json(job)
+  if (!job) return json(undefined, { status: 404 });
+  else return json(job);
 }

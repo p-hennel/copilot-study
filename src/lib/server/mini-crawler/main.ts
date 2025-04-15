@@ -1,7 +1,7 @@
-import { AreaType, TokenProvider } from "$lib/types"
-import { and, eq } from "drizzle-orm"
-import { db } from "../db"
-import { area, area_authorization, tokenScopeJob, tokenScopeJobArea } from "../db/base-schema"
+import { AreaType, TokenProvider } from "$lib/types";
+import { and, eq } from "drizzle-orm";
+import { db } from "../db";
+import { area, area_authorization, tokenScopeJob, tokenScopeJobArea } from "../db/base-schema";
 import type {
   BatchProcessCallback,
   GraphQLGroupResponse,
@@ -10,42 +10,54 @@ import type {
   ProgressCallback,
   ProgressStatus,
   Project
-} from "./types"
+} from "./types";
 
-export async function updateGroupsAndProjects(items: Group[] | Project[], itemType: "groups" | "projects", userId: string, accountId: string, provider?: TokenProvider) {
-  let type
+export async function updateGroupsAndProjects(
+  items: Group[] | Project[],
+  itemType: "groups" | "projects",
+  userId: string,
+  accountId: string,
+  provider?: TokenProvider
+) {
+  let type;
   if (itemType === "groups") {
-    type = AreaType.group
+    type = AreaType.group;
   } else if (itemType === "projects") {
-    type = AreaType.project
+    type = AreaType.project;
   } else {
-    throw new Error(`Unsupported ITEM TYPE: ${itemType}`)
+    throw new Error(`Unsupported ITEM TYPE: ${itemType}`);
   }
-  const areaIds = items.map(x => x.fullPath)
-  const _items = items.map(x => ({
+  const areaIds = items.map((x) => x.fullPath);
+  const _items = items.map((x) => ({
     name: x.name,
     full_path: x.fullPath,
     gitlab_id: x.id,
     type
-  }))
+  }));
   await db.insert(area).values(_items).onConflictDoNothing();
-  await db.insert(tokenScopeJobArea).values(areaIds.map(x => ({ full_path: x, userId, provider }))).onConflictDoNothing()
-  await db.insert(area_authorization).values(areaIds.map(x => ({ area_id: x, accountId }))).onConflictDoNothing()
+  await db
+    .insert(tokenScopeJobArea)
+    .values(areaIds.map((x) => ({ full_path: x, userId, provider })))
+    .onConflictDoNothing();
+  await db
+    .insert(area_authorization)
+    .values(areaIds.map((x) => ({ area_id: x, accountId })))
+    .onConflictDoNothing();
 }
 
 export async function updateScopingJob(data: ProgressStatus, userId: string) {
-  if (!userId) return
-  let cursor = {}
+  if (!userId) return;
+  let cursor = {};
   if (!data.groupsCursor || data.groupsCursor.length !== 0)
     cursor = {
       groupCursor: data.groupsCursor
-    }
+    };
   if (!data.projectsCursor || data.projectsCursor.length !== 0)
     cursor = {
       groupCursor: data.projectsCursor
-    }
+    };
 
-  if (!data) return
+  if (!data) return;
   await db.update(tokenScopeJob).set({
     isComplete: data.isComplete,
     groupCursor: data.groupsCursor,
@@ -56,7 +68,7 @@ export async function updateScopingJob(data: ProgressStatus, userId: string) {
     projectTotal: data.totalProjects,
     updated_at: new Date(),
     ...cursor
-  })
+  });
 }
 
 /**
@@ -79,41 +91,46 @@ async function fetchAllGroupsAndProjects(
   onBatchProcess: BatchProcessCallback = updateGroupsAndProjects,
   onProgress: ProgressCallback = updateScopingJob
 ): Promise<void> {
-
   const job = await db.query.tokenScopeJob.findFirst({
     where: and(eq(tokenScopeJob.userId, userId), eq(tokenScopeJob.provider, provider))
-  })
+  });
 
-  let groupsCursor = null
-  let projectsCursor = null
+  let groupsCursor = null;
+  let projectsCursor = null;
 
   if (job) {
-    const lastUpdateAgo = Date.now() - job.updated_at.getTime()
-    if (job.isComplete || (lastUpdateAgo < 2 * 60 * 1000)) {
-      return
+    const lastUpdateAgo = Date.now() - job.updated_at.getTime();
+    if (job.isComplete || lastUpdateAgo < 2 * 60 * 1000) {
+      return;
     }
-    await db.update(tokenScopeJob).set({
-      updated_at: new Date()
-    }).where(and(eq(tokenScopeJob.userId, userId), eq(tokenScopeJob.provider, provider)))
-    groupsCursor = job.groupCursor
-    projectsCursor = job.projectCursor
+    await db
+      .update(tokenScopeJob)
+      .set({
+        updated_at: new Date()
+      })
+      .where(and(eq(tokenScopeJob.userId, userId), eq(tokenScopeJob.provider, provider)));
+    groupsCursor = job.groupCursor;
+    projectsCursor = job.projectCursor;
   } else {
-    await db.insert(tokenScopeJob).values({
-      userId,
-      provider,
-      accountId,
-      createdAt: new Date(),
-      updated_at: new Date()
-    }).onConflictDoNothing()
+    await db
+      .insert(tokenScopeJob)
+      .values({
+        userId,
+        provider,
+        accountId,
+        createdAt: new Date(),
+        updated_at: new Date()
+      })
+      .onConflictDoNothing();
   }
 
   // Initialize tracking variables
-  let groupsPage = 0
-  let projectsPage = 0
-  let collectedGroups = 0
-  let collectedProjects = 0
-  let totalGroups = 0
-  let totalProjects = 0
+  let groupsPage = 0;
+  let projectsPage = 0;
+  let collectedGroups = 0;
+  let collectedProjects = 0;
+  let totalGroups = 0;
+  let totalProjects = 0;
 
   // Fetch and process all groups
   const loadingGroups = fetchAllGroups(
@@ -121,10 +138,10 @@ async function fetchAllGroupsAndProjects(
     personalAccessToken,
     groupsCursor,
     (groups, page, hasMoreGroups, cursor: string | null, total: number | null) => {
-      if (!groups || groups.length <= 0) return
-      groupsPage = page
-      collectedGroups += groups?.length ?? 0
-      if (total && total > totalGroups) totalGroups = total
+      if (!groups || groups.length <= 0) return;
+      groupsPage = page;
+      collectedGroups += groups?.length ?? 0;
+      if (total && total > totalGroups) totalGroups = total;
 
       // Update progress after each group page
       onProgress(
@@ -140,14 +157,14 @@ async function fetchAllGroupsAndProjects(
           isComplete: !hasMoreGroups
         },
         userId
-      )
+      );
 
       // Process this batch of groups
-      return onBatchProcess(groups, "groups", userId, accountId, provider)
+      return onBatchProcess(groups, "groups", userId, accountId, provider);
     },
     first,
     _fetch
-  )
+  );
 
   // Fetch and process all projects
   const loadingProjects = fetchAllProjects(
@@ -155,10 +172,10 @@ async function fetchAllGroupsAndProjects(
     personalAccessToken,
     projectsCursor,
     (projects, page, hasMoreProjects, cursor: string | null, total: number | null) => {
-      if (!projects || projects.length <= 0) return
-      projectsPage = page
-      collectedProjects += projects?.length ?? 0
-      if (total && total > totalProjects) totalProjects = total
+      if (!projects || projects.length <= 0) return;
+      projectsPage = page;
+      collectedProjects += projects?.length ?? 0;
+      if (total && total > totalProjects) totalProjects = total;
 
       // Update progress after each project page
       onProgress(
@@ -174,16 +191,16 @@ async function fetchAllGroupsAndProjects(
           isComplete: !hasMoreProjects
         },
         userId
-      )
+      );
 
       // Process this batch of projects
-      return onBatchProcess(projects, "projects", userId, accountId, provider)
+      return onBatchProcess(projects, "projects", userId, accountId, provider);
     },
     first,
     _fetch
-  )
+  );
 
-  await Promise.all([loadingGroups, loadingProjects])
+  await Promise.all([loadingGroups, loadingProjects]);
 
   // We don't need a final progress update here since the last project callback
   // will mark isComplete as true when hasMoreProjects is false
@@ -210,8 +227,8 @@ async function fetchAllGroups(
   first: number | undefined = 40,
   _fetch: typeof fetch = fetch
 ): Promise<void> {
-  let hasNextPage = true
-  let currentPage = 0
+  let hasNextPage = true;
+  let currentPage = 0;
 
   // GraphQL query for groups only
   const query = `
@@ -229,28 +246,35 @@ async function fetchAllGroups(
         }
       }
     }
-  `
+  `;
 
   while (hasNextPage) {
-    currentPage++
+    currentPage++;
 
     // Fetch current page of groups
-    const response: any = await fetchGraphQLPage<GraphQLGroupResponse>(endpoint, token, query, cursor, first, _fetch)
-    if (!response) return callback([], 0, false, null, null)
+    const response: any = await fetchGraphQLPage<GraphQLGroupResponse>(
+      endpoint,
+      token,
+      query,
+      cursor,
+      first,
+      _fetch
+    );
+    if (!response) return callback([], 0, false, null, null);
 
     // Extract groups from response
     // And pagination info
-    const { nodes, pageInfo, ...data } = response.data?.groups ?? { nodes: [], pageInfo: {} }
+    const { nodes, pageInfo, ...data } = response.data?.groups ?? { nodes: [], pageInfo: {} };
 
-    hasNextPage = pageInfo?.hasNextPage ?? false
-    cursor = pageInfo?.endCursor ?? null
-    let total = null
+    hasNextPage = pageInfo?.hasNextPage ?? false;
+    cursor = pageInfo?.endCursor ?? null;
+    let total = null;
     try {
-      total = data?.totalCount ?? data?.count ?? null
-    } catch { ; }
+      total = data?.totalCount ?? data?.count ?? null;
+    } catch {}
 
     // Call the callback with this batch of groups
-    await callback(nodes, currentPage, hasNextPage, cursor, total)
+    await callback(nodes, currentPage, hasNextPage, cursor, total);
   }
 }
 
@@ -271,12 +295,12 @@ async function fetchAllProjects(
     hasMorePages: boolean,
     cursor: string | null,
     total: number | null
-  ) => Promise<void>|undefined,
+  ) => Promise<void> | undefined,
   first: number | undefined = 40,
   _fetch: typeof fetch = fetch
 ): Promise<void> {
-  let hasNextPage = true
-  let currentPage = 0
+  let hasNextPage = true;
+  let currentPage = 0;
 
   // GraphQL query for projects onlys
   const query = `
@@ -295,29 +319,36 @@ async function fetchAllProjects(
         }
       }
     }
-  `
+  `;
 
   while (hasNextPage) {
-    currentPage++
+    currentPage++;
 
     // Fetch current page of projects
-    const response: any = await fetchGraphQLPage<GraphQLProjectResponse>(endpoint, token, query, cursor, first, _fetch)
-    if (!response) return callback([], 0, false, null, null)
+    const response: any = await fetchGraphQLPage<GraphQLProjectResponse>(
+      endpoint,
+      token,
+      query,
+      cursor,
+      first,
+      _fetch
+    );
+    if (!response) return callback([], 0, false, null, null);
 
     // Extract projects from response
     // And pagination info
-    const { nodes, pageInfo, ...data } = response.data?.projects ?? { nodes: [], pageInfo: {} }
-    hasNextPage = pageInfo?.hasNextPage ?? false
-    cursor = pageInfo?.endCursor ?? null
-    let total = null
+    const { nodes, pageInfo, ...data } = response.data?.projects ?? { nodes: [], pageInfo: {} };
+    hasNextPage = pageInfo?.hasNextPage ?? false;
+    cursor = pageInfo?.endCursor ?? null;
+    let total = null;
     try {
-      total = data?.totalCount ?? data?.count ?? null
+      total = data?.totalCount ?? data?.count ?? null;
     } catch {
-      console.log("catch")
+      console.log("catch");
     }
 
     // Call the callback with this batch of projects
-    await callback(nodes, currentPage, hasNextPage, cursor, total)
+    await callback(nodes, currentPage, hasNextPage, cursor, total);
   }
 }
 
@@ -325,7 +356,7 @@ function getHeaders(token: string) {
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`
-  }
+  };
 }
 
 /**
@@ -342,21 +373,23 @@ async function fetchGraphQLPage<T>(
   const response = await _fetch(endpoint, {
     method: "POST",
     headers: getHeaders(token),
-    signal: AbortSignal.timeout(60*1000),
+    signal: AbortSignal.timeout(60 * 1000),
     body: JSON.stringify({
       query,
       variables: { after, first }
     })
-  })
+  });
 
   if (!response.ok) {
-    const errorText = await response.text()
-    console.error(Error(`GraphQL request failed: ${response.status} ${response.statusText}\n${errorText}`))
-    return undefined
+    const errorText = await response.text();
+    console.error(
+      Error(`GraphQL request failed: ${response.status} ${response.statusText}\n${errorText}`)
+    );
+    return undefined;
   }
 
-  const data = (await response.json()) as any
-  return data
+  const data = (await response.json()) as any;
+  return data;
 }
 
 /**
@@ -384,25 +417,27 @@ export async function fetchProjectsForGroup(
         }
       }
     }
-  `
+  `;
 
   const response = await _fetch(endpoint, {
     method: "POST",
     headers: getHeaders(token),
-    signal: AbortSignal.timeout(60*1000),
+    signal: AbortSignal.timeout(60 * 1000),
     body: JSON.stringify({
       query,
       variables: { groupId }
     })
-  })
+  });
 
   if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}\n${errorText}`)
+    const errorText = await response.text();
+    throw new Error(
+      `GraphQL request failed: ${response.status} ${response.statusText}\n${errorText}`
+    );
   }
 
-  const data: any = await response.json()
-  return data.data.group.projects.nodes
+  const data: any = await response.json();
+  return data.data.group.projects.nodes;
 }
 
 // Example usage:
@@ -445,4 +480,4 @@ export async function fetchProjectsForGroup(
 })();
 */
 
-export default fetchAllGroupsAndProjects
+export default fetchAllGroupsAndProjects;

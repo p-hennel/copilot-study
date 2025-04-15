@@ -11,16 +11,22 @@
     class: className
   }: {
     area: {
-      full_path: string
-      name: string | null
+      full_path: string;
+      name: string | null;
       //      gitlab_id: string | null;
-      type: "group" | "project"
-      jobsFinished: number
-      jobsTotal: number
-    }
-    class?: string
-  } = $props()
-  const finished = $derived(area.jobsTotal && area.jobsTotal > 0 && area.jobsFinished && area.jobsFinished > 0 && area.jobsFinished >= area.jobsTotal)
+      type: "group" | "project";
+      jobsFinished: number;
+      jobsTotal: number;
+    };
+    class?: string;
+  } = $props();
+  const finished = $derived(
+    area.jobsTotal &&
+      area.jobsTotal > 0 &&
+      area.jobsFinished &&
+      area.jobsFinished > 0 &&
+      area.jobsFinished >= area.jobsTotal
+  );
 </script>
 
 <Card.Root class={cn("flex w-md flex-col", className)}>
@@ -29,21 +35,26 @@
       {area.name ?? area.full_path}
     </Card.Title>
   </Card.Header>
-  <Card.Content class="grow border-b-1 pt-2 pb-4 flex flex-row flex-wrap place-items-top">
+  <Card.Content class="place-items-top flex grow flex-row flex-wrap border-b-1 pt-2 pb-4">
     <p class="flex-1">{area.full_path}</p>
     <Card.Description>
       {`${area.type.substring(0, 1).toUpperCase()}${area.type.substring(1)}`}
     </Card.Description>
   </Card.Content>
-  <Card.Footer class="flex gap-4 pt-2 place-items-center mt-3 mb-0">
+  <Card.Footer class="mt-3 mb-0 flex place-items-center gap-4 pt-2">
     <div class="flex-1">
       <Tooltip.Provider delayDuration={0}>
         <Tooltip.Root>
           <Tooltip.Trigger class="w-full">
-            <Progress value={area.jobsTotal && area.jobsTotal > 0 ? area.jobsFinished / area.jobsTotal : 0} max={1} />
+            <Progress
+              value={area.jobsTotal && area.jobsTotal > 0 ? area.jobsFinished / area.jobsTotal : 0}
+              max={1}
+            />
           </Tooltip.Trigger>
           <Tooltip.Content>
-            {area.jobsFinished} {area.jobsTotal && area.jobsTotal > 0 ? `of ${area.jobsTotal}`: ""} jobs finished. More jobs might be added.
+            {area.jobsFinished}
+            {area.jobsTotal && area.jobsTotal > 0 ? `of ${area.jobsTotal}` : ""} jobs finished. More
+            jobs might be added.
           </Tooltip.Content>
         </Tooltip.Root>
       </Tooltip.Provider>

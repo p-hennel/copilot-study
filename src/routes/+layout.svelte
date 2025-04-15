@@ -1,5 +1,5 @@
 <script lang="ts">
-  import "../app.css"
+  import "../app.css";
 </script>
 
 <!-- Added relative positioning to the main container -->

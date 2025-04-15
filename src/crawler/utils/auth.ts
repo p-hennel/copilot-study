@@ -1,11 +1,11 @@
 /**
  * Authentication utilities for GitLab API
- * 
+ *
  * @packageDocumentation
  */
 
-import { Gitlab } from '@gitbeaker/node';
-import type { AuthConfig } from '../types/config-types';
+import { Gitlab } from "@gitbeaker/node";
+import type { AuthConfig } from "../types/config-types";
 
 /**
  * Result of a token refresh operation
@@ -15,12 +15,12 @@ export interface TokenRefreshResult {
    * New access token
    */
   accessToken: string;
-  
+
   /**
    * New refresh token (if provided)
    */
   refreshToken?: string;
-  
+
   /**
    * Expiration date for the new token
    */
@@ -43,7 +43,7 @@ interface OAuthTokenResponse {
 
 /**
  * Refresh an OAuth token using the refresh token flow
- * 
+ *
  * @param gitlabUrl - GitLab instance URL
  * @param authConfig - Authentication configuration
  * @returns Token refresh result
@@ -54,49 +54,55 @@ export async function refreshOAuthToken(
   authConfig: AuthConfig
 ): Promise<TokenRefreshResult> {
   if (!authConfig.refreshToken || !authConfig.clientId || !authConfig.clientSecret) {
-    throw new Error('Cannot refresh token: refresh token or client credentials not provided');
+    throw new Error("Cannot refresh token: refresh token or client credentials not provided");
   }
-  
+
   try {
     // Call GitLab OAuth endpoint to refresh token
     const response = await fetch(`${gitlabUrl}/oauth/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        grant_type: 'refresh_token',
+        grant_type: "refresh_token",
         refresh_token: authConfig.refreshToken,
         client_id: authConfig.clientId,
         client_secret: authConfig.clientSecret
       })
     });
-    
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' })) as OAuthTokenResponse;
-      throw new Error(`Token refresh failed: ${errorData.error_description || errorData.error || response.statusText}`);
+      const errorData = (await response
+        .json()
+        .catch(() => ({ error: "Unknown error" }))) as OAuthTokenResponse;
+      throw new Error(
+        `Token refresh failed: ${errorData.error_description || errorData.error || response.statusText}`
+      );
     }
-    
-    const data = await response.json() as OAuthTokenResponse;
-    
+
+    const data = (await response.json()) as OAuthTokenResponse;
+
     // Calculate expiration time
     let expiresAt: Date | undefined = undefined;
     if (data.expires_in) {
       const now = new Date();
       expiresAt = new Date(now.getTime() + data.expires_in * 1000);
     }
-    
+
     return {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       expiresAt
     };
   } catch (error) {
-    throw new Error(`Failed to refresh token: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to refresh token: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
 /**
  * Create a GitLab API client instance
- * 
+ *
  * @param gitlabUrl - GitLab instance URL
  * @param token - OAuth token
  * @returns GitLab API client
@@ -107,7 +113,6 @@ export function createGitLabClient(gitlabUrl: string, token: string): InstanceTy
     token: token
   });
 }
-
 
 /**
  * Checks if a specific AuthConfig's token needs refreshing and performs the refresh if necessary.
@@ -132,7 +137,9 @@ export async function refreshJobToken(
   }
 
   if (tokenNeedsRefresh(authConfig.tokenExpiresAt, bufferMinutes)) {
-    console.log(`Token for job needs refresh (Expires: ${authConfig.tokenExpiresAt}). Refreshing...`); // TODO: Replace console.log with proper logger if available here
+    console.log(
+      `Token for job needs refresh (Expires: ${authConfig.tokenExpiresAt}). Refreshing...`
+    ); // TODO: Replace console.log with proper logger if available here
     try {
       const result = await refreshOAuthToken(gitlabUrl, authConfig);
 
@@ -165,17 +172,17 @@ export async function refreshJobToken(
 
 /**
  * Check if a token needs to be refreshed
- * 
+ *
  * @param expiresAt - Token expiration date
  * @param bufferMinutes - Buffer time in minutes before expiration
  * @returns Whether the token needs refresh
  */
 export function tokenNeedsRefresh(expiresAt?: Date, bufferMinutes: number = 5): boolean {
   if (!expiresAt) return false;
-  
+
   const now = new Date();
   const bufferTime = bufferMinutes * 60 * 1000;
   const refreshTime = new Date(expiresAt.getTime() - bufferTime);
-  
+
   return now >= refreshTime;
 }

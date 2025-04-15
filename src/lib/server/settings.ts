@@ -5,90 +5,96 @@ import path from "node:path";
 import { z } from "zod";
 import { DefaultGitLabScopes } from "./db/base-schema";
 
-const logger = getLogger("settings")
+const logger = getLogger("settings");
 
 const getLocalSettingsFilePath = () => {
-  return getSettingsFileInConfigOrHere(process.cwd())
-}
+  return getSettingsFileInConfigOrHere(process.cwd());
+};
 
 const getSettingsFileInConfigOrHere = (basePath: string) => {
-  let candidate = path.resolve(basePath, "config", "settings.yaml")
+  let candidate = path.resolve(basePath, "config", "settings.yaml");
   if (existsSync(candidate)) {
-    return candidate
+    return candidate;
   } else {
-    candidate = path.resolve(basePath, "settings.yaml")
-    return existsSync(candidate) ? candidate : undefined
+    candidate = path.resolve(basePath, "settings.yaml");
+    return existsSync(candidate) ? candidate : undefined;
   }
-}
+};
 
 const getHomeSettingsFilePath = () => {
-  const base = path.resolve(path.join(process.env.HOME ?? "~", "data"))
-  const candidate = getSettingsFileInConfigOrHere(base)
+  const base = path.resolve(path.join(process.env.HOME ?? "~", "data"));
+  const candidate = getSettingsFileInConfigOrHere(base);
   if (candidate && existsSync(candidate)) {
-    return candidate
+    return candidate;
   } else {
-    return path.join(base, "config", "settings.yaml")
+    return path.join(base, "config", "settings.yaml");
   }
-}
+};
 
 const getHomeDataPath = () => {
-  const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data"))
+  const candidate = path.resolve(path.join(process.env.HOME ?? "~", "data"));
   if (existsSync(candidate)) {
-    return candidate
+    return candidate;
   }
-  const altCandidate = path.resolve(process.cwd(), "data")
+  const altCandidate = path.resolve(process.cwd(), "data");
   if (existsSync(altCandidate)) {
-    return altCandidate
+    return altCandidate;
   } else {
-    return candidate
+    return candidate;
   }
-}
+};
 
 const getSettingsFilePath = () => {
-  const settingsFilePath = Bun.env.SETTINGS_FILE ?? process.env.SETTINGS_FILE
+  const settingsFilePath = Bun.env.SETTINGS_FILE ?? process.env.SETTINGS_FILE;
   if (!!settingsFilePath && settingsFilePath.length > 0 && existsSync(settingsFilePath)) {
-    return settingsFilePath
+    return settingsFilePath;
   }
-  const homeSettingsFilePath = getHomeSettingsFilePath()
+  const homeSettingsFilePath = getHomeSettingsFilePath();
   if (existsSync(homeSettingsFilePath)) {
-    return homeSettingsFilePath
+    return homeSettingsFilePath;
   }
-  return getLocalSettingsFilePath() ?? homeSettingsFilePath
-}
+  return getLocalSettingsFilePath() ?? homeSettingsFilePath;
+};
 
 const getDataRoot = () => {
-  const dataPath = Bun.env.DATA_ROOT ?? process.env.DATA_ROOT
+  const dataPath = Bun.env.DATA_ROOT ?? process.env.DATA_ROOT;
   if (!!dataPath && dataPath.length > 0 && existsSync(dataPath)) {
-    return dataPath
+    return dataPath;
   }
-  return getHomeDataPath()
-}
+  return getHomeDataPath();
+};
 
-const dataRoot = getDataRoot()
+const dataRoot = getDataRoot();
 
 // Define the Zod schema for your settings, including nested or array structures if needed.
 export const settingsSchema = z.object({
   baseUrl: z.string().optional(),
-  email: z.object({
-    encryptionPassword: z.string().nonempty().default("1234567890!?"),
-    defaultReceiver: z.array(z.string().email()).optional().or(z.string().email()).optional(),
-    sender: z.string().email().optional(),
-    subject: z.string().optional().default("AUTOMATED BACKUP ({date})"),
-    smtp: z.object({
-      host: z.string(),
-      port: z.number().gt(0),
-      user: z.string(),
-      pass: z.string(),
-      secure: z.boolean().optional().default(true),
-      authMethod: z.string().optional()
-    }).optional().default({
-      host: "",
-      port: 465,
-      user: "",
-      pass: "",
-      secure: true
+  email: z
+    .object({
+      encryptionPassword: z.string().nonempty().default("1234567890!?"),
+      defaultReceiver: z.array(z.string().email()).optional().or(z.string().email()).optional(),
+      sender: z.string().email().optional(),
+      subject: z.string().optional().default("AUTOMATED BACKUP ({date})"),
+      smtp: z
+        .object({
+          host: z.string(),
+          port: z.number().gt(0),
+          user: z.string(),
+          pass: z.string(),
+          secure: z.boolean().optional().default(true),
+          authMethod: z.string().optional()
+        })
+        .optional()
+        .default({
+          host: "",
+          port: 465,
+          user: "",
+          pass: "",
+          secure: true
+        })
     })
-  }).optional().default({}),
+    .optional()
+    .default({}),
   paths: z
     .object({
       dataRoot: z.string().nonempty().default(dataRoot),
@@ -104,7 +110,17 @@ export const settingsSchema = z.object({
   hashing: z
     .object({
       algorithm: z
-        .enum(["sha256", "sha512", "blake2b512", "md5", "sha1", "sha224", "sha384", "sha512-224", "sha512-256"])
+        .enum([
+          "sha256",
+          "sha512",
+          "blake2b512",
+          "md5",
+          "sha1",
+          "sha224",
+          "sha384",
+          "sha512-224",
+          "sha512-256"
+        ])
         .default("sha256"),
       hmacKey: z.string().nonempty().optional()
     })
@@ -119,7 +135,9 @@ export const settingsSchema = z.object({
       trustedOrigins: z
         .array(z.string().nonempty())
         .default(["http://localhost:3000", "http://localhost:4173", "http://localhost:5173"]),
-      trustedProviders: z.array(z.string().nonempty()).default(["gitlab", "jira", "jiraCloud", "gitlabCloud", "gitlab-cloud", "gitlab-onprem"]),
+      trustedProviders: z
+        .array(z.string().nonempty())
+        .default(["gitlab", "jira", "jiraCloud", "gitlabCloud", "gitlab-cloud", "gitlab-onprem"]),
       allowDifferentEmails: z.boolean().default(true),
       admins: z
         .array(
@@ -142,7 +160,7 @@ export const settingsSchema = z.object({
               tokenUrl: z.string().optional(),
               type: z.enum(["oauth2", "oidc"]).default("oidc"),
               discoveryUrl: z.string().optional(),
-              scopes: z.array(z.string()).default(DefaultGitLabScopes.map(x => `${x}`)),
+              scopes: z.array(z.string()).default(DefaultGitLabScopes.map((x) => `${x}`)),
               redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
             })
             .default({}),
@@ -152,7 +170,9 @@ export const settingsSchema = z.object({
               clientId: z.string().optional(),
               clientSecret: z.string().optional(),
               discoveryUrl: z.string().optional(),
-              scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
+              scopes: z
+                .array(z.string())
+                .default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
               redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
             })
             .default({}),
@@ -162,11 +182,17 @@ export const settingsSchema = z.object({
               clientId: z.string().optional(),
               clientSecret: z.string().optional(),
               authorizationUrl: z.string().default("https://auth.atlassian.com/authorize"),
-              authorizationUrlParams: z.record(z.string()).default({ audience: "api.atlassian.com" }),
+              authorizationUrlParams: z
+                .record(z.string())
+                .default({ audience: "api.atlassian.com" }),
               tokenUrl: z.string().default("https://auth.atlassian.com/oauth/token"),
-              scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
+              scopes: z
+                .array(z.string())
+                .default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
               redirectURI: z.string().default("/api/auth/oauth2/callback/jiracloud"),
-              accessibleResourcesUrl: z.string().default("https://api.atlassian.com/oauth/token/accessible-resources")
+              accessibleResourcesUrl: z
+                .string()
+                .default("https://api.atlassian.com/oauth/token/accessible-resources")
             })
             .default({}),
           jira: z
@@ -175,11 +201,17 @@ export const settingsSchema = z.object({
               clientId: z.string().optional(),
               clientSecret: z.string().optional(),
               authorizationUrl: z.string().default("/authorize"),
-              authorizationUrlParams: z.record(z.string()).default({ audience: "api.atlassian.com" }),
+              authorizationUrlParams: z
+                .record(z.string())
+                .default({ audience: "api.atlassian.com" }),
               tokenUrl: z.string().default("/oauth/token"),
-              scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
+              scopes: z
+                .array(z.string())
+                .default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
               redirectURI: z.string().default("/api/auth/oauth2/callback/jira"),
-              accessibleResourcesUrl: z.string().default("https://api.atlassian.com/oauth/token/accessible-resources")
+              accessibleResourcesUrl: z
+                .string()
+                .default("https://api.atlassian.com/oauth/token/accessible-resources")
             })
             .default({})
         })
@@ -191,47 +223,50 @@ export const settingsSchema = z.object({
   //   enabled: z.boolean(),
   //   values: z.array(z.string()),
   // }),
-})
+});
 
-export type Settings = z.infer<typeof settingsSchema>
+export type Settings = z.infer<typeof settingsSchema>;
 
 export class AppSettings {
   // The singleton instance.
-  private static instance: AppSettings
-  private settings: Settings
-  private readonly filePath: string
-  private isWriting: boolean = false // Flag to prevent reload loop
-  private watcher: FSWatcher | null = null // To hold the watcher instance
+  private static instance: AppSettings;
+  private settings: Settings;
+  private readonly filePath: string;
+  private isWriting: boolean = false; // Flag to prevent reload loop
+  private watcher: FSWatcher | null = null; // To hold the watcher instance
 
   // Private constructor to enforce singleton pattern.
   private constructor(filePath: string) {
-    logger.info("Loading Settings from: {filePath} ({exists})", {filePath, exists: existsSync(filePath)})
-    this.filePath = filePath
+    logger.info("Loading Settings from: {filePath} ({exists})", {
+      filePath,
+      exists: existsSync(filePath)
+    });
+    this.filePath = filePath;
     // Read and parse the YAML file synchronously.
-    const fileContents = readFileSync(this.filePath, "utf8")
-    const data = yaml.load(fileContents)
+    const fileContents = readFileSync(this.filePath, "utf8");
+    const data = yaml.load(fileContents);
     // Validate the parsed data with Zod.
-    this.settings = settingsSchema.parse(data)
+    this.settings = settingsSchema.parse(data);
 
     // Start watching the file
-    this.watchFile()
+    this.watchFile();
   }
 
   // Method to reload settings from file
   private reloadSettings() {
     if (this.isWriting) {
       // console.log("Skipping reload during write operation.");
-      return // Don't reload if we are currently writing
+      return; // Don't reload if we are currently writing
     }
-    console.log(`Settings file ${this.filePath} changed, reloading...`)
+    console.log(`Settings file ${this.filePath} changed, reloading...`);
     try {
-      const fileContents = readFileSync(this.filePath, "utf8")
-      const data = yaml.load(fileContents)
-      this.settings = settingsSchema.parse(data)
-      console.log("Settings reloaded successfully.")
+      const fileContents = readFileSync(this.filePath, "utf8");
+      const data = yaml.load(fileContents);
+      this.settings = settingsSchema.parse(data);
+      console.log("Settings reloaded successfully.");
       // TODO: Optionally notify other parts of the application about the change
     } catch (error) {
-      console.error("Error reloading settings file:", error)
+      console.error("Error reloading settings file:", error);
       // Keep old settings in case of error? Or throw?
     }
   }
@@ -240,25 +275,25 @@ export class AppSettings {
   private watchFile() {
     try {
       // Close existing watcher if any
-      this.watcher?.close()
+      this.watcher?.close();
 
       this.watcher = watch(this.filePath, (eventType) => {
         if (eventType === "change") {
-          this.reloadSettings()
+          this.reloadSettings();
         }
-      })
+      });
 
       this.watcher.on("error", (error) => {
-        console.error(`Error watching settings file ${this.filePath}:`, error)
+        console.error(`Error watching settings file ${this.filePath}:`, error);
         // Attempt to restart watcher?
-        this.watcher = null // Clear watcher reference
+        this.watcher = null; // Clear watcher reference
         // Maybe add a delay before retrying watchFile()
-      })
+      });
 
-      console.log(`Watching settings file: ${this.filePath}`)
+      console.log(`Watching settings file: ${this.filePath}`);
     } catch (error) {
-      console.error(`Failed to start watching settings file ${this.filePath}:`, error)
-      this.watcher = null
+      console.error(`Failed to start watching settings file ${this.filePath}:`, error);
+      this.watcher = null;
     }
   }
 
@@ -271,19 +306,19 @@ export class AppSettings {
    */
   public static getInstance(filePath?: string): AppSettings {
     if (!AppSettings.instance) {
-      if (!filePath || filePath.length <= 0) filePath = getSettingsFilePath()
+      if (!filePath || filePath.length <= 0) filePath = getSettingsFilePath();
       if (!filePath || filePath.length <= 0) {
-        throw new Error("First-time initialization requires a file path.")
+        throw new Error("First-time initialization requires a file path.");
       }
       if (!existsSync(filePath)) {
-        const temp = settingsSchema.parse({})
-        console.log("temp", temp)
-        console.log("yaml", yaml.dump(temp))
-        writeFileSync(filePath, yaml.dump(temp), "utf8")
+        const temp = settingsSchema.parse({});
+        console.log("temp", temp);
+        console.log("yaml", yaml.dump(temp));
+        writeFileSync(filePath, yaml.dump(temp), "utf8");
       }
-      AppSettings.instance = new AppSettings(filePath)
+      AppSettings.instance = new AppSettings(filePath);
     }
-    return AppSettings.instance
+    return AppSettings.instance;
   }
 
   /**
@@ -292,7 +327,7 @@ export class AppSettings {
    * @returns The current settings.
    */
   public getSettings(): Settings {
-    return this.settings
+    return this.settings;
   }
 
   /**
@@ -302,27 +337,27 @@ export class AppSettings {
    * @param newSettings - Partial settings to update.
    */
   public updateSettings(newSettings: Partial<Settings>): void {
-    this.isWriting = true // Set flag before writing
+    this.isWriting = true; // Set flag before writing
     try {
       // Merge the current settings with the new values.
-      const updated = { ...this.settings, ...newSettings }
+      const updated = { ...this.settings, ...newSettings };
       // Validate the updated settings.
-      this.settings = settingsSchema.parse(updated)
+      this.settings = settingsSchema.parse(updated);
       // Convert the updated settings back to YAML format.
-      const yamlStr = yaml.dump(this.settings)
-      writeFileSync(this.filePath, yamlStr, "utf8")
-      console.log("Settings updated and saved.")
+      const yamlStr = yaml.dump(this.settings);
+      writeFileSync(this.filePath, yamlStr, "utf8");
+      console.log("Settings updated and saved.");
     } catch (error) {
-      console.error("Error updating settings:", error)
+      console.error("Error updating settings:", error);
       // Optionally re-throw or handle error
     } finally {
       // Ensure flag is reset even if write fails, after a short delay
       // to allow file system events to settle potentially.
       setTimeout(() => {
-        this.isWriting = false
-      }, 100)
+        this.isWriting = false;
+      }, 100);
     }
   }
 }
 
-export default () => AppSettings.getInstance().getSettings()
+export default () => AppSettings.getInstance().getSettings();

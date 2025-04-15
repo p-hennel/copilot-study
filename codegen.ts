@@ -1,5 +1,5 @@
-import { CodegenConfig } from "@graphql-codegen/cli"
-import { Types as GQLTypes } from "@graphql-codegen/plugin-helpers"
+import { CodegenConfig } from "@graphql-codegen/cli";
+import { Types as GQLTypes } from "@graphql-codegen/plugin-helpers";
 
 const config: CodegenConfig = {
   schema: [
@@ -18,6 +18,6 @@ const config: CodegenConfig = {
       preset: "client"
     }
   }
-}
+};
 
-export default config
+export default config;

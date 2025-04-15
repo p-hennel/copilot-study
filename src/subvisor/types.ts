@@ -1,20 +1,20 @@
 // Process states
 export enum ProcessState {
-  IDLE = 'idle',
-  BUSY = 'busy',
-  STARTING = 'starting',
-  STOPPING = 'stopping',
-  STOPPED = 'stopped',
-  FAILED = 'failed'
+  IDLE = "idle",
+  BUSY = "busy",
+  STARTING = "starting",
+  STOPPING = "stopping",
+  STOPPED = "stopped",
+  FAILED = "failed"
 }
 
 // Message types
 export enum MessageType {
-  MESSAGE = 'message',
-  COMMAND = 'command',
-  HEARTBEAT = 'heartbeat',
-  STATE_CHANGE = 'state_change',
-  SUBSCRIPTION = 'subscription'
+  MESSAGE = "message",
+  COMMAND = "command",
+  HEARTBEAT = "heartbeat",
+  STATE_CHANGE = "state_change",
+  SUBSCRIPTION = "subscription"
 }
 
 // Process stats interface for tracking process state
@@ -29,7 +29,7 @@ export interface ProcessStats {
 }
 
 // Define log level type for TypeScript
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 // Process configuration from settings schema
 export interface ProcessConfig {

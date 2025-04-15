@@ -7,14 +7,14 @@ import {
   getTextFormatter,
   withFilter,
   type LogRecord
-} from "@logtape/logtape"
+} from "@logtape/logtape";
 // Re-export getLogger so other modules can use it via this central logging module
-export { getLogger }
-import { getOpenTelemetrySink } from "@logtape/otel"
-import { getRotatingFileSink } from "@logtape/file"
-import { AsyncLocalStorage } from "node:async_hooks"
-import path from "node:path"
-import { mkdir } from "node:fs/promises"
+export { getLogger };
+import { getOpenTelemetrySink } from "@logtape/otel";
+import { getRotatingFileSink } from "@logtape/file";
+import { AsyncLocalStorage } from "node:async_hooks";
+import path from "node:path";
+import { mkdir } from "node:fs/promises";
 
 export const complexFormatter = (
   formatterFactory: (options?: object) => (record: any) => string,
@@ -26,78 +26,89 @@ export const complexFormatter = (
     timestamp: "date-time",
     value: (v: any) => (typeof v === "object" ? Bun.inspect(v) : v),
     ...formatterFactoryOptions
-  }
+  };
 
-  const formatter = formatterFactory(formatterFactoryOptions)
+  const formatter = formatterFactory(formatterFactoryOptions);
   return (record: LogRecord) => {
     if (!allParams || !record.properties || Object.keys(record.properties).length <= 0) {
-      return formatter(record)
+      return formatter(record);
     }
 
-    const props = record.properties
+    const props = record.properties;
     for (const prop in props) {
       if (record.rawMessage.includes(`{${prop}}`)) {
-        delete props[prop]
+        delete props[prop];
       }
     }
 
-    let message: unknown[] = Object.assign([], record.message)
+    let message: unknown[] = Object.assign([], record.message);
 
     if (Object.keys(props).length > 0) {
-      if (message.length <= 0) message = [`${record.rawMessage}${spacer}`]
-      else if (message.length % 2 !== 0) message.push(`${message.pop()}${spacer}`)
-      else message.push(spacer, spacer)
-      message.push(props)
+      if (message.length <= 0) message = [`${record.rawMessage}${spacer}`];
+      else if (message.length % 2 !== 0) message.push(`${message.pop()}${spacer}`);
+      else message.push(spacer, spacer);
+      message.push(props);
     }
 
     return formatter({
       ...record,
       message
-    } as LogRecord)
-  }
-}
+    } as LogRecord);
+  };
+};
 
 function getLogLevelFromEnv(): "info" | "debug" | "warning" | "error" | "fatal" | undefined {
-  const envKeys = Object.keys(Bun.env)
+  const envKeys = Object.keys(Bun.env);
   if (envKeys.includes("LOG_LEVEL")) {
-    const val = Bun.env["LOG_LEVEL"]
+    const val = Bun.env["LOG_LEVEL"];
     if (val && val.length > 0) {
-      const possibleValues = ["info", "debug", "warning", "error", "fatal"]
-      if (possibleValues.includes(val.toLowerCase())) return val as "info" | "debug" | "warning" | "error" | "fatal"
+      const possibleValues = ["info", "debug", "warning", "error", "fatal"];
+      if (possibleValues.includes(val.toLowerCase()))
+        return val as "info" | "debug" | "warning" | "error" | "fatal";
     }
-    return undefined
+    return undefined;
   }
   if (envKeys.includes("DEBUG")) {
-    const val = Bun.env["BUN"]
-    return val && (val.toLowerCase() === "true" || val.toLowerCase() === "yes" || val.toLowerCase() === "1") ? "debug" : undefined
+    const val = Bun.env["BUN"];
+    return val &&
+      (val.toLowerCase() === "true" || val.toLowerCase() === "yes" || val.toLowerCase() === "1")
+      ? "debug"
+      : undefined;
   }
-  return undefined
+  return undefined;
 }
 
-export async function configureLogging(id: string | string[], basePath: string, verbose?: boolean, debug?: boolean) {
-  if (!Array.isArray(id)) id = [id]
-  if (verbose === undefined) verbose = false
-  if (debug === undefined) debug = false
+export async function configureLogging(
+  id: string | string[],
+  basePath: string,
+  verbose?: boolean,
+  debug?: boolean
+) {
+  if (!Array.isArray(id)) id = [id];
+  if (verbose === undefined) verbose = false;
+  if (debug === undefined) debug = false;
 
-  const plainFormatter = complexFormatter(getTextFormatter)
-  const colorFormatter = complexFormatter(getAnsiColorFormatter, {}, false)
+  const plainFormatter = complexFormatter(getTextFormatter);
+  const colorFormatter = complexFormatter(getAnsiColorFormatter, {}, false);
 
   const logfileOptions = {
     maxSize: 0x400 * 0x400, // 1 MiB
     maxFiles: 3,
     formatter: plainFormatter
-  }
+  };
 
   try {
-    await mkdir("logs", { recursive: true })
-  } catch { /* */ }
+    await mkdir("logs", { recursive: true });
+  } catch {
+    /* */
+  }
 
-  const consoleLogLevel = debug ? "debug" : verbose ? "info" : "warning"
-  const fileLogLevel = debug ? "debug" : "info"
+  const consoleLogLevel = debug ? "debug" : verbose ? "info" : "warning";
+  const fileLogLevel = debug ? "debug" : "info";
 
-  const sinks = ["console", "logFile", "errorFile"]
+  const sinks = ["console", "logFile", "errorFile"];
   if (!debug && !verbose) {
-    sinks.push("otel")
+    sinks.push("otel");
   }
 
   await configure({
@@ -134,17 +145,17 @@ export async function configureLogging(id: string | string[], basePath: string, 
         sinks
       }
     ]
-  })
-  return getLogger(id)
+  });
+  return getLogger(id);
 }
 
 export function getCaller(parent: any) {
-  const error = new Error()
-  Error.captureStackTrace(error, parent)
-  const stack = error.stack?.split("\n")
+  const error = new Error();
+  Error.captureStackTrace(error, parent);
+  const stack = error.stack?.split("\n");
   // Check if stack exists, has enough lines, and the specific line exists before accessing it
   if (stack && stack.length > 1 && stack[1]) {
-    return stack[1].replace(/\s*at\s?/, "")
+    return stack[1].replace(/\s*at\s?/, "");
   }
-  return "unknown" // Return "unknown" if stack is not available, too short, or the line is undefined
+  return "unknown"; // Return "unknown" if stack is not available, too short, or the line is undefined
 }

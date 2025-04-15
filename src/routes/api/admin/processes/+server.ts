@@ -1,25 +1,25 @@
-import { json } from "@sveltejs/kit"
-import { pm2List } from "$lib/server/utils"
-import { getCrawlerStatus } from "../../../../hooks.server" // Import crawler status function
+import { json } from "@sveltejs/kit";
+import { pm2List } from "$lib/server/utils";
+import { getCrawlerStatus } from "../../../../hooks.server"; // Import crawler status function
 
 export async function GET({ locals }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
-    return json({ error: "Unauthorized!" }, { status: 401 })
+    return json({ error: "Unauthorized!" }, { status: 401 });
   }
 
   // Fetch both PM2 process list and crawler status concurrently
   const [pm2Processes, crawlerStatus] = await Promise.all([
     pm2List(),
     getCrawlerStatus() // Call the imported function
-  ])
+  ]);
 
   // Combine the results into a single response object
   const responseData = {
     pm2: pm2Processes ?? [], // Use pm2Processes or default to empty array
     crawler: crawlerStatus // Include the crawler status object (can be null)
-  }
+  };
 
-  return json(responseData)
+  return json(responseData);
 }
 
 /* // Temporarily commented out

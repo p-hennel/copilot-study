@@ -1,15 +1,15 @@
-import { json } from "@sveltejs/kit"
-import { db } from "$lib/server/db"
-import { area, area_authorization, job } from "$lib/server/db/base-schema" // Import schemas
-import { desc, sql } from "drizzle-orm" // Removed unused eq, count
-import { getLogger } from "$lib/logging" // Import logtape helper
+import { json } from "@sveltejs/kit";
+import { db } from "$lib/server/db";
+import { area, area_authorization, job } from "$lib/server/db/base-schema"; // Import schemas
+import { desc, sql } from "drizzle-orm"; // Removed unused eq, count
+import { getLogger } from "$lib/logging"; // Import logtape helper
 
-const logger = getLogger(["backend", "api", "admin", "areas"]) // Logger for this module
+const logger = getLogger(["backend", "api", "admin", "areas"]); // Logger for this module
 
 export async function GET({ request, locals }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     // No need to log unauthorized attempts unless debugging specific issues
-    return json({ error: "Unauthorized!" }, { status: 401 })
+    return json({ error: "Unauthorized!" }, { status: 401 });
   }
 
   try {
@@ -27,14 +27,17 @@ export async function GET({ request, locals }) {
             Number
           ),
         // Subquery or count for jobs
-        countJobs: sql<number>`(SELECT COUNT(*) FROM ${job} WHERE ${job.full_path} = ${area.full_path})`.mapWith(Number)
+        countJobs:
+          sql<number>`(SELECT COUNT(*) FROM ${job} WHERE ${job.full_path} = ${area.full_path})`.mapWith(
+            Number
+          )
       })
       .from(area)
-      .orderBy(desc(area.created_at))
+      .orderBy(desc(area.created_at));
 
-    return json(areasWithCounts)
+    return json(areasWithCounts);
   } catch (error) {
-    console.error("Error fetching areas with counts:", error)
+    console.error("Error fetching areas with counts:", error);
   }
 }
 

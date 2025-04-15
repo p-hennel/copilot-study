@@ -11,7 +11,7 @@
   export let once = false;
   let defaultVariants = {
     hidden: { opacity: 0, y: yOffset, filter: `blur(${blur})` },
-    visible: { opacity: 1, y: 0, filter: `blur(0px)` },
+    visible: { opacity: 1, y: 0, filter: `blur(0px)` }
   };
   let isInView = "hidden";
 
@@ -28,7 +28,7 @@
     transition={{
       delay: 0.04 + delay,
       duration,
-      ease: "easeOut",
+      ease: "easeOut"
     }}
     let:motion
   >

@@ -10,36 +10,39 @@ import type { AreaInformation, AuthorizationScopesResult } from "../utils";
 import { account } from "./auth-schema";
 import { area, job, type JobInsert, type Job as JobType } from "./base-schema";
 
-const logger = getLogger(["backend", "db", "jobFactory"]) // Align category with hooks.server.ts
+const logger = getLogger(["backend", "db", "jobFactory"]); // Align category with hooks.server.ts
 
 export type JobSearchResults = {
-  id: string
-  provider: string
-  token: string | null
-  refreshToken: string | null
-  idToken: string | null
-  status: JobStatus
-  command: CrawlCommand
-  full_path: string | null
-}[]
+  id: string;
+  provider: string;
+  token: string | null;
+  refreshToken: string | null;
+  idToken: string | null;
+  status: JobStatus;
+  command: CrawlCommand;
+  full_path: string | null;
+}[];
 
-export async function jobSearch(userId: string): Promise<JobSearchResults>
-export async function jobSearch(provider: TokenProvider, fullPaths: string[]): Promise<JobSearchResults>
+export async function jobSearch(userId: string): Promise<JobSearchResults>;
+export async function jobSearch(
+  provider: TokenProvider,
+  fullPaths: string[]
+): Promise<JobSearchResults>;
 export async function jobSearch(
   userId_Provider: TokenProvider | string,
   fullPaths?: string[]
 ): Promise<JobSearchResults> {
-  const query = []
+  const query = [];
   if (fullPaths) {
-    userId_Provider = userId_Provider as TokenProvider
-    fullPaths = fullPaths!
-    if (fullPaths.length <= 0) return []
-    query.push(inArray(job.full_path, fullPaths))
-    query.push(eq(account.providerId, userId_Provider))
+    userId_Provider = userId_Provider as TokenProvider;
+    fullPaths = fullPaths!;
+    if (fullPaths.length <= 0) return [];
+    query.push(inArray(job.full_path, fullPaths));
+    query.push(eq(account.providerId, userId_Provider));
   } else {
-    userId_Provider = userId_Provider as string
-    query.push(eq(job.command, CrawlCommand.authorizationScope))
-    query.push(eq(account.userId, userId_Provider))
+    userId_Provider = userId_Provider as string;
+    query.push(eq(job.command, CrawlCommand.authorizationScope));
+    query.push(eq(account.userId, userId_Provider));
   }
 
   const results = await db
@@ -55,8 +58,8 @@ export async function jobSearch(
     })
     .from(job)
     .innerJoin(account, eq(job.accountId, account.id))
-    .where(and(...query))
-  return results
+    .where(and(...query));
+  return results;
 }
 
 const _toJobLookup = (
@@ -75,65 +78,71 @@ const _toJobLookup = (
         }
       }
     }
-  } as ExistingJobLookup
-}
+  } as ExistingJobLookup;
+};
 
 export const toJobLookup = (jobs: JobSearchResults): ExistingJobLookup => {
   return jobs
     .map((x) => _toJobLookup(x.provider as TokenProvider, x.full_path, x.command, x.id, x.status))
-    .reduce(merge, {} as ExistingJobLookup)
-}
+    .reduce(merge, {} as ExistingJobLookup);
+};
 
 const merge = <T extends { [key: string]: any }>(objA: T, objB: T) => {
   for (const keyB in objB) {
-    const valueB = objB[keyB as keyof typeof objB]
-    const keyA = keyB as keyof typeof objA
-    const valueA = keyB in objA ? objA[keyA] : undefined
+    const valueB = objB[keyB as keyof typeof objB];
+    const keyA = keyB as keyof typeof objA;
+    const valueA = keyB in objA ? objA[keyA] : undefined;
     if (!valueA) {
-      objA = Object.assign(objA, { [keyB]: [valueB] as any[] })
+      objA = Object.assign(objA, { [keyB]: [valueB] as any[] });
     } else if (Array.isArray(objA[keyA])) {
-      objA[keyA].push(valueB)
+      objA[keyA].push(valueB);
     } else {
       if (typeof objA[keyA] === "object") {
-        objA[keyA] = merge(objA[keyA], objB[keyB])
+        objA[keyA] = merge(objA[keyA], objB[keyB]);
       } else {
         logger.warn("Attempting strange object merge with keys A ({keyA}) and B ({keyB})", {
           objA,
           objB,
           keyA,
           keyB
-        })
+        });
       }
     }
   }
 
   for (const keyB in objB) {
-    const valueB = objB[keyB as keyof typeof objB]
-    const valueA = keyB in objA ? objA[keyB as keyof typeof objA] : undefined
+    const valueB = objB[keyB as keyof typeof objB];
+    const valueA = keyB in objA ? objA[keyB as keyof typeof objA] : undefined;
     if (!valueA) {
-      objA = Object.assign(objA, { [keyB]: [valueB] as any[] })
+      objA = Object.assign(objA, { [keyB]: [valueB] as any[] });
     } else if (Array.isArray(objA[keyB as keyof typeof objA])) {
-      objA[keyB as keyof typeof objA].push(valueB)
+      objA[keyB as keyof typeof objA].push(valueB);
     } else {
-      const valueA = objA[keyB as keyof typeof objA]
-      objA = Object.assign(objA, { [keyB]: [valueA, valueB] as any[] })
+      const valueA = objA[keyB as keyof typeof objA];
+      objA = Object.assign(objA, { [keyB]: [valueA, valueB] as any[] });
     }
   }
-  return objA
-}
+  return objA;
+};
 
-export const newJob = (accountId: string, command: CrawlCommand, previousJobId?: string, fullPath?: string) => {
+export const newJob = (
+  accountId: string,
+  command: CrawlCommand,
+  previousJobId?: string,
+  fullPath?: string
+) => {
   return {
     accountId: accountId,
     full_path: fullPath,
     command: command,
     spawned_from: previousJobId
-  }
-}
+  };
+};
 
 export const jobFromAreaFactory =
-  (command: CrawlCommand, previousJob: { accountId: string; id: string }) => (area: AreaInformation) =>
-    newJob(previousJob.accountId, command, previousJob.id, area.fullPath)
+  (command: CrawlCommand, previousJob: { accountId: string; id: string }) =>
+  (area: AreaInformation) =>
+    newJob(previousJob.accountId, command, previousJob.id, area.fullPath);
 
 export const prepareNewArea = (provider: TokenProvider, type: AreaType, area: AreaInformation) => {
   return {
@@ -142,23 +151,32 @@ export const prepareNewArea = (provider: TokenProvider, type: AreaType, area: Ar
     gitlab_id: area.id,
     name: area.name,
     type: type
-  }
-}
+  };
+};
 
-export const prepareNewAreas = (provider: TokenProvider, type: AreaType, areas: AreaInformation[]) => {
-  return areas.map((area) => prepareNewArea(provider, type, area))
-}
+export const prepareNewAreas = (
+  provider: TokenProvider,
+  type: AreaType,
+  areas: AreaInformation[]
+) => {
+  return areas.map((area) => prepareNewArea(provider, type, area));
+};
 
-export const ensureAreasExist = async (provider: TokenProvider, scopes: AuthorizationScopesResult) => {
+export const ensureAreasExist = async (
+  provider: TokenProvider,
+  scopes: AuthorizationScopesResult
+) => {
   await db
     .insert(area)
     .values([
       ...prepareNewAreas(provider, AreaType.group, scopes.groups),
       ...prepareNewAreas(provider, AreaType.project, scopes.projects)
     ])
-    .onConflictDoNothing()
-  return [...new Set([...scopes.groups.map((x) => x.fullPath), ...scopes.projects.map((x) => x.fullPath)])]
-}
+    .onConflictDoNothing();
+  return [
+    ...new Set([...scopes.groups.map((x) => x.fullPath), ...scopes.projects.map((x) => x.fullPath)])
+  ];
+};
 
 export const prepareNewJobsAfterScoping = (
   previousJob: { accountId: string; id: string },
@@ -166,42 +184,42 @@ export const prepareNewJobsAfterScoping = (
   projects: AuthorizationScopesResult["projects"]
 ) => {
   // 3: Now we prepare new Jobs...
-  const newJobs = []
+  const newJobs = [];
   // 3.1: For Groups
-  newJobs.push(...groups.map(jobFromAreaFactory(CrawlCommand.group, previousJob)))
+  newJobs.push(...groups.map(jobFromAreaFactory(CrawlCommand.group, previousJob)));
   // 3.2: For Projects
-  newJobs.push(...projects.map(jobFromAreaFactory(CrawlCommand.project, previousJob)))
+  newJobs.push(...projects.map(jobFromAreaFactory(CrawlCommand.project, previousJob)));
   // 3.3: For Users
-  newJobs.push(newJob(previousJob.accountId, CrawlCommand.users, previousJob.id))
+  newJobs.push(newJob(previousJob.accountId, CrawlCommand.users, previousJob.id));
   // 3.4: For Vulnerabilities
-  newJobs.push(newJob(previousJob.accountId, CrawlCommand.vulnerabilities, previousJob.id))
+  newJobs.push(newJob(previousJob.accountId, CrawlCommand.vulnerabilities, previousJob.id));
   // 3.5: For Timelogs
-  newJobs.push(newJob(previousJob.accountId, CrawlCommand.timelogs, previousJob.id))
+  newJobs.push(newJob(previousJob.accountId, CrawlCommand.timelogs, previousJob.id));
 
-  return newJobs
-}
+  return newJobs;
+};
 
 const checkJobOperationResults = (jobs: any[], result: ResultSet, action: "update" | "insert") => {
   // Check that all new Jobs are actually inserted
   if (result.rowsAffected < jobs.length) {
-    handleIncident("Could not {action} Jobs!", jobs, action)
+    handleIncident("Could not {action} Jobs!", jobs, action);
   }
-}
+};
 
 export const handleIncident = (message: string, mainData: any, ...context: any[]) => {
-  const incidentID = ulid()
-  logger.error(`\nINCIDENT {incidentID}\n\t${message}`, { ...context, mainData, incidentID })
+  const incidentID = ulid();
+  logger.error(`\nINCIDENT {incidentID}\n\t${message}`, { ...context, mainData, incidentID });
   Bun.write(
     path.join("logs", "incidents", `${incidentID}.data`),
     `${message}\n${Bun.inspect(context)}\n\n${Bun.inspect(mainData)}`
-  )
-}
+  );
+};
 
 export const ensureJobSync = async (inserts: JobInsert[], resetJobIDs: string[]) => {
   // 5: If we need to insert new jobs
   if (inserts.length > 0) {
     // do so and check the results
-    await db.insert(job).values(inserts).onConflictDoNothing()
+    await db.insert(job).values(inserts).onConflictDoNothing();
     /*
     checkJobOperationResults(
       inserts,
@@ -224,21 +242,21 @@ export const ensureJobSync = async (inserts: JobInsert[], resetJobIDs: string[])
         })
         .where(inArray(job.id, resetJobIDs)),
       "update"
-    )
+    );
   }
-}
+};
 
 export type ExistingJobLookup = {
   [provider in TokenProvider]: {
     // or full_path.command
     [key: string]: {
       [subkey in CrawlCommand]?: {
-        id: string
-        status: JobStatus
-      }
-    }
-  }
-}
+        id: string;
+        status: JobStatus;
+      };
+    };
+  };
+};
 
 export const prepareJobInsertsAndResets = (
   newJobs: any[],
@@ -246,33 +264,39 @@ export const prepareJobInsertsAndResets = (
   provider?: TokenProvider
 ) => {
   // 4: Only to now filter all potential new Jobs into those we need to update...
-  const updateJobs = [] as string[]
+  const updateJobs = [] as string[];
   // 4.1: ... and those we need to insert
   const insertJobs = newJobs.filter((x) => {
-    if (!x.command || x.command.length <= 0 || (!provider && (!x.provider || x.provider.length <= 0))) return false
+    if (
+      !x.command ||
+      x.command.length <= 0 ||
+      (!provider && (!x.provider || x.provider.length <= 0))
+    )
+      return false;
 
     const providerJobs: ExistingJobLookup[keyof ExistingJobLookup] =
-      existingJobs[(x.provider as TokenProvider) ?? provider]
-    const jobsLookup = !!x.full_path && x.full_path.length > 0 ? providerJobs?.[x.full_path] : providerJobs?.[""] // Add optional chaining for providerJobs
-    const jobInfo = jobsLookup?.[x.command as CrawlCommand] // Use optional chaining here
+      existingJobs[(x.provider as TokenProvider) ?? provider];
+    const jobsLookup =
+      !!x.full_path && x.full_path.length > 0 ? providerJobs?.[x.full_path] : providerJobs?.[""]; // Add optional chaining for providerJobs
+    const jobInfo = jobsLookup?.[x.command as CrawlCommand]; // Use optional chaining here
     // If the key does not exist, it's truly a new job and gets inserted
-    if (!jobInfo) return true
+    if (!jobInfo) return true;
 
     // If the key for this job exists and is an actual value...
     // we can only make use if the job has failed before...
     if (jobInfo.status === JobStatus.failed) {
       // ... and reset its status
-      updateJobs.push(jobInfo.id)
+      updateJobs.push(jobInfo.id);
     }
     // anyway, we will discard it as a new job.
-    return false
-  })
+    return false;
+  });
 
   return {
     inserts: insertJobs,
     resets: updateJobs
-  }
-}
+  };
+};
 
 export const spawnNewJobs = async (
   provider: TokenProvider,
@@ -282,23 +306,23 @@ export const spawnNewJobs = async (
   try {
     // 1: insert areas (groups, projects), if they do not already exist
     // 2: To check if jobs already exist (are done or running even?), we collect all path information
-    const fullPaths = await ensureAreasExist(provider, scopes)
+    const fullPaths = await ensureAreasExist(provider, scopes);
 
     // 3: Then we fetch jobs that exist form the database
-    const existingJobs = toJobLookup(await jobSearch(provider, fullPaths))
+    const existingJobs = toJobLookup(await jobSearch(provider, fullPaths));
 
     // 4: Now we need to actually build the potential new jobs
-    const newJobs = prepareNewJobsAfterScoping(currentJob, scopes.groups, scopes.projects)
+    const newJobs = prepareNewJobsAfterScoping(currentJob, scopes.groups, scopes.projects);
 
     // 5: We can now filter those candidates into those to insert, those to reset, and some discarded ones
-    const preparedJobs = prepareJobInsertsAndResets(newJobs, existingJobs)
+    const preparedJobs = prepareJobInsertsAndResets(newJobs, existingJobs);
 
     // 6: Now it is time to sync this to the DB
-    await ensureJobSync(preparedJobs.inserts, preparedJobs.resets)
+    await ensureJobSync(preparedJobs.inserts, preparedJobs.resets);
   } catch (error: any) {
-    handleIncident("Could not create Jobs!", currentJob, error)
+    handleIncident("Could not create Jobs!", currentJob, error);
   }
-}
+};
 
 export const getAccounts = async (userId: string) => {
   return await db
@@ -309,48 +333,48 @@ export const getAccounts = async (userId: string) => {
       refreshToken: account.refreshToken
     })
     .from(account)
-    .where(eq(account.userId, userId))
-}
+    .where(eq(account.userId, userId));
+};
 
 export const isResettable = (obj: Partial<JobType>) => {
-  return !obj.status || obj.status !== JobStatus.failed
-}
+  return !obj.status || obj.status !== JobStatus.failed;
+};
 
 export async function scopingJobsFromAccounts(
   accounts: Awaited<ReturnType<typeof getAccounts>>,
   userId: string
-): Promise<void>
+): Promise<void>;
 export async function scopingJobsFromAccounts(
   accounts: Awaited<ReturnType<typeof getAccounts>>,
   existingJobs: ExistingJobLookup
-): Promise<void>
+): Promise<void>;
 export async function scopingJobsFromAccounts(
   accounts: Awaited<ReturnType<typeof getAccounts>>,
   existingJobs: ExistingJobLookup | string
 ): Promise<void> {
-  if (typeof existingJobs === "string") existingJobs = toJobLookup(await jobSearch(existingJobs))
+  if (typeof existingJobs === "string") existingJobs = toJobLookup(await jobSearch(existingJobs));
   const mappedObjs: (undefined | string | ReturnType<typeof newJob>)[] = accounts.map((x) => {
-    const obj = x.provider in existingJobs ? existingJobs[x.provider as TokenProvider] : undefined
-    if (!!obj && !isResettable(obj)) return undefined
+    const obj = x.provider in existingJobs ? existingJobs[x.provider as TokenProvider] : undefined;
+    if (!!obj && !isResettable(obj)) return undefined;
     else if (!!obj && !!obj.status) {
-      return obj.id as string
+      return obj.id as string;
     } else {
-      return newJob(x.id, CrawlCommand.authorizationScope)
+      return newJob(x.id, CrawlCommand.authorizationScope);
     }
-  })
+  });
   const scopingJobs = mappedObjs.reduce(
     (z, x) => {
-      if (!x) return z
+      if (!x) return z;
       if (typeof x === "string") {
-        z.updates.push(x)
+        z.updates.push(x);
       } else {
-        z.inserts.push(x)
+        z.inserts.push(x);
       }
-      return z
+      return z;
     },
     { inserts: [] as JobInsert[], updates: [] as string[] }
-  )
-  await ensureJobSync(scopingJobs.inserts, scopingJobs.updates)
+  );
+  await ensureJobSync(scopingJobs.inserts, scopingJobs.updates);
 }
 
 export const getAvailableJobs = async (
@@ -358,10 +382,10 @@ export const getAvailableJobs = async (
   cursor: string | null = null,
   perPage: number = 10
 ) => {
-  perPage = Math.min(Math.max(perPage, 0), 50)
-  const filter = [eq(job.status, status)]
+  perPage = Math.min(Math.max(perPage, 0), 50);
+  const filter = [eq(job.status, status)];
   if (cursor) {
-    filter.push(gt(job.id, cursor))
+    filter.push(gt(job.id, cursor));
   }
   const jobResults = (
     await db.query.job.findMany({
@@ -392,20 +416,21 @@ export const getAvailableJobs = async (
     })
   ).map((x) => {
     // Ensure resumeState is parsed correctly (Drizzle might return it as string or buffer depending on driver)
-    let parsedResumeState = null
+    let parsedResumeState = null;
     if (x.resumeState) {
       try {
         // Assuming Drizzle returns a JSON object directly for blob({ mode: 'json' })
-        parsedResumeState = typeof x.resumeState === "string" ? JSON.parse(x.resumeState) : x.resumeState
+        parsedResumeState =
+          typeof x.resumeState === "string" ? JSON.parse(x.resumeState) : x.resumeState;
       } catch (e) {
-        logger.error("Failed to parse resumeState for job {jobId}", { jobId: x.id, error: e })
+        logger.error("Failed to parse resumeState for job {jobId}", { jobId: x.id, error: e });
         // Keep it null if parsing fails
       }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { usingAccount, full_path, command, resumeState, ...rest } = x // Destructure resumeState
-    const { providerId, ...accountRest } = usingAccount
+    const { usingAccount, full_path, command, resumeState, ...rest } = x; // Destructure resumeState
+    const { providerId, ...accountRest } = usingAccount;
     return {
       ...rest,
       command: command as CrawlCommand,
@@ -414,32 +439,35 @@ export const getAvailableJobs = async (
       baseURL: providerToBaseURL(providerId),
       provider: providerId as TokenProvider,
       resumeState: parsedResumeState // Add resumeState to the returned object
-    }
-  })
-  return jobResults
-}
+    };
+  });
+  return jobResults;
+};
 
 /**
  * Updates the resume state for a specific job.
  * @param jobId The ID of the job to update.
  * @param newState The new resume state object (or null to clear it).
  */
-export async function updateJobResumeState(jobId: string, newState: Record<string, any> | null): Promise<ResultSet> {
-  logger.debug("Updating resume state for job {jobId}", { jobId, newState })
+export async function updateJobResumeState(
+  jobId: string,
+  newState: Record<string, any> | null
+): Promise<ResultSet> {
+  logger.debug("Updating resume state for job {jobId}", { jobId, newState });
   try {
     const result = await db
       .update(job)
       .set({
         resumeState: newState // Drizzle should handle JSON serialization for blob({ mode: 'json' })
       })
-      .where(eq(job.id, jobId))
+      .where(eq(job.id, jobId));
     if (result.rowsAffected === 0) {
-      logger.warn("Attempted to update resume state for non-existent job {jobId}", { jobId })
+      logger.warn("Attempted to update resume state for non-existent job {jobId}", { jobId });
     }
-    return result
+    return result;
   } catch (error) {
-    logger.error("Failed to update resume state for job {jobId}: {error}", { jobId, error })
-    throw error // Re-throw the error after logging
+    logger.error("Failed to update resume state for job {jobId}: {error}", { jobId, error });
+    throw error; // Re-throw the error after logging
   }
 }
 
@@ -447,17 +475,17 @@ export const providerToBaseURL = (provider: TokenProvider | string) => {
   switch (provider.toLowerCase()) {
     case "gitlab-onprem":
     case "gitlabonprem":
-      return AppSettings().auth.providers.gitlab.baseUrl
+      return AppSettings().auth.providers.gitlab.baseUrl;
     case "gitlab":
     case "gitlabcloud":
     case "gitlab-cloud":
-      return AppSettings().auth.providers.gitlabCloud.baseUrl
+      return AppSettings().auth.providers.gitlabCloud.baseUrl;
     case "jira":
-      return AppSettings().auth.providers.jira.baseUrl
+      return AppSettings().auth.providers.jira.baseUrl;
     case "jiracloud":
-      return AppSettings().auth.providers.jiracloud.baseUrl
+      return AppSettings().auth.providers.jiracloud.baseUrl;
     default:
-      logger.warn("No base URL found for provider {provider}", { provider })
-      return null
+      logger.warn("No base URL found for provider {provider}", { provider });
+      return null;
   }
-}
+};

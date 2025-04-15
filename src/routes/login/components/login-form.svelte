@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { Button } from "$ui/button/index.js"
-  import * as Card from "$ui/card/index.js"
-  import { signIn } from "$lib/auth-client"
-  import { m } from "$paraglide"
-  import { page } from "$app/stores" // Import page store
-  import { TokenProvider } from "$lib/types"
+  import { Button } from "$ui/button/index.js";
+  import * as Card from "$ui/card/index.js";
+  import { signIn } from "$lib/auth-client";
+  import { m } from "$paraglide";
+  import { page } from "$app/stores"; // Import page store
+  import { TokenProvider } from "$lib/types";
 
-  const currentPath = $page.url.pathname // Get pathname from store
+  const currentPath = $page.url.pathname; // Get pathname from store
 </script>
 
 <Card.Root class="mx-auto max-w-sm min-w-80">

@@ -6,28 +6,32 @@ import type { TokenProvider } from "./types";
 //import type { getAvailableJobs } from "./server/db/jobFactory";
 
 export interface ProviderCallback<T> {
-  gitlabCloud?: () => T
-  gitlabOnPrem?: () => T
-  jiraCloud?: () => T
-  jiraOnPrem?: () => T
+  gitlabCloud?: () => T;
+  gitlabOnPrem?: () => T;
+  jiraCloud?: () => T;
+  jiraOnPrem?: () => T;
 }
-export function forProvider<T = void>(provider: TokenProvider | string, cbs: ProviderCallback<T>, logger = getLogger()): T|undefined {
+export function forProvider<T = void>(
+  provider: TokenProvider | string,
+  cbs: ProviderCallback<T>,
+  logger = getLogger()
+): T | undefined {
   switch (provider.toLowerCase()) {
     case "gitlab-onprem":
     case "gitlabonprem":
-      return cbs.gitlabOnPrem?.()
+      return cbs.gitlabOnPrem?.();
     case "gitlab":
     case "gitlabcloud":
     case "gitlab-cloud":
-      return cbs.gitlabCloud?.()
+      return cbs.gitlabCloud?.();
     case "jiralocal":
     case "jira":
-      return cbs.jiraOnPrem?.()
+      return cbs.jiraOnPrem?.();
     case "jiracloud":
-      return cbs.jiraCloud?.()
+      return cbs.jiraCloud?.();
     default:
-      logger.warn("No base URL found for provider {provider}", { provider })
-      return undefined
+      logger.warn("No base URL found for provider {provider}", { provider });
+      return undefined;
   }
 }
 
@@ -70,5 +74,3 @@ export const dynamicHandleDownloadAsCSV = <T extends CSVbaseType>(
 ) => {
   return () => downloadAsCSV<T>(fn(), config);
 };
-
-

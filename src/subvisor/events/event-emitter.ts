@@ -1,23 +1,23 @@
 // src/events/event-emitter.ts
-import { EventEmitter as NodeEventEmitter } from 'events';
-import { getLogger } from '@logtape/logtape';
+import { EventEmitter as NodeEventEmitter } from "events";
+import { getLogger } from "@logtape/logtape";
 
 /**
  * Enhanced EventEmitter with logging capabilities
  */
 export class EventEmitter extends NodeEventEmitter {
-  protected logger = getLogger(['event-emitter']);
+  protected logger = getLogger(["event-emitter"]);
 
   /**
    * Override emit to add logging
    */
   emit(eventName: string | symbol, ...args: any[]): boolean {
     // Log the event emission
-    if (typeof eventName === 'string') {
+    if (typeof eventName === "string") {
       // Fix: Properly structure the second argument as a Record<string, unknown>
       this.logger.debug(`Event emitted: ${eventName}`, { args: args });
     }
-    
+
     return super.emit(eventName, ...args);
   }
 
@@ -26,11 +26,13 @@ export class EventEmitter extends NodeEventEmitter {
    */
   on(eventName: string | symbol, listener: (...args: any[]) => void): this {
     // Log when a listener is added
-    if (typeof eventName === 'string') {
+    if (typeof eventName === "string") {
       // Fix: Properly structure the second argument as a Record<string, unknown>
-      this.logger.info(`Listener added for event: ${eventName}`, { listener: listener.name || 'anonymous' });
+      this.logger.info(`Listener added for event: ${eventName}`, {
+        listener: listener.name || "anonymous"
+      });
     }
-    
+
     return super.on(eventName, listener);
   }
 
@@ -39,11 +41,13 @@ export class EventEmitter extends NodeEventEmitter {
    */
   once(eventName: string | symbol, listener: (...args: any[]) => void): this {
     // Log when a one-time listener is added
-    if (typeof eventName === 'string') {
+    if (typeof eventName === "string") {
       // Fix: Properly structure the second argument as a Record<string, unknown>
-      this.logger.info(`One-time listener added for event: ${eventName}`, { listener: listener.name || 'anonymous' });
+      this.logger.info(`One-time listener added for event: ${eventName}`, {
+        listener: listener.name || "anonymous"
+      });
     }
-    
+
     return super.once(eventName, listener);
   }
 
@@ -52,11 +56,13 @@ export class EventEmitter extends NodeEventEmitter {
    */
   removeListener(eventName: string | symbol, listener: (...args: any[]) => void): this {
     // Log when a listener is removed
-    if (typeof eventName === 'string') {
+    if (typeof eventName === "string") {
       // Fix: Properly structure the second argument as a Record<string, unknown>
-      this.logger.info(`Listener removed for event: ${eventName}`, { listener: listener.name || 'anonymous' });
+      this.logger.info(`Listener removed for event: ${eventName}`, {
+        listener: listener.name || "anonymous"
+      });
     }
-    
+
     return super.removeListener(eventName, listener);
   }
 }

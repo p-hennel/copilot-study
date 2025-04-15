@@ -1,11 +1,11 @@
 # Example supervisor.yaml
 socketPath: /tmp/supervisor.sock
-heartbeatInterval: 5000  # milliseconds
+heartbeatInterval: 5000 # milliseconds
 
 # Logging configuration
-logLevel: info  # debug, info, warn, error
-logFile: './logs/supervisor.log'
-logPrefix: 'supervisor'
+logLevel: info # debug, info, warn, error
+logFile: "./logs/supervisor.log"
+logPrefix: "supervisor"
 
 # Processes configuration
 
@@ -28,7 +28,7 @@ processes:
       - --port=3000
     env:
       NODE_ENV: production
-  
+
   - id: scheduler
     script: ./processes/scheduler.ts
     autoRestart: true

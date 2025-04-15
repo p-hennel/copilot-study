@@ -1,7 +1,7 @@
 // src/registry/cursor-registry.ts
-import { getLogger } from '@logtape/logtape';
-import { type CrawlerEventEmitter, EventType, type PaginationCursor } from '../events/event-types';
-import { JobType } from '../types/job-types';
+import { getLogger } from "@logtape/logtape";
+import { type CrawlerEventEmitter, EventType, type PaginationCursor } from "../events/event-types";
+import { JobType } from "../types/job-types";
 
 // Initialize logger
 const logger = getLogger(["crawlib", "cursor-registry"]);
@@ -35,7 +35,7 @@ export class CursorRegistry {
     nextCursor?: string
   ): PaginationCursor {
     const key = this.getResourceKey(resourceType, resourceId);
-    
+
     const cursor: PaginationCursor = {
       resourceType,
       resourceId,
@@ -44,9 +44,9 @@ export class CursorRegistry {
       hasNextPage,
       lastUpdated: new Date()
     };
-    
+
     this.cursors.set(key, cursor);
-    
+
     // Emit page completed event
     this.eventEmitter.emit({
       type: EventType.PAGE_COMPLETED,
@@ -56,9 +56,9 @@ export class CursorRegistry {
       page,
       hasNextPage,
       nextCursor,
-      itemCount: 0  // This will be set by the caller if needed
+      itemCount: 0 // This will be set by the caller if needed
     });
-    
+
     return cursor;
   }
 
@@ -97,21 +97,25 @@ export class CursorRegistry {
   /**
    * Mark resource as discovered
    */
-  markResourceDiscovered(resourceType: string, resourceId: string | number, parentInfo?: {
-    parentResourceType: string;
-    parentResourceId: string | number;
-    resourcePath?: string;
-  }): void {
+  markResourceDiscovered(
+    resourceType: string,
+    resourceId: string | number,
+    parentInfo?: {
+      parentResourceType: string;
+      parentResourceId: string | number;
+      resourcePath?: string;
+    }
+  ): void {
     if (!this.discoveredResources.has(resourceType)) {
       this.discoveredResources.set(resourceType, new Set());
     }
-    
+
     const resourceSet = this.discoveredResources.get(resourceType)!;
-    
+
     // Only emit event if this is a new discovery
     if (!resourceSet.has(resourceId)) {
       resourceSet.add(resourceId);
-      
+
       // Emit resource discovered event
       this.eventEmitter.emit({
         type: EventType.RESOURCE_DISCOVERED,
@@ -132,7 +136,7 @@ export class CursorRegistry {
     if (!this.discoveredResources.has(resourceType)) {
       return false;
     }
-    
+
     return this.discoveredResources.get(resourceType)!.has(resourceId);
   }
 
@@ -143,7 +147,7 @@ export class CursorRegistry {
     if (!this.discoveredResources.has(resourceType)) {
       return [];
     }
-    
+
     return Array.from(this.discoveredResources.get(resourceType)!);
   }
 
@@ -158,14 +162,14 @@ export class CursorRegistry {
    * Get pagination cursors for a specific resource type
    */
   getCursorsByType(resourceType: string): PaginationCursor[] {
-    return this.getAllCursors().filter(cursor => cursor.resourceType === resourceType);
+    return this.getAllCursors().filter((cursor) => cursor.resourceType === resourceType);
   }
 
   /**
    * Get pending cursors (resources with more pages)
    */
   getPendingCursors(): PaginationCursor[] {
-    return this.getAllCursors().filter(cursor => cursor.hasNextPage);
+    return this.getAllCursors().filter((cursor) => cursor.hasNextPage);
   }
 
   /**
@@ -173,27 +177,27 @@ export class CursorRegistry {
    */
   getCursorCounts(): Record<string, { total: number; pending: number }> {
     const counts: Record<string, { total: number; pending: number }> = {};
-    
+
     // Initialize counts for all job types
-    Object.values(JobType).forEach(type => {
+    Object.values(JobType).forEach((type) => {
       counts[type] = { total: 0, pending: 0 };
     });
-    
+
     // Count cursors by resource type
-    this.getAllCursors().forEach(cursor => {
+    this.getAllCursors().forEach((cursor) => {
       const type = cursor.resourceType;
-      
+
       if (!counts[type]) {
         counts[type] = { total: 0, pending: 0 };
       }
-      
+
       counts[type].total++;
-      
+
       if (cursor.hasNextPage) {
         counts[type].pending++;
       }
     });
-    
+
     return counts;
   }
 
@@ -205,11 +209,11 @@ export class CursorRegistry {
     discoveredResources: Record<string, (string | number)[]>;
   } {
     const discoveredResourcesExport: Record<string, (string | number)[]> = {};
-    
+
     this.discoveredResources.forEach((resources, type) => {
       discoveredResourcesExport[type] = Array.from(resources);
     });
-    
+
     return {
       cursors: this.getAllCursors(),
       discoveredResources: discoveredResourcesExport
@@ -224,17 +228,19 @@ export class CursorRegistry {
     discoveredResources: Record<string, (string | number)[]>;
   }): void {
     // Import cursors
-    state.cursors.forEach(cursor => {
+    state.cursors.forEach((cursor) => {
       const key = this.getResourceKey(cursor.resourceType, cursor.resourceId);
       this.cursors.set(key, cursor);
     });
-    
+
     // Import discovered resources
     Object.entries(state.discoveredResources).forEach(([type, resources]) => {
       const resourceSet = new Set<string | number>(resources);
       this.discoveredResources.set(type, resourceSet);
     });
-    
-    logger.info(`Imported state: ${state.cursors.length} cursors, ${Object.keys(state.discoveredResources).length} resource types`);
+
+    logger.info(
+      `Imported state: ${state.cursors.length} cursors, ${Object.keys(state.discoveredResources).length} resource types`
+    );
   }
 }

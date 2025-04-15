@@ -1,17 +1,17 @@
-import { json } from "@sveltejs/kit"
-import { startJob } from "../../../../../hooks.server"
-import { db } from "$lib/server/db"
-import { normalizeURL } from "$lib/utils"
-import { JobStatus } from "$lib/types"
-import { CrawlCommand } from "$lib/types"
-import AppSettings from "$lib/server/settings"
-import { job } from "$lib/server/db/base-schema"
-import { account } from "$lib/server/db/auth-schema"
-import { asc, eq, inArray } from "drizzle-orm"
+import { json } from "@sveltejs/kit";
+import { startJob } from "../../../../../hooks.server";
+import { db } from "$lib/server/db";
+import { normalizeURL } from "$lib/utils";
+import { JobStatus } from "$lib/types";
+import { CrawlCommand } from "$lib/types";
+import AppSettings from "$lib/server/settings";
+import { job } from "$lib/server/db/base-schema";
+import { account } from "$lib/server/db/auth-schema";
+import { asc, eq, inArray } from "drizzle-orm";
 
 export async function POST({ locals }: { locals: App.Locals }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
-    return json({ error: "Unauthorized!" }, { status: 401 })
+    return json({ error: "Unauthorized!" }, { status: 401 });
   }
   /*
   const job = await db.query.job.findFirst({
@@ -38,17 +38,17 @@ export async function POST({ locals }: { locals: App.Locals }) {
       .innerJoin(account, eq(job.accountId, account.id))
       .where(inArray(job.status, [JobStatus.queued, JobStatus.failed]))
       .orderBy(asc(job.created_at))
-  ).at(0)
+  ).at(0);
 
   if (!jobToWorkOn) {
-    return json({ error: "No job found!" }, { status: 404 })
+    return json({ error: "No job found!" }, { status: 404 });
   }
 
-  let apiUrl = normalizeURL(AppSettings().auth.providers.gitlab.baseUrl)
+  let apiUrl = normalizeURL(AppSettings().auth.providers.gitlab.baseUrl);
   if (jobToWorkOn.command === CrawlCommand.commits) {
-    apiUrl += "/api/v4"
+    apiUrl += "/api/v4";
   } else {
-    apiUrl += "/api/graphql"
+    apiUrl += "/api/graphql";
   }
 
   await startJob({
@@ -57,32 +57,32 @@ export async function POST({ locals }: { locals: App.Locals }) {
     gitlabToken: jobToWorkOn.token ?? "",
     dataTypes: commandToDataTypes(jobToWorkOn.command),
     jobId: jobToWorkOn.id
-  })
+  });
 
-  return json({ success: true })
+  return json({ success: true });
 }
 
 const commandToDataTypes = (command: CrawlCommand): string[] => {
   switch (command) {
     case CrawlCommand.commits:
-      return ["commits"]
+      return ["commits"];
     case CrawlCommand.workItems:
     case CrawlCommand.issues:
-      return ["issues"]
+      return ["issues"];
     case CrawlCommand.mergeRequests:
-      return ["mergeRequests"]
+      return ["mergeRequests"];
     case CrawlCommand.pipelines:
-      return ["pipelines"]
+      return ["pipelines"];
     case CrawlCommand.group:
-      return ["pulls", "milestones", "groupSubgroups", "groupProjects"]
+      return ["pulls", "milestones", "groupSubgroups", "groupProjects"];
     case CrawlCommand.groupProjects:
-      return ["groupProjects", "branches"]
+      return ["groupProjects", "branches"];
     case CrawlCommand.groupSubgroups:
-      return ["snippets"]
+      return ["snippets"];
     case CrawlCommand.timelogs:
-      return ["timelogs"]
+      return ["timelogs"];
     case CrawlCommand.users:
-      return [""]
+      return [""];
     case CrawlCommand.project:
       return [
         "branches",
@@ -92,12 +92,12 @@ const commandToDataTypes = (command: CrawlCommand): string[] => {
         "pipelines",
         "releases",
         "milestones"
-      ]
+      ];
     case CrawlCommand.vulnerabilities:
-      return ["vulnerabilities"]
+      return ["vulnerabilities"];
     case CrawlCommand.authorizationScope:
-      return ["memberships", "labels"]
+      return ["memberships", "labels"];
     default:
-      return [] as string[]
+      return [] as string[];
   }
-}
+};

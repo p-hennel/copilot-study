@@ -25,8 +25,7 @@
       "bg-background pointer-events-none block size-5 rounded-full shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
       "relative z-10"
     )}
-  >
-  </SwitchPrimitive.Thumb>
+  ></SwitchPrimitive.Thumb>
   {#if !checked}
     {@render children?.()}
   {/if}

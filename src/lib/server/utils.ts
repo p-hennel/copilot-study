@@ -1,6 +1,6 @@
-import path from "node:path"
-import { json } from "@sveltejs/kit" // Keep json import
-import pm2, { type Proc } from "@socket.io/pm2"
+import path from "node:path";
+import { json } from "@sveltejs/kit"; // Keep json import
+import pm2, { type Proc } from "@socket.io/pm2";
 // Removed incorrect import attempts for App
 
 export enum CollectionTypes {
@@ -21,80 +21,93 @@ export enum CollectionTypes {
   Label = "labels" // Added Label
 }
 
-export async function getMD(slug: string, depends: (dep: string) => void, locals: App.Locals): Promise<string> {
-  depends("paraglide:lang")
-  const selectedLanguage = locals.locale ?? "en"
-  const content = await import(`$content/${selectedLanguage}/${slug}.md?raw`)
-  return content.default as string
+export async function getMD(
+  slug: string,
+  depends: (dep: string) => void,
+  locals: App.Locals
+): Promise<string> {
+  depends("paraglide:lang");
+  const selectedLanguage = locals.locale ?? "en";
+  const content = await import(`$content/${selectedLanguage}/${slug}.md?raw`);
+  return content.default as string;
 }
 
 export async function isAdmin(locals: App.Locals | undefined) {
-  return locals && locals.session && locals.user && locals.user.role === "admin"
+  return locals && locals.session && locals.user && locals.user.role === "admin";
 }
 
 export async function unauthorizedResponse() {
-  return json({ error: "unauthorized" }, { status: 401 })
+  return json({ error: "unauthorized" }, { status: 401 });
 }
 
 export type AreaInformation = {
-  id: string
-  fullPath: string
-  name?: string
-}
+  id: string;
+  fullPath: string;
+  name?: string;
+};
 
 export type AuthorizationScopesResult = {
-  groups: AreaInformation[]
-  projects: AreaInformation[]
-}
+  groups: AreaInformation[];
+  projects: AreaInformation[];
+};
 
 export const ensureUserIsAuthenticated = (locals: App.Locals) => {
-  return !!locals.session && !!locals.user && !!locals.user.id && !!locals.user.email && locals.user.email.length > 0
-}
+  return (
+    !!locals.session &&
+    !!locals.user &&
+    !!locals.user.id &&
+    !!locals.user.email &&
+    locals.user.email.length > 0
+  );
+};
 
 const pm2Connect = async (): Promise<Error | undefined> => {
   return new Promise((resolve, reject) => {
     pm2.connect((err: Error) => {
-      if (err) reject(err)
-      else resolve(undefined)
-    })
-  })
-}
+      if (err) reject(err);
+      else resolve(undefined);
+    });
+  });
+};
 export const pm2List = (): Promise<pm2.ProcessDescription[] | undefined> => {
   // Remove async from signature
   return new Promise((resolve, reject) => {
     // Remove async from executor
     // IIAFE to handle async operations
-    ;(async () => {
+    (async () => {
       try {
-        const err = await pm2Connect()
-        if (err) return reject(err) // Use return reject
+        const err = await pm2Connect();
+        if (err) return reject(err); // Use return reject
         pm2.list((listErr: Error, procDesc: pm2.ProcessDescription[]) => {
-          if (listErr) return reject(listErr) // Use return reject
-          resolve(procDesc)
-        })
+          if (listErr) return reject(listErr); // Use return reject
+          resolve(procDesc);
+        });
       } catch (e) {
-        reject(e) // Catch potential errors from pm2Connect
+        reject(e); // Catch potential errors from pm2Connect
       }
-    })() // Immediately invoke
-  })
-}
+    })(); // Immediately invoke
+  });
+};
 
-export async function pm2Start(process: string | number | undefined, startOptions?: pm2.StartOptions) {
-  return pm2Handle("start", process, startOptions)
+export async function pm2Start(
+  process: string | number | undefined,
+  startOptions?: pm2.StartOptions
+) {
+  return pm2Handle("start", process, startOptions);
 }
 
 export async function pm2Stop(process: string | number | "all") {
-  return pm2Handle("stop", process)
+  return pm2Handle("stop", process);
 }
 
 export async function pm2Restart(process: string | number | "all") {
-  return pm2Handle("restart", process)
+  return pm2Handle("restart", process);
 }
 
-type PM2ErrCB = (err: Error, proc: Proc) => void
-type PM2StartFN = (options: pm2.StartOptions, errback: PM2ErrCB) => void
-type PM2ActionFN = (process: string | number, errback: PM2ErrCB) => void
-type PM2Function = PM2StartFN | PM2ActionFN
+type PM2ErrCB = (err: Error, proc: Proc) => void;
+type PM2StartFN = (options: pm2.StartOptions, errback: PM2ErrCB) => void;
+type PM2ActionFN = (process: string | number, errback: PM2ErrCB) => void;
+type PM2Function = PM2StartFN | PM2ActionFN;
 
 async function pm2Handle(
   action: "start" | "stop" | "restart" = "restart",
@@ -103,32 +116,32 @@ async function pm2Handle(
 ): Promise<pm2.Proc | undefined> {
   return new Promise((resolve, reject) => {
     // Remove async
-    ;(async () => {
+    (async () => {
       // IIAFE
       try {
-        const err = await pm2Connect()
-        if (err) return reject(err)
-        let fnAction: PM2Function // Keep Function type for now, complex to replace
-        if (action === "start") fnAction = pm2.start.bind(pm2)
-        else if (action === "stop") fnAction = pm2.stop.bind(pm2)
-        else if (action === "restart") fnAction = pm2.restart.bind(pm2)
-        else return reject()
+        const err = await pm2Connect();
+        if (err) return reject(err);
+        let fnAction: PM2Function; // Keep Function type for now, complex to replace
+        if (action === "start") fnAction = pm2.start.bind(pm2);
+        else if (action === "stop") fnAction = pm2.stop.bind(pm2);
+        else if (action === "restart") fnAction = pm2.restart.bind(pm2);
+        else return reject();
 
         const cb = (err: Error, proc: pm2.Proc) => {
-          if (err) return reject(err)
-          resolve(proc)
-        }
+          if (err) return reject(err);
+          resolve(proc);
+        };
 
         if (action === "start" && !!startOptions) {
-          ;(fnAction as PM2StartFN)(startOptions, cb)
+          (fnAction as PM2StartFN)(startOptions, cb);
         } else {
-          ;(fnAction as PM2ActionFN)(process, cb)
+          (fnAction as PM2ActionFN)(process, cb);
         }
       } catch (e) {
-        reject(e)
+        reject(e);
       }
-    })() // Invoke IIAFE
-  })
+    })(); // Invoke IIAFE
+  });
 }
 
 export const pm2Send = async <S extends object = object, R extends object = object>(
@@ -137,40 +150,40 @@ export const pm2Send = async <S extends object = object, R extends object = obje
 ): Promise<R | undefined> => {
   return new Promise((resolve, reject) => {
     // Remove async
-    ;(async () => {
+    (async () => {
       // IIAFE
       try {
-        const err = await pm2Connect()
-        if (err) return reject(err)
+        const err = await pm2Connect();
+        if (err) return reject(err);
         // Assuming types for err/result are fixed by @types/pm2
         pm2.sendDataToProcessId(procId, msg, (sendErr, result) => {
-          if (sendErr) return reject(sendErr)
-          resolve(result as R)
-        })
+          if (sendErr) return reject(sendErr);
+          resolve(result as R);
+        });
       } catch (e) {
-        reject(e)
+        reject(e);
       }
-    })() // Invoke IIAFE
-  })
-}
+    })(); // Invoke IIAFE
+  });
+};
 
-import { and, count, eq } from "drizzle-orm"
-import { account, apikey, area_authorization, job } from "./db/schema"
-import { db } from "./db"
-import { auth } from "$lib/auth"
-import { JobStatus } from "$lib/types"
-import AppSettings from "./settings"
+import { and, count, eq } from "drizzle-orm";
+import { account, apikey, area_authorization, job } from "./db/schema";
+import { db } from "./db";
+import { auth } from "$lib/auth";
+import { JobStatus } from "$lib/types";
+import AppSettings from "./settings";
 
 export const getApiToken = async (userId: string): Promise<string | undefined> => {
-  const oldKey = await db.select().from(apikey).where(eq(apikey.userId, userId)).limit(1)
-  if (oldKey.length > 0 && !!oldKey.at(0)) return oldKey.at(0)?.key
+  const oldKey = await db.select().from(apikey).where(eq(apikey.userId, userId)).limit(1);
+  if (oldKey.length > 0 && !!oldKey.at(0)) return oldKey.at(0)?.key;
   else {
     // Add type assertion to inform TS about the expected method
     const api = auth.api as typeof auth.api & {
       createApiKey: (args: {
-        body: { userId: string; enabled: boolean; rateLimitEnabled: boolean; permissions: any }
-      }) => Promise<{ key: string }>
-    }
+        body: { userId: string; enabled: boolean; rateLimitEnabled: boolean; permissions: any };
+      }) => Promise<{ key: string }>;
+    };
     const newKey = await api.createApiKey({
       body: {
         userId: userId,
@@ -181,13 +194,13 @@ export const getApiToken = async (userId: string): Promise<string | undefined> =
           branch: ["read", "write"]
         }
       }
-    })
-    return newKey.key
+    });
+    return newKey.key;
   }
-}
+};
 
 export const canAccessAreaFiles = async (fullPath: string, userId: string | undefined) => {
-  if (!userId) return false
+  if (!userId) return false;
   return await db
     .select({
       count: count()
@@ -195,33 +208,38 @@ export const canAccessAreaFiles = async (fullPath: string, userId: string | unde
     .from(area_authorization)
     .innerJoin(account, eq(area_authorization.accountId, account.id)) // Corrected join condition (assuming account PK is 'id')
     .where(and(eq(area_authorization.area_id, fullPath), eq(account.userId, userId)))
-    .then((val) => (val && val[0] ? val[0].count >= 1 : false)) // More explicit check and default
-}
+    .then((val) => (val && val[0] ? val[0].count >= 1 : false)); // More explicit check and default
+};
 
 export const areAreaJobsFinished = async (fullPath: string) => {
-  const total = await db.$count(job, eq(job.full_path, fullPath))
+  const total = await db.$count(job, eq(job.full_path, fullPath));
   const finished =
-    total < 0 ? 0 : await db.$count(job, and(eq(job.full_path, fullPath), eq(job.status, JobStatus.finished)))
-  return finished < total || total <= 0
-}
+    total < 0
+      ? 0
+      : await db.$count(job, and(eq(job.full_path, fullPath), eq(job.status, JobStatus.finished)));
+  return finished < total || total <= 0;
+};
 
-export const fileForAreaPart = async (fullPath: string | string[], type: CollectionTypes | string) => {
-  if (!Array.isArray(fullPath)) fullPath = fullPath.split("/")
+export const fileForAreaPart = async (
+  fullPath: string | string[],
+  type: CollectionTypes | string
+) => {
+  if (!Array.isArray(fullPath)) fullPath = fullPath.split("/");
   if (typeof type === "string") {
-    const tmp = fileToCollectionType(type)
-    if (!tmp) return undefined
-    type = tmp
+    const tmp = fileToCollectionType(type);
+    if (!tmp) return undefined;
+    type = tmp;
   }
 
-  const filePath = path.resolve(path.join(AppSettings().paths.dataRoot, ...fullPath))
-  const file = Bun.file(filePath)
-  if (!(await file.exists)) return undefined
-  else return file
-}
+  const filePath = path.resolve(path.join(AppSettings().paths.dataRoot, ...fullPath));
+  const file = Bun.file(filePath);
+  if (!(await file.exists)) return undefined;
+  else return file;
+};
 
 export const fileToCollectionType = (file: string): CollectionTypes | undefined => {
-  const keys = Object.keys(CollectionTypes)
-  const fileName = path.basename(file, path.extname(file))
-  if (keys.includes(fileName)) return fileName as CollectionTypes
-  else return undefined
-}
+  const keys = Object.keys(CollectionTypes);
+  const fileName = path.basename(file, path.extname(file));
+  if (keys.includes(fileName)) return fileName as CollectionTypes;
+  else return undefined;
+};

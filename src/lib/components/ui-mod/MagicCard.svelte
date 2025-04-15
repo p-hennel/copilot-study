@@ -38,14 +38,14 @@
   on:mousemove={handleMouseMove}
   on:mouseleave={handleMouseLeave}
   class={cn(
-    "group relative flex size-full overflow-hidden rounded-xl bg-neutral-100 border text-black justify-center py-4",
+    "group relative flex size-full justify-center overflow-hidden rounded-xl border bg-neutral-100 py-4 text-black",
     className
   )}
 >
   <div class="relative z-10">
     <!-- Default  -->
     <slot>
-      <div class="flex items-center justify-center h-full text-center">
+      <div class="flex h-full items-center justify-center text-center">
         <p class="text-2xl">Magic Card</p>
       </div>
     </slot>
@@ -53,7 +53,7 @@
   <Motion
     style={{
       background: bg,
-      opacity: gradientOpacity,
+      opacity: gradientOpacity
     }}
     let:motion
   >

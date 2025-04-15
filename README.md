@@ -37,7 +37,6 @@ You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
 
-
     "build:hasher": "bun run build:hasher:unix64 && bun run build:hasher:win64 && bun run build:hasher:darwinx64 && bun run build:hasher:darwinarm",
     "build:hasher:unix64": "bun build --compile --target=bun-linux-x64-modern ./src/lib/hasher.ts --outfile ./build/hasher-unix-x64",
     "build:hasher:win64": "bun build --compile --target=bun-windows-x64-modern ./src/lib/hasher.ts --outfile ./build/hasher-win-x64",

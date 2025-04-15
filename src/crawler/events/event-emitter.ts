@@ -1,6 +1,11 @@
 // src/events/event-emitter.ts
-import { getLogger } from '@logtape/logtape';
-import { type CrawlerEventEmitter, type CrawlerEventUnion, type EventListener, EventType } from './event-types';
+import { getLogger } from "@logtape/logtape";
+import {
+  type CrawlerEventEmitter,
+  type CrawlerEventUnion,
+  type EventListener,
+  EventType
+} from "./event-types";
 
 // Initialize logger
 const logger = getLogger(["crawlib", "event-emitter"]);
@@ -16,7 +21,7 @@ export class GitLabCrawlerEventEmitter implements CrawlerEventEmitter {
    * Register a listener for a specific event type
    */
   on(eventType: EventType | string, listener: EventListener): void {
-    if (eventType === '*') {
+    if (eventType === "*") {
       this.allEventListeners.add(listener);
       return;
     }
@@ -33,7 +38,7 @@ export class GitLabCrawlerEventEmitter implements CrawlerEventEmitter {
    * Remove a listener for a specific event type
    */
   off(eventType: EventType | string, listener: EventListener): void {
-    if (eventType === '*') {
+    if (eventType === "*") {
       this.allEventListeners.delete(listener);
       return;
     }
@@ -59,7 +64,7 @@ export class GitLabCrawlerEventEmitter implements CrawlerEventEmitter {
         try {
           listener(event);
         } catch (error) {
-          logger.error(`Error in event listener for ${event.type}:`, {error});
+          logger.error(`Error in event listener for ${event.type}:`, { error });
         }
       }
     }
@@ -69,7 +74,7 @@ export class GitLabCrawlerEventEmitter implements CrawlerEventEmitter {
       try {
         listener(event);
       } catch (error) {
-        logger.error(`Error in global event listener for ${event.type}:`, {error});
+        logger.error(`Error in global event listener for ${event.type}:`, { error });
       }
     }
 
@@ -81,7 +86,7 @@ export class GitLabCrawlerEventEmitter implements CrawlerEventEmitter {
    * Get the count of listeners for a specific event type
    */
   listenerCount(eventType: EventType | string): number {
-    if (eventType === '*') {
+    if (eventType === "*") {
       return this.allEventListeners.size;
     }
 

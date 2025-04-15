@@ -1,41 +1,36 @@
-import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types"
-import { relations, sql } from "drizzle-orm"
+import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
+import { relations, sql } from "drizzle-orm";
 import {
-  blob // Added blob for json
-  ,
-
-
-
-
+  blob, // Added blob for json
   index,
   integer,
   primaryKey,
   sqliteTable,
   text,
   uniqueIndex
-} from "drizzle-orm/sqlite-core"
-import { monotonicFactory } from "ulid"
-import { account, user } from "./auth-schema"
+} from "drizzle-orm/sqlite-core";
+import { monotonicFactory } from "ulid";
+import { account, user } from "./auth-schema";
 
-const ulid = monotonicFactory()
+const ulid = monotonicFactory();
 
 export enum TokenType {
   bearer = "bearer"
 }
 
 export type NewJobType = {
-  accountId: string
-  full_path?: string
-  command: CrawlCommand
-  from?: Date
-  spawned_from?: string
-}
+  accountId: string;
+  full_path?: string;
+  command: CrawlCommand;
+  from?: Date;
+  spawned_from?: string;
+};
 export type UpdateJobType = {
-  id?: string
-  status: JobStatus
-  startedAt?: Date | null
-  finishedAt?: Date | null
-}
+  id?: string;
+  status: JobStatus;
+  startedAt?: Date | null;
+  finishedAt?: Date | null;
+};
 
 export enum GitLabScopes {
   api = "api",
@@ -62,10 +57,10 @@ export const DefaultGitLabScopes = [
   GitLabScopes.openid,
   GitLabScopes.email,
   GitLabScopes.profile
-]
+];
 
 function toDBEnum<T extends Record<any, string>>(data: T): [T[keyof T], ...T[keyof T][]] {
-  return Object.values(data) as [T[keyof T], ...T[keyof T][]]
+  return Object.values(data) as [T[keyof T], ...T[keyof T][]];
 }
 
 export const tokenScopeJob = sqliteTable(
@@ -99,14 +94,14 @@ export const tokenScopeJob = sqliteTable(
     index("tsj_provider_path").on(table.provider),
     primaryKey({ columns: [table.userId, table.provider] })
   ]
-)
+);
 export const tokenScopeJobRelations = relations(tokenScopeJob, ({ one, many }) => ({
   fromUser: one(user, {
     fields: [tokenScopeJob.userId],
     references: [user.id]
   }),
   forAreas: many(area)
-}))
+}));
 
 export const tokenScopeJobArea = sqliteTable(
   "token_scope_job_area",
@@ -118,7 +113,7 @@ export const tokenScopeJobArea = sqliteTable(
     full_path: text().notNull()
   },
   (table) => [primaryKey({ columns: [table.userId, table.provider, table.full_path] })]
-)
+);
 
 export const tokenScopeJobAreaRelations = relations(tokenScopeJobArea, ({ one }) => ({
   fromUser: one(user, {
@@ -133,7 +128,7 @@ export const tokenScopeJobAreaRelations = relations(tokenScopeJobArea, ({ one })
     fields: [tokenScopeJobArea.userId, tokenScopeJobArea.provider],
     references: [tokenScopeJob.userId, tokenScopeJob.provider]
   })
-}))
+}));
 
 export const area_authorization = sqliteTable(
   "area_authorization",
@@ -146,11 +141,11 @@ export const area_authorization = sqliteTable(
       .references(() => area.full_path)
   },
   (table) => [primaryKey({ columns: [table.accountId, table.area_id] })]
-)
+);
 export const area_authorizationRelations = relations(area_authorization, ({ one }) => ({
   account: one(account),
   area: one(area)
-}))
+}));
 
 export const area = sqliteTable("area", {
   full_path: text().primaryKey(),
@@ -160,12 +155,12 @@ export const area = sqliteTable("area", {
   created_at: integer({ mode: "timestamp" })
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`) // Use SQL default
-})
+});
 export const areaRelations = relations(area, ({ many }) => ({
   usingAccounts: many(account),
   relatedJobs: many(job),
   fromTokenScopeJobs: many(tokenScopeJob)
-}))
+}));
 
 export const job = sqliteTable(
   "job",
@@ -203,7 +198,8 @@ export const job = sqliteTable(
     index("job_full_path_status_idx").on(table.full_path, table.status),
     index("job_full_path_from_idx").on(table.full_path, table.from),
     index("job_full_path_to_idx").on(table.full_path, table.to),
-    uniqueIndex("job_uq_full_path_branch_command").on(table.full_path, table.branch, table.command).where(sql`
+    uniqueIndex("job_uq_full_path_branch_command").on(table.full_path, table.branch, table.command)
+      .where(sql`
 			${table.command} <> 'authorizationScope'
 		`), // ${CrawlCommand.authorizationScope}
     uniqueIndex("job_uq_command_accountId").on(table.command, table.accountId).where(sql`
@@ -212,9 +208,9 @@ export const job = sqliteTable(
 			${table.branch} IS NULL
 		`)
   ]
-)
+);
 
-export type Area = typeof area.$inferInsert
+export type Area = typeof area.$inferInsert;
 
 export const jobRelations = relations(job, ({ one, many }) => ({
   fromJob: one(job, {
@@ -230,7 +226,7 @@ export const jobRelations = relations(job, ({ one, many }) => ({
     fields: [job.accountId],
     references: [account.id]
   })
-}))
+}));
 
-export type Job = typeof job.$inferSelect
-export type JobInsert = typeof job.$inferInsert
+export type Job = typeof job.$inferSelect;
+export type JobInsert = typeof job.$inferInsert;

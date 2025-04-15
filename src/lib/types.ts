@@ -1,4 +1,4 @@
-import * as icons from '@lucide/svelte';
+import * as icons from "@lucide/svelte";
 
 export enum ContentType {
   Markdown,
@@ -6,21 +6,21 @@ export enum ContentType {
 }
 
 export interface ContentBase {
-  type: ContentType
+  type: ContentType;
 }
 
 export interface MarkdownContent extends ContentBase {
-  type: ContentType.Markdown
-  content: string
+  type: ContentType.Markdown;
+  content: string;
 }
 
 export interface AlertContent extends ContentBase {
-  icon?: keyof typeof icons,
-  title: string,
-  content: string
+  icon?: keyof typeof icons;
+  title: string;
+  content: string;
 }
 
-export type Content = MarkdownContent | AlertContent
+export type Content = MarkdownContent | AlertContent;
 
 export enum CrawlCommand {
   authorizationScope = "authorizationScope",
@@ -47,11 +47,11 @@ export type AccountInformation = {
   createdAt: Date;
   refreshTokenExpiresAt: Date | null;
 };
-export type UserInformation = { id: string; name: string; email: string; createdAt: Date; };
+export type UserInformation = { id: string; name: string; email: string; createdAt: Date };
 export enum JobStatus {
   queued = "queued",
   running = "running",
-  paused = "paused",// Added paused state
+  paused = "paused", // Added paused state
   failed = "failed",
   finished = "finished"
 }
@@ -171,12 +171,13 @@ export namespace pm2types {
     pm_exec_path?: string;
   }
 
-  export type ProcessStatus = "online" |
-    "stopping" |
-    "stopped" |
-    "launching" |
-    "errored" |
-    "one-launch-status";
+  export type ProcessStatus =
+    | "online"
+    | "stopping"
+    | "stopped"
+    | "launching"
+    | "errored"
+    | "one-launch-status";
 
   export interface StartOptions {
     /**
@@ -311,7 +312,7 @@ export namespace pm2types {
     /**
      * The environment variables to pass on to the process.
      */
-    env?: { [key: string]: string; };
+    env?: { [key: string]: string };
     /**
      * NameSpace for the process
      * @default 'default'
@@ -322,7 +323,6 @@ export namespace pm2types {
     namespace?: string;
   }
 }
-
 
 export type AvailableJobType = any; //Awaited<ReturnType<typeof getAvailableJobs>>[number];export const fileNameToCommand = {
 export const fileNameToCommand = {
