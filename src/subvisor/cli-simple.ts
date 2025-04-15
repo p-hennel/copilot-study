@@ -6,7 +6,8 @@ import { getLogger } from "@logtape/logtape";
 import { existsSync, mkdirSync } from "fs";
 import { dirname, join } from "path";
 import { cwd } from "process";
-import { ProcessState, type ProcessConfig } from "./types";
+import { SimplifiedSupervisor } from "./simplified-supervisor";
+import { ProcessState } from "./types";
 
 // Initialize logger
 const logger = getLogger(["supervisor-cli"]);
@@ -36,7 +37,8 @@ for (let i = 1; i < args.length; i++) {
   const arg = args[i];
   if (arg && arg.startsWith("--")) {
     const key = arg.slice(2);
-    const value = args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : "true";
+    const nextArg = i + 1 < args.length ? args[i + 1] : undefined;
+    const value = nextArg && !nextArg.startsWith("--") ? nextArg : "true";
     options[key] = value;
     
     if (value !== "true") {
@@ -53,7 +55,10 @@ const DEFAULT_OPTIONS = {
   crawlerCmd: "bun run crawler:start",
   maxRestarts: 10,
   restartDelay: 5000,
-  foreground: true
+  foreground: true,
+  // Added additional options
+  noRestart: "false",
+  cwd: process.cwd()
 };
 
 // Merge defaults with provided options
@@ -90,7 +95,10 @@ function createSupervisor(): SimplifiedSupervisor {
   
   // Add website process if requested
   if (processes.includes("website")) {
-    const [script, ...args] = config.websiteCmd.split(/\s+/);
+    const cmdParts = config.websiteCmd.split(/\s+/);
+    const script = cmdParts[0] || '';
+    const args = cmdParts.slice(1);
+    
     supervisor.defineProcess("website", {
       script,
       args,
@@ -102,15 +110,19 @@ function createSupervisor(): SimplifiedSupervisor {
         SUPERVISOR_PROCESS_ID: "website",
         DATABASE_URL: process.env.DATABASE_URL || join(cwd(), "data.private/config/main.db"),
         DATA_ROOT: process.env.DATA_ROOT || join(cwd(), "data.private"),
-        SETTINGS_FILE: process.env.SETTINGS_FILE || join(cwd(), "data.private/config/settings.yaml")
-      },
-      cwd: config.cwd || cwd()
-    } as ProcessConfig);
+        SETTINGS_FILE: process.env.SETTINGS_FILE || join(cwd(), "data.private/config/settings.yaml"),
+        // Pass cwd as environment variable
+        CWD: config.cwd || cwd()
+      }
+    });
   }
   
   // Add crawler process if requested
   if (processes.includes("crawler")) {
-    const [script, ...args] = config.crawlerCmd.split(/\s+/);
+    const cmdParts = config.crawlerCmd.split(/\s+/);
+    const script = cmdParts[0] || '';
+    const args = cmdParts.slice(1);
+    
     supervisor.defineProcess("crawler", {
       script,
       args,
@@ -120,10 +132,11 @@ function createSupervisor(): SimplifiedSupervisor {
       dependencies: processes.includes("website") ? ["website"] : [],
       env: {
         ...commonEnv,
-        SUPERVISOR_PROCESS_ID: "crawler"
-      },
-      cwd: config.cwd || cwd()
-    } as ProcessConfig);
+        SUPERVISOR_PROCESS_ID: "crawler",
+        // Pass cwd as environment variable
+        CWD: config.cwd || cwd()
+      }
+    });
   }
   
   return supervisor;

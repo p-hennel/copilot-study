@@ -64,11 +64,11 @@ export class SimplifiedSupervisor {
       // Register all processes with the supervisor
       for (const [id, config] of this.processes.entries()) {
         logger.info(`Registering process: ${id}`);
-        this.supervisor["addProcess"](id, config);
+        this.supervisor.addProcess(id, config);
       }
       
       // Start the supervisor
-      await this.supervisor["start"]();
+      await this.supervisor.start();
       logger.info("Supervisor started successfully");
     } catch (error) {
       logger.error(`Failed to start supervisor: ${error}`);
@@ -82,7 +82,7 @@ export class SimplifiedSupervisor {
   async stop(): Promise<void> {
     try {
       // Stop the supervisor
-      await this.supervisor["initiateShutdown"]({
+      await this.supervisor.initiateShutdown({
         reason: "User requested stop",
         exitProcess: false
       });

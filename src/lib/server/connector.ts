@@ -557,30 +557,22 @@ export async function boot() {
   
   // Send GitLab authentication credentials to the supervisor for the crawler
   try {
-    if (process.env.AUTH_IPC_SOCKET_PATH) {
-      logger.info("Sending GitLab authentication credentials to supervisor");
-      
-      // Get credentials from app settings
-      const credentials = {
-        // Use the OAuth token from the settings or environment variables
-        token: process.env.GITLAB_TOKEN || "",
-        clientId: AppSettings().auth.providers.gitlab.clientId || "",
-        clientSecret: AppSettings().auth.providers.gitlab.clientSecret || ""
-      };
-      
-      // Only send if we have at least a token
-      if (credentials.token) {
-        const success = await sendAuthCredentials(credentials);
-        if (success) {
-          logger.info("Successfully sent GitLab credentials to supervisor");
-        } else {
-          logger.warn("Failed to send GitLab credentials to supervisor");
-        }
-      } else {
-        logger.warn("No GitLab token available in settings, skipping credential sharing");
-      }
+    logger.info("Sending GitLab authentication credentials to supervisor");
+    
+    // Get credentials from app settings or environment variables
+    const credentials = {
+      token: process.env.GITLAB_TOKEN || "",
+      clientId: AppSettings().auth.providers.gitlab.clientId || "",
+      clientSecret: AppSettings().auth.providers.gitlab.clientSecret || ""
+    };
+    
+    // Only send if we have at least a token
+    if (credentials.token) {
+      // Send credentials to all processes using the supervisor client
+      client.broadcastMessage("auth_credentials", credentials);
+      logger.info("Successfully sent GitLab credentials to supervisor");
     } else {
-      logger.info("AUTH_IPC_SOCKET_PATH not set, skipping credential sharing");
+      logger.warn("No GitLab token available, skipping credential sharing");
     }
   } catch (error) {
     logger.error(`Error sending credentials to supervisor: ${error}`);

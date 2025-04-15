@@ -27,6 +27,10 @@ const config: CrawlerConfig = {
   } as AuthConfig,
   outputDir: "./output",
   requestsPerSecond: 10,
+  // Required properties according to the type definition
+  concurrency: 5,
+  maxRetries: 3,
+  retryDelayMs: 1000,
   // No need for hooks as the GitLabCrawlerWithIPC handles this automatically
 };
 

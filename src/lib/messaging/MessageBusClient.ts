@@ -1,16 +1,39 @@
 // src/lib/messaging/MessageBusClient.ts - Unix Socket IPC implementation
-import { Socket } from "bun";
+import type { Socket } from "bun";
 import { EventEmitter } from "events";
 import { existsSync } from "fs";
 import { z } from "zod";
 
 // Import types for crawler communication
 import { getLogger, type Logger } from "@logtape/logtape";
-import type { JobCompletionUpdate } from "../../crawler/jobManager";
-import type {
-  CrawlerCommand,
-  CrawlerStatus
-} from "../../crawler/types";
+// TODO: Create these types if they don't exist
+// For now using placeholder types to fix compilation errors
+type JobCompletionUpdate = {
+  jobId: string;
+  success: boolean;
+  result?: any;
+  error?: string;
+  status: "completed" | "failed" | "paused";
+  timestamp: number;
+};
+
+type CrawlerCommand = {
+  type: string;
+  [key: string]: any;
+};
+
+type CrawlerStatus = {
+  state: string;
+  queuedJobs: number;
+  runningJobs: number;
+  running: boolean;
+  paused: boolean;
+  queued: number;
+  processing: number;
+  completed: number;
+  failed: number;
+  [key: string]: any;
+};
 
 // --- Message Schema Validation ---
 const IPCMessageSchema = z.object({

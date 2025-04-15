@@ -21,7 +21,7 @@ const processConfigSchema = z.object({
 
 // Main supervisor configuration schema
 const supervisorConfigSchema = z.object({
-  socketPath: z.string().default("/tmp/supervisor.sock"),
+  socketPath: z.string(),
   processes: z.array(processConfigSchema),
   heartbeatInterval: z.number().int().positive().default(5000),
   logLevel: z.enum(["debug", "info", "warn", "error"]).default("info"),
@@ -70,7 +70,8 @@ const supervisorConfigSchema = z.object({
 // Helper function to determine the state file path
 
 // Create and export the settings manager
-export const supervisorSettings = createSettingsManager<SupervisorConfig>(supervisorConfigSchema, {
+// Use the proper type with type assertions
+export const supervisorSettings = createSettingsManager<SupervisorConfig>(supervisorConfigSchema as z.ZodType<SupervisorConfig>, {
   filename: "supervisor.yaml",
   autoCreate: true,
   watchForChanges: true,

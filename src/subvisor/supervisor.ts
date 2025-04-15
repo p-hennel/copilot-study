@@ -218,7 +218,7 @@ export class Supervisor extends EventEmitter {
 
     try {
       const data = readFileSync(this.stateFile, "utf-8");
-      const state = JSON.parse(data);
+      const state = JSON.parse(data) as { timestamp: number; processes: any[] };
 
       // Check if state is too old (e.g., more than 1 hour)
       const maxAge = 3600000; // 1 hour
@@ -263,7 +263,7 @@ export class Supervisor extends EventEmitter {
     if (existsSync(this.config.socketPath)) {
       try {
         unlinkSync(this.config.socketPath);
-      } catch (socketErr: any) {
+      } catch {
         // Can't log here as process is exiting
       }
     }
@@ -439,8 +439,9 @@ export class Supervisor extends EventEmitter {
         reason: "SIGINT signal received",
         exitProcess: true,
         timeout: 10000 // Give processes 10 seconds to exit gracefully
-      }).catch((err) => {
-        this.logger.error(`Error during SIGINT shutdown: ${err.message}`, { error: err });
+      }).catch((err: unknown) => {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Error during SIGINT shutdown: ${errorMessage}`, { error: err });
         process.exit(1);
       });
     });
@@ -452,8 +453,9 @@ export class Supervisor extends EventEmitter {
         reason: "SIGTERM signal received",
         exitProcess: true,
         timeout: 10000 // Give processes 10 seconds to exit gracefully
-      }).catch((err) => {
-        this.logger.error(`Error during SIGTERM shutdown: ${err.message}`, { error: err });
+      }).catch((err: unknown) => {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Error during SIGTERM shutdown: ${errorMessage}`, { error: err });
         process.exit(1);
       });
     });
@@ -727,7 +729,7 @@ export class Supervisor extends EventEmitter {
         }
         break;
 
-      case "getProcessList":
+      case "getProcessList": {
         const processList = Array.from(this.processes.entries()).map(([id, proc]) => ({
           id,
           state: proc.getState(),
@@ -743,6 +745,7 @@ export class Supervisor extends EventEmitter {
           timestamp: Date.now()
         });
         break;
+      }
 
       case "reloadSettings":
         this.logger.info(`Command from ${origin}: Reloading settings`);
@@ -919,6 +922,27 @@ export class Supervisor extends EventEmitter {
       socket.write(JSON.stringify(message));
     } catch (err: any) {
       this.logger.error(`Failed to send message: ${err}`);
+    }
+  }
+  
+  /**
+   * Add a process to be managed by the supervisor
+   * @param id Process identifier
+   * @param config Process configuration (without id, which will be added)
+   */
+  public addProcess(id: string, config: Omit<ProcessConfig, 'id'>): void {
+    const processConfig: ProcessConfig = { ...config, id };
+    const managedProcess = new ManagedProcess(processConfig, this);
+    this.processes.set(id, managedProcess);
+    
+    // Create empty subscription set for this process
+    this.subscriptions.set(id, new Set());
+    
+    this.logger.info(`Added process ${id} to supervisor`);
+    
+    // Start the process if supervisor is already running
+    if (this.server) {
+      managedProcess.start();
     }
   }
 }

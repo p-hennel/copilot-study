@@ -5,9 +5,9 @@
  * to the supervisor process via IPC, which will then pass them to the crawler.
  */
 
-import { getLogger } from '@logtape/logtape'
-import { existsSync } from 'fs'
-import { createConnection } from 'net'
+import { getLogger } from '@logtape/logtape';
+import { existsSync } from 'fs';
+import { createConnection } from 'net';
 
 // Initialize logger
 const logger = getLogger(['auth-ipc-client']);
@@ -15,13 +15,14 @@ const logger = getLogger(['auth-ipc-client']);
 /**
  * Send GitLab authentication credentials to the supervisor process.
  * 
- * @param {Object} credentials - The GitLab authentication credentials
- * @param {string} credentials.token - GitLab API token
- * @param {string} credentials.clientId - GitLab OAuth client ID
- * @param {string} credentials.clientSecret - GitLab OAuth client secret
+ * @param credentials - The GitLab authentication credentials
  * @returns {Promise<boolean>} - True if the credentials were sent successfully
  */
-export async function sendAuthCredentials(credentials) {
+export async function sendAuthCredentials(credentials: {
+  token: string;
+  clientId: string;
+  clientSecret: string;
+}) {
   const socketPath = process.env.AUTH_IPC_SOCKET_PATH;
   
   if (!socketPath) {
@@ -65,7 +66,7 @@ export async function sendAuthCredentials(credentials) {
         responseData += data.toString();
         
         try {
-          const response = JSON.parse(responseData);
+          const response = JSON.parse(responseData) as { type: string; success: boolean };
           
           if (response.type === 'auth_ack') {
             clearTimeout(timeout);

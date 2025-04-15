@@ -36,7 +36,7 @@ for (let i = 0; i < args.length; i++) {
   const arg = args[i];
   
   // Handle commands
-  if (i === 0) {
+  if (i === 0 && arg) {
     if (["start", "stop", "restart", "status", "list", "help"].includes(arg)) {
       command = arg;
       continue;
@@ -44,7 +44,7 @@ for (let i = 0; i < args.length; i++) {
   }
   
   // Handle process names (should come after the command)
-  if (i === 1 && !arg.startsWith('-')) {
+  if (i === 1 && arg && !arg.startsWith('-')) {
     const names = arg.split(',');
     for (const name of names) {
       if (name === "website" || name === "crawler") {
@@ -59,7 +59,7 @@ for (let i = 0; i < args.length; i++) {
   }
   
   // Handle options
-  if (arg.startsWith('--')) {
+  if (arg && arg.startsWith('--')) {
     const key = arg.slice(2);
     
     // Boolean flags
@@ -71,7 +71,8 @@ for (let i = 0; i < args.length; i++) {
     optionKey = camelCase(key);
     
     // If the next arg is an option too or doesn't exist, treat this as a flag
-    if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+    const nextArg = args[i + 1];
+    if (i + 1 >= args.length || (nextArg && nextArg.startsWith('-'))) {
       options[optionKey] = true;
       optionKey = null;
     }
@@ -97,7 +98,11 @@ if (processNames.length === 0 && command === "start") {
 
 // Helper function to convert kebab-case to camelCase
 function camelCase(str: string): string {
-  return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+  if (!str) return '';
+  return str.replace(/-([a-z])/g, (match, group) => {
+    if (group) return group.toUpperCase();
+    return '';
+  });
 }
 
 // Helper function to ensure directories exist
@@ -124,17 +129,7 @@ function initializeSupervisor(): Supervisor {
   };
   
   // Create a supervisor instance
-  const supervisor = new Supervisor({
-    socketPath: options.socketPath,
-    logDir: options.logDir,
-    autoCleanupLogs: true,
-    logRotation: {
-      maxSize: '10M',
-      maxFiles: 5
-    },
-    // Skip loading from a config file
-    loadFromConfig: false
-  });
+  const supervisor = new Supervisor(options.socketPath);
   
   // Initialize the website process if requested
   if (processNames.includes("website")) {
@@ -151,9 +146,9 @@ function initializeSupervisor(): Supervisor {
       maxRestarts: options.maxRestarts,
       env: {
         ...commonEnv,
-        SUPERVISOR_PROCESS_ID: "website"
-      },
-      cwd: options.currentCwd
+        SUPERVISOR_PROCESS_ID: "website",
+        CWD: options.currentCwd // Pass as environment variable instead
+      }
     });
   }
   
@@ -172,11 +167,11 @@ function initializeSupervisor(): Supervisor {
       maxRestarts: options.maxRestarts,
       env: {
         ...commonEnv,
-        SUPERVISOR_PROCESS_ID: "crawler"
+        SUPERVISOR_PROCESS_ID: "crawler",
+        CWD: options.currentCwd // Pass as environment variable instead
       },
       // Make crawler depend on website for proper ordering
-      depends: processNames.includes("website") ? ["website"] : [],
-      cwd: options.currentCwd
+      dependencies: processNames.includes("website") ? ["website"] : []
     });
   }
   
@@ -327,7 +322,7 @@ async function main() {
       await supervisor.initiateShutdown({
         reason: "Restart complete",
         exitProcess: true,
-        killProcesses: false
+        force: false
       });
       break;
     }
@@ -351,8 +346,8 @@ async function main() {
           console.log(`  Restart delay: ${process.config.restartDelay}ms`);
           console.log(`  Max restarts: ${process.config.maxRestarts}`);
           
-          if (process.config.depends?.length) {
-            console.log(`  Dependencies: ${process.config.depends.join(", ")}`);
+          if (process.config.dependencies?.length) {
+            console.log(`  Dependencies: ${process.config.dependencies.join(", ")}`);
           }
           
           console.log("-----------------------");
@@ -372,8 +367,8 @@ async function main() {
             console.log(`Restart delay: ${proc.config.restartDelay}ms`);
             console.log(`Max restarts: ${proc.config.maxRestarts}`);
             
-            if (proc.config.depends?.length) {
-              console.log(`Dependencies: ${proc.config.depends.join(", ")}`);
+            if (proc.config.dependencies?.length) {
+              console.log(`Dependencies: ${proc.config.dependencies.join(", ")}`);
             }
             
             console.log("-----------------------");
@@ -387,7 +382,7 @@ async function main() {
       await supervisor.initiateShutdown({
         reason: "Status check complete",
         exitProcess: true,
-        killProcesses: false
+        force: false
       });
       break;
     }
@@ -410,7 +405,7 @@ async function main() {
       await supervisor.initiateShutdown({
         reason: "List complete",
         exitProcess: true,
-        killProcesses: false
+        force: false
       });
       break;
     }
@@ -425,8 +420,8 @@ async function main() {
 // Helper function to get colored state string for better visibility
 function getColoredState(state: ProcessState): string {
   switch (state) {
-    case ProcessState.RUNNING:
-      return "\x1b[32mRUNNING\x1b[0m"; // Green
+    case ProcessState.BUSY:
+      return "\x1b[32mBUSY\x1b[0m"; // Green
     case ProcessState.STARTING:
       return "\x1b[33mSTARTING\x1b[0m"; // Yellow
     case ProcessState.STOPPING:
@@ -437,8 +432,8 @@ function getColoredState(state: ProcessState): string {
       return "\x1b[31mFAILED\x1b[0m"; // Red
     case ProcessState.IDLE:
       return "\x1b[36mIDLE\x1b[0m"; // Cyan
-    case ProcessState.WAITING:
-      return "\x1b[34mWAITING\x1b[0m"; // Blue
+    case ProcessState.PAUSED:
+      return "\x1b[34mPAUSED\x1b[0m"; // Blue
     default:
       return state;
   }

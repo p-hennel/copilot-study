@@ -187,8 +187,9 @@ export class SupervisorClient extends EventEmitter {
         delay: delay
       });
       this.reconnectAttempts++;
-      this.connect().catch((err) => {
-        this.logger.error(`Reconnection failed: ${err.message}`, {
+      this.connect().catch((err: unknown) => {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Reconnection failed: ${errorMessage}`, {
           error: err
         });
       });
@@ -241,8 +242,9 @@ export class SupervisorClient extends EventEmitter {
             messageType: message.type
           });
       }
-    } catch (err) {
-      this.logger.error(`Error processing message: ${err}`, {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Error processing message: ${errorMessage}`, {
         error: err
       });
     }

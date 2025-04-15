@@ -7,7 +7,7 @@
 
 import { getLogger } from "@logtape/logtape";
 import { SupervisorClient } from "../../subvisor/client";
-import { Job, JobType } from "../types/job-types";
+import type { Job, JobType } from "../types/job-types";
 
 // Initialize logger
 const logger = getLogger(["crawlib", "supervisorClient"]);
