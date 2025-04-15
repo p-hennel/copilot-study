@@ -1,0 +1,32 @@
+FROM oven/bun:latest
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json bun.lockb ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Generate config
+RUN bun run src/subvisor/cli.ts init \
+    -w "bun run dev" \
+    -cr "bun run src/crawler/cli.ts" \
+    -c /app/supervisor.json \
+    --log-dir /app/logs
+
+# Expose ports (web server and monitoring)
+EXPOSE 3000 9090
+
+# Create volumes for persistence
+VOLUME ["/app/logs", "/app/data"]
+
+# Run in foreground mode with Docker-specific settings
+ENTRYPOINT ["bun", "run", "src/subvisor/cli.ts", "start", "--foreground", "--config", "/app/supervisor.json"]
+
+# Health check using the built-in monitoring capabilities
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:9090/health || exit 1

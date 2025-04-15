@@ -30,6 +30,7 @@ const supervisorConfigSchema = z.object({
 
   // Additional settings for enhanced operation
   enableHotReload: z.boolean().default(false),
+  useUnixSocketsOnly: z.boolean().default(true),  // Use Unix sockets only for IPC (no HTTP)
   monitoringPort: z.number().int().positive().default(9090),
   enableMonitoring: z.boolean().default(false),
   maxMessageSize: z

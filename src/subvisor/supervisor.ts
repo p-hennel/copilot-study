@@ -507,7 +507,8 @@ export class Supervisor extends EventEmitter {
         unlinkSync(this.config.socketPath);
       }
 
-      // Start the IPC server
+      // Start the IPC server using Unix socket
+      this.logger.info(`Starting Unix socket server at ${this.config.socketPath}`);
       this.server = Bun.listen({
         unix: this.config.socketPath,
         socket: {
@@ -530,6 +531,26 @@ export class Supervisor extends EventEmitter {
           }
         }
       });
+      
+      // Log the IPC configuration
+      this.logger.info(`IPC using Unix socket: ${this.config.socketPath}`);
+      this.logger.info(`Unix socket only mode: ${this.config.useUnixSocketsOnly ? 'enabled' : 'disabled'}`);
+      
+      // Ensure environment variables for child processes will use Unix sockets
+      if (this.config.useUnixSocketsOnly) {
+        for (const processConfig of this.config.processes) {
+          if (processConfig.env) {
+            // Remove any PORT environment variables
+            if ('PORT' in processConfig.env) {
+              this.logger.warn(`Removing PORT env var from ${processConfig.id} as useUnixSocketsOnly is enabled`);
+              delete processConfig.env['PORT'];
+            }
+            
+            // Set Unix socket environment flag
+            processConfig.env.SUPERVISOR_USE_UNIX_SOCKET = 'true';
+          }
+        }
+      }
 
       this.logger.info(`Supervisor started, listening on ${this.config.socketPath}`);
 

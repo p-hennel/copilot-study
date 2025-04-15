@@ -1,10 +1,9 @@
-import type { Handle } from "@sveltejs/kit"
-import { sequence } from "@sveltejs/kit/hooks"
-// Removed: import { io, type Socket } from "socket.io-client";
 import { auth } from "$lib/auth"
 import { paraglideMiddleware } from "$lib/paraglide/server"
+import type { Handle } from "@sveltejs/kit"
+import { sequence } from "@sveltejs/kit/hooks"
 import { svelteKitHandler } from "better-auth/svelte-kit"
-// Drizzle operators will be imported later if needed
+// Removed socket.io and HTTP-based imports
 
 // Import AppSettings and initialize early
 import { getDb } from "$lib/server/db"; // Import getDb
@@ -130,7 +129,7 @@ try {
   // throw new Error("Server initialization failed");
 }
 
-// Import the new MessageBusClient singleton instance
+// Import the MessageBusClient for Unix socket IPC
 import messageBusClientInstance from "$lib/messaging/MessageBusClient"
 
 // Crawler specific imports (keep as needed)

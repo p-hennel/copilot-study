@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { supervisorSettings } from "./settings";
 import { Supervisor } from "./supervisor";
-import { type ProcessConfig } from "./types";
+import { ProcessState, type ProcessConfig } from "./types";
 
 // Initialize logger
 const logger = getLogger(["supervisor-cli"]);
@@ -18,6 +18,7 @@ let processId: string | null = null;
 let webServerCmd: string | null = null;
 let crawlerCmd: string | null = null;
 let logDir = "./logs";
+let foregroundMode = false;
 
 // Parse arguments
 for (let i = 0; i < args.length; i++) {
@@ -31,6 +32,9 @@ for (let i = 0; i < args.length; i++) {
     crawlerCmd = args[++i] ?? "";
   } else if (arg === "--log-dir" || arg === "-l") {
     logDir = args[++i] ?? "./logs";
+  } else if (arg === "--foreground" || arg === "-f") {
+    // This option indicates we should run in foreground/non-daemonized mode
+    foregroundMode = true;
   } else if (
     arg === "start" ||
     arg === "stop" ||
@@ -69,11 +73,14 @@ function generateConfigFile(webServerCmd: string, crawlerCmd: string, configPath
     const crawlerParts = parseCommand(crawlerCmd);
     
     // Generate common environment variables for the processes
-    const socketPath = join("/tmp", `supervisor-${Date.now()}.sock`);
+    // Use a consistent, predictable socket path for Unix socket-based IPC
+    const socketPath = join("/var/run", `supervisor-${Date.now()}.sock`);
     const commonEnv = {
       NODE_ENV: process.env.NODE_ENV || "production",
       LOG_LEVEL: "info",
-      SUPERVISOR_SOCKET_PATH: socketPath
+      SUPERVISOR_SOCKET_PATH: socketPath,
+      // Explicitly indicate that we're using Unix socket only
+      SUPERVISOR_USE_UNIX_SOCKET: "true"
     };
     
     // Create process configurations
@@ -116,10 +123,19 @@ function generateConfigFile(webServerCmd: string, crawlerCmd: string, configPath
       stateFile: join(logDir, "supervisor-state.json"),
       processes: [webServerProcess, crawlerProcess],
       
-      // Additional settings
-      enableMonitoring: true,
-      monitoringPort: 9090,
-      stateSaveInterval: 30000
+      // Use Unix sockets exclusively for IPC (no HTTP/ports)
+      useUnixSocketsOnly: true,
+      stateSaveInterval: 30000,
+      
+      // Docker/container-friendly settings
+      foregroundMode: false,    // Will be set to true with --foreground flag
+      consoleLogs: false,       // When true, duplicate logs to console
+      healthCheck: {
+        enabled: true,
+        interval: 30000,        // Health check interval in ms
+        timeout: 5000,          // Health check timeout
+        retries: 3              // Number of retries before considering unhealthy
+      }
     };
     
     // Ensure the directory exists
@@ -174,6 +190,52 @@ async function main() {
 
   // Ensure log directory exists if logFile is specified
   const config = supervisorSettings.getSettings();
+  
+  // If foreground mode is enabled, update the config for Docker-friendly operation
+  if (foregroundMode && command === "start") {
+    // Auto-detect container environment if possible
+    const inContainer = await isRunningInContainer();
+    
+    logger.info(`Running in foreground mode (Docker-friendly: ${inContainer ? "Container detected" : "No container detected"})`);
+    
+    // Get the raw config file to add our Docker mode properties
+    try {
+      // Read the config file directly
+      const configText = await Bun.file(configPath).text();
+      const configContent = JSON.parse(configText) as Record<string, any>;
+      
+      // Add Docker mode settings
+      configContent.foregroundMode = true;
+      configContent.consoleLogs = true;
+      
+      // If we're in a container, adjust some settings for better container compatibility
+      if (inContainer) {
+        // Ensure health check is enabled for container orchestration
+        configContent.healthCheck = {
+          ...configContent.healthCheck,
+          enabled: true
+        };
+        
+        // Always use /var/run for socket path in containers (more reliable than /tmp)
+        configContent.socketPath = '/var/run/supervisor.sock';
+        
+        // Explicitly enforce Unix sockets only for IPC in container environments
+        configContent.useUnixSocketsOnly = true;
+      }
+      
+      // Write back the updated config
+      writeFileSync(configPath, JSON.stringify(configContent, null, 2));
+      
+      // Reload settings
+      supervisorSettings.reload();
+      
+      logger.info("Updated configuration for foreground/Docker mode");
+    } catch (error: any) {
+      logger.error(`Failed to update Docker mode settings: ${error.message}`);
+    }
+  }
+  
+  // Make sure log directory exists
   if (config.logFile) {
     const logDir = dirname(config.logFile);
     if (!existsSync(logDir)) {
@@ -284,6 +346,41 @@ async function main() {
         process.once('beforeExit', () => {
           if (cleanupMonitoring) cleanupMonitoring();
         });
+        
+        if (foregroundMode) {
+          // In foreground mode, output more information for Docker/container environments
+          logger.info("Running in foreground mode");
+          logger.info(`Socket path: ${config.socketPath}`);
+          logger.info(`Log file: ${config.logFile}`);
+          logger.info(`Monitoring port: ${config.enableMonitoring ? config.monitoringPort : 'disabled'}`);
+          
+          // Set up a regular heartbeat for container health checks
+          const healthInterval = setInterval(() => {
+            // Check if all processes are running
+            let allHealthy = true;
+            const statuses = [];
+            
+            for (const [id, process] of supervisor["processes"].entries()) {
+              const state = process.getState();
+              const isHealthy = state !== ProcessState.FAILED && 
+                               state !== ProcessState.STOPPING && 
+                               state !== ProcessState.STOPPED;
+              allHealthy = allHealthy && isHealthy;
+              statuses.push(`${id}: ${state} (${isHealthy ? "healthy" : "unhealthy"})`);
+            }
+            
+            // Log health status
+            logger.debug(`Health check: ${allHealthy ? "HEALTHY" : "UNHEALTHY"} - ${statuses.join(", ")}`);
+            
+            // If running in a Docker environment, we could also expose this via HTTP
+            // for Docker's health check mechanism
+          }, 30000); // Every 30 seconds
+          
+          // Add a cleanup handler for the health check
+          process.once('beforeExit', () => {
+            clearInterval(healthInterval);
+          });
+        }
         
         logger.info("System is running. Press Ctrl+C to stop.");
         
@@ -428,6 +525,33 @@ async function main() {
   }
 }
 
+/**
+ * Helper function to detect if we're running in a Docker/container environment
+ */
+async function isRunningInContainer(): Promise<boolean> {
+  try {
+    // Check for the .dockerenv file at the root
+    if (existsSync('/.dockerenv')) {
+      return true;
+    }
+    
+    // Check by reading cgroup information
+    try {
+      const cgroupContent = await Bun.file('/proc/1/cgroup').text();
+      return cgroupContent.includes('/docker') || 
+            cgroupContent.includes('/lxc') || 
+            cgroupContent.includes('/kubepods');
+    } catch {
+      // File might not exist or be readable
+      return false;
+    }
+    
+  } catch {
+    // Ignore errors - they likely mean we're not in a container
+    return false;
+  }
+}
+
 function printUsage() {
   console.log("Usage: bun run src/subvisor/cli.ts [options] [command] [process-id]");
   console.log("");
@@ -436,6 +560,7 @@ function printUsage() {
   console.log("  --web-server, -w <cmd>      Command to start the web server (required for 'init')");
   console.log("  --crawler, -cr <cmd>        Command to start the crawler (required for 'init')");
   console.log("  --log-dir, -l <path>        Directory for log files (default: ./logs)");
+  console.log("  --foreground, -f            Run in foreground/non-daemonized mode (ideal for Docker)");
   console.log("");
   console.log("Commands:");
   console.log("  init                     Generate a config file with web server and crawler commands");
@@ -450,8 +575,8 @@ function printUsage() {
   console.log("  # Initialize with web server and crawler commands");
   console.log('  bun run src/subvisor/cli.ts init -w "bun run dev" -cr "bun run src/crawler/cli.ts"');
   console.log("");
-  console.log("  # Start all processes");
-  console.log("  bun run src/subvisor/cli.ts start");
+  console.log("  # Start all processes in foreground mode (good for Docker)");
+  console.log("  bun run src/subvisor/cli.ts start -f");
   console.log("");
   console.log("  # Start only the web server");
   console.log("  bun run src/subvisor/cli.ts start web-server");

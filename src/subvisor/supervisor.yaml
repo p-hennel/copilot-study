@@ -1,6 +1,9 @@
 # Example supervisor.yaml
-socketPath: /tmp/supervisor.sock
+# Use predictable Unix socket path for all IPC communication
+socketPath: /var/run/supervisor.sock
 heartbeatInterval: 5000 # milliseconds
+# Use Unix sockets exclusively for IPC (no HTTP/ports)
+useUnixSocketsOnly: true
 
 # Logging configuration
 logLevel: info # debug, info, warn, error

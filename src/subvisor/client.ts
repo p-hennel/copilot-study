@@ -2,6 +2,7 @@
 import { getLogger } from "@logtape/logtape";
 import { type Socket } from "bun";
 import { EventEmitter } from "events";
+import { existsSync } from "fs";
 import { type IPCMessage, MessageType, ProcessState } from "./types";
 
 // Constants for message handling
@@ -20,27 +21,35 @@ export class SupervisorClient extends EventEmitter {
   private maxReconnectDelay = 30000; // 30 seconds maximum
 
   constructor(
-    _options: {
+    options: {
+      id?: string;
+      socketPath?: string;
       logLevel?: "debug" | "info" | "warn" | "error";
       logFile?: string;
     } = {}
   ) {
     super();
 
-    // Get process ID and socket path from environment variables
-    this.id = process.env.SUPERVISOR_PROCESS_ID || "";
-    this.socketPath = process.env.SUPERVISOR_SOCKET_PATH || "";
+    // Get process ID and socket path from options or environment variables
+    this.id = options.id || process.env.SUPERVISOR_PROCESS_ID || "";
+    this.socketPath = options.socketPath || process.env.SUPERVISOR_SOCKET_PATH || "";
 
     if (!this.id) {
-      throw new Error("SUPERVISOR_PROCESS_ID environment variable not set");
+      throw new Error("Process ID not provided and SUPERVISOR_PROCESS_ID environment variable not set");
     }
 
     if (!this.socketPath) {
-      throw new Error("SUPERVISOR_SOCKET_PATH environment variable not set");
+      throw new Error("Socket path not provided and SUPERVISOR_SOCKET_PATH environment variable not set");
     }
 
     // Initialize logtape logger
     this.logger = getLogger([`client:${this.id}`]);
+    
+    // Validate socket path exists or at least its directory
+    const socketDir = this.socketPath.substring(0, this.socketPath.lastIndexOf('/'));
+    if (!existsSync(socketDir)) {
+      throw new Error(`Socket directory does not exist: ${socketDir}`);
+    }
   }
 
   private pruneMessageQueue(): void {
@@ -91,12 +100,20 @@ export class SupervisorClient extends EventEmitter {
     }
 
     try {
+      this.logger.info(`Attempting to connect to Unix socket: ${this.socketPath}`);
+      
+      // Check if socket file exists
+      if (!existsSync(this.socketPath)) {
+        throw new Error(`Socket file does not exist: ${this.socketPath}`);
+      }
+      
       this.socket = await Bun.connect({
         unix: this.socketPath,
         socket: {
           data: (_socket, data) => this.handleMessage(data),
           open: () => {
             this.connected = true;
+            this.reconnectAttempts = 0; // Reset on successful connection
             this.emit("connected");
             this.logger.info(`Connected to supervisor at ${this.socketPath}`, {
               socketPath: this.socketPath
@@ -110,6 +127,13 @@ export class SupervisorClient extends EventEmitter {
 
             // Send initial state update
             this.updateState(this.state);
+            
+            // Register with supervisor
+            this.sendMessage("supervisor", "register", { 
+              id: this.id,
+              pid: process.pid,
+              type: this.id.includes("web") ? "web-server" : this.id.includes("crawler") ? "crawler" : "worker"
+            });
           },
           close: () => {
             this.connected = false;
@@ -131,7 +155,8 @@ export class SupervisorClient extends EventEmitter {
       });
     } catch (err) {
       this.logger.error(`Failed to connect to supervisor: ${err}`, {
-        error: err
+        error: err,
+        socketPath: this.socketPath
       });
       this.emit("error", err);
 
@@ -174,7 +199,7 @@ export class SupervisorClient extends EventEmitter {
     try {
       const message = JSON.parse(data.toString()) as IPCMessage;
 
-      if (message.destination !== this.id) {
+      if (message.destination !== this.id && message.destination !== "*") {
         this.logger.warn(
           `Received message intended for ${message.destination}, but our ID is ${this.id}`,
           {
@@ -292,6 +317,22 @@ export class SupervisorClient extends EventEmitter {
     this.emit("ownStateChange", state, oldState);
   }
 
+  public sendHeartbeat(payload?: any): void {
+    const message: IPCMessage = {
+      origin: this.id,
+      destination: "supervisor",
+      type: MessageType.HEARTBEAT,
+      key: "heartbeat",
+      payload: {
+        timestamp: Date.now(),
+        ...payload
+      },
+      timestamp: Date.now()
+    };
+    
+    this.sendMessage_(message);
+  }
+
   public subscribeToHeartbeats(targetId: string): void {
     const message: IPCMessage = {
       origin: this.id,
@@ -318,6 +359,19 @@ export class SupervisorClient extends EventEmitter {
         target: targetId,
         action: "unsubscribe"
       },
+      timestamp: Date.now()
+    };
+
+    this.sendMessage_(message);
+  }
+
+  public broadcastMessage(key: string, payload?: any): void {
+    const message: IPCMessage = {
+      origin: this.id,
+      destination: "*", // Broadcast to all
+      type: MessageType.MESSAGE,
+      key,
+      payload,
       timestamp: Date.now()
     };
 
