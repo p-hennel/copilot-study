@@ -1,0 +1,65 @@
+# Application Settings
+
+# File paths configuration
+paths:
+  dataRoot: ./data
+  config: ./data/config
+  database: file://./data/config/main.db
+  archive: ./data/archive
+  logs: ./data/logs
+  assets: ./public/assets
+
+# Hashing configuration
+hashing:
+  algorithm: sha256
+  hmacKey: your-secret-key-here
+
+# Authentication settings
+auth:
+  initCode: aVNEpnVwsutCH5sq4HGuQCyoFRFh7ifneoiZogrpV2EoLRsc
+  secret: your-jwt-secret-key
+  trustedOrigins:
+    - http://localhost:3000
+    - http://localhost:5173
+    - https://your-production-domain.com
+  trustedProviders:
+    - gitlab
+    - jira
+  allowDifferentEmails: true
+  admins:
+    - email: admin@example.com
+      name: Admin User
+    - email: tech@example.com
+  providers:
+    gitlab:
+      baseUrl: https://gitlab.com
+      clientId: your-gitlab-client-id
+      clientSecret: your-gitlab-client-secret
+      redirectURI: /api/auth/oauth2/callback/gitlab
+    jira:
+      baseUrl: https://api.atlassian.com
+      clientId: your-jira-client-id
+      clientSecret: your-jira-client-secret
+      redirectURI: /api/auth/oauth2/callback/jira
+
+# Application-specific settings
+app:
+  name: My Bun Application
+  version: 1.0.0
+  port: 3000
+  features:
+    enableLogging: true
+    maxWorkers: 4
+    theme: system
+    enableCache: true
+    maxCacheSize: 100MB
+  database:
+    poolSize: 10
+    timeout: 30000
+  api:
+    rateLimiting:
+      enabled: true
+      maxRequests: 100
+      timeWindow: 60000
+  deployment:
+    environment: development
