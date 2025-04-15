@@ -5,6 +5,7 @@
  */
 
 import { Gitlab } from "@gitbeaker/node";
+import { getLogger } from "@logtape/logtape";
 import type { AuthConfig } from "../types/config-types";
 
 /**
@@ -137,9 +138,11 @@ export async function refreshJobToken(
   }
 
   if (tokenNeedsRefresh(authConfig.tokenExpiresAt, bufferMinutes)) {
-    console.log(
+    const logger = getLogger ? getLogger(["crawlib", "auth"]) : console;
+    logger.info(
       `Token for job needs refresh (Expires: ${authConfig.tokenExpiresAt}). Refreshing...`
-    ); // TODO: Replace console.log with proper logger if available here
+    );
+
     try {
       const result = await refreshOAuthToken(gitlabUrl, authConfig);
 
@@ -148,19 +151,21 @@ export async function refreshJobToken(
       authConfig.refreshToken = result.refreshToken || authConfig.refreshToken; // Keep old refresh token if new one isn't provided
       authConfig.tokenExpiresAt = result.expiresAt;
 
-      console.log(`Token for job refreshed successfully. New expiry: ${authConfig.tokenExpiresAt}`); // TODO: Replace console.log
+      logger.info(`Token for job refreshed successfully. New expiry: ${authConfig.tokenExpiresAt}`);
 
       // Notify callback if provided within this specific authConfig
       if (authConfig.tokenRefreshCallback) {
         try {
           authConfig.tokenRefreshCallback(result.accessToken);
         } catch (callbackError) {
-          console.error(`Error in job-specific tokenRefreshCallback: ${callbackError}`); // TODO: Replace console.error
+          logger.error(`Error in job-specific tokenRefreshCallback: ${callbackError}`);
         }
       }
       return authConfig; // Return the updated config
     } catch (error) {
-      console.error(`Failed to refresh job-specific token: ${error}`); // TODO: Replace console.error
+      logger.error(
+        `Failed to refresh job-specific token: ${error instanceof Error ? error.message : String(error)}`
+      );
       // Re-throw the error to be handled by the job processing logic
       throw error;
     }

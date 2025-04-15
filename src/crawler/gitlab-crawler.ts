@@ -459,6 +459,70 @@ export class GitLabCrawler {
   }
 
   /**
+   * Calculate retry delay with exponential backoff and jitter
+   *
+   * @param retryCount - Current retry count
+   * @returns Delay in milliseconds
+   */
+  private calculateRetryDelay(retryCount: number): number {
+    // Calculate base backoff time with exponential factor
+    const backoffTime =
+      this.config.retryDelayMs * Math.pow(this.config.retryBackoffFactor || 2, retryCount);
+
+    // Add jitter to prevent "thundering herd" problems
+    const jitterFactor =
+      1 + Math.random() * (this.config.retryJitter || 0.1) * 2 - (this.config.retryJitter || 0.1);
+
+    // Return final delay with jitter applied
+    return Math.round(backoffTime * jitterFactor);
+  }
+
+  /**
+   * Schedule a job for retry
+   *
+   * @param job - Failed job to retry
+   * @param errorMessage - Error message from the failed attempt
+   */
+  private scheduleJobRetry(job: Job, errorMessage: string): void {
+    // Only retry if we haven't exceeded retry limit
+    if (job.retryCount >= this.config.maxRetries) {
+      logger.debug(
+        `Job ${job.id} has reached max retries (${this.config.maxRetries}), not retrying`
+      );
+      return;
+    }
+
+    // Calculate delay for this retry attempt
+    const retryDelay = this.calculateRetryDelay(job.retryCount);
+
+    logger.info(
+      `Scheduling retry ${job.retryCount + 1}/${this.config.maxRetries} for job ${job.id} ` +
+        `(${job.type}) in ${retryDelay}ms. Error: ${errorMessage}`
+    );
+
+    // Create timeout to retry the job
+    const retryTimeoutId = setTimeout(() => {
+      this.retryTimeoutsById.delete(job.id);
+
+      // Create a new job with incremented retry count
+      const retryJob: Job = {
+        ...job,
+        retryCount: job.retryCount + 1
+      };
+
+      // Enqueue the retry job
+      this.enqueueJob(retryJob).catch((error) => {
+        logger.error(
+          `Failed to retry job ${job.id}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      });
+    }, retryDelay) as unknown as number;
+
+    // Track the timeout ID so we can clear it if needed
+    this.retryTimeoutsById.set(job.id, retryTimeoutId);
+  }
+
+  /**
    * Process a specific job
    *
    * @param job - Job to process
@@ -466,6 +530,7 @@ export class GitLabCrawler {
   private async processJob(job: Job): Promise<void> {
     if (this.runningJobs.has(job.id)) {
       // Job already running
+      logger.debug(`Job ${job.id} is already running, skipping`);
       return;
     }
 
@@ -484,12 +549,16 @@ export class GitLabCrawler {
       job
     });
 
+    logger.debug(`Starting job ${job.id} (${job.type}) for resource ${job.resourceId}`);
+
     // Get processor for job type
     const processors = this.processors.getProcessors();
     const processor = processors[job.type];
 
     if (!processor) {
-      // No processor for this job type
+      // No processor for this job type - this is an error in our code
+      logger.error(`No processor found for job type: ${job.type}`);
+
       this.eventEmitter.emit({
         type: EventType.JOB_FAILED,
         timestamp: new Date(),
@@ -534,7 +603,6 @@ export class GitLabCrawler {
       });
 
       // Process the job with timeout, passing the effective auth config
-      // TODO: Update processor signature to accept authConfig
       const processingPromise = processor(job, effectiveAuth);
       const result = await Promise.race([processingPromise, timeoutPromise]);
 
@@ -547,51 +615,28 @@ export class GitLabCrawler {
       if (result.success) {
         // Job completed successfully
         // The job completed event is already emitted by the processor
+        logger.debug(`Job ${job.id} (${job.type}) completed successfully`);
       } else {
-        // Job failed
+        // Job failed with error in result
+        const errorMessage = result.error || "Unknown error";
+        logger.error(`Job ${job.id} (${job.type}) failed: ${errorMessage}`);
+
         this.eventEmitter.emit({
           type: EventType.JOB_FAILED,
           timestamp: new Date(),
           job,
-          error: result.error || "Unknown error",
+          error: errorMessage,
           attempts: job.retryCount + 1,
           willRetry: job.retryCount < this.config.maxRetries
         });
 
-        // Retry job if needed
-        if (job.retryCount < this.config.maxRetries) {
-          // Calculate retry delay with backoff
-          const backoffTime =
-            this.config.retryDelayMs *
-            Math.pow(this.config.retryBackoffFactor || 2, job.retryCount);
-
-          // Add jitter
-          const jitterFactor =
-            1 +
-            Math.random() * (this.config.retryJitter || 0.1) * 2 -
-            (this.config.retryJitter || 0.1);
-          const retryDelay = Math.round(backoffTime * jitterFactor);
-
-          // Schedule retry
-          const retryTimeoutId = setTimeout(() => {
-            this.retryTimeoutsById.delete(job.id);
-
-            const retryJob: Job = {
-              ...job,
-              retryCount: job.retryCount + 1
-            };
-
-            this.enqueueJob(retryJob).catch((error) => {
-              logger.error(`Failed to retry job ${job.id}:`, { error });
-            });
-          }, retryDelay) as unknown as number;
-
-          this.retryTimeoutsById.set(job.id, retryTimeoutId);
-        }
+        // Schedule retry if needed
+        this.scheduleJobRetry(job, errorMessage);
       }
     } catch (error) {
       // Job failed with exception
       const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Job ${job.id} (${job.type}) threw exception: ${errorMessage}`);
 
       this.eventEmitter.emit({
         type: EventType.JOB_FAILED,
@@ -602,38 +647,10 @@ export class GitLabCrawler {
         willRetry: job.retryCount < this.config.maxRetries
       });
 
-      // Retry job if needed
-      if (job.retryCount < this.config.maxRetries) {
-        // Calculate retry delay with backoff
-        const backoffTime =
-          this.config.retryDelayMs * Math.pow(this.config.retryBackoffFactor || 2, job.retryCount);
-
-        // Add jitter
-        const jitterFactor =
-          1 +
-          Math.random() * (this.config.retryJitter || 0.1) * 2 -
-          (this.config.retryJitter || 0.1);
-        const retryDelay = Math.round(backoffTime * jitterFactor);
-
-        // Schedule retry
-        const retryTimeoutId = setTimeout(() => {
-          this.retryTimeoutsById.delete(job.id);
-
-          const retryJob: Job = {
-            ...job,
-            retryCount: job.retryCount + 1
-          };
-
-          this.enqueueJob(retryJob).catch((error) => {
-            logger.error(`Failed to retry job ${job.id}:`, { error });
-          });
-        }, retryDelay) as unknown as number;
-
-        this.retryTimeoutsById.set(job.id, retryTimeoutId);
-      }
+      // Schedule retry if needed
+      this.scheduleJobRetry(job, errorMessage);
     } finally {
-      // Remove job from running jobs if still there
-      // (it might have been removed in the job completed event handler)
+      // Clean up job tracking regardless of outcome
       this.runningJobs.delete(job.id);
 
       // Remove from type tracking

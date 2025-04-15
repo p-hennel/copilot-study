@@ -110,7 +110,7 @@ export function createThrottledRequest<T>(options: ThrottleOptions) {
     }
   };
 
-  return lodashThrottle(throttleFn, throttleInterval);
+  return lodashThrottle(throttleFn as (fn: () => Promise<T>) => Promise<T>, throttleInterval);
 }
 
 /**
