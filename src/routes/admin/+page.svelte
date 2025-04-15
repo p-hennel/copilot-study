@@ -19,7 +19,8 @@
   import { invalidate } from "$app/navigation";
   import { CircleDashed, Pause, Play, PlayCircle, RefreshCw } from "lucide-svelte";
   import type { CrawlerStatus } from "../../crawler/types";
-
+  import TokensInfo from "$components/TokensInfo.svelte";
+  
   let { data }: PageProps = $props();
 
   // --- Settings Tab State ---
@@ -112,7 +113,7 @@
     loading = false;
     invalidate("/api/admin/crawler");
   }
-
+/*
   async function toggleCrawler(crawler: CrawlerStatus | null) {
     if (!crawler) crawler = await data.crawler;
     if (!crawler) return;
@@ -146,6 +147,7 @@
       .catch((error) => console.error("Error pushing crawler:", error))
       .finally(() => (loading = false));
   }
+*/
 </script>
 
 <ProfileWidget user={data.user} class="mb-4" />
@@ -153,12 +155,20 @@
 
 <Tabs.Root bind:value={selectedTab} class="w-full">
   <Tabs.List class="mx-auto flex w-full flex-row">
+    <Tabs.Trigger value="tokens" class="flex-1">Tokens</Tabs.Trigger>
     <Tabs.Trigger value="accounts" class="flex-1">Accounts</Tabs.Trigger>
     <Tabs.Trigger value="areas" class="flex-1">Areas</Tabs.Trigger>
     <Tabs.Trigger value="jobs" class="flex-1">Jobs</Tabs.Trigger>
     <Tabs.Trigger value="processes" class="flex-1">Processes</Tabs.Trigger>
     <Tabs.Trigger value="settings" class="flex-1">Settings</Tabs.Trigger>
   </Tabs.List>
+  <Tabs.Content value="tokens">
+    {#await data.tokenInfos}
+      Loading...
+    {:then tokenInfos}
+      <TokensInfo infos={tokenInfos.result} />
+    {/await}
+  </Tabs.Content>
   <Tabs.Content value="accounts">
     {#await data.users}
       <Skeleton class="my-2 h-4 w-1/12" />
