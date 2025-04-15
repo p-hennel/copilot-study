@@ -1,16 +1,16 @@
-import { sequence } from "@sveltejs/kit/hooks"
 import type { Handle } from "@sveltejs/kit"
+import { sequence } from "@sveltejs/kit/hooks"
 // Removed: import { io, type Socket } from "socket.io-client";
 import { auth } from "$lib/auth"
-import { svelteKitHandler } from "better-auth/svelte-kit"
 import { paraglideMiddleware } from "$lib/paraglide/server"
+import { svelteKitHandler } from "better-auth/svelte-kit"
 // Drizzle operators will be imported later if needed
 
 // Import AppSettings and initialize early
+import { getDb } from "$lib/server/db"; // Import getDb
+import { user as userSchema } from "$lib/server/db/schema"; // Import user schema
 import AppSettings, { type Settings } from "$lib/server/settings"
-import { getDb } from "$lib/server/db" // Import getDb
-import { user as userSchema } from "$lib/server/db/schema" // Import user schema
-import { and, inArray, not, or, isNull, eq } from "drizzle-orm" // Import needed operators
+import { and, eq, inArray, isNull, not, or } from "drizzle-orm"; // Import needed operators
 
 // Import logtape helpers
 import { configureLogging } from "$lib/logging"
@@ -138,10 +138,53 @@ import { db } from "$lib/server/db"
 import { job as jobSchema } from "$lib/server/db/schema"
 import { JobStatus } from "$lib/types"
 // eq is already imported above
-import type { CrawlerCommand, CrawlerStatus, StartJobCommand, JobDataTypeProgress } from "./crawler/types"
-import type { JobCompletionUpdate } from "./crawler/jobManager"
-import { existsSync } from "node:fs";
+import { boot } from "$lib/server/connector"
+import { existsSync } from "node:fs"
 import path from "node:path"
+
+// Define crawler-related types
+interface JobCompletionUpdate {
+  jobId: string;
+  status: 'completed' | 'failed' | 'paused';
+  timestamp: number;
+  error?: string;
+  progress?: any;
+}
+
+interface CrawlerCommand {
+  type: string;
+  [key: string]: any;
+}
+
+interface CrawlerStatus {
+  running: boolean;
+  paused: boolean;
+  queued: number;
+  processing: number;
+  completed: number;
+  failed: number;
+  lastHeartbeat?: number;
+  lastUpdated?: number;
+}
+
+interface JobDataTypeProgress {
+  cursor?: string;
+  page?: number;
+  processed?: number;
+  total?: number;
+  [key: string]: any;
+}
+
+interface StartJobCommand extends CrawlerCommand {
+  type: 'START_JOB';
+  jobId: string;
+  fullPath: string;
+  command: string;
+  branch?: string;
+  from?: Date;
+  to?: Date;
+  progress?: Record<string, JobDataTypeProgress>;
+}
 
 // --- State Variables ---
 // These are now defined after potential logger initialization
@@ -171,8 +214,7 @@ async function handleJobUpdate(update: JobCompletionUpdate) {
       dbStatus = JobStatus.paused
       break
     default: {
-      const exhaustiveCheck: never = update.status
-      logger?.error(`Invalid status received in jobUpdate: ${exhaustiveCheck}`)
+      logger?.error(`Invalid status received in jobUpdate: ${update.status}`)
       return
     }
   }
@@ -245,7 +287,8 @@ export async function startJob(params: Omit<StartJobCommand, "type" | "progress"
     logger?.error(`Error fetching progress for job ${params.jobId} from DB:`, { error: dbError })
   }
 
-  const command: StartJobCommand = {
+  // Create command with all required properties
+  const command: CrawlerCommand = {
     type: "START_JOB",
     ...params,
     progress: existingProgress
@@ -375,3 +418,8 @@ export const corsHandle: Handle = async ({ event, resolve }) => {
 };
 
 export const handle: Handle = sequence(corsHandle, paraglideHandle, authHandle, authHandle2)
+
+boot().catch(err => {
+  console.error(`Error in data processor: ${err}`);
+  //process.exit(1);
+});

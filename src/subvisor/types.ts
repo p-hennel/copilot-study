@@ -5,7 +5,8 @@ export enum ProcessState {
   STARTING = "starting",
   STOPPING = "stopping",
   STOPPED = "stopped",
-  FAILED = "failed"
+  FAILED = "failed",
+  PAUSED = "paused"
 }
 
 // Message types
@@ -54,13 +55,4 @@ export interface IPCMessage {
   timestamp: number;
 }
 
-// Helper interface for the saved state
-interface SavedState {
-  processes: {
-    id: string;
-    state: ProcessState;
-    lastHeartbeat: number;
-    restartCount: number;
-  }[];
-  timestamp: number;
-}
+
