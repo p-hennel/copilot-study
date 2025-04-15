@@ -1,8 +1,7 @@
 // src/processors/job-processors.ts
 import { getLogger } from "@logtape/logtape";
-import { type ProcessorMap } from "../types/job-types";
-import { JobType } from "../types/job-types";
-import { BaseProcessor, type BaseProcessorConfig } from "./base-processor";
+import { JobType, type ProcessorMap } from "../types/job-types";
+import { type BaseProcessorConfig } from "./base-processor";
 import { DetailProcessor } from "./detail";
 import { DiscoveryProcessor } from "./discovery";
 import { GroupProcessor } from "./group";
