@@ -217,52 +217,20 @@ export class JobProcessors {
   async processDiscoverGroups(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     logger.info('Discovering groups...');
-
-    // Create temporary API client for this job
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for group (replace 'any' with specific type if known)
     type GitLabGroupBasic = { id: number | string; path_with_namespace: string; [key: string]: any };
-
     const groups = await this.fetchPaginatedData<GitLabGroupBasic>(
-      JobType.DISCOVER_GROUPS,
-      'all',
-      // Pass the temporary client to the fetch function
-      (client, options) => this.getThrottledRequest(JobType.DISCOVER_GROUPS)(async () => (await client.Groups.all(options as any)) as unknown as GitLabGroupBasic[]), // Double cast result
-      jobApi // Pass the created client
+      JobType.DISCOVER_GROUPS, 'all',
+      (client, options) => this.getThrottledRequest(JobType.DISCOVER_GROUPS)(async () => (await client.Groups.all(options as any)) as unknown as GitLabGroupBasic[]),
+      jobApi
     );
-
     await this.saveData('groups.jsonl', groups);
-
-    // Create jobs for group details
     const discoveredJobs: Job[] = groups.map((group: GitLabGroupBasic) => ({
-        id: `${JobType.GROUP_DETAILS}-${group.id}-${Date.now()}`,
-        type: JobType.GROUP_DETAILS,
-        resourceId: group.id,
-        resourcePath: group.path_with_namespace,
-        createdAt: new Date(),
-        priority: 700, // Priority for GROUP_DETAILS
-        retryCount: 0,
-        parentJobId: job.id,
-        // auth: authConfig // Optionally inherit auth
+        id: `${JobType.GROUP_DETAILS}-${group.id}-${Date.now()}`, type: JobType.GROUP_DETAILS, resourceId: group.id, resourcePath: group.path_with_namespace,
+        createdAt: new Date(), priority: 700, retryCount: 0, parentJobId: job.id,
     }));
-
-    // Emit job completed event
-    this.eventEmitter.emit({
-      type: EventType.JOB_COMPLETED,
-      timestamp: new Date(),
-      job,
-      result: { groupCount: groups.length },
-      duration: Date.now() - startTime,
-      discoveredJobs
-    } as JobCompletedEvent);
-
-    return {
-      job,
-      success: true,
-      discoveredJobs,
-      data: { groupCount: groups.length }
-    };
+    this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { groupCount: groups.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+    return { job, success: true, discoveredJobs, data: { groupCount: groups.length } };
   }
 
   /**
@@ -272,62 +240,22 @@ export class JobProcessors {
     const startTime = Date.now();
     const pipelineId = job.resourceId;
     const projectId = job.data?.projectId;
-
-    if (!projectId) {
-      throw new Error('Project ID is required for processing pipeline test reports');
-    }
-
+    if (!projectId) throw new Error('Project ID is required for processing pipeline test reports');
     logger.info(`Processing test reports for pipeline ${pipelineId} in project ${projectId}...`);
-
     try {
-      // Use direct GitLab API call utility, passing the specific token
       const testReport = await this.getThrottledRequest(JobType.PIPELINE_TEST_REPORTS)(() =>
-        getPipelineTestReport(projectId, pipelineId, {
-          gitlabUrl: this.gitlabUrl,
-          oauthToken: authConfig.oauthToken || '' // Use token from authConfig
-        })
+        getPipelineTestReport(projectId, pipelineId, { gitlabUrl: this.gitlabUrl, oauthToken: authConfig.oauthToken || '' })
       );
-
-      // Save to nested directory
       await this.saveSingleObject(`projects/${projectId}/pipelines/${pipelineId}/test-report.json`, testReport);
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { testReport },
-        duration: Date.now() - startTime
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        data: { testReport }
-      };
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { testReport }, duration: Date.now() - startTime } as JobCompletedEvent);
+      return { job, success: true, data: { testReport } };
     } catch (error) {
-      // Test report might not be available, which is fine
       const errorMessage = error instanceof Error ? error.message : String(error);
-
       if (errorMessage.includes('not found') || errorMessage.includes('404')) {
         logger.info(`No test report available for pipeline ${pipelineId} in project ${projectId}`);
-
-        // Emit job completed event
-        this.eventEmitter.emit({
-          type: EventType.JOB_COMPLETED,
-          timestamp: new Date(),
-          job,
-          result: { noTestReport: true },
-          duration: Date.now() - startTime
-        } as JobCompletedEvent);
-
-        return {
-          job,
-          success: true,
-          data: { noTestReport: true }
-        };
+        this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { noTestReport: true }, duration: Date.now() - startTime } as JobCompletedEvent);
+        return { job, success: true, data: { noTestReport: true } };
       }
-
       throw error;
     }
   }
@@ -338,52 +266,20 @@ export class JobProcessors {
   async processDiscoverProjects(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     logger.info('Discovering projects...');
-
-    // Create temporary API client for this job using the provided authConfig
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define a type for the project object returned by the API
     type GitLabProject = { id: number | string; path_with_namespace: string; [key: string]: any };
-
     const projects = await this.fetchPaginatedData<GitLabProject>(
-      JobType.DISCOVER_PROJECTS,
-      'all',
-      // Pass the temporary client to the fetch function
-      (client, options) => this.getThrottledRequest(JobType.DISCOVER_PROJECTS)(async () => (await client.Projects.all(options as any)) as unknown as GitLabProject[]), // Double cast result
-      jobApi // Pass the created client
+      JobType.DISCOVER_PROJECTS, 'all',
+      (client, options) => this.getThrottledRequest(JobType.DISCOVER_PROJECTS)(async () => (await client.Projects.all(options as any)) as unknown as GitLabProject[]),
+      jobApi
     );
-
     await this.saveData('projects.jsonl', projects);
-
-    // Create jobs for project details
     const discoveredJobs: Job[] = projects.map((project: GitLabProject) => ({
-      id: `${JobType.PROJECT_DETAILS}-${project.id}-${Date.now()}`, // Simple unique ID
-      type: JobType.PROJECT_DETAILS,
-      resourceId: project.id,
-      resourcePath: project.path_with_namespace,
-      createdAt: new Date(),
-      priority: 700, // Priority for PROJECT_DETAILS
-      retryCount: 0,
-      parentJobId: job.id,
-      // auth: authConfig // Optionally inherit auth
+      id: `${JobType.PROJECT_DETAILS}-${project.id}-${Date.now()}`, type: JobType.PROJECT_DETAILS, resourceId: project.id, resourcePath: project.path_with_namespace,
+      createdAt: new Date(), priority: 700, retryCount: 0, parentJobId: job.id,
     }));
-
-    // Emit job completed event
-    this.eventEmitter.emit({
-      type: EventType.JOB_COMPLETED,
-      timestamp: new Date(),
-      job,
-      result: { projectCount: projects.length },
-      duration: Date.now() - startTime,
-      discoveredJobs
-    } as JobCompletedEvent);
-
-    return {
-      job,
-      success: true,
-      discoveredJobs,
-      data: { projectCount: projects.length }
-    };
+    this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { projectCount: projects.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+    return { job, success: true, discoveredJobs, data: { projectCount: projects.length } };
   }
 
   /**
@@ -393,53 +289,20 @@ export class JobProcessors {
     const startTime = Date.now();
     const parentGroupId = job.resourceId;
     logger.info(`Discovering subgroups for group ${parentGroupId}...`);
-
-    // Create temporary API client for this job using the provided authConfig
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for subgroup (similar to group)
     type GitLabGroup = { id: number | string; path_with_namespace: string; [key: string]: any };
-
     const subgroups = await this.fetchPaginatedData<GitLabGroup>(
-      JobType.DISCOVER_SUBGROUPS,
-      parentGroupId,
-      // Pass the temporary client to the fetch function
-      (client, options) => this.getThrottledRequest(JobType.DISCOVER_SUBGROUPS)(async () => (await client.Groups.subgroups(parentGroupId, options as any)) as unknown as GitLabGroup[]), // Double cast result
-      jobApi // Pass the created client
+      JobType.DISCOVER_SUBGROUPS, parentGroupId,
+      (client, options) => this.getThrottledRequest(JobType.DISCOVER_SUBGROUPS)(async () => (await client.Groups.subgroups(parentGroupId, options as any)) as unknown as GitLabGroup[]),
+      jobApi
     );
-
-    // Save subgroups data
     await this.saveData(`groups/${parentGroupId}/subgroups.jsonl`, subgroups);
-
-    // Create jobs for group details for each discovered subgroup
     const discoveredJobs: Job[] = subgroups.map((subgroup: GitLabGroup) => ({
-      id: `${JobType.GROUP_DETAILS}-${subgroup.id}-${Date.now()}`,
-      type: JobType.GROUP_DETAILS,
-      resourceId: subgroup.id,
-      resourcePath: subgroup.path_with_namespace,
-      createdAt: new Date(),
-      priority: 700, // Priority for GROUP_DETAILS
-      retryCount: 0,
-      parentJobId: job.id,
-      // auth: authConfig // Optionally inherit auth
+      id: `${JobType.GROUP_DETAILS}-${subgroup.id}-${Date.now()}`, type: JobType.GROUP_DETAILS, resourceId: subgroup.id, resourcePath: subgroup.path_with_namespace,
+      createdAt: new Date(), priority: 700, retryCount: 0, parentJobId: job.id,
     }));
-
-    // Emit job completed event
-    this.eventEmitter.emit({
-      type: EventType.JOB_COMPLETED,
-      timestamp: new Date(),
-      job,
-      result: { subgroupCount: subgroups.length },
-      duration: Date.now() - startTime,
-      discoveredJobs
-    } as JobCompletedEvent);
-
-    return {
-      job,
-      success: true,
-      discoveredJobs,
-      data: { subgroupCount: subgroups.length }
-    };
+    this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { subgroupCount: subgroups.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+    return { job, success: true, discoveredJobs, data: { subgroupCount: subgroups.length } };
   }
 
   /**
@@ -449,145 +312,47 @@ export class JobProcessors {
     const startTime = Date.now();
     const groupId = job.resourceId;
     logger.info(`Processing details for group ${groupId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for group details
     type GitLabGroupDetails = { id: number | string; path_with_namespace: string; web_url: string; [key: string]: any };
-
     try {
-      // Fetch group details
       const groupDetails = await this.getThrottledRequest(JobType.GROUP_DETAILS)(
-        async () => (await jobApi.Groups.show(groupId)) as unknown as GitLabGroupDetails // Double cast result
+        async () => (await jobApi.Groups.show(groupId)) as unknown as GitLabGroupDetails
       );
-
-      // Save group details
       await this.saveSingleObject(`groups/${groupId}/details.json`, groupDetails);
-
-      // Create follow-up jobs for this group
       const discoveredJobs: Job[] = [
-        // Discover subgroups
-        {
-          id: `${JobType.DISCOVER_SUBGROUPS}-${groupId}-${Date.now()}`,
-          type: JobType.DISCOVER_SUBGROUPS,
-          resourceId: groupId,
-          resourcePath: groupDetails.path_with_namespace,
-          createdAt: new Date(),
-          priority: 800, // Priority for DISCOVER_SUBGROUPS
-          retryCount: 0,
-          parentJobId: job.id,
-          // auth: authConfig // Optionally inherit auth
-        },
-        // Discover members
-        {
-          id: `${JobType.GROUP_MEMBERS}-${groupId}-${Date.now()}`,
-          type: JobType.GROUP_MEMBERS,
-          resourceId: groupId,
-          resourcePath: groupDetails.path_with_namespace,
-          createdAt: new Date(),
-          priority: 600, // Priority for GROUP_MEMBERS
-          retryCount: 0,
-          parentJobId: job.id,
-          // auth: authConfig
-        },
-        // Discover projects within the group
-        {
-          id: `${JobType.GROUP_PROJECTS}-${groupId}-${Date.now()}`,
-          type: JobType.GROUP_PROJECTS,
-          resourceId: groupId,
-          resourcePath: groupDetails.path_with_namespace,
-          createdAt: new Date(),
-          priority: 600, // Priority for GROUP_PROJECTS
-          retryCount: 0,
-          parentJobId: job.id,
-          // auth: authConfig
-        },
-        // Discover issues within the group
-        {
-          id: `${JobType.GROUP_ISSUES}-${groupId}-${Date.now()}`,
-          type: JobType.GROUP_ISSUES,
-          resourceId: groupId,
-          resourcePath: groupDetails.path_with_namespace,
-          createdAt: new Date(),
-          priority: 500, // Priority for GROUP_ISSUES
-          retryCount: 0,
-          parentJobId: job.id,
-          // auth: authConfig
-        }
+        { id: `${JobType.DISCOVER_SUBGROUPS}-${groupId}-${Date.now()}`, type: JobType.DISCOVER_SUBGROUPS, resourceId: groupId, resourcePath: groupDetails.path_with_namespace, createdAt: new Date(), priority: 800, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.GROUP_MEMBERS}-${groupId}-${Date.now()}`, type: JobType.GROUP_MEMBERS, resourceId: groupId, resourcePath: groupDetails.path_with_namespace, createdAt: new Date(), priority: 600, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.GROUP_PROJECTS}-${groupId}-${Date.now()}`, type: JobType.GROUP_PROJECTS, resourceId: groupId, resourcePath: groupDetails.path_with_namespace, createdAt: new Date(), priority: 600, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.GROUP_ISSUES}-${groupId}-${Date.now()}`, type: JobType.GROUP_ISSUES, resourceId: groupId, resourcePath: groupDetails.path_with_namespace, createdAt: new Date(), priority: 500, retryCount: 0, parentJobId: job.id }
       ];
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { groupDetails },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { groupDetails }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { groupDetails }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { groupDetails } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process details for group ${groupId}: ${errorMessage}`);
-      // Re-throw to let the main crawler handle failure/retry
       throw error;
     }
   }
 
-  // --- Placeholder Processor Methods ---
-  // TODO: Implement the remaining processor methods following the pattern above
-
-  async processGroupMembers(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig back to authConfig as it's now used
+  /**
+   * Process fetching members for a specific group
+   */
+  async processGroupMembers(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const groupId = job.resourceId;
     logger.info(`Processing members for group ${groupId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for member details
     type GitLabMember = { id: number | string; username: string; [key: string]: any };
-
     try {
       const members = await this.fetchPaginatedData<GitLabMember>(
-        JobType.GROUP_MEMBERS,
-        groupId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.GROUP_MEMBERS)(async () => (await client.GroupMembers.all(groupId, options as any)) as unknown as GitLabMember[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.GROUP_MEMBERS, groupId,
+        (client, options) => this.getThrottledRequest(JobType.GROUP_MEMBERS)(async () => (await client.GroupMembers.all(groupId, options as any)) as unknown as GitLabMember[]),
+        jobApi
       );
-
-      // Save members data
       await this.saveData(`groups/${groupId}/members.jsonl`, members);
-
-      // No new jobs discovered from members typically
       const discoveredJobs: Job[] = [];
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { memberCount: members.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { memberCount: members.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { memberCount: members.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { memberCount: members.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process members for group ${groupId}: ${errorMessage}`);
@@ -595,59 +360,28 @@ export class JobProcessors {
     }
   }
 
-  async processGroupProjects(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching projects for a specific group
+   */
+  async processGroupProjects(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const groupId = job.resourceId;
     logger.info(`Processing projects for group ${groupId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for project details (basic)
     type GitLabProjectBasic = { id: number | string; path_with_namespace: string; [key: string]: any };
-
     try {
       const projects = await this.fetchPaginatedData<GitLabProjectBasic>(
-        JobType.GROUP_PROJECTS,
-        groupId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.GROUP_PROJECTS)(async () => (await client.Groups.projects(groupId, options as any)) as unknown as GitLabProjectBasic[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.GROUP_PROJECTS, groupId,
+        (client, options) => this.getThrottledRequest(JobType.GROUP_PROJECTS)(async () => (await client.Groups.projects(groupId, options as any)) as unknown as GitLabProjectBasic[]),
+        jobApi
       );
-
-      // Save projects data
       await this.saveData(`groups/${groupId}/projects.jsonl`, projects);
-
-      // Create jobs for project details for each discovered project
       const discoveredJobs: Job[] = projects.map((project: GitLabProjectBasic) => ({
-        id: `${JobType.PROJECT_DETAILS}-${project.id}-${Date.now()}`,
-        type: JobType.PROJECT_DETAILS,
-        resourceId: project.id,
-        resourcePath: project.path_with_namespace,
-        createdAt: new Date(),
-        priority: 700, // Priority for PROJECT_DETAILS
-        retryCount: 0,
-        parentJobId: job.id,
-        // auth: authConfig // Optionally inherit auth
+        id: `${JobType.PROJECT_DETAILS}-${project.id}-${Date.now()}`, type: JobType.PROJECT_DETAILS, resourceId: project.id, resourcePath: project.path_with_namespace,
+        createdAt: new Date(), priority: 700, retryCount: 0, parentJobId: job.id,
       }));
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { projectCount: projects.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { projectCount: projects.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { projectCount: projects.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { projectCount: projects.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process projects for group ${groupId}: ${errorMessage}`);
@@ -655,64 +389,29 @@ export class JobProcessors {
     }
   }
 
-  async processGroupIssues(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching issues for a specific group
+   */
+  async processGroupIssues(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const groupId = job.resourceId;
     logger.info(`Processing issues for group ${groupId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for issue details (basic)
     type GitLabIssueBasic = { id: number | string; iid: number; project_id: number; [key: string]: any };
-
     try {
       const issues = await this.fetchPaginatedData<GitLabIssueBasic>(
-        JobType.GROUP_ISSUES,
-        groupId,
-        // Pass the temporary client to the fetch function
-        // Note: Issues.all takes an object for filtering
-        (client, options) => this.getThrottledRequest(JobType.GROUP_ISSUES)(async () => (await client.Issues.all({ groupId: groupId, ...options })) as unknown as GitLabIssueBasic[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.GROUP_ISSUES, groupId,
+        (client, options) => this.getThrottledRequest(JobType.GROUP_ISSUES)(async () => (await client.Issues.all({ groupId: groupId, ...options })) as unknown as GitLabIssueBasic[]),
+        jobApi
       );
-
-      // Save issues data
       await this.saveData(`groups/${groupId}/issues.jsonl`, issues);
-
-      // Create jobs for issue discussions for each discovered issue
       const discoveredJobs: Job[] = issues.map((issue: GitLabIssueBasic) => ({
-        id: `${JobType.ISSUE_DISCUSSIONS}-${issue.project_id}-${issue.iid}-${Date.now()}`,
-        type: JobType.ISSUE_DISCUSSIONS,
-        resourceId: issue.id, // Use the global issue ID as resourceId
-        resourcePath: `projects/${issue.project_id}/issues/${issue.iid}`, // Construct a path
-        createdAt: new Date(),
-        priority: 200, // Priority for ISSUE_DISCUSSIONS
-        retryCount: 0,
-        parentJobId: job.id,
-        data: { // Pass necessary IDs for the processor
-            projectId: issue.project_id,
-            issueIid: issue.iid
-        }
-        // auth: authConfig // Optionally inherit auth
+        id: `${JobType.ISSUE_DISCUSSIONS}-${issue.project_id}-${issue.iid}-${Date.now()}`, type: JobType.ISSUE_DISCUSSIONS, resourceId: issue.id,
+        resourcePath: `projects/${issue.project_id}/issues/${issue.iid}`, createdAt: new Date(), priority: 200, retryCount: 0, parentJobId: job.id,
+        data: { projectId: issue.project_id, issueIid: issue.iid }
       }));
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { issueCount: issues.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { issueCount: issues.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { issueCount: issues.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { issueCount: issues.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process issues for group ${groupId}: ${errorMessage}`);
@@ -720,103 +419,31 @@ export class JobProcessors {
     }
   }
 
-  async processProjectDetails(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching details for a specific project
+   */
+  async processProjectDetails(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.resourceId;
     logger.info(`Processing details for project ${projectId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for project details
     type GitLabProjectDetails = { id: number | string; path_with_namespace: string; web_url: string; [key: string]: any };
-
     try {
-      // Fetch project details
       const projectDetails = await this.getThrottledRequest(JobType.PROJECT_DETAILS)(
-        async () => (await jobApi.Projects.show(projectId)) as unknown as GitLabProjectDetails // Double cast result
+        async () => (await jobApi.Projects.show(projectId)) as unknown as GitLabProjectDetails
       );
-
-      // Save project details
       await this.saveSingleObject(`projects/${projectId}/details.json`, projectDetails);
-
-      // Create follow-up jobs for this project
       const discoveredJobs: Job[] = [
-        {
-          id: `${JobType.PROJECT_BRANCHES}-${projectId}-${Date.now()}`,
-          type: JobType.PROJECT_BRANCHES,
-          resourceId: projectId,
-          resourcePath: projectDetails.path_with_namespace,
-          createdAt: new Date(), priority: 500, retryCount: 0, parentJobId: job.id,
-          // auth: authConfig
-        },
-        {
-          id: `${JobType.PROJECT_MERGE_REQUESTS}-${projectId}-${Date.now()}`,
-          type: JobType.PROJECT_MERGE_REQUESTS,
-          resourceId: projectId,
-          resourcePath: projectDetails.path_with_namespace,
-          createdAt: new Date(), priority: 500, retryCount: 0, parentJobId: job.id,
-          // auth: authConfig
-        },
-        {
-          id: `${JobType.PROJECT_ISSUES}-${projectId}-${Date.now()}`,
-          type: JobType.PROJECT_ISSUES,
-          resourceId: projectId,
-          resourcePath: projectDetails.path_with_namespace,
-          createdAt: new Date(), priority: 500, retryCount: 0, parentJobId: job.id,
-          // auth: authConfig
-        },
-        {
-          id: `${JobType.PROJECT_MILESTONES}-${projectId}-${Date.now()}`,
-          type: JobType.PROJECT_MILESTONES,
-          resourceId: projectId,
-          resourcePath: projectDetails.path_with_namespace,
-          createdAt: new Date(), priority: 400, retryCount: 0, parentJobId: job.id,
-          // auth: authConfig
-        },
-        {
-          id: `${JobType.PROJECT_RELEASES}-${projectId}-${Date.now()}`,
-          type: JobType.PROJECT_RELEASES,
-          resourceId: projectId,
-          resourcePath: projectDetails.path_with_namespace,
-          createdAt: new Date(), priority: 400, retryCount: 0, parentJobId: job.id,
-          // auth: authConfig
-        },
-        {
-          id: `${JobType.PROJECT_PIPELINES}-${projectId}-${Date.now()}`,
-          type: JobType.PROJECT_PIPELINES,
-          resourceId: projectId,
-          resourcePath: projectDetails.path_with_namespace,
-          createdAt: new Date(), priority: 400, retryCount: 0, parentJobId: job.id,
-          // auth: authConfig
-        },
-        {
-          id: `${JobType.PROJECT_VULNERABILITIES}-${projectId}-${Date.now()}`,
-          type: JobType.PROJECT_VULNERABILITIES,
-          resourceId: projectId,
-          resourcePath: projectDetails.path_with_namespace,
-          createdAt: new Date(), priority: 300, retryCount: 0, parentJobId: job.id,
-          // auth: authConfig
-        }
+        { id: `${JobType.PROJECT_BRANCHES}-${projectId}-${Date.now()}`, type: JobType.PROJECT_BRANCHES, resourceId: projectId, resourcePath: projectDetails.path_with_namespace, createdAt: new Date(), priority: 500, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.PROJECT_MERGE_REQUESTS}-${projectId}-${Date.now()}`, type: JobType.PROJECT_MERGE_REQUESTS, resourceId: projectId, resourcePath: projectDetails.path_with_namespace, createdAt: new Date(), priority: 500, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.PROJECT_ISSUES}-${projectId}-${Date.now()}`, type: JobType.PROJECT_ISSUES, resourceId: projectId, resourcePath: projectDetails.path_with_namespace, createdAt: new Date(), priority: 500, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.PROJECT_MILESTONES}-${projectId}-${Date.now()}`, type: JobType.PROJECT_MILESTONES, resourceId: projectId, resourcePath: projectDetails.path_with_namespace, createdAt: new Date(), priority: 400, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.PROJECT_RELEASES}-${projectId}-${Date.now()}`, type: JobType.PROJECT_RELEASES, resourceId: projectId, resourcePath: projectDetails.path_with_namespace, createdAt: new Date(), priority: 400, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.PROJECT_PIPELINES}-${projectId}-${Date.now()}`, type: JobType.PROJECT_PIPELINES, resourceId: projectId, resourcePath: projectDetails.path_with_namespace, createdAt: new Date(), priority: 400, retryCount: 0, parentJobId: job.id },
+        { id: `${JobType.PROJECT_VULNERABILITIES}-${projectId}-${Date.now()}`, type: JobType.PROJECT_VULNERABILITIES, resourceId: projectId, resourcePath: projectDetails.path_with_namespace, createdAt: new Date(), priority: 300, retryCount: 0, parentJobId: job.id }
       ];
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { projectDetails },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { projectDetails }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { projectDetails }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { projectDetails } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process details for project ${projectId}: ${errorMessage}`);
@@ -824,49 +451,25 @@ export class JobProcessors {
     }
   }
 
-  async processProjectBranches(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching branches for a specific project
+   */
+  async processProjectBranches(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.resourceId;
     logger.info(`Processing branches for project ${projectId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for branch details
     type GitLabBranch = { name: string; commit: { id: string }; [key: string]: any };
-
     try {
       const branches = await this.fetchPaginatedData<GitLabBranch>(
-        JobType.PROJECT_BRANCHES,
-        projectId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.PROJECT_BRANCHES)(async () => (await client.Branches.all(projectId, options as any)) as unknown as GitLabBranch[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.PROJECT_BRANCHES, projectId,
+        (client, options) => this.getThrottledRequest(JobType.PROJECT_BRANCHES)(async () => (await client.Branches.all(projectId, options as any)) as unknown as GitLabBranch[]),
+        jobApi
       );
-
-      // Save branches data
       await this.saveData(`projects/${projectId}/branches.jsonl`, branches);
-
-      // No new jobs discovered from branches
       const discoveredJobs: Job[] = [];
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { branchCount: branches.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { branchCount: branches.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { branchCount: branches.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { branchCount: branches.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process branches for project ${projectId}: ${errorMessage}`);
@@ -874,63 +477,29 @@ export class JobProcessors {
     }
   }
 
-  async processProjectMergeRequests(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching merge requests for a specific project
+   */
+  async processProjectMergeRequests(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.resourceId;
     logger.info(`Processing merge requests for project ${projectId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for merge request details (basic)
     type GitLabMergeRequestBasic = { id: number | string; iid: number; [key: string]: any };
-
     try {
       const mergeRequests = await this.fetchPaginatedData<GitLabMergeRequestBasic>(
-        JobType.PROJECT_MERGE_REQUESTS,
-        projectId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.PROJECT_MERGE_REQUESTS)(async () => (await client.MergeRequests.all({ projectId: projectId, ...options })) as unknown as GitLabMergeRequestBasic[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.PROJECT_MERGE_REQUESTS, projectId,
+        (client, options) => this.getThrottledRequest(JobType.PROJECT_MERGE_REQUESTS)(async () => (await client.MergeRequests.all({ projectId: projectId, ...options })) as unknown as GitLabMergeRequestBasic[]),
+        jobApi
       );
-
-      // Save merge requests data
       await this.saveData(`projects/${projectId}/merge_requests.jsonl`, mergeRequests);
-
-      // Create jobs for merge request discussions for each discovered MR
       const discoveredJobs: Job[] = mergeRequests.map((mr: GitLabMergeRequestBasic) => ({
-        id: `${JobType.MERGE_REQUEST_DISCUSSIONS}-${projectId}-${mr.iid}-${Date.now()}`,
-        type: JobType.MERGE_REQUEST_DISCUSSIONS,
-        resourceId: mr.id, // Use the global MR ID as resourceId
-        resourcePath: `projects/${projectId}/merge_requests/${mr.iid}`, // Construct a path
-        createdAt: new Date(),
-        priority: 200, // Priority for MERGE_REQUEST_DISCUSSIONS
-        retryCount: 0,
-        parentJobId: job.id,
-        data: { // Pass necessary IDs for the processor
-            projectId: projectId,
-            mergeRequestIid: mr.iid
-        }
-        // auth: authConfig // Optionally inherit auth
+        id: `${JobType.MERGE_REQUEST_DISCUSSIONS}-${projectId}-${mr.iid}-${Date.now()}`, type: JobType.MERGE_REQUEST_DISCUSSIONS, resourceId: mr.id,
+        resourcePath: `projects/${projectId}/merge_requests/${mr.iid}`, createdAt: new Date(), priority: 200, retryCount: 0, parentJobId: job.id,
+        data: { projectId: projectId, mergeRequestIid: mr.iid }
       }));
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { mergeRequestCount: mergeRequests.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { mergeRequestCount: mergeRequests.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { mergeRequestCount: mergeRequests.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { mergeRequestCount: mergeRequests.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process merge requests for project ${projectId}: ${errorMessage}`);
@@ -938,63 +507,29 @@ export class JobProcessors {
     }
   }
 
-  async processProjectIssues(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching issues for a specific project
+   */
+  async processProjectIssues(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.resourceId;
     logger.info(`Processing issues for project ${projectId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for issue details (basic)
     type GitLabIssueBasic = { id: number | string; iid: number; project_id: number; [key: string]: any };
-
     try {
       const issues = await this.fetchPaginatedData<GitLabIssueBasic>(
-        JobType.PROJECT_ISSUES,
-        projectId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.PROJECT_ISSUES)(async () => (await client.Issues.all({ projectId: projectId, ...options })) as unknown as GitLabIssueBasic[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.PROJECT_ISSUES, projectId,
+        (client, options) => this.getThrottledRequest(JobType.PROJECT_ISSUES)(async () => (await client.Issues.all({ projectId: projectId, ...options })) as unknown as GitLabIssueBasic[]),
+        jobApi
       );
-
-      // Save issues data
       await this.saveData(`projects/${projectId}/issues.jsonl`, issues);
-
-      // Create jobs for issue discussions for each discovered issue
       const discoveredJobs: Job[] = issues.map((issue: GitLabIssueBasic) => ({
-        id: `${JobType.ISSUE_DISCUSSIONS}-${projectId}-${issue.iid}-${Date.now()}`,
-        type: JobType.ISSUE_DISCUSSIONS,
-        resourceId: issue.id, // Use the global issue ID as resourceId
-        resourcePath: `projects/${projectId}/issues/${issue.iid}`, // Construct a path
-        createdAt: new Date(),
-        priority: 200, // Priority for ISSUE_DISCUSSIONS
-        retryCount: 0,
-        parentJobId: job.id,
-        data: { // Pass necessary IDs for the processor
-            projectId: projectId,
-            issueIid: issue.iid
-        }
-        // auth: authConfig // Optionally inherit auth
+        id: `${JobType.ISSUE_DISCUSSIONS}-${projectId}-${issue.iid}-${Date.now()}`, type: JobType.ISSUE_DISCUSSIONS, resourceId: issue.id,
+        resourcePath: `projects/${projectId}/issues/${issue.iid}`, createdAt: new Date(), priority: 200, retryCount: 0, parentJobId: job.id,
+        data: { projectId: projectId, issueIid: issue.iid }
       }));
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { issueCount: issues.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { issueCount: issues.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { issueCount: issues.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { issueCount: issues.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process issues for project ${projectId}: ${errorMessage}`);
@@ -1002,49 +537,25 @@ export class JobProcessors {
     }
   }
 
-  async processProjectMilestones(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching milestones for a specific project
+   */
+  async processProjectMilestones(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.resourceId;
     logger.info(`Processing milestones for project ${projectId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for milestone details
     type GitLabMilestone = { id: number | string; iid: number; title: string; [key: string]: any };
-
     try {
       const milestones = await this.fetchPaginatedData<GitLabMilestone>(
-        JobType.PROJECT_MILESTONES,
-        projectId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.PROJECT_MILESTONES)(async () => (await client.ProjectMilestones.all(projectId, options as any)) as unknown as GitLabMilestone[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.PROJECT_MILESTONES, projectId,
+        (client, options) => this.getThrottledRequest(JobType.PROJECT_MILESTONES)(async () => (await client.ProjectMilestones.all(projectId, options as any)) as unknown as GitLabMilestone[]),
+        jobApi
       );
-
-      // Save milestones data
       await this.saveData(`projects/${projectId}/milestones.jsonl`, milestones);
-
-      // No new jobs discovered from milestones
       const discoveredJobs: Job[] = [];
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { milestoneCount: milestones.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { milestoneCount: milestones.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { milestoneCount: milestones.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { milestoneCount: milestones.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process milestones for project ${projectId}: ${errorMessage}`);
@@ -1052,49 +563,25 @@ export class JobProcessors {
     }
   }
 
-  async processProjectReleases(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching releases for a specific project
+   */
+  async processProjectReleases(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.resourceId;
     logger.info(`Processing releases for project ${projectId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for release details
     type GitLabRelease = { tag_name: string; name: string; [key: string]: any };
-
     try {
       const releases = await this.fetchPaginatedData<GitLabRelease>(
-        JobType.PROJECT_RELEASES,
-        projectId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.PROJECT_RELEASES)(async () => (await client.Releases.all(projectId, options as any)) as unknown as GitLabRelease[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.PROJECT_RELEASES, projectId,
+        (client, options) => this.getThrottledRequest(JobType.PROJECT_RELEASES)(async () => (await client.Releases.all(projectId, options as any)) as unknown as GitLabRelease[]),
+        jobApi
       );
-
-      // Save releases data
       await this.saveData(`projects/${projectId}/releases.jsonl`, releases);
-
-      // No new jobs discovered from releases
       const discoveredJobs: Job[] = [];
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { releaseCount: releases.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { releaseCount: releases.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { releaseCount: releases.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { releaseCount: releases.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process releases for project ${projectId}: ${errorMessage}`);
@@ -1102,74 +589,28 @@ export class JobProcessors {
     }
   }
 
-  async processProjectPipelines(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching pipelines for a specific project
+   */
+  async processProjectPipelines(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.resourceId;
     logger.info(`Processing pipelines for project ${projectId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for pipeline details (basic)
     type GitLabPipelineBasic = { id: number | string; status: string; ref: string; [key: string]: any };
-
     try {
       const pipelines = await this.fetchPaginatedData<GitLabPipelineBasic>(
-        JobType.PROJECT_PIPELINES,
-        projectId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.PROJECT_PIPELINES)(async () => (await client.Pipelines.all(projectId, options as any)) as unknown as GitLabPipelineBasic[]), // Double cast result
-        jobApi // Pass the created client
+        JobType.PROJECT_PIPELINES, projectId,
+        (client, options) => this.getThrottledRequest(JobType.PROJECT_PIPELINES)(async () => (await client.Pipelines.all(projectId, options as any)) as unknown as GitLabPipelineBasic[]),
+        jobApi
       );
-
-      // Save pipelines data
       await this.saveData(`projects/${projectId}/pipelines.jsonl`, pipelines);
-
-      // Create jobs for pipeline details and test reports for each discovered pipeline
       const discoveredJobs: Job[] = pipelines.flatMap((pipeline: GitLabPipelineBasic) => [
-        {
-          id: `${JobType.PIPELINE_DETAILS}-${projectId}-${pipeline.id}-${Date.now()}`,
-          type: JobType.PIPELINE_DETAILS,
-          resourceId: pipeline.id,
-          resourcePath: `projects/${projectId}/pipelines/${pipeline.id}`,
-          createdAt: new Date(),
-          priority: 200, // Priority for PIPELINE_DETAILS
-          retryCount: 0,
-          parentJobId: job.id,
-          data: { projectId: projectId }
-          // auth: authConfig
-        },
-        {
-          id: `${JobType.PIPELINE_TEST_REPORTS}-${projectId}-${pipeline.id}-${Date.now()}`,
-          type: JobType.PIPELINE_TEST_REPORTS,
-          resourceId: pipeline.id,
-          resourcePath: `projects/${projectId}/pipelines/${pipeline.id}/test_report`,
-          createdAt: new Date(),
-          priority: 100, // Priority for PIPELINE_TEST_REPORTS
-          retryCount: 0,
-          parentJobId: job.id,
-          data: { projectId: projectId }
-          // auth: authConfig
-        }
+        { id: `${JobType.PIPELINE_DETAILS}-${projectId}-${pipeline.id}-${Date.now()}`, type: JobType.PIPELINE_DETAILS, resourceId: pipeline.id, resourcePath: `projects/${projectId}/pipelines/${pipeline.id}`, createdAt: new Date(), priority: 200, retryCount: 0, parentJobId: job.id, data: { projectId: projectId } },
+        { id: `${JobType.PIPELINE_TEST_REPORTS}-${projectId}-${pipeline.id}-${Date.now()}`, type: JobType.PIPELINE_TEST_REPORTS, resourceId: pipeline.id, resourcePath: `projects/${projectId}/pipelines/${pipeline.id}/test_report`, createdAt: new Date(), priority: 100, retryCount: 0, parentJobId: job.id, data: { projectId: projectId } }
       ]);
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { pipelineCount: pipelines.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { pipelineCount: pipelines.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { pipelineCount: pipelines.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { pipelineCount: pipelines.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to process pipelines for project ${projectId}: ${errorMessage}`);
@@ -1177,63 +618,30 @@ export class JobProcessors {
     }
   }
 
-   async processProjectVulnerabilities(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+   /**
+    * Process fetching vulnerabilities for a specific project
+    */
+   async processProjectVulnerabilities(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.resourceId;
     logger.info(`Processing vulnerabilities for project ${projectId}...`);
-
-    // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
-
-    // Define type for vulnerability finding details
     type GitLabVulnerabilityFinding = { id: number | string; name: string; severity: string; [key: string]: any };
-
     try {
-      // Note: VulnerabilityFindings API might require specific permissions/features enabled on GitLab
       const vulnerabilities = await this.fetchPaginatedData<GitLabVulnerabilityFinding>(
-        JobType.PROJECT_VULNERABILITIES,
-        projectId,
-        // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.PROJECT_VULNERABILITIES)(async () => (await client.VulnerabilityFindings.all(projectId, options as any)) as unknown as GitLabVulnerabilityFinding[]), // Pass projectId as first arg, double cast result
-        jobApi // Pass the created client
+        JobType.PROJECT_VULNERABILITIES, projectId,
+        (client, options) => this.getThrottledRequest(JobType.PROJECT_VULNERABILITIES)(async () => (await client.VulnerabilityFindings.all(projectId, options as any)) as unknown as GitLabVulnerabilityFinding[]),
+        jobApi
       );
-
-      // Save vulnerabilities data
       await this.saveData(`projects/${projectId}/vulnerabilities.jsonl`, vulnerabilities);
-
-      // No new jobs discovered from vulnerabilities
       const discoveredJobs: Job[] = [];
-
-      // Emit job completed event
-      this.eventEmitter.emit({
-        type: EventType.JOB_COMPLETED,
-        timestamp: new Date(),
-        job,
-        result: { vulnerabilityCount: vulnerabilities.length },
-        duration: Date.now() - startTime,
-        discoveredJobs
-      } as JobCompletedEvent);
-
-      return {
-        job,
-        success: true,
-        discoveredJobs,
-        data: { vulnerabilityCount: vulnerabilities.length }
-      };
-
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { vulnerabilityCount: vulnerabilities.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { vulnerabilityCount: vulnerabilities.length } };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      // Handle cases where vulnerability scanning might not be enabled/available
       if (errorMessage.includes('403') || errorMessage.includes('forbidden') || errorMessage.includes('not found') || errorMessage.includes('404')) {
          logger.warn(`Could not fetch vulnerabilities for project ${projectId} (status: ${errorMessage}). Feature might be disabled or permissions missing.`);
-         this.eventEmitter.emit({
-            type: EventType.JOB_COMPLETED,
-            timestamp: new Date(),
-            job,
-            result: { vulnerabilityCount: 0, skipped: true, reason: errorMessage },
-            duration: Date.now() - startTime,
-            discoveredJobs: []
-         } as JobCompletedEvent);
+         this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { vulnerabilityCount: 0, skipped: true, reason: errorMessage }, duration: Date.now() - startTime, discoveredJobs: [] } as JobCompletedEvent);
          return { job, success: true, data: { vulnerabilityCount: 0, skipped: true, reason: errorMessage } };
       }
       logger.error(`Failed to process vulnerabilities for project ${projectId}: ${errorMessage}`);
@@ -1241,16 +649,47 @@ export class JobProcessors {
     }
   }
 
-  async processMergeRequestDiscussions(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig
+  /**
+   * Process fetching discussions for a specific merge request
+   */
+  async processMergeRequestDiscussions(job: Job, authConfig: AuthConfig): Promise<JobResult> {
     const startTime = Date.now();
     const projectId = job.data?.projectId;
     const mergeRequestIid = job.data?.mergeRequestIid;
+    if (!projectId || !mergeRequestIid) throw new Error(`Missing projectId or mergeRequestIid in job data for job ${job.id}`);
+    logger.info(`Processing discussions for MR !${mergeRequestIid} in project ${projectId}...`);
+    const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
+    type GitLabDiscussion = { id: string; notes: any[]; [key: string]: any };
+    try {
+      const discussions = await this.fetchPaginatedData<GitLabDiscussion>(
+        JobType.MERGE_REQUEST_DISCUSSIONS, `${projectId}-mr-${mergeRequestIid}`,
+        (client, options) => this.getThrottledRequest(JobType.MERGE_REQUEST_DISCUSSIONS)(async () => (await client.MergeRequestDiscussions.all(projectId, mergeRequestIid, options as any)) as unknown as GitLabDiscussion[]),
+        jobApi
+      );
+      await this.saveData(`projects/${projectId}/merge_requests/${mergeRequestIid}/discussions.jsonl`, discussions);
+      const discoveredJobs: Job[] = [];
+      this.eventEmitter.emit({ type: EventType.JOB_COMPLETED, timestamp: new Date(), job, result: { discussionCount: discussions.length }, duration: Date.now() - startTime, discoveredJobs } as JobCompletedEvent);
+      return { job, success: true, discoveredJobs, data: { discussionCount: discussions.length } };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to process discussions for MR !${mergeRequestIid} in project ${projectId}: ${errorMessage}`);
+      throw error;
+    }
+  }
 
-    if (!projectId || !mergeRequestIid) {
-      throw new Error(`Missing projectId or mergeRequestIid in job data for job ${job.id}`);
+  /**
+   * Process fetching discussions for a specific issue
+   */
+  async processIssueDiscussions(job: Job, authConfig: AuthConfig): Promise<JobResult> { // Renamed _authConfig as it's now used
+    const startTime = Date.now();
+    const projectId = job.data?.projectId;
+    const issueIid = job.data?.issueIid;
+
+    if (!projectId || !issueIid) {
+      throw new Error(`Missing projectId or issueIid in job data for job ${job.id}`);
     }
 
-    logger.info(`Processing discussions for MR !${mergeRequestIid} in project ${projectId}...`);
+    logger.info(`Processing discussions for issue #${issueIid} in project ${projectId}...`);
 
     // Create temporary API client
     const jobApi = createGitLabClient(this.gitlabUrl, authConfig.oauthToken || '');
@@ -1260,15 +699,15 @@ export class JobProcessors {
 
     try {
       const discussions = await this.fetchPaginatedData<GitLabDiscussion>(
-        JobType.MERGE_REQUEST_DISCUSSIONS,
-        `${projectId}-mr-${mergeRequestIid}`, // Composite resource ID for cursor tracking
+        JobType.ISSUE_DISCUSSIONS,
+        `${projectId}-issue-${issueIid}`, // Composite resource ID for cursor tracking
         // Pass the temporary client to the fetch function
-        (client, options) => this.getThrottledRequest(JobType.MERGE_REQUEST_DISCUSSIONS)(async () => (await client.MergeRequestDiscussions.all(projectId, mergeRequestIid, options as any)) as unknown as GitLabDiscussion[]), // Double cast result
+        (client, options) => this.getThrottledRequest(JobType.ISSUE_DISCUSSIONS)(async () => (await client.IssueDiscussions.all(projectId, issueIid, options as any)) as unknown as GitLabDiscussion[]), // Double cast result
         jobApi // Pass the created client
       );
 
       // Save discussions data
-      await this.saveData(`projects/${projectId}/merge_requests/${mergeRequestIid}/discussions.jsonl`, discussions);
+      await this.saveData(`projects/${projectId}/issues/${issueIid}/discussions.jsonl`, discussions);
 
       // No new jobs discovered
       const discoveredJobs: Job[] = [];
@@ -1292,19 +731,14 @@ export class JobProcessors {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`Failed to process discussions for MR !${mergeRequestIid} in project ${projectId}: ${errorMessage}`);
+      logger.error(`Failed to process discussions for issue #${issueIid} in project ${projectId}: ${errorMessage}`);
       throw error;
     }
   }
 
-  async processIssueDiscussions(job: Job, _authConfig: AuthConfig): Promise<JobResult> {
-    logger.warn(`Processor for ${job.type} not fully implemented.`);
-    // Requires projectId and issueIid from job.data
-    // Use jobApi.IssueDiscussions.all(projectId, issueIid, options)
-    // Save to projects/${projectId}/issues/${issueIid}/discussions.jsonl
-    return { job, success: true, data: { note: 'Not implemented' } };
-  }
-
+  /**
+   * Process fetching details for a specific pipeline
+   */
   async processPipelineDetails(job: Job, _authConfig: AuthConfig): Promise<JobResult> {
     logger.warn(`Processor for ${job.type} not fully implemented.`);
     // Requires projectId from job.data
@@ -1325,7 +759,7 @@ export class JobProcessors {
       [JobType.GROUP_DETAILS]: this.processGroupDetails.bind(this),
       [JobType.PIPELINE_TEST_REPORTS]: this.processPipelineTestReports.bind(this),
 
-      // Bind placeholder implementations
+      // Bind implemented/placeholder implementations
       [JobType.GROUP_MEMBERS]: this.processGroupMembers.bind(this),
       [JobType.GROUP_PROJECTS]: this.processGroupProjects.bind(this),
       [JobType.GROUP_ISSUES]: this.processGroupIssues.bind(this),
