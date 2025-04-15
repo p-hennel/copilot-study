@@ -14,6 +14,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "./db";
 import { job } from "./db/base-schema";
 import AppSettings from "./settings";
+// Import the auth IPC client
 
 // Initialize the supervisor client
 let client: SupervisorClient;
@@ -375,43 +376,39 @@ export async function boot() {
           progress: event.result.data?.progress || null
         })
         .where(eq(job.id, event.job.id));
-      
-      // Process any discovered jobs if configuration allows
-      // Note: We'll check a flag that might be in settings or just default to true
-      const autoEnqueueEnabled = true; // Default to true if not explicitly defined in settings
-      
-      if (event.result.discoveredJobs && event.result.discoveredJobs.length > 0 && autoEnqueueEnabled) {
-        
-        logger.info(`Processing ${event.result.discoveredJobs.length} discovered jobs from ${event.job.id}`);
-        
-        // Process each discovered job
-        for (const discoveredJob of event.result.discoveredJobs) {
-          try {
-            // Convert to our DB job format and insert
-            const newJob = {
-              id: discoveredJob.id,
-              command: mapJobTypeToCrawlCommand(discoveredJob.type as string),
-              full_path: discoveredJob.resourcePath || String(discoveredJob.resourceId),
-              accountId: (event.job as any).accountId || 'system', // Use parent job account ID or default to 'system'
-              spawned_from: event.job.id,
-              status: JobStatus.queued,
-              created_at: new Date()
-            };
-            
-            // Ensure accountId is always set
-            if (newJob.accountId) {
-              // Insert the discovered job
-              await db.insert(job).values(newJob as any); // Use 'as any' to bypass type checking
-            } else {
-              logger.warn(`Cannot insert discovered job ${discoveredJob.id} without accountId`);
-            }
-          } catch (error) {
-            logger.error(`Failed to insert discovered job ${discoveredJob.id}: ${error}`);
-          }
-        }
-      }
     } catch (error) {
       logger.error(`Failed to update job ${event.job.id} status: ${error}`);
+    }
+  });
+  
+  // Handle discovered jobs events - this is a new message type for IPC-based job planning
+  client.on("discoveredJobs", async (originId, event: { jobs: Job[]; timestamp: number }) => {
+    const autoEnqueueEnabled = true; // Default to true if not explicitly defined in settings
+    
+    if (event.jobs && event.jobs.length > 0 && autoEnqueueEnabled) {
+      logger.info(`Received ${event.jobs.length} discovered jobs from ${originId}`);
+      
+      // Process each discovered job
+      for (const discoveredJob of event.jobs) {
+        try {
+          // Convert to our DB job format and insert
+          const newJob = {
+            id: discoveredJob.id,
+            command: mapJobTypeToCrawlCommand(discoveredJob.type as string),
+            full_path: discoveredJob.resourcePath || String(discoveredJob.resourceId),
+            accountId: (discoveredJob as any).accountId || 'system', // Use job's account ID or default to 'system'
+            spawned_from: discoveredJob.parentJobId || null,
+            status: JobStatus.queued,
+            created_at: new Date()
+          };
+          
+          // Insert the discovered job
+          logger.info(`Inserting discovered job ${discoveredJob.id} of type ${discoveredJob.type}`);
+          await db.insert(job).values(newJob as any); // Use 'as any' to bypass type checking
+        } catch (error) {
+          logger.error(`Failed to insert discovered job ${discoveredJob.id}: ${error}`);
+        }
+      }
     }
   });
 
@@ -557,6 +554,37 @@ export async function boot() {
   // Connect to the supervisor
   await client.connect();
   logger.info("Connected to the supervisor");
+  
+  // Send GitLab authentication credentials to the supervisor for the crawler
+  try {
+    if (process.env.AUTH_IPC_SOCKET_PATH) {
+      logger.info("Sending GitLab authentication credentials to supervisor");
+      
+      // Get credentials from app settings
+      const credentials = {
+        // Use the OAuth token from the settings or environment variables
+        token: process.env.GITLAB_TOKEN || "",
+        clientId: AppSettings().auth.providers.gitlab.clientId || "",
+        clientSecret: AppSettings().auth.providers.gitlab.clientSecret || ""
+      };
+      
+      // Only send if we have at least a token
+      if (credentials.token) {
+        const success = await sendAuthCredentials(credentials);
+        if (success) {
+          logger.info("Successfully sent GitLab credentials to supervisor");
+        } else {
+          logger.warn("Failed to send GitLab credentials to supervisor");
+        }
+      } else {
+        logger.warn("No GitLab token available in settings, skipping credential sharing");
+      }
+    } else {
+      logger.info("AUTH_IPC_SOCKET_PATH not set, skipping credential sharing");
+    }
+  } catch (error) {
+    logger.error(`Error sending credentials to supervisor: ${error}`);
+  }
 
   // Set up a periodic check for queued jobs
   const jobCheckInterval = setInterval(() => {

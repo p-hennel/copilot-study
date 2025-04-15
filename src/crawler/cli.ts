@@ -99,8 +99,12 @@ async function main() {
     gitlabUrl,
     outputDir,
     auth: {
-      // Will be overridden by job-specific auth
-      oauthToken: '',
+      // Use environment variable or a placeholder token
+      // This prevents GitBeaker from failing on initialization
+      // Real token will be provided when a job is submitted
+      oauthToken: process.env.GITLAB_TOKEN || 'placeholder_token',
+      clientId: process.env.GITLAB_CLIENT_ID || '',
+      clientSecret: process.env.GITLAB_CLIENT_SECRET || ''
     },
     requestsPerSecond: 10,
     concurrency,
