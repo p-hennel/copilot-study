@@ -9,6 +9,8 @@
  * Updated to use SupervisorClient for all communications.
  */
 
+import { authCredentialsToEnvVars, buildAuthCredentials } from "$lib/server/utils";
+import { TokenProvider } from "$lib/types";
 import { ChildProcess, spawn } from "child_process";
 import { existsSync, mkdirSync, unlinkSync } from "fs";
 import { dirname, join } from "path";
@@ -17,10 +19,11 @@ import type { IPCMessage } from "./types";
 import { MessageType } from "./types";
 
 // Authentication credentials interface
-interface AuthCredentials {
-  token: string;
-  clientId: string;
-  clientSecret: string;
+export interface AuthCredentials {
+  provider: string,
+  token?: string;
+  clientId?: string;
+  clientSecret?: string;
   [key: string]: any;
 }
 
@@ -50,7 +53,7 @@ const websiteCmd = "bun run dev:exposed";
 const crawlerCmd = "bun run src/crawler/cli.ts --outputDir ./data";
 const restartDelay = 5000;
 const logDir = "./logs";
-let authCredentials: AuthCredentials | null = null;
+let authCredentials: AuthCredentials | AuthCredentials[] | null = null;
 
 // Ensure directories exist
 ensureDirExists(dirname(socketPath));
@@ -206,8 +209,15 @@ function setupSupervisorClient(): SupervisorSetup {
   supervisorClient.on("message", (originId: string, key: string, payload: any) => {
     if (key === "auth_credentials") {
       console.log(`Received authentication credentials from ${originId}`);
-      
-      authCredentials = payload as AuthCredentials;
+      if (!payload) {
+        console.error("empty auth credentials as payload")
+        return
+      }
+
+      if (Array.isArray(payload))
+        authCredentials = payload as AuthCredentials[];
+      else
+        authCredentials = payload as AuthCredentials;
       
       // Start crawler if it's in the processes list and not already started
       if (processes.includes('crawler') && !runningProcesses.find(p => p.name === 'crawler')) {
@@ -255,27 +265,27 @@ function handleIncomingMessage(client: SupervisorClient, _socket: any, message: 
 
 // Function to start the crawler with authentication credentials
 function startCrawlerWithCredentials(): ChildProcess | null {
-  if (!authCredentials) {
-    console.log('Cannot start crawler: No authentication credentials received yet');
-    return null;
+  let _authCredentials: AuthCredentials[]
+  if (authCredentials && !Array.isArray(authCredentials))
+    _authCredentials = [authCredentials]
+  else if (!authCredentials)
+    _authCredentials = [] as AuthCredentials[]
+  else
+    _authCredentials = authCredentials
+
+  _authCredentials = _authCredentials.map((x) => {
+    return buildAuthCredentials(x.provider, x)
+  })
+
+  const tokenproviders = Object.values(TokenProvider)
+  if (_authCredentials.length < tokenproviders.length) {
+    const presentproviders = _authCredentials.map(x => x.provider)
+    _authCredentials.push(...(tokenproviders.filter(x => !presentproviders.includes(x))).map(x => buildAuthCredentials(x)))
   }
   
   console.log('Starting crawler with received authentication credentials');
   
-  const crawlerEnv: Record<string, string> = {
-    GITLAB_TOKEN: authCredentials.token || process.env.GITLAB_TOKEN || "dummy_token_for_init_only",
-    GITLAB_CLIENT_ID: authCredentials.clientId || process.env.GITLAB_CLIENT_ID || "dummy_client_id",
-    GITLAB_CLIENT_SECRET: authCredentials.clientSecret || process.env.GITLAB_CLIENT_SECRET || "dummy_client_secret"
-  };
-  
-  // Make sure to log which credentials we're using
-  if (crawlerEnv.GITLAB_TOKEN) {
-    console.log(`Using token starting with: ${crawlerEnv.GITLAB_TOKEN.substring(0, 4)}... (${crawlerEnv.GITLAB_TOKEN.length} chars)`);
-  } else {
-    console.log('No GitLab token available');
-  }
-  
-  const crawlerProc = startProcess(crawlerCmd, "crawler", crawlerEnv);
+  const crawlerProc = startProcess(crawlerCmd, "crawler", authCredentialsToEnvVars(_authCredentials));
   runningProcesses.push({ name: "crawler", process: crawlerProc });
   return crawlerProc;
 }
@@ -345,7 +355,7 @@ async function main(): Promise<void> {
         };
         startCrawlerWithCredentials();
       }
-    }, 15000); // 15 second timeout
+    }, 60000); // 60 second timeout
   }
   
   console.log("Supervisor started. Press Ctrl+C to stop all processes.");

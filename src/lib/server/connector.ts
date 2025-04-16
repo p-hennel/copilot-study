@@ -8,12 +8,13 @@ import type {
 import { JobType } from "$lib/../crawler";
 import { SupervisorClient } from "$lib/../subvisor/client";
 import { ProcessState } from "$lib/../subvisor/types";
-import { CrawlCommand, JobStatus } from "$lib/types";
+import { CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
 import { getLogger } from "@logtape/logtape";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "./db";
 import { job } from "./db/base-schema";
 import AppSettings from "./settings";
+import { buildAuthCredentials } from "./utils";
 // Import the auth IPC client
 
 // Initialize the supervisor client
@@ -558,23 +559,14 @@ export async function boot() {
   // Send GitLab authentication credentials to the supervisor for the crawler
   try {
     logger.info("Sending GitLab authentication credentials to supervisor");
+    Bun.sleepSync(125)
+
+    //const clientId = (dev ? AppSettings().auth.providers.gitlabCloud.clientId : AppSettings().auth.providers.gitlab.clientId) || process.env.GITLAB_CLIENT_ID || ""
+    //const clientSecret = (dev ? AppSettings().auth.providers.gitlabCloud.clientSecret : AppSettings().auth.providers.gitlab.clientSecret) || process.env.GITLAB_CLIENT_SECRET || ""
     
-    // Get credentials from app settings or environment variables
-    const credentials = {
-      token: process.env.GITLAB_TOKEN || "placeholder_token_for_testing",
-      clientId: AppSettings().auth.providers.gitlab.clientId || process.env.GITLAB_CLIENT_ID || "dummy_client_id",
-      clientSecret: AppSettings().auth.providers.gitlab.clientSecret || process.env.GITLAB_CLIENT_SECRET || "dummy_client_secret"
-    };
-    
-    // Send credentials immediately to ensure crawler can start
-    // This is crucial as the crawler depends on these credentials to initialize
-    setTimeout(() => {
-      // Always send credentials - we're using placeholder values if not available
-      // Send credentials to all processes using the supervisor client
-      client.broadcastMessage("auth_credentials", credentials);
-      logger.info("Successfully sent GitLab credentials to supervisor");
-    }, 1000); // Short delay to ensure supervisor is ready
-    
+    const tokenproviders = Object.values(TokenProvider)
+    client.broadcastMessage("auth_credentials", tokenproviders.map(x => buildAuthCredentials(x)));
+    logger.info("Successfully sent GitLab credentials to supervisor");
   } catch (error) {
     logger.error(`Error sending credentials to supervisor: ${error}`);
   }

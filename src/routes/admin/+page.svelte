@@ -1,25 +1,23 @@
 <script lang="ts">
-  import type { PageProps } from "./$types";
-  import * as Card from "$lib/components/ui/card/index.js";
-  import { m } from "$paraglide";
-  import UserTable from "$lib/components/UserTable.svelte";
-  import { Skeleton } from "$ui/skeleton";
-  import * as Tabs from "$lib/components/ui/tabs/index.js";
-  import CircleAlert from "@lucide/svelte/icons/circle-alert";
-  import * as Alert from "$lib/components/ui/alert/index.js";
-  import JobsTable from "$lib/components/JobsTable.svelte";
-  import AreasTable from "$lib/components/AreasTable.svelte";
-  import type { Snapshot } from "./$types";
+  import { invalidate } from "$app/navigation";
   import ProfileWidget from "$components/ProfileWidget.svelte";
-  import { onMount } from "svelte";
-  import { Textarea } from "$ui/textarea";
+  import TokensInfo from "$components/TokensInfo.svelte";
+  import AreasTable from "$lib/components/AreasTable.svelte";
+  import JobsTable from "$lib/components/JobsTable.svelte";
+  import * as Alert from "$lib/components/ui/alert/index.js";
+  import * as Card from "$lib/components/ui/card/index.js";
+  import * as Tabs from "$lib/components/ui/tabs/index.js";
+  import UserTable from "$lib/components/UserTable.svelte";
+  import { m } from "$paraglide";
   import { Button } from "$ui/button";
+  import { Skeleton } from "$ui/skeleton";
+  import { Textarea } from "$ui/textarea";
+  import CircleAlert from "@lucide/svelte/icons/circle-alert";
+  import { CircleDashed, Pause, Play, PlayCircle, RefreshCw } from "lucide-svelte";
+  import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import Time from "svelte-time/Time.svelte";
-  import { invalidate } from "$app/navigation";
-  import { CircleDashed, Pause, Play, PlayCircle, RefreshCw } from "lucide-svelte";
-  import type { CrawlerStatus } from "../../crawler/types";
-  import TokensInfo from "$components/TokensInfo.svelte";
+  import type { PageProps, Snapshot } from "./$types";
   
   let { data }: PageProps = $props();
 
@@ -96,7 +94,7 @@
     Array.from({ length: 7 }, (_, idx) => getLoadingClassForColumn(idx))
   );
 
-  let selectedTab = $state("accounts");
+  let selectedTab = $state("tokens");
 
   export const snapshot: Snapshot<string> = {
     capture: () => selectedTab,

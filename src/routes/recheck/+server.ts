@@ -9,10 +9,9 @@ import { getLogger } from "@logtape/logtape";
 import { redirect, type RequestHandler } from "@sveltejs/kit";
 import { eq } from "drizzle-orm";
 
-// TODO: Encrypted Mail Tokens
-
 export const GET: RequestHandler = async ({ locals, fetch }) => {
-  if (true || !locals.session || !locals.user || !locals.user.id) return redirect(301, "/");
+  if (true) // || !locals.session || !locals.user || !locals.user.id)
+    return redirect(301, "/");
   const _job = (
     await db
       .select({

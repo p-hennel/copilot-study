@@ -8,6 +8,8 @@ import { SupervisorClient } from "../subvisor/client";
 import { ProcessState } from "../subvisor/types";
 
 // Import crawler components
+import { TokenProvider } from "$lib/types";
+import type { AuthCredentials } from "../subvisor/simple-supervisor";
 import { GitLabCrawler } from "./gitlab-crawler";
 import type { AuthConfig, CrawlerConfig } from "./types/config-types";
 import { type Job, JOB_PRIORITIES, JobType } from "./types/job-types";
@@ -206,30 +208,40 @@ async function main() {
 
   // Handle auth credentials received via socket
   client.on("auth_credentials", (_originId, credentials: any) => {
-    if (!credentials || typeof credentials !== 'object') {
+    if (!credentials || (typeof credentials !== 'object' && !Array.isArray(credentials))) {
       logger.warn("Received invalid authentication credentials format");
       return;
     }
+
+    if (!Array.isArray(credentials))
+      credentials = [credentials]
     
     logger.info("Received authentication credentials from supervisor");
+
+    const currentlyOnlyUsedProvider = Bun.env.NODE_ENV === "dev" ? TokenProvider.gitlabCloud : TokenProvider.gitlab
     
-    // Update crawler config with new auth credentials if they look valid
-    if (crawler && credentials.token && credentials.token !== 'placeholder_token_for_init_only') {
-      // Store the credentials for use with future jobs
-      baseConfig.auth = {
-        ...baseConfig.auth,
-        oauthToken: credentials.token,
-        clientId: credentials.clientId || baseConfig.auth.clientId,
-        clientSecret: credentials.clientSecret || baseConfig.auth.clientSecret
-      };
-      
-      // Create a new crawler with the updated credentials if necessary
-      if (crawler.isActive()) {
-        logger.info("Crawler is active, will use new credentials for future jobs");
-      } else {
-        // Recreate the crawler with new credentials if it's not active
-        crawler = new GitLabCrawler(baseConfig);
-        logger.info("Created new crawler instance with updated authentication credentials");
+    for (const credential of credentials as AuthCredentials[]) {
+      if (credential.provider !== currentlyOnlyUsedProvider)
+        continue
+
+      // Update crawler config with new auth credentials if they look valid
+      if (crawler && credential.token && credential.token !== 'placeholder_token_for_init_only') {
+        // Store the credentials for use with future jobs
+        baseConfig.auth = {
+          ...baseConfig.auth,
+          oauthToken: credential.token,
+          clientId: credential.clientId || baseConfig.auth.clientId,
+          clientSecret: credential.clientSecret || baseConfig.auth.clientSecret
+        };
+        
+        // Create a new crawler with the updated credentials if necessary
+        if (crawler.isActive()) {
+          logger.info("Crawler is active, will use new credentials for future jobs");
+        } else {
+          // Recreate the crawler with new credentials if it's not active
+          crawler = new GitLabCrawler(baseConfig);
+          logger.info("Created new crawler instance with updated authentication credentials");
+        }
       }
     }
   });

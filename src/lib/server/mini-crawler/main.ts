@@ -87,7 +87,7 @@ async function fetchAllGroupsAndProjects(
   gitlabGraphQLEndpoint: string,
   personalAccessToken: string,
   _fetch: typeof fetch = fetch,
-  first: number | undefined = 40,
+  first: number | undefined = 20,
   onBatchProcess: BatchProcessCallback = updateGroupsAndProjects,
   onProgress: ProgressCallback = updateScopingJob
 ): Promise<void> {
@@ -224,7 +224,7 @@ async function fetchAllGroups(
     cursor: string | null,
     total: number | null
   ) => Promise<void> | undefined,
-  first: number | undefined = 40,
+  first: number | undefined = 20,
   _fetch: typeof fetch = fetch
 ): Promise<void> {
   let hasNextPage = true;
@@ -296,7 +296,7 @@ async function fetchAllProjects(
     cursor: string | null,
     total: number | null
   ) => Promise<void> | undefined,
-  first: number | undefined = 40,
+  first: number | undefined = 20,
   _fetch: typeof fetch = fetch
 ): Promise<void> {
   let hasNextPage = true;
