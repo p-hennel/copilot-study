@@ -561,19 +561,20 @@ export async function boot() {
     
     // Get credentials from app settings or environment variables
     const credentials = {
-      token: process.env.GITLAB_TOKEN || "",
-      clientId: AppSettings().auth.providers.gitlab.clientId || "",
-      clientSecret: AppSettings().auth.providers.gitlab.clientSecret || ""
+      token: process.env.GITLAB_TOKEN || "placeholder_token_for_testing",
+      clientId: AppSettings().auth.providers.gitlab.clientId || process.env.GITLAB_CLIENT_ID || "dummy_client_id",
+      clientSecret: AppSettings().auth.providers.gitlab.clientSecret || process.env.GITLAB_CLIENT_SECRET || "dummy_client_secret"
     };
     
-    // Only send if we have at least a token
-    if (credentials.token) {
+    // Send credentials immediately to ensure crawler can start
+    // This is crucial as the crawler depends on these credentials to initialize
+    setTimeout(() => {
+      // Always send credentials - we're using placeholder values if not available
       // Send credentials to all processes using the supervisor client
       client.broadcastMessage("auth_credentials", credentials);
       logger.info("Successfully sent GitLab credentials to supervisor");
-    } else {
-      logger.warn("No GitLab token available, skipping credential sharing");
-    }
+    }, 1000); // Short delay to ensure supervisor is ready
+    
   } catch (error) {
     logger.error(`Error sending credentials to supervisor: ${error}`);
   }

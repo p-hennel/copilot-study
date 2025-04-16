@@ -418,7 +418,18 @@ export const corsHandle: Handle = async ({ event, resolve }) => {
 
 export const handle: Handle = sequence(corsHandle, paraglideHandle, authHandle, authHandle2)
 
-boot().catch(err => {
+// Boot the connector immediately to ensure credentials are sent to the supervisor
+// This is crucial for the crawler to start properly
+boot().then(() => {
+  if (logger) {
+    logger.info("Connector booted successfully - credentials will be sent to supervisor");
+  } else {
+    console.log("Connector booted successfully - credentials will be sent to supervisor");
+  }
+  
+  // Force log output for debugging
+  console.log("Website started and connector booted - credentials should be sent to supervisor");
+}).catch(err => {
   console.error(`Error in data processor: ${err}`);
   //process.exit(1);
 });

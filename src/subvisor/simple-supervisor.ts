@@ -46,7 +46,7 @@ if (args.length > 1 && args[1] && !args[1].startsWith("--")) {
 // Common configuration
 const socketPath = join(process.cwd(), "tmp", "supervisor.sock");
 const ipcSocketPath = join(process.cwd(), "tmp", "auth-ipc.sock");
-const websiteCmd = "bun run dev";
+const websiteCmd = "bun run dev:exposed";
 const crawlerCmd = "bun run src/crawler/cli.ts --outputDir ./data";
 const restartDelay = 5000;
 const logDir = "./logs";
@@ -268,6 +268,13 @@ function startCrawlerWithCredentials(): ChildProcess | null {
     GITLAB_CLIENT_SECRET: authCredentials.clientSecret || process.env.GITLAB_CLIENT_SECRET || "dummy_client_secret"
   };
   
+  // Make sure to log which credentials we're using
+  if (crawlerEnv.GITLAB_TOKEN) {
+    console.log(`Using token starting with: ${crawlerEnv.GITLAB_TOKEN.substring(0, 4)}... (${crawlerEnv.GITLAB_TOKEN.length} chars)`);
+  } else {
+    console.log('No GitLab token available');
+  }
+  
   const crawlerProc = startProcess(crawlerCmd, "crawler", crawlerEnv);
   runningProcesses.push({ name: "crawler", process: crawlerProc });
   return crawlerProc;
@@ -311,11 +318,34 @@ async function main(): Promise<void> {
     }
   }
   
-  // Start crawler immediately only if we already have environment variables
-  // and auth credentials weren't received yet
+  // First, check if we have environment variables for crawler authentication
   if (processes.includes("crawler") && process.env.GITLAB_TOKEN && !authCredentials) {
     console.log("Using environment variables for crawler authentication");
+    // Set auth credentials from environment variables
+    authCredentials = {
+      token: process.env.GITLAB_TOKEN || "placeholder_token",
+      clientId: process.env.GITLAB_CLIENT_ID || "dummy_client_id",
+      clientSecret: process.env.GITLAB_CLIENT_SECRET || "dummy_client_secret"
+    };
+    // Start crawler with these credentials
     startCrawlerWithCredentials();
+  } 
+  // If we need to wait for credentials from the website
+  else if (processes.includes("crawler") && !authCredentials) {
+    console.log("Waiting for credentials from website before starting crawler...");
+    
+    // Set a timeout to start with placeholder credentials if we don't receive real ones
+    setTimeout(() => {
+      if (!authCredentials && processes.includes("crawler")) {
+        console.log("No credentials received from website after timeout. Creating placeholder credentials to allow crawler initialization");
+        authCredentials = {
+          token: "placeholder_token_for_init_only",
+          clientId: "dummy_client_id",
+          clientSecret: "dummy_client_secret"
+        };
+        startCrawlerWithCredentials();
+      }
+    }, 15000); // 15 second timeout
   }
   
   console.log("Supervisor started. Press Ctrl+C to stop all processes.");

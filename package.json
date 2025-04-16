@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "DATABASE_URL=\"$PWD/data.private/config/main.db\" DATA_ROOT=$PWD/data.private SETTINGS_FILE=$PWD/data.private/config/settings.yaml bun --bun x vite dev",
+    "dev:exposed": "DATABASE_URL=\"$PWD/data.private/config/main.db\" DATA_ROOT=$PWD/data.private SETTINGS_FILE=$PWD/data.private/config/settings.yaml bun --bun x vite dev --host 0.0.0.0 --port 3000",
     "build": "bun run prepare && bun --bun x vite build",
     "preview": "bun --bun x vite preview",
     "serve": "bun --bun ./build/index.js",
@@ -26,11 +27,12 @@
     "db:migrate": "DATABASE_URL=\"$PWD/data.private/config/main.db\" bun --bun x drizzle-kit migrate",
     "db:studio": "DATABASE_URL=\"$PWD/data.private/config/main.db\" bun --bun x drizzle-kit studio",
     "crawler:start": "bun --bun run src/crawler/cli.ts",
-    "supervisor": "bun --bun run src/subvisor/simple-supervisor.js",
+    "supervisor": "bun --bun run src/subvisor/simple-supervisor.ts",
     "start": "bun run supervisor start",
     "start:all": "bun run supervisor start website,crawler",
     "start:website": "bun run supervisor start website",
-    "start:crawler": "bun run supervisor start crawler"
+    "start:crawler": "bun run supervisor start crawler",
+    "start:sequence": "bun run supervisor start website && bun run supervisor start crawler"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.8",

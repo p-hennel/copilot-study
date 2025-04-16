@@ -103,13 +103,15 @@ async function main() {
       // This prevents GitBeaker from failing on initialization
       // Real token will be provided when a job is submitted
       oauthToken: process.env.GITLAB_TOKEN || 'placeholder_token',
-      clientId: process.env.GITLAB_CLIENT_ID || '',
-      clientSecret: process.env.GITLAB_CLIENT_SECRET || ''
+      clientId: process.env.GITLAB_CLIENT_ID || 'dummy_client_id',
+      clientSecret: process.env.GITLAB_CLIENT_SECRET || 'dummy_client_secret'
     },
     requestsPerSecond: 10,
     concurrency,
     maxRetries: 3,
     retryDelayMs: 5000,
+    // Add resource-specific rate limits to avoid null reference issue
+    resourceSpecificRateLimits: {},
     hooks: {
       // These hooks will report back to the supervisor
       afterJobComplete: async (job, result) => {
@@ -200,6 +202,36 @@ async function main() {
     updateState(ProcessState.IDLE);
     
     logger.info("Crawler reconfigured successfully");
+  });
+
+  // Handle auth credentials received via socket
+  client.on("auth_credentials", (_originId, credentials: any) => {
+    if (!credentials || typeof credentials !== 'object') {
+      logger.warn("Received invalid authentication credentials format");
+      return;
+    }
+    
+    logger.info("Received authentication credentials from supervisor");
+    
+    // Update crawler config with new auth credentials if they look valid
+    if (crawler && credentials.token && credentials.token !== 'placeholder_token_for_init_only') {
+      // Store the credentials for use with future jobs
+      baseConfig.auth = {
+        ...baseConfig.auth,
+        oauthToken: credentials.token,
+        clientId: credentials.clientId || baseConfig.auth.clientId,
+        clientSecret: credentials.clientSecret || baseConfig.auth.clientSecret
+      };
+      
+      // Create a new crawler with the updated credentials if necessary
+      if (crawler.isActive()) {
+        logger.info("Crawler is active, will use new credentials for future jobs");
+      } else {
+        // Recreate the crawler with new credentials if it's not active
+        crawler = new GitLabCrawler(baseConfig);
+        logger.info("Created new crawler instance with updated authentication credentials");
+      }
+    }
   });
 
   // Handle individual crawl jobs received via socket
