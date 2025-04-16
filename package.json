@@ -114,7 +114,7 @@
     "csv-stringify": "^6.5.2",
     "devalue": "^5.1.1",
     "dotenv": "^16.5.0",
-    "drizzle-kit": "^0.30.6",
+    "drizzle-kit": "^0.31.0",
     "drizzle-orm": "^0.41.0",
     "eslint-plugin-drizzle": "^0.2.3",
     "export-to-csv": "^1.4.0",
