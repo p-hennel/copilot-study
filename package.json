@@ -92,7 +92,7 @@
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.4",
     "@tailwindcss/typography": "^0.5.16",
-    "@tanstack/svelte-query": "^5.74.3",
+    "@tanstack/svelte-query": "^5.74.4",
     "@tanstack/svelte-query-devtools": "^5.74.3",
     "@tanstack/table-core": "^8.21.3",
     "@types/csv-parse": "^1.2.5",
