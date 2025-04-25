@@ -73,7 +73,7 @@
     "zod": "^3.24.2",
     "@types/lodash": "^4.17.16",
     "@types/uuid": "^10.0.0",
-    "typedoc": "^0.28.2",
+    "typedoc": "^0.28.3",
     "@types/js-yaml": "^4.0.9",
     "bunup": "^0.4.16"
   },
