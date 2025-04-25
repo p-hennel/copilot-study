@@ -9,7 +9,7 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-minor"]
+        update-types: ["version-update:semver-patch"]
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"
