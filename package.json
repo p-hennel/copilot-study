@@ -82,7 +82,7 @@
     "@gitbeaker/node": "^35.8.1",
     "@libsql/client": "^0.15.4",
     "@logtape/file": "^0.9.0",
-    "@logtape/logtape": "^0.9.0",
+    "@logtape/logtape": "^0.9.1",
     "@logtape/otel": "^0.3.0",
     "@melt-ui/svelte": "^0.86.6",
     "@rollup/plugin-json": "^6.1.0",
