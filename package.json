@@ -48,7 +48,7 @@
     "@types/node": "^22.14.1",
     "@types/nodemailer": "^6.4.17",
     "embla-carousel-svelte": "^8.6.0",
-    "eslint": "^9.24.0",
+    "eslint": "^9.26.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-svelte": "^3.5.1",
