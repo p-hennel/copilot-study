@@ -75,6 +75,10 @@ export const settingsSchema = z.object({
       defaultReceiver: z.array(z.string().email()).optional().or(z.string().email()).optional(),
       sender: z.string().email().optional(),
       subject: z.string().optional().default("AUTOMATED BACKUP ({date})"),
+      api: z.object({
+        url: z.string().optional().default("http://134.102.23.170:3000/api/send-email"),
+        timeout: z.number().optional().default(30000)
+      }).optional(),
       smtp: z
         .object({
           host: z.string(),

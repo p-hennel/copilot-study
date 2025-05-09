@@ -12,6 +12,8 @@ import type {
   Project
 } from "./types";
 
+import { handleNewArea } from "$lib/server/job-manager";
+
 export async function updateGroupsAndProjects(
   items: Group[] | Project[],
   itemType: "groups" | "projects",
@@ -43,6 +45,12 @@ export async function updateGroupsAndProjects(
     .insert(area_authorization)
     .values(areaIds.map((x) => ({ area_id: x, accountId })))
     .onConflictDoNothing();
+  // After DB inserts, trigger job creation for each discovered area
+  for (const item of items) {
+    // itemType: "groups" or "projects" -> type: AreaType.group or AreaType.project
+    // item.id is the GitLab ID, item.fullPath is the unique path
+    await handleNewArea(item.fullPath, type, item.id, accountId);
+  }
 }
 
 export async function updateScopingJob(data: ProgressStatus, userId: string) {

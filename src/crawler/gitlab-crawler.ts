@@ -176,13 +176,15 @@ export class GitLabCrawler {
           await this.config.hooks.afterJobComplete(completedEvent.job, {
             job: completedEvent.job,
             success: true,
-            data: completedEvent.result
-          });
+            data: completedEvent.result,
+            discoveredJobs: completedEvent.discoveredJobs
+          } as JobResult);
         } catch (error) {
           logger.error(`Error in afterJobComplete hook: ${error}`);
         }
       }
 
+      /*
       // Add discovered jobs
       if (completedEvent.discoveredJobs && completedEvent.discoveredJobs.length > 0) {
         for (const job of completedEvent.discoveredJobs) {
@@ -192,6 +194,7 @@ export class GitLabCrawler {
           }
         }
       }
+      */
 
       // Schedule next jobs
       logger.debug(`JOB_COMPLETED (${completedEvent.job.id}) triggered processNextJobs`);

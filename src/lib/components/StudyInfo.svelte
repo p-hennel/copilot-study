@@ -24,11 +24,11 @@
       {/if}
       {#if content.icon}
         {@const Icon = icons[content.icon]}
-        <Icon class="mt-2.5" color="#581c87" strokeWidth={2} size={64} />
+        <Icon class="mt-2.5" color="#581c87" strokeWidth={2} size={24} />
       {/if}
       <Alert.Title>
         <h1
-          class="mb-0 ml-12 text-center text-3xl font-bold tracking-tighter md:text-4xl lg:text-6xl"
+          class="mb-0 ml-12 text-center text-md font-bold tracking-tighter md:text-lg lg:text-xl"
         >
           <SparklesText
             colors={{ first: "#fcd34d", second: "#fda4af" }}
@@ -40,7 +40,7 @@
           />
         </h1>
       </Alert.Title>
-      <Alert.Description class="ml-12 text-center md:text-lg lg:text-xl">
+      <Alert.Description class="ml-12 text-center md:text-md lg:text-lg">
         {content.content}
       </Alert.Description>
     </Alert.Root>

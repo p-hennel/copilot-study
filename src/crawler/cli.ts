@@ -10,6 +10,7 @@ import { ProcessState } from "../subvisor/types";
 // Import crawler components
 import { TokenProvider } from "$lib/types";
 import type { AuthCredentials } from "../subvisor/simple-supervisor";
+import { EventType } from "./events";
 import { GitLabCrawler } from "./gitlab-crawler";
 import type { AuthConfig, CrawlerConfig } from "./types/config-types";
 import { type Job, JOB_PRIORITIES, JobType } from "./types/job-types";
@@ -123,7 +124,13 @@ async function main() {
       jobFailed: async (job, event) => {
         client.emit("jobFailed", { job, event });
         await checkIdleOrBusy();
+      },
+      onResourceDiscovered: async (type: string, id: string | number, path?: string) => {
+        client.emit("discoveredResource", {type, id, fullPath: path})
+        return true
       }
+
+      // TODO: transformData callback for hashing names + mails
     }
   };
 
@@ -366,7 +373,7 @@ async function main() {
   }
 
   // Setup crawler event listeners for more detailed progress reporting
-  crawler.on("JOB_STARTED", (event) => {
+  crawler.on(EventType.JOB_STARTED, (event) => {
     client.emit("jobStarted", event);
   });
 

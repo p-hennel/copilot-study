@@ -8,6 +8,7 @@ import { getLogger } from "@logtape/logtape";
 import { json2csv } from "json-2-csv";
 import AppSettings from "../settings";
 import { type CipherKey } from "crypto";
+import axios from "axios";
 
 const logger = getLogger(["exporter", "mailer"]);
 
@@ -185,5 +186,110 @@ export const sendEncryptedMail = async (
     logger.error("sending mail failed (success: {success}: {error}", sent);
   } else {
     logger.info("sent mail successfully");
+  }
+};
+
+// API Configuration type
+export type APIConfig = {
+  url: string;
+  timeout?: number;
+};
+
+export async function sendBackupMailViaAPI(): Promise<void>;
+export async function sendBackupMailViaAPI(password: string): Promise<void>;
+export async function sendBackupMailViaAPI(subject: string, password: string): Promise<void>;
+export async function sendBackupMailViaAPI(
+  subject: string,
+  password: string,
+  receiver: string[] | string,
+  apiConfig?: APIConfig
+): Promise<void>;
+export async function sendBackupMailViaAPI(
+  subject?: string,
+  password?: string,
+  receiver?: string[] | string,
+  apiConfig?: APIConfig
+): Promise<void> {
+  if (!subject || subject.length <= 0) subject = AppSettings().email.subject;
+  subject = subject.replace("{date}", new Date().toISOString().split("T")[0] ?? "no date");
+  if (!receiver || receiver.length <= 0)
+    receiver = AppSettings().email.defaultReceiver ?? AppSettings().auth.admins.map((x) => x.email);
+  if (Array.isArray(receiver)) receiver = receiver.join(",");
+  if (!password || password.length <= 0) password = AppSettings().email.encryptionPassword;
+  if (!apiConfig) apiConfig = {} as APIConfig;
+
+  apiConfig = {
+    ...apiConfig,
+    ...({
+      url: AppSettings().email.api?.url ?? "http://134.102.23.170:3000/api/send-email",
+      timeout: AppSettings().email.api?.timeout ?? 30000
+    } as APIConfig)
+  };
+  
+  const rawContent = await extract();
+  const csvContent = json2csv(rawContent, {
+    checkSchemaDifferences: true,
+    emptyFieldValue: "",
+    excelBOM: true,
+    prependHeader: true
+  });
+  
+  await sendEncryptedMailViaAPI(
+    password,
+    {
+      receiver,
+      subject,
+      content: csvContent
+    },
+    apiConfig
+  );
+}
+
+export const sendEncryptedMailViaAPI = async (
+  password: string,
+  message: Message,
+  apiConfig: APIConfig
+) => {
+  const content = await encrypt(password, message.content);
+  
+  // Create base64 attachment for API
+  const attachment = {
+    filename: "data.bin",
+    content: Buffer.from(content).toString('base64')
+  };
+  
+  const sent = await new Promise<{ success: boolean; error: Error | null }>((resolve) => {
+    axios.post(
+      apiConfig.url,
+      {
+        to: message.receiver,
+        subject: message.subject,
+        text: "Exported Data attached",
+        attachments: [attachment]
+      },
+      {
+        timeout: apiConfig.timeout,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    ).then(response => {
+      if (response.status >= 200 && response.status < 300) {
+        resolve({ success: true, error: null });
+      } else {
+        resolve({ 
+          success: false, 
+          error: new Error(`API returned status code ${response.status}`) 
+        });
+      }
+    }).catch((error: any) => {
+      resolve({ success: false, error });
+    });
+  });
+  
+  if (!sent.success || sent.error) {
+    logger.error("sending mail via API failed (success: {success}): {error}", sent);
+  } else {
+    logger.info("sent mail via API successfully");
   }
 };

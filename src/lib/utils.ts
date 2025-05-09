@@ -1,6 +1,6 @@
+import { getLogger } from "@logtape/logtape";
 import { clsx, type ClassValue } from "clsx";
 import { download, generateCsv, mkConfig, type ConfigOptions } from "export-to-csv";
-import { getLogger } from "nodemailer/lib/shared";
 import { twMerge } from "tailwind-merge";
 import type { TokenProvider } from "./types";
 //import type { getAvailableJobs } from "./server/db/jobFactory";
@@ -74,3 +74,36 @@ export const dynamicHandleDownloadAsCSV = <T extends CSVbaseType>(
 ) => {
   return () => downloadAsCSV<T>(fn(), config);
 };
+
+export function clickToCopy(node: any, target: any) {
+	async function copyText() {
+		const text: any = target 
+		  ? document.querySelector(target).innerText 
+		  : node.innerText;
+		
+		try {
+			await navigator.clipboard.writeText(text);
+			
+			node.dispatchEvent(
+        new CustomEvent('copysuccess', {
+					bubbles: true
+				})
+      );
+		} catch(error) {
+			node.dispatchEvent(
+        new CustomEvent('copyerror', {
+					bubbles: true,
+					detail: error
+				})
+      );
+		}
+	}
+	
+	node.addEventListener('click', copyText);
+	
+	return {
+		destroy() {
+			node.removeEventListener('click', copyText);
+		}
+	}
+}

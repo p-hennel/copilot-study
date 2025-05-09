@@ -2,6 +2,7 @@ import { db } from "$lib/server/db";
 import { account } from "$lib/server/db/auth-schema";
 import { area, area_authorization, job } from "$lib/server/db/base-schema";
 import { getAccounts } from "$lib/server/db/jobFactory";
+import { handleNewAuthorization } from "$lib/server/job-manager";
 import fetchAllGroupsAndProjects from "$lib/server/mini-crawler/main";
 import { manageOAuthToken, type TokenManagerOptions } from "$lib/server/mini-crawler/token-check";
 import { ensureUserIsAuthenticated, getMD } from "$lib/server/utils";
@@ -151,6 +152,9 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
         }
 
         if (!token) return;
+
+        // Trigger authorization scope job creation/check
+        await handleNewAuthorization(locals.user!.id!, x.id, opts.provider);
 
         const apiUrl = `${opts.baseUrl}/api/graphql`;
         console.log("starting fetch all");

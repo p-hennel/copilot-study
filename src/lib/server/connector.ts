@@ -318,6 +318,17 @@ export function requestCrawlerStatus(crawlerId: string) {
   return true;
 }
 
+async function getAccountIdFromJob(jobId: string|undefined|null) {
+  if (!jobId || jobId.length <= 0)
+    return null
+  return (await db.query.job.findFirst({
+    columns: {
+      accountId: true
+    },
+    where: eq(job.id, jobId)
+  }))?.accountId
+}
+
 /**
  * Initialize the supervisor client and set up event handlers
  */
@@ -367,6 +378,27 @@ export async function boot() {
   client.on("jobCompleted", async (originId, event: { job: Job; result: JobResult }) => {
     logger.info(`Job completed from ${originId}: ${event.job.id}`);
     
+    try {
+      if (event.result.discoveredJobs && event.result.discoveredJobs.length > 0) {
+        const toBeInserted = (await Promise.all(event.result.discoveredJobs.map(async (x) => ({
+          accountId: await getAccountIdFromJob(x.parentJobId) ?? "",
+          full_path: x.resourcePath,
+          command: mapJobTypeToCrawlCommand(x.type),
+          spawned_from: x.parentJobId,
+          status: JobStatus.queued,
+          created_at: new Date()
+        })))).filter(x => x.accountId.length > 0)
+
+        const insertResult = await db.insert(job).values(toBeInserted).onConflictDoNothing()
+
+        if (insertResult.rowsAffected < event.result.discoveredJobs.length) {
+          logger.debug("Inserted fewer rows ({insertCount}) than discovered ({discoveredCount})", { insertCount: insertResult.rowsAffected, disoveredCount: event.result.discoveredJobs.length, rows: insertResult.rows })
+        }
+      }
+    } catch (error) {
+      logger.error(`Failed to insert discovered jobs ${event.job.id} status: ${error}`);
+    }
+
     try {
       // Update job status in the database
       db.update(job)

@@ -18,6 +18,9 @@
   import { toast } from "svelte-sonner";
   import Time from "svelte-time/Time.svelte";
   import type { PageProps, Snapshot } from "./$types";
+    import Input from "@/input/input.svelte";
+    import { clickToCopy } from "$lib/utils";
+    import { ClipboardCopy } from "@lucide/svelte";
   
   let { data }: PageProps = $props();
 
@@ -146,6 +149,9 @@
       .finally(() => (loading = false));
   }
 */
+
+  let toBeHashed = $state("");
+  let hashedValue = $state("");
 </script>
 
 <ProfileWidget user={data.user} class="mb-4" />
@@ -165,6 +171,36 @@
       Loading...
     {:then tokenInfos}
       <TokensInfo infos={tokenInfos.result} />
+      <div class="flex flex-row gap-4 mt-4">
+        <Input
+          type="text"
+          bind:value={toBeHashed}
+          class="font-mono grow-1"
+          placeholder="Value to hash"
+        />
+        <Button
+          onclick={async () => {
+            const response = await fetch("/api/admin/hash", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ value: toBeHashed })
+            });
+            const result: any = await response.json();
+            if (result.error || !result.success) {
+              toast.error("Error hashing value", { description: result.error });
+              hashedValue = result.error
+            } else {
+              hashedValue = result.hashedValue;
+            }
+          }}
+          >
+          Hash Value
+        </Button>
+      </div>
+      <p class="flex flex-wrap flex-row mt-4 cursor-pointer font-mono border-2 border-slate-300 p-2 rounded-md min-h-[2.5rem]" use:clickToCopy>
+        <ClipboardCopy color={hashedValue && hashedValue.length > 0 ? '' : 'grey-200'} class="mr-4" />
+        {hashedValue}
+      </p>
     {/await}
   </Tabs.Content>
   <Tabs.Content value="accounts">

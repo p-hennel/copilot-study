@@ -11,9 +11,11 @@ export async function GET({ locals }) {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }
 
+  const shouldHash = computeHash(locals.user?.email) !== "";
+
   const users = (await getUsers()).map((x) => ({
     ...x,
-    email: computeHash(x.email)
+    email: shouldHash ? computeHash(x.email) : x.email,
   }));
 
   return json(users);
