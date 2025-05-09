@@ -221,7 +221,15 @@ export const settingsSchema = z.object({
         })
         .default({})
     })
-    .default({})
+    .default({}),
+  app: z.object({
+      CRAWLER_API_TOKEN: z
+        .string()
+        .default(
+          process.env.CRAWLER_API_TOKEN ||
+            "nLR6HdQXYwpehaQxGRsoZUZmFTje3m4BVwPZRNSkEqYurTmNzxsphvMWQfX3SXNA"
+        )
+    }).default({})
   // For nested settings, you might add something like:
   // nestedConfig: z.object({
   //   enabled: z.boolean(),

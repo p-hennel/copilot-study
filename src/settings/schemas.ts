@@ -119,7 +119,16 @@ export const defaultSettingsSchema = z.object({
     .default({}),
 
   // For custom app settings, extend the schema
-  app: z.record(z.unknown()).default({})
+  app: z
+    .object({
+      CRAWLER_API_TOKEN: z
+        .string()
+        .default(
+          process.env.CRAWLER_API_TOKEN ||
+            "nLR6HdQXYwpehaQxGRsoZUZmFTje3m4BVwPZRNSkEqYurTmNzxsphvMWQfX3SXNA"
+        )
+    })
+    .default({})
 });
 
 /**
