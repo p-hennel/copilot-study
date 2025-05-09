@@ -162,8 +162,12 @@
     <Tabs.Trigger value="tokens" class="flex-1">Tokens</Tabs.Trigger>
     <Tabs.Trigger value="accounts" class="flex-1">Accounts</Tabs.Trigger>
     <Tabs.Trigger value="areas" class="flex-1">Areas</Tabs.Trigger>
+    <!--
     <Tabs.Trigger value="jobs" class="flex-1">Jobs</Tabs.Trigger>
+    -->
+    <!--
     <Tabs.Trigger value="processes" class="flex-1">Processes</Tabs.Trigger>
+    -->
     <Tabs.Trigger value="settings" class="flex-1">Settings</Tabs.Trigger>
   </Tabs.List>
   <Tabs.Content value="tokens">

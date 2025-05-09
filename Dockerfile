@@ -61,7 +61,8 @@ COPY --from=prerelease \
   /usr/src/app/startup.sh \
   /usr/src/app/.autorestic.yml \
   /usr/src/app/backup.cron \
-  .
+  /usr/src/app/dual-server.js \
+  ./
   
 COPY drizzle /usr/src/app/
 
