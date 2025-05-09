@@ -1,8 +1,8 @@
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import tailwindcss from "@tailwindcss/vite";
 //import { svelteTesting } from "@testing-library/svelte/vite";
-import { sveltekit } from "@sveltejs/kit/vite";
 import { enhancedImages } from "@sveltejs/enhanced-img";
+import { sveltekit } from "@sveltejs/kit/vite";
 //import autoprefixer from 'autoprefixer'
 import { defineConfig } from "vite";
 
@@ -25,7 +25,14 @@ export default defineConfig({
   },
   build: {
     target: "modules",
-    sourcemap: true
+    sourcemap: true,
+    manifest: true,
+    rollupOptions: {
+      external: [
+        "src/crawler/**/*",
+        "src/subvisor/**/*"
+      ],
+    },
   },
   preview: {
     host: true,
@@ -40,8 +47,13 @@ export default defineConfig({
     external: ["bun"]
   },
   resolve: {
-    external: ["bun"]
-  }
+    external: ["bun"],
+    alias: {
+      os: "rollup-plugin-node-polyfills/polyfills/empty",
+      stream: "rollup-plugin-node-polyfills/polyfills/empty"
+    }
+  },
+  
   // test: {
   //   workspace: [
   //     {

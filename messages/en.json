@@ -101,8 +101,8 @@
           "name": "Name",
           "type": "Type",
           "created_at": "Created",
-          "countAccounts": "# Accounts",
-          "countJobs": "# Jobs"
+          "countAccounts": "Accounts",
+          "countJobs": "Jobs"
         },
         "no_areas": "No Areas"
       }

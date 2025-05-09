@@ -18,9 +18,9 @@
   import { toast } from "svelte-sonner";
   import Time from "svelte-time/Time.svelte";
   import type { PageProps, Snapshot } from "./$types";
-    import Input from "@/input/input.svelte";
-    import { clickToCopy } from "$lib/utils";
-    import { ClipboardCopy } from "@lucide/svelte";
+  import Input from "@/input/input.svelte";
+  import { clickToCopy } from "$lib/utils";
+  import { ClipboardCopy } from "@lucide/svelte";
   
   let { data }: PageProps = $props();
 
@@ -150,7 +150,7 @@
   }
 */
 
-  let toBeHashed = $state("");
+  let toBeHashed = $state(data.user.email ?? "");
   let hashedValue = $state("");
 </script>
 
@@ -198,7 +198,7 @@
         </Button>
       </div>
       <p class="flex flex-wrap flex-row mt-4 cursor-pointer font-mono border-2 border-slate-300 p-2 rounded-md min-h-[2.5rem]" use:clickToCopy>
-        <ClipboardCopy color={hashedValue && hashedValue.length > 0 ? '' : 'grey-200'} class="mr-4" />
+        <ClipboardCopy color={hashedValue && hashedValue.length > 0 ? '#000000' : '#9ca3af'} class="mr-2" />
         {hashedValue}
       </p>
     {/await}

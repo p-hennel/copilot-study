@@ -11,6 +11,7 @@
   import LoadingButton from "./LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
+    import { ClipboardCopy } from "@lucide/svelte";
 
   type UserInformationWithAccounts = UserInformation & { accounts: AccountInformation[] };
   type PreparedUserInformation = UserInformationWithAccounts & {
@@ -74,6 +75,15 @@
     >
       Backup
     </LoadingButton>
+    <Button
+      variant="secondary"
+      onclick={async () => {
+        const idsText = data.users.map(x => x.email).join("\n");
+        navigator.clipboard.writeText(idsText);
+      }}>
+      <ClipboardCopy />
+      Copy IDs
+    </Button>
     <Button
       variant="default"
       onclick={dynamicHandleDownloadAsCSV(() =>
