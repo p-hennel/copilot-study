@@ -315,6 +315,21 @@ export function getLastHeartbeat(): number {
   return lastHeartbeat
 }
 
+export async function reqSourceHandle({ event, resolve }) {
+  // Get the request source from the header we added
+  const requestSource = event.request.headers.get('x-request-source') || 'unknown';
+  
+  // Add to locals for use in routes
+  event.locals.requestSource = requestSource;
+  event.locals.isSocketRequest = requestSource === 'unix';
+
+  if (event.url.pathname.startsWith('/api/internal') && !event.locals.isSocketRequest) {
+    return new Response('Forbidden', { status: 403 });
+  }
+  
+  return await resolve(event);
+}
+
 // --- Setup Event Listeners and Heartbeat Monitor ---
 // This block runs only if logger initialization was successful
 if (logger) {
@@ -416,7 +431,7 @@ export const corsHandle: Handle = async ({ event, resolve }) => {
   return response;
 };
 
-export const handle: Handle = sequence(corsHandle, paraglideHandle, authHandle, authHandle2)
+export const handle: Handle = sequence(corsHandle, paraglideHandle, authHandle, authHandle2, reqSourceHandle)
 
 // Boot the connector immediately to ensure credentials are sent to the supervisor
 // This is crucial for the crawler to start properly

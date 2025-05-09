@@ -8,7 +8,7 @@ import { JobStatus, CrawlCommand } from '$lib/types';
 import { eq } from 'drizzle-orm';
 import { getLogger } from '$lib/logging';
 
-const logger = getLogger(['backend', 'api', 'crawler_tasks', 'progress']);
+const logger = getLogger(['backend', 'api', 'jobs', 'progress']);
 
 const CRAWLER_API_TOKEN_FROM_SETTINGS = AppSettings().app?.CRAWLER_API_TOKEN;
 

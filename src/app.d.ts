@@ -11,6 +11,8 @@ declare global {
       session?: Session;
       user?: user;
       locale: "en";
+      requestSource: string;
+      isSocketRequest: boolean;
     }
     // interface PageData {}
     // interface PageState {}

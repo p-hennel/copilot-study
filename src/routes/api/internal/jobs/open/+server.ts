@@ -1,20 +1,5 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { getLogger } from "$lib/logging";
-// Ensure CRAWLER_API_TOKEN is defined in your .env file and SvelteKit's type generation has run (e.g., `npx svelte-kit sync`)
-// For example, in .env: CRAWLER_API_TOKEN="your_secure_token"
-// And in src/app.d.ts (or similar, often auto-generated):
-// declare global {
-//   namespace App {
-//     interface Locals {}
-//     interface PageData {}
-//     interface Error {}
-//     interface Platform {}
-//     interface PrivateEnv {
-//       CRAWLER_API_TOKEN: string;
-//     }
-//   }
-// }
-// export {};
 import AppSettings from "$lib/server/settings"; // Use AppSettings
 import { db } from "$lib/server/db";
 import { account } from "$lib/server/db/auth-schema";
@@ -22,7 +7,7 @@ import { area, job, type Job } from "$lib/server/db/base-schema";
 import { JobStatus, CrawlCommand } from "$lib/types";
 import { and, asc, eq } from "drizzle-orm";
 
-const logger = getLogger(["backend", "api", "crawler_tasks", "open"]);
+const logger = getLogger(["backend", "api", "jobs", "open"]);
 
 const CRAWLER_API_TOKEN_FROM_SETTINGS = AppSettings().app?.CRAWLER_API_TOKEN;
 
