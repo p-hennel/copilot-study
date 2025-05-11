@@ -17,27 +17,29 @@ if (!CRAWLER_API_TOKEN_FROM_SETTINGS) {
   );
 }
 
-export const GET: RequestHandler = async ({ request, url }) => {
+export const GET: RequestHandler = async ({ request, url, locals }) => {
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
   if (!currentCrawlerApiToken) {
     logger.error("Attempted to access disabled task endpoint: CRAWLER_API_TOKEN setting not set at request time.");
     return json({ error: "Endpoint disabled due to missing configuration" }, { status: 503 });
   }
 
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    logger.warn("Missing or malformed Authorization header");
-    return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
-  }
+  if (!locals.isSocketRequest) {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      logger.warn("Missing or malformed Authorization header");
+      return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
+    }
 
-  const token = authHeader.substring("Bearer ".length);
-  if (token !== currentCrawlerApiToken) {
-    logger.warn("Invalid taskApiToken provided", {
-      tokenProvided: token ? "****" + token.slice(-4) : "null"
-    });
-    return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
+    const token = authHeader.substring("Bearer ".length);
+    if (token !== currentCrawlerApiToken) {
+      logger.warn("Invalid taskApiToken provided", {
+        tokenProvided: token ? "****" + token.slice(-4) : "null"
+      });
+      return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
+    }
   }
-
+  
   const resourceParam = url.searchParams.get("resource");
   logger.info(`Task request received. Resource parameter: ${resourceParam || "not provided"}`);
 
