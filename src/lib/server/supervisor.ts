@@ -126,6 +126,9 @@ async function handleJobUpdate(update: JobCompletionUpdate) {
  * Sends a command to the crawler process via the MessageBusClient (stdin/stdout).
  */
 export function sendCommandToCrawler(command: CrawlerCommand): boolean {
+  if (!SUPERVISED) {
+    return false
+  }
   if (!messageBusClientInstance) {
     logger?.error("Cannot send command: MessageBusClient not available (not running under supervisor?).", { command })
     return false
