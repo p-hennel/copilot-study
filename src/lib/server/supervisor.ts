@@ -142,7 +142,6 @@ export function sendCommandToCrawler(command: CrawlerCommand): boolean {
 }
 
 export async function startJob(params: Omit<StartJobCommand, "type" | "progress">) {
-  console.log("starting job:", params)
   let existingProgress: Record<string, JobDataTypeProgress> | undefined = undefined
   try {
     const jobRecord = await db.query.job.findFirst({

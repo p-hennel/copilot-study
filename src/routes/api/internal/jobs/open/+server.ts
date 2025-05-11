@@ -100,13 +100,13 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
       return new Response(null, { status: 204 }); // No content, as the job cannot be processed by this worker
     }
 
+    /*
     const now = new Date();
     // Try to mark the job as running
     const updatedJobArray = await db
       .update(job)
       .set({ status: JobStatus.running, started_at: now })
       .where(eq(job.id, jobDetails.id))
-      .returning();
 
     if (!updatedJobArray || updatedJobArray.length === 0) {
       logger.error(
@@ -118,6 +118,11 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
     // Use the updated job record from now on, but retain the 'usingAccount' from the initial fetch
     const currentJob: Job & { usingAccount: typeof account.$inferSelect } = {
       ...updatedJobArray[0]!,
+      usingAccount: jobDetails.usingAccount // Add the account details to the current job object
+    };
+    */
+    const currentJob: Job & { usingAccount: typeof account.$inferSelect } = {
+      ...jobDetails!,
       usingAccount: jobDetails.usingAccount // Add the account details to the current job object
     };
 

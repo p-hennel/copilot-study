@@ -7,6 +7,7 @@ import path from "node:path";
 import { ulid } from "ulid";
 import { db } from ".";
 import type { AreaInformation, AuthorizationScopesResult } from "../utils";
+import { handleNewArea } from "$lib/server/job-manager"; // Added import
 import { account } from "./auth-schema";
 import { area, job, type JobInsert, type Job as JobType } from "./base-schema";
 
@@ -178,22 +179,20 @@ export const ensureAreasExist = async (
   ];
 };
 
-export const prepareNewJobsAfterScoping = (
-  previousJob: { accountId: string; id: string },
-  groups: AuthorizationScopesResult["groups"],
-  projects: AuthorizationScopesResult["projects"]
+/**
+ * Prepares only global jobs after scoping. Area-specific jobs are handled by `handleNewArea`.
+ */
+export const prepareGlobalJobsAfterScoping = (
+  previousJob: { accountId: string; id: string }
+  // groups and projects parameters are no longer needed here
 ) => {
-  // 3: Now we prepare new Jobs...
+  // Prepare new global Jobs...
   const newJobs = [];
-  // 3.1: For Groups
-  newJobs.push(...groups.map(jobFromAreaFactory(CrawlCommand.group, previousJob)));
-  // 3.2: For Projects
-  newJobs.push(...projects.map(jobFromAreaFactory(CrawlCommand.project, previousJob)));
-  // 3.3: For Users
+  // For Users
   newJobs.push(newJob(previousJob.accountId, CrawlCommand.users, previousJob.id));
-  // 3.4: For Vulnerabilities
+  // For Vulnerabilities
   newJobs.push(newJob(previousJob.accountId, CrawlCommand.vulnerabilities, previousJob.id));
-  // 3.5: For Timelogs
+  // For Timelogs
   newJobs.push(newJob(previousJob.accountId, CrawlCommand.timelogs, previousJob.id));
 
   return newJobs;
@@ -304,23 +303,40 @@ export const spawnNewJobs = async (
   currentJob: { accountId: string; id: string }
 ) => {
   try {
-    // 1: insert areas (groups, projects), if they do not already exist
-    // 2: To check if jobs already exist (are done or running even?), we collect all path information
-    const fullPaths = await ensureAreasExist(provider, scopes);
+    // 1: Insert areas (groups, projects), if they do not already exist.
+    //    `ensureAreasExist` also returns a list of all fullPaths for these areas.
+    await ensureAreasExist(provider, scopes);
 
-    // 3: Then we fetch jobs that exist form the database
-    const existingJobs = toJobLookup(await jobSearch(provider, fullPaths));
+    // 2: For each newly discovered group and project, call handleNewArea to create the comprehensive job suite.
+    //    The `currentJob.id` is passed as the `spawningJobId`.
+    logger.info(`Spawning comprehensive jobs for ${scopes.groups.length} groups and ${scopes.projects.length} projects from job ${currentJob.id}`);
+    for (const group of scopes.groups) {
+      await handleNewArea(group.fullPath, AreaType.group, String(group.id), currentJob.accountId, currentJob.id);
+    }
+    for (const project of scopes.projects) {
+      await handleNewArea(project.fullPath, AreaType.project, String(project.id), currentJob.accountId, currentJob.id);
+    }
 
-    // 4: Now we need to actually build the potential new jobs
-    const newJobs = prepareNewJobsAfterScoping(currentJob, scopes.groups, scopes.projects);
+    // 3: Prepare and sync global jobs (users, vulnerabilities, timelogs).
+    //    Fetch existing global jobs (no full_path) to avoid duplicates or to reset failed ones.
+    //    Note: `jobSearch` with an empty fullPaths array might need adjustment if it doesn't handle global jobs correctly.
+    //    For now, we assume `jobSearch(provider, [])` or a similar call can fetch global jobs for the provider.
+    //    A more robust way would be to fetch jobs with `full_path IS NULL` for the given account.
+    //    Let's assume `jobSearch` with an empty array is okay for now, or `toJobLookup` handles empty `full_path` keys.
+    const existingGlobalJobsLookup = toJobLookup(await jobSearch(provider, [])); // Fetch global jobs
 
-    // 5: We can now filter those candidates into those to insert, those to reset, and some discarded ones
-    const preparedJobs = prepareJobInsertsAndResets(newJobs, existingJobs);
+    const newGlobalJobs = prepareGlobalJobsAfterScoping(currentJob);
 
-    // 6: Now it is time to sync this to the DB
-    await ensureJobSync(preparedJobs.inserts, preparedJobs.resets);
+    // Filter these global jobs into those to insert and those to reset.
+    // The `provider` parameter in `prepareJobInsertsAndResets` will be used as these jobs don't have `full_path`.
+    const preparedGlobalJobs = prepareJobInsertsAndResets(newGlobalJobs, existingGlobalJobsLookup, provider);
+
+    // Sync global jobs to the DB.
+    await ensureJobSync(preparedGlobalJobs.inserts, preparedGlobalJobs.resets);
+    logger.info(`Global jobs synced: ${preparedGlobalJobs.inserts.length} inserts, ${preparedGlobalJobs.resets.length} resets for job ${currentJob.id}`);
+
   } catch (error: any) {
-    handleIncident("Could not create Jobs!", currentJob, error);
+    handleIncident("Could not create/spawn new jobs after scoping!", { currentJob, scopes, error }, error);
   }
 };
 

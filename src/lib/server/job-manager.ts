@@ -191,14 +191,16 @@ export async function handleNewAuthorization(
  * @param areaType The type of area (group or project)
  * @param areaId The GitLab ID of the area
  * @param accountId The account ID to use for crawling
+ * @param spawningJobId Optional ID of the job that triggered this area handling
  */
 export async function handleNewArea(
   areaPath: string,
   areaType: AreaType,
   areaId: string,
-  accountId: string
+  accountId: string,
+  spawningJobId?: string
 ): Promise<void> {
-  logger.info(`Handling new area: ${areaPath} (${areaType}) with ID ${areaId}`);
+  logger.info(`Handling new area: ${areaPath} (${areaType}) with ID ${areaId}${spawningJobId ? ` (spawned by job ${spawningJobId})` : ''}`);
 
   try {
     // First, check if area already exists in the database
@@ -259,7 +261,8 @@ export async function handleNewArea(
             accountId,
             full_path: areaPath,
             command,
-            status: JobStatus.queued
+            status: JobStatus.queued,
+            spawned_from: spawningJobId // Add spawned_from
           });
         }
       }
@@ -322,7 +325,8 @@ export async function handleNewArea(
             accountId,
             full_path: areaPath,
             command,
-            status: JobStatus.queued
+            status: JobStatus.queued,
+            spawned_from: spawningJobId // Add spawned_from
           });
         }
       }
@@ -375,5 +379,5 @@ export async function handleIpcAreaDiscovery(message: any): Promise<void> {
     return;
   }
 
-  await handleNewArea(areaPath, areaType, areaId, accountId);
+  await handleNewArea(areaPath, areaType, areaId, accountId); // Spawning job ID is not relevant for direct IPC calls
 }
