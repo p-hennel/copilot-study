@@ -68,6 +68,7 @@ const dataRoot = getDataRoot();
 
 // Define the Zod schema for your settings, including nested or array structures if needed.
 export const settingsSchema = z.object({
+  dev: z.boolean().default(false),
   baseUrl: z.string().optional(),
   email: z
     .object({

@@ -94,7 +94,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
             };
           },
           gitlabOnPrem: () => {
-            const baseUrl = AppSettings().auth.providers.gitlabCloud.baseUrl;
+            const baseUrl = AppSettings().auth.providers.gitlab.baseUrl ?? "";
             return {
               provider: TokenProvider.gitlab,
               baseUrl

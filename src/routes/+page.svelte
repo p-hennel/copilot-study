@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { dev } from "$app/environment";
   import ProfileWidget from "$components/ProfileWidget.svelte";
   import StudyInfo from "$components/StudyInfo.svelte";
   import { Progress } from "$components/ui/progress";
@@ -43,7 +42,7 @@
   const isLoggedIn = $derived(!!data.session && !!data.session.userId);
   const jobsSummary = $derived.by(() => {
     return data.jobs.reduce(
-      (ctr, item) => {
+      (ctr: any, item: any) => {
         if (item.status) ctr[item.status] = ctr[item.status] + 1;
         return ctr;
       },
@@ -117,7 +116,7 @@
     {isLoggedIn}
     nextUrl="/"
   />
-  {#if dev}
+  {#if data.isDev}
     <AuthProviderCard
       iconSize={12}
       class="md:col-span-2 xl:col-span-5"

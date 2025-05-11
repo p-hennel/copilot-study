@@ -26,7 +26,6 @@ export default defineConfig({
   build: {
     target: "modules",
     sourcemap: true,
-    manifest: true,
     rollupOptions: {
       external: [
         "src/crawler/**/*",

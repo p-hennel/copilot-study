@@ -1,15 +1,17 @@
 import { browser } from "$app/environment";
 import { invalidate } from "$app/navigation";
 import { authClient } from "$lib/auth-client";
+import type { PageLoad } from './$types';
 
 let jobProgressTimer: Timer | null = null;
 let scopingUrls: string[] | undefined = [];
 const token = authClient.getSession().then((response) => response.data?.session?.token);
-export async function load(event) {
-  scopingUrls = getUrls(event.data.linkedAccounts);
+
+export const load: PageLoad = async ({ data, fetch }) => {
+  scopingUrls = getUrls(data.linkedAccounts);
   return {
-    jobInfo: fetchScopingInfo(event.fetch),
-    ...event.data
+    jobInfo: fetchScopingInfo(fetch),
+    ...data
   };
 }
 
