@@ -12,13 +12,14 @@ export class SupervisorClient extends EventEmitter {
   private id: string;
   private socketPath: string;
   private socket: Socket | null = null;
-  private connected: boolean = false;
+  private _connected: boolean = false; // Renamed to avoid conflict with getter
   private reconnectTimer: Timer | null = null;
   private state: ProcessState = ProcessState.STARTING;
   private messageQueue: IPCMessage[] = [];
   private logger: any;
   private reconnectAttempts = 0;
   private maxReconnectDelay = 30000; // 30 seconds maximum
+  public isSupervisorAvailable: boolean = true; // New flag
 
   constructor(
     options: {
@@ -31,24 +32,24 @@ export class SupervisorClient extends EventEmitter {
     super();
 
     // Get process ID and socket path from options or environment variables
-    this.id = options.id || process.env.SUPERVISOR_PROCESS_ID || "";
+    this.id = options.id || process.env.SUPERVISOR_PROCESS_ID || "standalone"; // Default ID if not provided
     this.socketPath = options.socketPath || process.env.SUPERVISOR_SOCKET_PATH || "";
 
-    if (!this.id) {
-      throw new Error("Process ID not provided and SUPERVISOR_PROCESS_ID environment variable not set");
-    }
-
-    if (!this.socketPath) {
-      throw new Error("Socket path not provided and SUPERVISOR_SOCKET_PATH environment variable not set");
-    }
-
-    // Initialize logtape logger
+    // Initialize logtape logger first
     this.logger = getLogger([`client:${this.id}`]);
-    
-    // Validate socket path exists or at least its directory
-    const socketDir = this.socketPath.substring(0, this.socketPath.lastIndexOf('/'));
-    if (!existsSync(socketDir)) {
-      throw new Error(`Socket directory does not exist: ${socketDir}`);
+
+    if (!process.env.SUPERVISOR_PROCESS_ID || !process.env.SUPERVISOR_SOCKET_PATH) {
+      this.logger.warn("SUPERVISOR_PROCESS_ID or SUPERVISOR_SOCKET_PATH not set. Supervisor client will be disabled.");
+      this.isSupervisorAvailable = false;
+      // No need to validate socketPath if supervisor is not available
+    } else {
+      // Validate socket path exists or at least its directory only if supervisor is expected
+      const socketDir = this.socketPath.substring(0, this.socketPath.lastIndexOf('/'));
+      if (!existsSync(socketDir)) {
+        this.logger.error(`Socket directory does not exist: ${socketDir}. Supervisor client might not connect.`);
+        // Potentially set isSupervisorAvailable to false here too, or let connect fail
+        this.isSupervisorAvailable = false; // Or handle as a connection error later
+      }
     }
   }
 
@@ -94,8 +95,16 @@ export class SupervisorClient extends EventEmitter {
     });
   }
 
+  public get connected(): boolean {
+    return this._connected && this.isSupervisorAvailable;
+  }
+
   public async connect(): Promise<void> {
-    if (this.connected) {
+    if (!this.isSupervisorAvailable) {
+      this.logger.info("Supervisor is not available. Skipping connection attempt.");
+      return;
+    }
+    if (this._connected) {
       return;
     }
 
@@ -112,7 +121,7 @@ export class SupervisorClient extends EventEmitter {
         socket: {
           data: (_socket, data) => this.handleMessage(data),
           open: () => {
-            this.connected = true;
+            this._connected = true;
             this.reconnectAttempts = 0; // Reset on successful connection
             this.emit("connected");
             this.logger.info(`Connected to supervisor at ${this.socketPath}`, {
@@ -136,7 +145,7 @@ export class SupervisorClient extends EventEmitter {
             });
           },
           close: () => {
-            this.connected = false;
+            this._connected = false;
             this.emit("disconnected");
             this.logger.warn("Disconnected from supervisor", {
               socketPath: this.socketPath
@@ -431,7 +440,11 @@ export class SupervisorClient extends EventEmitter {
   }
 
   private sendMessage_(message: IPCMessage): void {
-    if (!this.connected || !this.socket) {
+    if (!this.isSupervisorAvailable) {
+      // this.logger.debug("Supervisor not available, not sending message:", { type: message.type, key: message.key });
+      return; // Do not queue or send if supervisor is not meant to be used
+    }
+    if (!this._connected || !this.socket) {
       // Queue message if not connected
       this.messageQueue.push(message);
       // Check if we need to prune the queue
@@ -486,6 +499,6 @@ export class SupervisorClient extends EventEmitter {
       this.socket = null;
     }
 
-    this.connected = false;
+    this._connected = false;
   }
 }

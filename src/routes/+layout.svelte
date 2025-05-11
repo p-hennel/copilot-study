@@ -3,7 +3,6 @@
   import "../app.css";
 
   let { data, children }: LayoutProps = $props();
-  $inspect(data)
 </script>
 
 <!-- Added relative positioning to the main container -->

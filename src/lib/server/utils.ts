@@ -1,6 +1,10 @@
 import pm2, { type Proc } from "@socket.io/pm2";
 import { json } from "@sveltejs/kit"; // Keep json import
 import path from "node:path";
+
+import { getDb } from "$lib/server/db"; // Import getDb
+import { user as userSchema } from "$lib/server/db/schema"; // Import user schema
+import { inArray, isNull, not, or } from "drizzle-orm"; // Import needed operators
 // Removed incorrect import attempts for App
 
 export enum CollectionTypes {
@@ -175,6 +179,7 @@ import type { AuthCredentials } from "../../subvisor/simple-supervisor";
 import { db } from "./db";
 import { account, apikey, area_authorization, job } from "./db/schema";
 import AppSettings from "./settings";
+import { getLogger } from "nodemailer/lib/shared";
 
 export const getApiToken = async (userId: string): Promise<string | undefined> => {
   const oldKey = await db.select().from(apikey).where(eq(apikey.userId, userId)).limit(1);
@@ -284,4 +289,86 @@ export function authCredentialsToEnvVars(authCredentials: AuthCredentials[]) {
     { [`${x.provider}_CLIENT_SECRET`]: x.clientSecret },
   ]).reduce((a, b) => ({ ...a, ...b }), {} as Record<string, string | null | undefined>);
   return getValuable(_envs) as Record<string, string>;
+}
+
+export const syncAdminRoles = async () => {
+  const logger = getLogger(["AdminSync"])
+  const settings = AppSettings()
+  // Use optional chaining within this function as well
+  logger.info("Synchronizing admin roles...")
+  if (!settings?.auth?.admins) {
+    logger?.warn("No admin emails defined in settings. Skipping admin sync.")
+    return
+  }
+
+  const adminEmails = settings.auth.admins.map((admin) => admin.email).filter(Boolean)
+
+  if (adminEmails.length === 0) {
+    logger?.info("Settings contain an empty admin list. Demoting all current admins.")
+  } else {
+    logger?.info("Admin emails from settings:", { adminEmails })
+  }
+
+  const db = getDb()
+
+  try {
+    logger?.info(`[AdminSync] Starting sync.`, { adminEmails })
+
+    // 1. Find users to demote
+    logger?.info("[AdminSync] Querying for users to demote...")
+    const usersToDemote = await db
+      .select({ id: userSchema.id, email: userSchema.email })
+      .from(userSchema)
+      .where(
+        and(
+          eq(userSchema.role, "admin"),
+          adminEmails.length > 0 ? not(inArray(userSchema.email, adminEmails)) : undefined
+        )
+      )
+
+    if (usersToDemote.length > 0) {
+      const emailsToDemote = usersToDemote.map((u) => u.email)
+      const idsToDemote = usersToDemote.map((u) => u.id)
+      logger?.info(`[AdminSync] Found ${usersToDemote.length} users to demote`, { emailsToDemote })
+      try {
+        await db.update(userSchema).set({ role: null }).where(inArray(userSchema.id, idsToDemote))
+        logger?.info(`[AdminSync] Successfully demoted ${usersToDemote.length} users.`)
+      } catch (updateError) {
+        logger?.error(`[AdminSync] Error demoting users`, { emailsToDemote, error: updateError })
+      }
+    } else {
+      logger?.info("[AdminSync] No users found to demote.")
+    }
+
+    // 2. Find users to promote
+    if (adminEmails.length > 0) {
+      logger?.info("[AdminSync] Querying for users to promote...")
+      const usersToPromote = await db
+        .select({ id: userSchema.id, email: userSchema.email })
+        .from(userSchema)
+        .where(
+          and(inArray(userSchema.email, adminEmails), or(not(eq(userSchema.role, "admin")), isNull(userSchema.role)))
+        )
+
+      if (usersToPromote.length > 0) {
+        const emailsToPromote = usersToPromote.map((u) => u.email)
+        const idsToPromote = usersToPromote.map((u) => u.id)
+        logger?.info(`[AdminSync] Found ${usersToPromote.length} users to promote`, { emailsToPromote })
+        try {
+          await db.update(userSchema).set({ role: "admin" }).where(inArray(userSchema.id, idsToPromote))
+          logger?.info(`[AdminSync] Successfully promoted ${usersToPromote.length} users.`)
+        } catch (updateError) {
+          logger?.error(`[AdminSync] Error promoting users`, { emailsToPromote, error: updateError })
+        }
+      } else {
+        logger?.info("[AdminSync] No users found to promote.")
+      }
+    } else {
+      logger?.info("[AdminSync] Skipping promotion step as admin email list in settings is empty.")
+    }
+
+    logger?.info("[AdminSync] Admin role synchronization complete.")
+  } catch (dbError) {
+    logger?.error("Error during admin role synchronization:", { error: dbError })
+  }
 }

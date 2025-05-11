@@ -2,10 +2,10 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import AppSettings from '$lib/server/settings';
 import { db } from '$lib/server/db';
-import { job as jobSchema, tokenScopeJob, area, area_authorization, tokenScopeJobArea } from '$lib/server/db/base-schema';
+import { job as jobSchema, area, area_authorization, jobArea } from '$lib/server/db/base-schema'; // Removed tokenScopeJob, tokenScopeJobArea
 import type { Job } from '$lib/server/db/base-schema';
 import { JobStatus, CrawlCommand, AreaType } from '$lib/types';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { getLogger } from '$lib/logging';
 import { handleNewArea } from '$lib/server/job-manager';
 
@@ -85,21 +85,16 @@ async function processDiscoveredAreas(
       await db.insert(area_authorization).values(authorizations).onConflictDoNothing();
     }
     
-    // Associate areas with tokenScopeJob if command is authorizationScope
-    if (jobRecord.command === CrawlCommand.authorizationScope || 
-        jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
-      // Find the tokenScopeJob
-      const scopeJob = await db.query.tokenScopeJob.findFirst({
-        where: eq(tokenScopeJob.accountId, jobRecord.accountId)
-      });
+    // Associate areas with the GROUP_PROJECT_DISCOVERY job
+    if (jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY && jobRecord.id) {
+      const jobAreaRecords = areas.map(discoveredArea => ({
+        jobId: jobRecord.id, // Use the ID of the current GROUP_PROJECT_DISCOVERY job
+        full_path: discoveredArea.fullPath
+      }));
       
-      if (scopeJob) {
-        const scopeAreaRecords = areas.map(area => ({
-          token_scope_job_id: scopeJob.id,
-          full_path: area.fullPath
-        }));
-        
-        await db.insert(tokenScopeJobArea).values(scopeAreaRecords).onConflictDoNothing();
+      if (jobAreaRecords.length > 0) {
+        await db.insert(jobArea).values(jobAreaRecords).onConflictDoNothing();
+        logger.info(`Associated ${jobAreaRecords.length} areas with job ${jobRecord.id}`);
       }
     }
   }
@@ -204,16 +199,22 @@ export const POST: RequestHandler = async ({ request }) => {
 
       await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
       
-      // If this is an authorizationScope job, update tokenScopeJob counts
-      if (jobRecord.command === CrawlCommand.authorizationScope || 
-          jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
-        await db.update(tokenScopeJob)
-          .set({ 
-            groupCount: sql`${tokenScopeJob.groupCount} + ${groupsCount}`,
-            projectCount: sql`${tokenScopeJob.projectCount} + ${projectsCount}`,
-            updated_at: new Date()
+      // If this is a GROUP_PROJECT_DISCOVERY job, update its progress with counts
+      if (jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
+        const currentJobProgress = jobRecord.progress as Record<string, any> || {};
+        const newProgress = {
+          ...currentJobProgress,
+          groupCount: (currentJobProgress.groupCount || 0) + groupsCount,
+          projectCount: (currentJobProgress.projectCount || 0) + projectsCount,
+          // Potentially update groupTotal and projectTotal if known
+        };
+        await db.update(jobSchema)
+          .set({
+            progress: newProgress,
+            updated_at: new Date() // Ensure updated_at is also set here
           })
-          .where(eq(tokenScopeJob.accountId, jobRecord.accountId));
+          .where(eq(jobSchema.id, jobRecord.id)); // Update the specific job
+        logger.info(`Updated progress for GROUP_PROJECT_DISCOVERY job ${jobRecord.id} with ${groupsCount} groups, ${projectsCount} projects.`);
       }
       
       return json(
@@ -295,18 +296,12 @@ export const POST: RequestHandler = async ({ request }) => {
     await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
     logger.info(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}`, { updateData });
 
-    // Handle special case for authorizationScope completion
-    if (newJobStatus === JobStatus.finished && 
-        (jobRecord.command === CrawlCommand.authorizationScope || 
-         jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY)) {
-      if (jobRecord.accountId) {
-        await db.update(tokenScopeJob)
-          .set({ isComplete: true, updated_at: new Date() })
-          .where(eq(tokenScopeJob.accountId, jobRecord.accountId));
-        logger.info(`Token scope job for account ${jobRecord.accountId} marked as complete.`);
-      } else {
-        logger.warn(`Job ${taskId} (authorizationScope/GROUP_PROJECT_DISCOVERY) finished but has no accountId. Cannot update tokenScopeJob.`);
-      }
+    // If a GROUP_PROJECT_DISCOVERY job finishes, its status is already set to 'finished'.
+    // No separate 'isComplete' flag to manage on the job itself.
+    // The progress and resumeState fields on the job record hold the relevant completion/state info.
+    if (newJobStatus === JobStatus.finished && jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
+      logger.info(`GROUP_PROJECT_DISCOVERY job ${jobRecord.id} for account ${jobRecord.accountId} marked as finished.`);
+      // Any finalization of progress (e.g. setting total counts if now known) should happen here or in the processor.
     }
 
     return json(

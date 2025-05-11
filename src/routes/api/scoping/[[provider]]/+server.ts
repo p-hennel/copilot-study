@@ -1,7 +1,7 @@
 import { db } from "$lib/server/db";
-import { tokenScopeJob } from "$lib/server/db/base-schema";
+import { job as jobSchema } from "$lib/server/db/base-schema"; // Changed from tokenScopeJob to job
 import { unauthorizedResponse } from "$lib/server/utils";
-import { TokenProvider } from "$lib/types";
+import { TokenProvider, CrawlCommand, JobStatus } from "$lib/types"; // Added CrawlCommand and JobStatus
 import { json } from "@sveltejs/kit";
 import { and, eq } from "drizzle-orm";
 
@@ -25,20 +25,38 @@ export async function GET({ params: { provider }, locals }) {
     return json(undefined, { status: 400 });
   }
 
-  const job = await db.query.tokenScopeJob.findFirst({
+  const jobRecord = await db.query.job.findFirst({
     columns: {
       provider: true,
-      createdAt: true,
+      created_at: true, // Renamed from createdAt
       updated_at: true,
-      isComplete: true,
-      groupCount: true,
-      projectCount: true,
-      groupTotal: true,
-      projectTotal: true
+      status: true, // Replaces isComplete
+      progress: true, // Contains groupCount, projectCount, groupTotal, projectTotal
+      command: true // To filter for GROUP_PROJECT_DISCOVERY
     },
-    where: and(eq(tokenScopeJob.userId, locals.user.id), eq(tokenScopeJob.provider, _provider))
+    where: and(
+      eq(jobSchema.userId, locals.user.id),
+      eq(jobSchema.provider, _provider),
+      eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY) // Ensure we get the correct job type
+    )
   });
 
-  if (!job) return json(undefined, { status: 404 });
-  else return json(job);
+  if (!jobRecord) return json(undefined, { status: 404 });
+
+  // Transform the jobRecord to the expected output structure
+  const progressData = jobRecord.progress as { groupCount?: number, projectCount?: number, groupTotal?: number, projectTotal?: number } | null;
+
+  const responseJob = {
+    provider: jobRecord.provider,
+    createdAt: jobRecord.created_at,
+    updated_at: jobRecord.updated_at,
+    isComplete: jobRecord.status === JobStatus.finished,
+    groupCount: progressData?.groupCount || 0,
+    projectCount: progressData?.projectCount || 0,
+    groupTotal: progressData?.groupTotal || null,
+    projectTotal: progressData?.projectTotal || null
+  };
+
+  return json(responseJob);
 }
+// Ensure the closing brace for the GET function is present if it was removed by the diff

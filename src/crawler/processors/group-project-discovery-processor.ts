@@ -1,9 +1,9 @@
 import { BaseProcessor, type BaseProcessorConfig } from "./base-processor";
 import type { Job, JobResult } from "../types/job-types";
 import { JobType } from "../types/job-types"; // Import JobType enum
-import { AreaType } from "../../lib/types"; // Removed CrawlCommand and TokenProvider
+import { AreaType, JobStatus } from "../../lib/types"; // Added JobStatus
 import { db } from "../../lib/server/db";
-import { tokenScopeJob, area, area_authorization, tokenScopeJobArea } from "../../lib/server/db/base-schema";
+import { job as jobSchema, area, area_authorization, jobArea, type Job as DbJob } from "../../lib/server/db/base-schema"; // Changed tokenScopeJob to job, tokenScopeJobArea to jobArea, added DbJob type
 import { account as accountTable } from "../../lib/server/db/auth-schema";
 import { handleNewArea } from "../../lib/server/job-manager";
 // import { monotonicFactory } from "ulid"; // ulid not used directly in this file
@@ -105,42 +105,57 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
     }
   }
 
-  private async updateTokenScopeJobProgress(
-    tokenScopeJobId: string,
-    progress: DiscoveryProgress & { updated_at?: Date } // Ensure updated_at can be passed
+  private async updateDiscoveryJobProgress(
+    discoveryJobId: string,
+    progressUpdate: DiscoveryProgress
   ) {
-    const updateData: any = { ...progress, updated_at: progress.updated_at || new Date() };
-    
-    // Ensure nulls are passed correctly for cursors if they are explicitly set to null or empty string
-    if (Object.prototype.hasOwnProperty.call(progress, 'groupsCursor')) {
-        updateData.groupCursor = progress.groupsCursor === "" ? null : progress.groupsCursor;
-    } else {
-        delete updateData.groupCursor; // Don't update if not provided
+    const jobRecord = await db.query.job.findFirst({
+        where: eq(jobSchema.id, discoveryJobId),
+    });
+
+    if (!jobRecord) {
+        logger.error(`Job not found for progress update: ${discoveryJobId}`);
+        return;
     }
-    if (Object.prototype.hasOwnProperty.call(progress, 'projectsCursor')) {
-        updateData.projectCursor = progress.projectsCursor === "" ? null : progress.projectsCursor;
-    } else {
-        delete updateData.projectCursor;
+
+    const currentProgress = (jobRecord.progress || {}) as Record<string, any>;
+    const currentResumeState = (jobRecord.resumeState || {}) as Record<string, any>;
+
+    const newProgress: Record<string, any> = { ...currentProgress };
+    const newResumeState: Record<string, any> = { ...currentResumeState };
+
+    if (progressUpdate.collectedGroups !== undefined) newProgress.groupCount = progressUpdate.collectedGroups;
+    if (progressUpdate.totalGroups !== undefined) newProgress.groupTotal = progressUpdate.totalGroups;
+    if (progressUpdate.collectedProjects !== undefined) newProgress.projectCount = progressUpdate.collectedProjects;
+    if (progressUpdate.totalProjects !== undefined) newProgress.projectTotal = progressUpdate.totalProjects;
+
+    if (progressUpdate.groupsCursor !== undefined) newResumeState.groupCursor = progressUpdate.groupsCursor === "" ? null : progressUpdate.groupsCursor;
+    if (progressUpdate.projectsCursor !== undefined) newResumeState.projectCursor = progressUpdate.projectsCursor === "" ? null : progressUpdate.projectsCursor;
+    
+    const updatePayload: Partial<DbJob> = {
+        progress: newProgress,
+        resumeState: newResumeState,
+        updated_at: new Date() // Ensure updated_at is always set
+    };
+
+    if (progressUpdate.isComplete !== undefined) {
+        updatePayload.status = progressUpdate.isComplete ? JobStatus.finished : jobRecord.status;
+        if (progressUpdate.isComplete) {
+            updatePayload.finished_at = new Date();
+        }
     }
     
-    // Remove undefined fields to avoid overwriting with null if not provided in progress object
-    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
-    
-    if (Object.keys(updateData).length > 1 || (Object.keys(updateData).length === 1 && !Object.prototype.hasOwnProperty.call(updateData, 'updated_at'))) { // Check if there's more than just updated_at
-        await db.update(tokenScopeJob)
-          .set(updateData)
-          .where(eq(tokenScopeJob.id, tokenScopeJobId));
-        logger.debug("Updated tokenScopeJob progress", { tokenScopeJobId, updateData });
-    } else {
-        logger.debug("No progress data to update for tokenScopeJob (only updated_at or empty)", { tokenScopeJobId });
-    }
+    await db.update(jobSchema)
+      .set(updatePayload)
+      .where(eq(jobSchema.id, discoveryJobId));
+    logger.debug("Updated discovery job progress", { discoveryJobId, updatePayload });
   }
 
   private async updateGroupsAndProjectsInDb(
     items: DiscoveredItem[],
     itemType: AreaType,
     authorizationId: string,
-    tokenScopeJobId: string
+    discoveryJobId: string // Changed from tokenScopeJobId
   ) {
     if (!items || items.length === 0) return;
 
@@ -153,30 +168,33 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
 
     try {
       await db.insert(area).values(areaInserts).onConflictDoNothing();
-      logger.debug(`Inserted/ignored ${areaInserts.length} areas of type ${itemType}`, { tokenScopeJobId });
+      logger.debug(`Inserted/ignored ${areaInserts.length} areas of type ${itemType}`, { discoveryJobId });
 
       const areaPaths = items.map((x) => x.fullPath);
 
-      const tokenScopeJobAreaInserts = areaPaths.map((path) => ({
+      // Link areas to the discovery job
+      const jobAreaInserts = areaPaths.map((path) => ({
         full_path: path,
-        token_scope_job_id: tokenScopeJobId,
+        jobId: discoveryJobId, // Use discoveryJobId
       }));
-      await db.insert(tokenScopeJobArea).values(tokenScopeJobAreaInserts).onConflictDoNothing();
-      logger.debug(`Linked ${tokenScopeJobAreaInserts.length} areas to tokenScopeJob ${tokenScopeJobId}`, { tokenScopeJobId });
+      if (jobAreaInserts.length > 0) {
+        await db.insert(jobArea).values(jobAreaInserts).onConflictDoNothing(); // Use jobArea schema
+        logger.debug(`Linked ${jobAreaInserts.length} areas to discovery job ${discoveryJobId}`, { discoveryJobId });
+      }
       
       const areaAuthorizationInserts = areaPaths.map((path) => ({
         area_id: path,
         accountId: authorizationId,
       }));
       await db.insert(area_authorization).values(areaAuthorizationInserts).onConflictDoNothing();
-      logger.debug(`Linked ${areaAuthorizationInserts.length} areas to authorization ${authorizationId}`, { tokenScopeJobId });
+      logger.debug(`Linked ${areaAuthorizationInserts.length} areas to authorization ${authorizationId}`, { discoveryJobId });
 
       for (const item of items) {
         await handleNewArea(item.fullPath, itemType, item.id, authorizationId);
-        logger.info(`Triggered handleNewArea for ${itemType} ${item.fullPath}`, { tokenScopeJobId, gitlabId: item.id });
+        logger.info(`Triggered handleNewArea for ${itemType} ${item.fullPath}`, { discoveryJobId, gitlabId: item.id });
       }
     } catch (error: any) {
-        logger.error(`Error in updateGroupsAndProjectsInDb for ${itemType}: ${error.message}`, { tokenScopeJobId, stack: error.stack });
+        logger.error(`Error in updateGroupsAndProjectsInDb for ${itemType}: ${error.message}`, { discoveryJobId, stack: error.stack });
         throw error; // Re-throw to be caught by the main process method
     }
   }
@@ -185,7 +203,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
     gitlabGraphQLEndpoint: string,
     personalAccessToken: string,
     initialCursor: string | null,
-    tokenScopeJobId: string,
+    discoveryJobId: string, // Changed from tokenScopeJobId
     authorizationId: string,
     progressCallback: (progressUpdate: DiscoveryProgress) => Promise<void>,
     batchProcessCallback: (groups: DiscoveredItem[]) => Promise<void>,
@@ -217,7 +235,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
 
     while (hasNextPage) {
       pageNum++;
-      logger.info(`Fetching groups page ${pageNum} for tokenScopeJob ${tokenScopeJobId}`, { cursor: currentCursor, itemsPerPage });
+      logger.info(`Fetching groups page ${pageNum} for discovery job ${discoveryJobId}`, { cursor: currentCursor, itemsPerPage }); // Log uses discoveryJobId
       const response = await this.fetchGraphQLPage<GraphQLGroupsResponse>(
         gitlabGraphQLEndpoint,
         personalAccessToken,
@@ -229,7 +247,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
       const pageInfo = response?.data?.groups?.pageInfo;
       
       if (response?.errors || !groups || !pageInfo) {
-        logger.error("GraphQL errors or missing data while fetching groups:", { errors: response?.errors, missingData: !groups || !pageInfo, tokenScopeJobId });
+        logger.error("GraphQL errors or missing data while fetching groups:", { errors: response?.errors, missingData: !groups || !pageInfo, discoveryJobId }); // Log uses discoveryJobId
         hasNextPage = false;
         break;
       }
@@ -251,20 +269,20 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
       });
 
       if (!hasNextPage) {
-        logger.info(`Finished fetching all groups for tokenScopeJob ${tokenScopeJobId}. Collected in this run: ${runningCollectedCount}`, { finalCursor: currentCursor });
+        logger.info(`Finished fetching all groups for discovery job ${discoveryJobId}. Collected in this run: ${runningCollectedCount}`, { finalCursor: currentCursor }); // Log uses discoveryJobId
       }
     }
     return { finalCursor: currentCursor, collectedCount: runningCollectedCount, totalCount: currentTotalCount, hasMore: hasNextPage };
   }
 
  private async fetchAllProjectsInternal(
-    gitlabGraphQLEndpoint: string,
-    personalAccessToken: string,
-    initialCursor: string | null,
-    tokenScopeJobId: string,
-    authorizationId: string,
-    progressCallback: (progressUpdate: DiscoveryProgress) => Promise<void>,
-    batchProcessCallback: (projects: DiscoveredItem[]) => Promise<void>,
+   gitlabGraphQLEndpoint: string,
+   personalAccessToken: string,
+   initialCursor: string | null,
+   discoveryJobId: string, // Changed from tokenScopeJobId
+   authorizationId: string,
+   progressCallback: (progressUpdate: DiscoveryProgress) => Promise<void>,
+   batchProcessCallback: (projects: DiscoveredItem[]) => Promise<void>,
     itemsPerPage: number = 20 // Original used 5 for projects
   ): Promise<{ finalCursor: string | null; collectedCount: number; totalCount: number | null; hasMore: boolean }> {
     let currentCursor = initialCursor;
@@ -293,7 +311,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
     
     while (hasNextPage) {
       pageNum++;
-      logger.info(`Fetching projects page ${pageNum} for tokenScopeJob ${tokenScopeJobId}`, { cursor: currentCursor, itemsPerPage });
+      logger.info(`Fetching projects page ${pageNum} for discovery job ${discoveryJobId}`, { cursor: currentCursor, itemsPerPage }); // Log uses discoveryJobId
       const response = await this.fetchGraphQLPage<GraphQLProjectsResponse>(
         gitlabGraphQLEndpoint,
         personalAccessToken,
@@ -305,7 +323,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
       const pageInfo = response?.data?.projects?.pageInfo;
 
       if (response?.errors || !projects || !pageInfo) {
-        logger.error("GraphQL errors or missing data while fetching projects:", { errors: response?.errors, missingData: !projects || !pageInfo, tokenScopeJobId });
+        logger.error("GraphQL errors or missing data while fetching projects:", { errors: response?.errors, missingData: !projects || !pageInfo, discoveryJobId }); // Log uses discoveryJobId
         hasNextPage = false;
         break;
       }
@@ -327,7 +345,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
       });
       
       if (!hasNextPage) {
-        logger.info(`Finished fetching all projects for tokenScopeJob ${tokenScopeJobId}. Collected in this run: ${runningCollectedCount}`, { finalCursor: currentCursor });
+        logger.info(`Finished fetching all projects for discovery job ${discoveryJobId}. Collected in this run: ${runningCollectedCount}`, { finalCursor: currentCursor }); // Log uses discoveryJobId
       }
     }
     return { finalCursor: currentCursor, collectedCount: runningCollectedCount, totalCount: currentTotalCount, hasMore: hasNextPage };
@@ -342,23 +360,33 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
       throw new Error(`GroupProjectDiscoveryProcessor cannot handle job type ${job.type}`);
     }
 
-    const tokenScopeJobId = job.resourceId as string;
+    // The job.id IS the discoveryJobId for GROUP_PROJECT_DISCOVERY jobs.
+    // The job.resourceId was previously used to link to the separate tokenScopeJob.
+    // Now, the job itself holds all necessary state.
+    const discoveryJobId = job.id;
     
-    const tokenScopeJobRecord = await db.query.tokenScopeJob.findFirst({
-      where: eq(tokenScopeJob.id, tokenScopeJobId),
+    const discoveryJobRecord = await db.query.job.findFirst({
+      where: eq(jobSchema.id, discoveryJobId),
     });
 
-    if (!tokenScopeJobRecord) {
-      logger.error(`TokenScopeJob not found: ${tokenScopeJobId}`, { jobId: job.id });
-      return { job, success: false, error: `TokenScopeJob not found: ${tokenScopeJobId}` };
+    if (!discoveryJobRecord) {
+      logger.error(`GROUP_PROJECT_DISCOVERY job not found: ${discoveryJobId}`, { jobId: job.id });
+      return { job, success: false, error: `Job not found: ${discoveryJobId}` };
     }
 
-    const authorizationId = tokenScopeJobRecord.authorizationId;
-    const gitlabGraphQLEndpoint = tokenScopeJobRecord.gitlabGraphQLUrl;
+    // Ensure this is indeed a GROUP_PROJECT_DISCOVERY job, though job.type check should cover this.
+    // if (discoveryJobRecord.command !== CrawlCommand.GROUP_PROJECT_DISCOVERY) { ... }
 
-    if (!authorizationId || !gitlabGraphQLEndpoint) {
-      logger.error(`TokenScopeJob ${tokenScopeJobId} is missing authorizationId or gitlabGraphQLEndpoint`, { jobId: job.id });
-      return { job, success: false, error: "Missing authorizationId or gitlabGraphQLEndpoint in tokenScopeJob record" };
+    const authorizationId = discoveryJobRecord.authorizationId; // This should be the PK of the 'account' table
+    const gitlabGraphQLEndpoint = discoveryJobRecord.gitlabGraphQLUrl;
+
+    if (!authorizationId) { // gitlabGraphQLEndpoint might be optional if default is used
+      logger.error(`Job ${discoveryJobId} is missing authorizationId`, { jobId: job.id });
+      return { job, success: false, error: "Missing authorizationId in job record" };
+    }
+    if (!gitlabGraphQLEndpoint) {
+        logger.warn(`Job ${discoveryJobId} is missing gitlabGraphQLEndpoint, will attempt to use default if PAT provides it.`, { jobId: job.id });
+        // Potentially fetch default from accountRecord if not present on job.
     }
 
     const accountRecord = await db.query.account.findFirst({
@@ -372,114 +400,124 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
     const personalAccessToken = accountRecord.accessToken;
     
     try {
-      logger.info(`Starting GROUP_PROJECT_DISCOVERY for tokenScopeJobId: ${tokenScopeJobId}`, { jobId: job.id, gitlabGraphQLEndpoint });
+      logger.info(`Starting GROUP_PROJECT_DISCOVERY for job ID: ${discoveryJobId}`, { jobId: job.id, gitlabGraphQLEndpoint });
       
-      let currentGroupsCursor = tokenScopeJobRecord.groupCursor;
-      let currentProjectsCursor = tokenScopeJobRecord.projectCursor;
-      let currentCollectedGroups = tokenScopeJobRecord.groupCount || 0;
-      let currentCollectedProjects = tokenScopeJobRecord.projectCount || 0;
-      let currentTotalGroups: number | null = tokenScopeJobRecord.groupTotal || null; // Allow null
-      let currentTotalProjects: number | null = tokenScopeJobRecord.projectTotal || null; // Allow null
+      const resumeState = (discoveryJobRecord.resumeState || {}) as { groupCursor?: string | null, projectCursor?: string | null };
+      const progressState = (discoveryJobRecord.progress || {}) as { groupCount?: number, projectCount?: number, groupTotal?: number | null, projectTotal?: number | null };
+
+      let currentGroupsCursor = resumeState.groupCursor || null;
+      let currentProjectsCursor = resumeState.projectCursor || null;
+      let currentCollectedGroups = progressState.groupCount || 0;
+      let currentCollectedProjects = progressState.projectCount || 0;
+      let currentTotalGroups: number | null = progressState.groupTotal || null;
+      let currentTotalProjects: number | null = progressState.projectTotal || null;
       
       let groupsFetchCompleted = false;
       let projectsFetchCompleted = false;
 
-      // If job was marked complete, but cursors exist, it means it was interrupted or is a new run after completion.
-      // We should reset isComplete and continue.
-      if (tokenScopeJobRecord.isComplete && (currentGroupsCursor || currentProjectsCursor)) {
-          logger.info(`Resuming previously completed or interrupted job: ${tokenScopeJobId}`);
-          await this.updateTokenScopeJobProgress(tokenScopeJobId, { isComplete: false });
-      } else if (tokenScopeJobRecord.isComplete) {
-          logger.info(`Job ${tokenScopeJobId} already marked as complete and no cursors found. Assuming full completion.`);
+      // If job status is finished, but cursors exist, it implies a reset or interruption.
+      // The job manager should reset status to queued. Here we just proceed.
+      if (discoveryJobRecord.status === JobStatus.finished && (currentGroupsCursor || currentProjectsCursor)) {
+          logger.info(`Resuming previously finished or interrupted job: ${discoveryJobId}. Current status: ${discoveryJobRecord.status}`);
+          // No need to update status here, job manager should have set it to queued if reset.
+          // If it's still 'finished' but has cursors, it's an odd state, but we proceed.
+      } else if (discoveryJobRecord.status === JobStatus.finished) {
+          logger.info(`Job ${discoveryJobId} already marked as finished and no cursors found. Assuming full completion.`);
           groupsFetchCompleted = true;
           projectsFetchCompleted = true;
       }
 
 
       if (!groupsFetchCompleted) {
-        logger.info(`Fetching groups for tokenScopeJobId: ${tokenScopeJobId}`, { initialCursor: currentGroupsCursor });
+        logger.info(`Fetching groups for job ID: ${discoveryJobId}`, { initialCursor: currentGroupsCursor });
         const groupResult = await this.fetchAllGroupsInternal(
-          gitlabGraphQLEndpoint,
+          gitlabGraphQLEndpoint!, // Assert non-null as checked or default logic would apply
           personalAccessToken,
           currentGroupsCursor,
-          tokenScopeJobId,
-          authorizationId,
+          discoveryJobId,
+          authorizationId!, // Assert non-null as checked
           async (progressUpdate) => { // progressCallback
-            currentCollectedGroups = (tokenScopeJobRecord.groupCount || 0) + (progressUpdate.collectedGroups || 0);
+            // Accumulate counts based on what's already in DB progress + this run's collection
+            const baseGroupCount = (progressState.groupCount || 0) - (progressUpdate.collectedGroups || 0); // Subtract this run's to add accurately
+            currentCollectedGroups = baseGroupCount + (progressUpdate.collectedGroups || 0);
             if (progressUpdate.totalGroups !== undefined) currentTotalGroups = progressUpdate.totalGroups;
-            await this.updateTokenScopeJobProgress(tokenScopeJobId, {
-              ...progressUpdate, // contains groupsCursor from internal fetch
+            await this.updateDiscoveryJobProgress(discoveryJobId, {
+              ...progressUpdate,
               collectedGroups: currentCollectedGroups,
               totalGroups: currentTotalGroups,
             });
           },
           async (groups) => { // batchProcessCallback
-            await this.updateGroupsAndProjectsInDb(groups, AreaType.group, authorizationId, tokenScopeJobId);
-            // The currentCollectedGroups is updated based on progressUpdate from fetchAllGroupsInternal
+            await this.updateGroupsAndProjectsInDb(groups, AreaType.group, authorizationId!, discoveryJobId);
           }
         );
         currentGroupsCursor = groupResult.finalCursor;
-        currentCollectedGroups = (tokenScopeJobRecord.groupCount || 0) + groupResult.collectedCount;
+        // After fetchAll, update with the final collected count from this run + what was already there
+        currentCollectedGroups = (progressState.groupCount || 0) + groupResult.collectedCount;
         if (groupResult.totalCount !== null) currentTotalGroups = groupResult.totalCount;
         groupsFetchCompleted = !groupResult.hasMore;
         
-        await this.updateTokenScopeJobProgress(tokenScopeJobId, {
+        await this.updateDiscoveryJobProgress(discoveryJobId, {
             groupsCursor: currentGroupsCursor,
             collectedGroups: currentCollectedGroups,
             totalGroups: currentTotalGroups,
-            isComplete: groupsFetchCompleted && projectsFetchCompleted
+            isComplete: groupsFetchCompleted && projectsFetchCompleted // Only set isComplete if both are done
         });
       } else {
-          logger.info(`Group discovery previously completed or skipped for ${tokenScopeJobId}.`);
+          logger.info(`Group discovery previously completed or skipped for ${discoveryJobId}.`);
       }
 
       if (!projectsFetchCompleted) {
-        logger.info(`Fetching projects for tokenScopeJobId: ${tokenScopeJobId}`, { initialCursor: currentProjectsCursor });
+        logger.info(`Fetching projects for job ID: ${discoveryJobId}`, { initialCursor: currentProjectsCursor });
         const projectResult = await this.fetchAllProjectsInternal(
-          gitlabGraphQLEndpoint,
+          gitlabGraphQLEndpoint!,
           personalAccessToken,
           currentProjectsCursor,
-          tokenScopeJobId,
-          authorizationId,
+          discoveryJobId,
+          authorizationId!,
           async (progressUpdate) => { // progressCallback
-            currentCollectedProjects = (tokenScopeJobRecord.projectCount || 0) + (progressUpdate.collectedProjects || 0);
+            const baseProjectCount = (progressState.projectCount || 0) - (progressUpdate.collectedProjects || 0);
+            currentCollectedProjects = baseProjectCount + (progressUpdate.collectedProjects || 0);
             if (progressUpdate.totalProjects !== undefined) currentTotalProjects = progressUpdate.totalProjects;
-            await this.updateTokenScopeJobProgress(tokenScopeJobId, {
-              ...progressUpdate, // contains projectsCursor
+            await this.updateDiscoveryJobProgress(discoveryJobId, {
+              ...progressUpdate,
               collectedProjects: currentCollectedProjects,
               totalProjects: currentTotalProjects,
             });
           },
           async (projects) => { // batchProcessCallback
-            await this.updateGroupsAndProjectsInDb(projects, AreaType.project, authorizationId, tokenScopeJobId);
+            await this.updateGroupsAndProjectsInDb(projects, AreaType.project, authorizationId!, discoveryJobId);
           }
         );
         currentProjectsCursor = projectResult.finalCursor;
-        currentCollectedProjects = (tokenScopeJobRecord.projectCount || 0) + projectResult.collectedCount;
+        currentCollectedProjects = (progressState.projectCount || 0) + projectResult.collectedCount;
         if (projectResult.totalCount !== null) currentTotalProjects = projectResult.totalCount;
         projectsFetchCompleted = !projectResult.hasMore;
 
-        await this.updateTokenScopeJobProgress(tokenScopeJobId, {
+        await this.updateDiscoveryJobProgress(discoveryJobId, {
             projectsCursor: currentProjectsCursor,
             collectedProjects: currentCollectedProjects,
             totalProjects: currentTotalProjects,
             isComplete: groupsFetchCompleted && projectsFetchCompleted
         });
       } else {
-          logger.info(`Project discovery previously completed or skipped for ${tokenScopeJobId}.`);
+          logger.info(`Project discovery previously completed or skipped for ${discoveryJobId}.`);
       }
 
       const finalJobStatusIsComplete = groupsFetchCompleted && projectsFetchCompleted;
-      if (finalJobStatusIsComplete && !tokenScopeJobRecord.isComplete) { // Only update if it wasn't already marked complete
-         await this.updateTokenScopeJobProgress(tokenScopeJobId, { isComplete: true });
+      // The isComplete flag in updateDiscoveryJobProgress handles setting the job to 'finished'
+      // No need for an explicit update here if already handled by the last call to updateDiscoveryJobProgress.
+      // However, ensure it's set if not already.
+      if (finalJobStatusIsComplete && discoveryJobRecord.status !== JobStatus.finished) {
+         await this.updateDiscoveryJobProgress(discoveryJobId, { isComplete: true });
       }
-      logger.info(`GROUP_PROJECT_DISCOVERY processing finished for tokenScopeJobId: ${tokenScopeJobId}`, { groupsDone: groupsFetchCompleted, projectsDone: projectsFetchCompleted, finalStatusComplete: finalJobStatusIsComplete});
+      logger.info(`GROUP_PROJECT_DISCOVERY processing finished for job ID: ${discoveryJobId}`, { groupsDone: groupsFetchCompleted, projectsDone: projectsFetchCompleted, finalStatusComplete: finalJobStatusIsComplete});
 
       return {
         job,
         success: true,
         data: {
-          message: `Processed GROUP_PROJECT_DISCOVERY for tokenScopeJobId: ${tokenScopeJobId}`,
+          message: `Processed GROUP_PROJECT_DISCOVERY for job ID: ${discoveryJobId}`,
           collectedGroups: currentCollectedGroups,
           collectedProjects: currentCollectedProjects,
           groupsCursor: currentGroupsCursor,
@@ -488,8 +526,14 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
         },
       };
     } catch (error: any) {
-      logger.error(`Error processing GROUP_PROJECT_DISCOVERY for tokenScopeJobId: ${tokenScopeJobId}: ${error.message}`, { jobId: job.id, stack: error.stack });
-      await this.updateTokenScopeJobProgress(tokenScopeJobId, { isComplete: false });
+      logger.error(`Error processing GROUP_PROJECT_DISCOVERY for job ID: ${discoveryJobId}: ${error.message}`, { jobId: job.id, stack: error.stack });
+      // Mark the job as failed in the database
+      await this.updateDiscoveryJobProgress(discoveryJobId, { isComplete: false }); // isComplete: false implies not finished, status will be updated to failed by job manager or here
+      try {
+        await db.update(jobSchema).set({ status: JobStatus.failed, finished_at: new Date() }).where(eq(jobSchema.id, discoveryJobId));
+      } catch (dbError) {
+        logger.error(`Failed to mark job ${discoveryJobId} as failed in DB:`, { dbError });
+      }
       return {
         job,
         success: false,

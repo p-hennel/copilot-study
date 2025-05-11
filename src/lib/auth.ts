@@ -112,10 +112,6 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "gitlab-onprem",
-          type: (AppSettings().auth.providers.gitlab.type ?? undefined) as
-            | "oidc"
-            | "oauth2"
-            | undefined,
           responseType: "code",
           responseMode: "query",
           prompt: "consent",
@@ -134,7 +130,6 @@ export const auth = betterAuth({
         },
         {
           providerId: "gitlab-cloud",
-          type: "oidc",
           responseType: "code",
           responseMode: "query",
           prompt: "consent",

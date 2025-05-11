@@ -2,14 +2,14 @@ import { getLogger } from "$lib/logging";
 import { db } from "$lib/server/db";
 import {
   area as areaSchema,
-  job as jobSchema,
-  tokenScopeJob as tokenScopeJobSchema
+  job as jobSchema
   // account as accountSchema // No longer directly used here to fetch PAT
 } from "$lib/server/db/schema";
 import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
+import type { Job, JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
 import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
 import { monotonicFactory } from "ulid";
-import { startJob } from "../../hooks.server";
+import { startJob } from "$lib/server/supervisor";
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();
@@ -25,7 +25,7 @@ interface InitiateGitLabDiscoveryArgs {
 
 /**
  * Initiates the GitLab discovery process for a given authorization.
- * Creates or updates a tokenScopeJob and then calls fetchAllGroupsAndProjects.
+ * Creates or updates a job for group/project discovery.
  */
 export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs): Promise<void> {
   // 'pat' is no longer used directly in this function, the worker will fetch it.
@@ -34,113 +34,115 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
     `Initiating GitLab discovery for authorization ID ${authorizationDbId} (User: ${userId}, Provider: ${providerId})`
   );
 
-  try {
-    let currentScopeJobId: string;
+  let currentDiscoveryJobId: string | undefined = undefined;
 
+  try {
     // Check for recent completed jobs for this authorization
-    const recentCompletedJob = await db.query.tokenScopeJob.findFirst({
+    const recentCompletedJob = await db.query.job.findFirst({
       where: and(
-        eq(tokenScopeJobSchema.authorizationId, authorizationDbId),
-        eq(tokenScopeJobSchema.isComplete, true)
+        eq(jobSchema.authorizationId, authorizationDbId),
+        eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY),
+        eq(jobSchema.status, JobStatus.finished)
       ),
-      orderBy: [desc(tokenScopeJobSchema.updated_at)]
+      orderBy: [desc(jobSchema.updated_at)]
     });
 
     if (recentCompletedJob && recentCompletedJob.updated_at) {
-      const jobAgeMs = Date.now() - recentCompletedJob.updated_at.getTime();
+      const jobAgeMs = Date.now() - new Date(recentCompletedJob.updated_at).getTime();
       if (jobAgeMs < FORTY_EIGHT_HOURS_MS) {
         logger.info(
-          `Recent completed tokenScopeJob ${recentCompletedJob.id} (updated: ${recentCompletedJob.updated_at.toISOString()}) found for authorization ${authorizationDbId}. Skipping new discovery run.`
+          `Recent completed GROUP_PROJECT_DISCOVERY job ${recentCompletedJob.id} (updated: ${new Date(recentCompletedJob.updated_at).toISOString()}) found for authorization ${authorizationDbId}. Skipping new discovery run.`
         );
         return; // Return early
       }
       logger.info(
-        `Found completed tokenScopeJob ${recentCompletedJob.id} for authorization ${authorizationDbId}, but it's older than 48 hours (age: ${jobAgeMs / (60 * 60 * 1000)}h). Proceeding with new/reset job.`
+        `Found completed GROUP_PROJECT_DISCOVERY job ${recentCompletedJob.id} for authorization ${authorizationDbId}, but it's older than 48 hours (age: ${jobAgeMs / (60 * 60 * 1000)}h). Proceeding with new/reset job.`
       );
     }
 
-    // Check if a tokenScopeJob already exists for this authorization to reset, or create a new one
-    const existingTokenScopeJobToReset = await db.query.tokenScopeJob.findFirst({
-      where: eq(tokenScopeJobSchema.authorizationId, authorizationDbId),
-      orderBy: [desc(tokenScopeJobSchema.updated_at)] // Get the most recent one to reset
+    // Check if a GROUP_PROJECT_DISCOVERY job already exists for this authorization to reset, or create a new one
+    const existingJobToReset = await db.query.job.findFirst({
+      where: and(
+        eq(jobSchema.authorizationId, authorizationDbId),
+        eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY)
+      ),
+      orderBy: [desc(jobSchema.updated_at)] // Get the most recent one to reset
     });
 
-    if (existingTokenScopeJobToReset) {
+    if (existingJobToReset) {
       logger.info(
-        `Found existing tokenScopeJob ${existingTokenScopeJobToReset.id} for authorization ${authorizationDbId}. Resetting and reusing.`
+        `Found existing GROUP_PROJECT_DISCOVERY job ${existingJobToReset.id} for authorization ${authorizationDbId}. Resetting and reusing.`
       );
       await db
-        .update(tokenScopeJobSchema)
+        .update(jobSchema)
         .set({
-          isComplete: false,
-          groupCursor: null,
-          projectCursor: null,
+          status: JobStatus.queued,
+          resumeState: {}, // Reset cursors
+          progress: { // Reset counts and totals
+            groupCount: 0,
+            projectCount: 0,
+            groupTotal: null,
+            projectTotal: null
+          },
+          gitlabGraphQLUrl, // Update in case it changed. Assumes this field exists on jobSchema.
+          // updated_at is handled by onUpdateNow()
+        })
+        .where(eq(jobSchema.id, existingJobToReset.id));
+      currentDiscoveryJobId = existingJobToReset.id;
+    } else {
+      currentDiscoveryJobId = ulid();
+      const newDiscoveryJobData: JobInsert = {
+        id: currentDiscoveryJobId,
+        command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
+        userId,
+        provider: providerId as TokenProvider,
+        accountId: authorizationDbId, // Account for PAT
+        authorizationId: authorizationDbId, // Specific authorization
+        gitlabGraphQLUrl, // Assumes this field exists on jobSchema.
+        status: JobStatus.queued,
+        resumeState: {}, // Store cursors here
+        progress: { // Store counts and totals here
           groupCount: 0,
           projectCount: 0,
           groupTotal: null,
-          projectTotal: null,
-          gitlabGraphQLUrl, // Update in case it changed
-          // updated_at is handled by $onUpdate
-        })
-        .where(eq(tokenScopeJobSchema.id, existingTokenScopeJobToReset.id));
-      currentScopeJobId = existingTokenScopeJobToReset.id;
-    } else {
-      currentScopeJobId = ulid();
-      await db.insert(tokenScopeJobSchema).values({
-        id: currentScopeJobId,
-        userId,
-        provider: providerId as TokenProvider, // Ensure providerId matches TokenProvider enum values
-        accountId: authorizationDbId, // This is the system's account ID, linking to account.id PK
-        authorizationId: authorizationDbId, // Explicit link to the specific authorization record (account.id PK)
-        gitlabGraphQLUrl,
-        isComplete: false,
-        groupCursor: null,
-        projectCursor: null,
-        groupCount: 0,
-        projectCount: 0
-        // groupTotal and projectTotal default to null or are not set if not available
-      });
-      logger.info(`Created new tokenScopeJob ${currentScopeJobId} for authorization ${authorizationDbId}`);
+          projectTotal: null
+        },
+        full_path: null, // Not applicable for this command type
+        started_at: null,
+        finished_at: null,
+        branch: null,
+        to: null,
+        spawned_from: null,
+        updated_at: null, // Will be set by DB on update, null on insert
+        // created_at, from are handled by DB defaults
+      };
+      await db.insert(jobSchema).values(newDiscoveryJobData);
+      logger.info(`Created new GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} for authorization ${authorizationDbId}`);
     }
 
-    // Create and start the GROUP_PROJECT_DISCOVERY job
-    const discoveryJobId = ulid();
-    const newJob = {
-      id: discoveryJobId,
-      accountId: authorizationDbId, // This is the PK of the 'account' table, used to fetch PAT etc.
-      full_path: currentScopeJobId, // Link to the tokenScopeJob
-      command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
-      status: JobStatus.queued,
-      // Add other necessary job parameters if any, e.g., payload with pat, gitlabGraphQLUrl if not derivable
-      // For now, assuming the worker for GROUP_PROJECT_DISCOVERY can fetch PAT and URL using authorizationDbId
-      // and can use currentScopeJobId (as full_path) to update the tokenScopeJob.
-      // The `userId` and `providerId` are available in the `tokenScopeJob` record via `currentScopeJobId`.
-      // The `pat` and `gitlabGraphQLUrl` are available in the `account` record via `authorizationDbId`.
-    };
-
-    await db.insert(jobSchema).values(newJob);
-    logger.info(
-      `Created new GROUP_PROJECT_DISCOVERY job ${discoveryJobId} for tokenScopeJob ${currentScopeJobId} (Authorization: ${authorizationDbId})`
-    );
-
     // Start the job
-    // The startJob function might need to be aware of how to pass pat and gitlabGraphQLUrl if they are not
-    // directly stored or easily derivable by the worker using only accountId and full_path (tokenScopeJobId).
-    // For now, assuming startJob can handle this or the worker can fetch them.
     await startJob({
-      jobId: newJob.id,
-      fullPath: newJob.full_path, // This is currentScopeJobId
-      command: newJob.command,
-      accountId: newJob.accountId // This is authorizationDbId
+      jobId: currentDiscoveryJobId,
+      fullPath: null, // GROUP_PROJECT_DISCOVERY is not tied to a specific GitLab path
+      command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
+      accountId: authorizationDbId // Account ID for PAT fetching by worker
     });
 
     logger.info(
-      `GROUP_PROJECT_DISCOVERY job ${discoveryJobId} started for tokenScopeJob ${currentScopeJobId} (Authorization: ${authorizationDbId})`
+      `GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} started for Authorization: ${authorizationDbId}`
     );
   } catch (error) {
     logger.error(`Error initiating GitLab discovery or creating/starting job for authorization ${authorizationDbId}:`, { error });
-    // Consider updating the tokenScopeJob to an error state here
-    // Also, if the job was created but failed to start, update its status to 'failed'
+    if (currentDiscoveryJobId) {
+      try {
+        await db.update(jobSchema)
+          .set({ status: JobStatus.failed }) // Removed error field
+          .where(eq(jobSchema.id, currentDiscoveryJobId));
+        logger.info(`Marked GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} as failed.`);
+      } catch (dbError) {
+        logger.error(`Failed to update job ${currentDiscoveryJobId} to failed status:`, { dbError });
+      }
+    }
   }
 }
 
@@ -165,8 +167,8 @@ export async function handleNewAuthorization(
   );
 
   try {
-    // The old logic for creating a generic 'CrawlCommand.authorizationScope' job and
-    // directly managing 'tokenScopeJob' entries is now replaced by 'initiateGitLabDiscovery'.
+    // The logic for initiating discovery is now directly handled by 'initiateGitLabDiscovery',
+    // which creates a 'GROUP_PROJECT_DISCOVERY' job.
 
     await initiateGitLabDiscovery({
       pat,
