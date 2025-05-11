@@ -1,73 +1,76 @@
 import { getLogger } from "$lib/logging";
 import { db } from "$lib/server/db";
-import { area as areaSchema, job as jobSchema, tokenScopeJob as tokenScopeJobSchema } from "$lib/server/db/schema";
+import {
+  area as areaSchema,
+  job as jobSchema,
+  tokenScopeJob as tokenScopeJobSchema,
+  account as accountSchema // Import account schema for fetching PAT
+} from "$lib/server/db/schema";
 import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, or } from "drizzle-orm";
 import { monotonicFactory } from "ulid";
-import { startJob } from "../../hooks.server";
+import { startJob } from "../../hooks.server"; // This might be removed or repurposed
+import { fetchAllGroupsAndProjects } from "./mini-crawler/main"; // Import the new discovery function
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();
+const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
+
+interface InitiateGitLabDiscoveryArgs {
+  pat: string;
+  gitlabGraphQLUrl: string;
+  userId: string; // User who owns this authorization in our system
+  providerId: string; // e.g., "gitlab"
+  authorizationDbId: string; // PK of the 'account' table entry for this PAT
+}
 
 /**
- * Handles creation of jobs when a new authorization is received via OAuth
- * @param userId The user ID that authenticated
- * @param accountId The account ID from the authorization
- * @param providerId The provider ID (e.g. gitlab-onprem, gitlab-cloud)
- * @param tokens The OAuth tokens received
+ * Initiates the GitLab discovery process for a given authorization.
+ * Creates or updates a tokenScopeJob and then calls fetchAllGroupsAndProjects.
  */
-export async function handleNewAuthorization(
-  userId: string,
-  accountId: string,
-  providerId: string): Promise<void> {
-  logger.info(`Handling new authorization for user ${userId} with account ${accountId} via ${providerId}`);
+export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs): Promise<void> {
+  const { pat, gitlabGraphQLUrl, userId, providerId, authorizationDbId } = args;
+  logger.info(
+    `Initiating GitLab discovery for authorization ID ${authorizationDbId} (User: ${userId}, Provider: ${providerId})`
+  );
 
   try {
-    // Check if we already have an authorization scope job for this account
-    const existingJob = await db.query.job.findFirst({
+    let currentScopeJobId: string;
+
+    // Check for recent completed jobs for this authorization
+    const recentCompletedJob = await db.query.tokenScopeJob.findFirst({
       where: and(
-        eq(jobSchema.accountId, accountId),
-        eq(jobSchema.command, CrawlCommand.authorizationScope),
-        isNull(jobSchema.full_path),
-        isNull(jobSchema.branch),
-        or(
-          eq(jobSchema.status, JobStatus.queued),
-          eq(jobSchema.status, JobStatus.running)
-        )
-      )
+        eq(tokenScopeJobSchema.authorizationId, authorizationDbId),
+        eq(tokenScopeJobSchema.isComplete, true)
+      ),
+      orderBy: [desc(tokenScopeJobSchema.updated_at)]
     });
 
-    // If job already exists and is running or queued, don't create a new one
-    if (existingJob) {
-      logger.info(`Authorization scope job already exists for account ${accountId}: ${existingJob.id}`);
-      return;
+    if (recentCompletedJob && recentCompletedJob.updated_at) {
+      const jobAgeMs = Date.now() - recentCompletedJob.updated_at.getTime();
+      if (jobAgeMs < FORTY_EIGHT_HOURS_MS) {
+        logger.info(
+          `Recent completed tokenScopeJob ${recentCompletedJob.id} (updated: ${recentCompletedJob.updated_at.toISOString()}) found for authorization ${authorizationDbId}. Skipping new discovery run.`
+        );
+        return; // Return early
+      }
+      logger.info(
+        `Found completed tokenScopeJob ${recentCompletedJob.id} for authorization ${authorizationDbId}, but it's older than 48 hours (age: ${jobAgeMs / (60 * 60 * 1000)}h). Proceeding with new/reset job.`
+      );
     }
 
-    // Create new authorization scope job
-    const jobId = ulid();
-    const newJob = {
-      id: jobId,
-      accountId,
-      command: CrawlCommand.authorizationScope,
-      status: JobStatus.queued,
-      // No full_path or branch for authorization scope jobs
-    };
-
-    logger.info(`Creating new authorization scope job ${jobId} for account ${accountId}`);
-    await db.insert(jobSchema).values(newJob);
-
-    // Create/update token scope job entry to track progress
-    const existingTokenScopeJob = await db.query.tokenScopeJob.findFirst({
-      where: and(
-        eq(tokenScopeJobSchema.userId, userId),
-        eq(tokenScopeJobSchema.provider, providerId as TokenProvider),
-        eq(tokenScopeJobSchema.accountId, accountId)
-      )
+    // Check if a tokenScopeJob already exists for this authorization to reset, or create a new one
+    const existingTokenScopeJobToReset = await db.query.tokenScopeJob.findFirst({
+      where: eq(tokenScopeJobSchema.authorizationId, authorizationDbId),
+      orderBy: [desc(tokenScopeJobSchema.updated_at)] // Get the most recent one to reset
     });
 
-    if (existingTokenScopeJob) {
-      // Reset the progress if we're creating a new job
-      await db.update(tokenScopeJobSchema)
+    if (existingTokenScopeJobToReset) {
+      logger.info(
+        `Found existing tokenScopeJob ${existingTokenScopeJobToReset.id} for authorization ${authorizationDbId}. Resetting and reusing.`
+      );
+      await db
+        .update(tokenScopeJobSchema)
         .set({
           isComplete: false,
           groupCursor: null,
@@ -76,40 +79,85 @@ export async function handleNewAuthorization(
           projectCount: 0,
           groupTotal: null,
           projectTotal: null,
-          updated_at: new Date()
+          gitlabGraphQLUrl, // Update in case it changed
+          // updated_at is handled by $onUpdate
         })
-        .where(and(
-          eq(tokenScopeJobSchema.userId, userId),
-          eq(tokenScopeJobSchema.provider, providerId as TokenProvider),
-          eq(tokenScopeJobSchema.accountId, accountId)
-        ));
+        .where(eq(tokenScopeJobSchema.id, existingTokenScopeJobToReset.id));
+      currentScopeJobId = existingTokenScopeJobToReset.id;
     } else {
-      // Create new token scope job entry
+      currentScopeJobId = ulid();
       await db.insert(tokenScopeJobSchema).values({
+        id: currentScopeJobId,
         userId,
-        provider: providerId as TokenProvider,
-        accountId,
+        provider: providerId as TokenProvider, // Ensure providerId matches TokenProvider enum values
+        accountId: authorizationDbId, // This is the system's account ID, linking to account.id PK
+        authorizationId: authorizationDbId, // Explicit link to the specific authorization record (account.id PK)
+        gitlabGraphQLUrl,
         isComplete: false,
+        groupCursor: null,
+        projectCursor: null,
         groupCount: 0,
         projectCount: 0
+        // groupTotal and projectTotal default to null or are not set if not available
       });
+      logger.info(`Created new tokenScopeJob ${currentScopeJobId} for authorization ${authorizationDbId}`);
     }
 
-    // Start the job
-    await startJob({
-      jobId,
-      accountId,
-      command: CrawlCommand.authorizationScope
-    });
+    // Call fetchAllGroupsAndProjects
+    // The 'accountId' passed to fetchAllGroupsAndProjects is the system's account ID for data association,
+    // which is authorizationDbId (the PK of the account table record).
+    await fetchAllGroupsAndProjects(userId, authorizationDbId, providerId as TokenProvider, gitlabGraphQLUrl, pat);
 
-    logger.info(`Successfully created and started authorization scope job ${jobId}`);
+    logger.info(
+      `GitLab discovery process invoked for tokenScopeJob ${currentScopeJobId} (Authorization: ${authorizationDbId})`
+    );
   } catch (error) {
-    logger.error(`Error creating authorization scope job for account ${accountId}:`, { error });
+    logger.error(`Error initiating GitLab discovery for authorization ${authorizationDbId}:`, { error });
+    // Consider updating the tokenScopeJob to an error state here if appropriate
   }
 }
 
 /**
- * Handles creation of jobs when a new area (group or project) is created/discovered
+ * Handles actions when a new authorization is successfully created or updated in the system.
+ * This function is the new entry point for triggering GitLab discovery.
+ * @param userId The internal system User ID.
+ * @param authorizationDbId The unique ID of the authorization record in the database (e.g., from the 'account' table).
+ * @param providerId The identifier for the provider (e.g., "gitlab", "gitlab-onprem").
+ * @param pat The Personal Access Token (PAT) for GitLab.
+ * @param gitlabGraphQLUrl The GraphQL endpoint for the GitLab instance.
+ */
+export async function handleNewAuthorization(
+  userId: string,
+  authorizationDbId: string, // Renamed from accountId for clarity, this is the PK of the 'account' table
+  providerId: string,
+  pat: string, // New parameter: PAT
+  gitlabGraphQLUrl: string // New parameter: GitLab GraphQL URL
+): Promise<void> {
+  logger.info(
+    `Handling new authorization: UserID=${userId}, AuthDBID=${authorizationDbId}, Provider=${providerId}`
+  );
+
+  try {
+    // The old logic for creating a generic 'CrawlCommand.authorizationScope' job and
+    // directly managing 'tokenScopeJob' entries is now replaced by 'initiateGitLabDiscovery'.
+
+    await initiateGitLabDiscovery({
+      pat,
+      gitlabGraphQLUrl,
+      userId,
+      providerId,
+      authorizationDbId
+    });
+
+    logger.info(`Successfully processed new authorization for AuthDBID ${authorizationDbId} and initiated discovery.`);
+  } catch (error) {
+    logger.error(`Error in handleNewAuthorization for AuthDBID ${authorizationDbId}:`, { error });
+  }
+}
+
+/**
+ * Handles creation of jobs when a new area (group or project) is created/discovered.
+ * This function remains largely unchanged but is distinct from PAT-based discovery.
  * @param areaPath The full path of the group or project
  * @param areaType The type of area (group or project)
  * @param areaId The GitLab ID of the area

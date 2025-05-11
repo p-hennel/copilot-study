@@ -1,4 +1,5 @@
 import { AreaType, TokenProvider } from "$lib/types";
+import { monotonicFactory } from "ulid";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { area, area_authorization, tokenScopeJob, tokenScopeJobArea } from "../db/base-schema";
@@ -14,11 +15,14 @@ import type {
 
 import { handleNewArea } from "$lib/server/job-manager";
 
+const ulid = monotonicFactory();
+
 export async function updateGroupsAndProjects(
   items: Group[] | Project[],
   itemType: "groups" | "projects",
   userId: string,
   accountId: string,
+  tokenScopeJobId: string,
   provider?: TokenProvider
 ) {
   let type;
@@ -39,7 +43,7 @@ export async function updateGroupsAndProjects(
   await db.insert(area).values(_items).onConflictDoNothing();
   await db
     .insert(tokenScopeJobArea)
-    .values(areaIds.map((x) => ({ full_path: x, userId, provider })))
+    .values(areaIds.map((x) => ({ full_path: x, token_scope_job_id: tokenScopeJobId })))
     .onConflictDoNothing();
   await db
     .insert(area_authorization)
@@ -88,7 +92,7 @@ export async function updateScopingJob(data: ProgressStatus, userId: string) {
  * @param onBatchProcess - Callback function to process each batch of results
  * @returns Promise that resolves when all data has been fetched and processed
  */
-async function fetchAllGroupsAndProjects(
+export async function fetchAllGroupsAndProjects(
   userId: string,
   accountId: string,
   provider: TokenProvider,
@@ -99,33 +103,41 @@ async function fetchAllGroupsAndProjects(
   onBatchProcess: BatchProcessCallback = updateGroupsAndProjects,
   onProgress: ProgressCallback = updateScopingJob
 ): Promise<void> {
-  const job = await db.query.tokenScopeJob.findFirst({
+  let currentTokenScopeJobId: string;
+
+  const existingJob = await db.query.tokenScopeJob.findFirst({
     where: and(eq(tokenScopeJob.userId, userId), eq(tokenScopeJob.provider, provider))
   });
 
   let groupsCursor = null;
   let projectsCursor = null;
 
-  if (job) {
-    const lastUpdateAgo = Date.now() - job.updated_at.getTime();
-    if (job.isComplete || lastUpdateAgo < 2 * 60 * 1000) {
+  if (existingJob) {
+    const lastUpdateAgo = Date.now() - existingJob.updated_at.getTime();
+    if (existingJob.isComplete || lastUpdateAgo < 2 * 60 * 1000) {
       return;
     }
     await db
       .update(tokenScopeJob)
       .set({
-        updated_at: new Date()
+        updated_at: new Date(),
+        gitlabGraphQLUrl: gitlabGraphQLEndpoint // Ensure this is updated if it can change
       })
       .where(and(eq(tokenScopeJob.userId, userId), eq(tokenScopeJob.provider, provider)));
-    groupsCursor = job.groupCursor;
-    projectsCursor = job.projectCursor;
+    groupsCursor = existingJob.groupCursor;
+    projectsCursor = existingJob.projectCursor;
+    currentTokenScopeJobId = existingJob.id;
   } else {
+    currentTokenScopeJobId = ulid();
     await db
       .insert(tokenScopeJob)
       .values({
+        id: currentTokenScopeJobId,
         userId,
         provider,
-        accountId,
+        accountId, // accountId from params is the system's account ID
+        authorizationId: accountId, // authorizationId also refers to the account.id for this specific authorization
+        gitlabGraphQLUrl: gitlabGraphQLEndpoint,
         createdAt: new Date(),
         updated_at: new Date()
       })
@@ -168,7 +180,7 @@ async function fetchAllGroupsAndProjects(
       );
 
       // Process this batch of groups
-      return onBatchProcess(groups, "groups", userId, accountId, provider);
+      return onBatchProcess(groups, "groups", userId, accountId, currentTokenScopeJobId, provider);
     },
     first,
     _fetch
@@ -202,7 +214,7 @@ async function fetchAllGroupsAndProjects(
       );
 
       // Process this batch of projects
-      return onBatchProcess(projects, "projects", userId, accountId, provider);
+      return onBatchProcess(projects, "projects", userId, accountId, currentTokenScopeJobId, provider);
     },
     first,
     _fetch

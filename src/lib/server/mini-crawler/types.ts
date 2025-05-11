@@ -69,5 +69,6 @@ export type BatchProcessCallback = (
   itemType: "groups" | "projects",
   userId: string,
   accountId: string,
-  provider?: TokenProvider
+  tokenScopeJobId: string,
+  provider?: import("$lib/types").TokenProvider
 ) => Promise<void>;

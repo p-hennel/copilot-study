@@ -10,7 +10,7 @@ import {
   uniqueIndex
 } from "drizzle-orm/sqlite-core";
 import { monotonicFactory } from "ulid";
-import { account, user } from "./auth-schema";
+import { account, user, session } from "./auth-schema"; // Added session for potential future use, account for authorizationId
 
 const ulid = monotonicFactory();
 
@@ -66,67 +66,72 @@ function toDBEnum<T extends Record<any, string>>(data: T): [T[keyof T], ...T[key
 export const tokenScopeJob = sqliteTable(
   "token_scope_job",
   {
-    userId: text().notNull(),
-    provider: text({ enum: toDBEnum(TokenProvider) })
+    id: text("id").$defaultFn(ulid).primaryKey(), // New ULID primary key
+    userId: text("user_id").notNull().references(() => user.id),
+    provider: text("provider", { enum: toDBEnum(TokenProvider) })
       .notNull()
       .default(TokenProvider.gitlab),
-    accountId: text().notNull(),
-    createdAt: integer({ mode: "timestamp" })
+    accountId: text("account_id").notNull().references(() => account.id),
+    authorizationId: text("authorization_id").notNull().references(() => account.id),
+    gitlabGraphQLUrl: text("gitlab_graphql_url").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
-      .default(sql`current_timestamp`), // Use SQL default
-    updated_at: integer({ mode: "timestamp" })
+      .default(sql`current_timestamp`),
+    updated_at: integer("updated_at", { mode: "timestamp" })
       .notNull()
       .default(sql`current_timestamp`)
-      .$onUpdate(() => sql`current_timestamp`), // Use SQL default
-    isComplete: integer({ mode: "boolean" }).notNull().default(false),
-    groupCursor: text(),
-    projectCursor: text(),
-    groupCount: integer().notNull().default(0),
-    projectCount: integer().notNull().default(0),
-    groupTotal: integer(),
-    projectTotal: integer()
+      .$onUpdate(() => sql`current_timestamp`),
+    isComplete: integer("is_complete", { mode: "boolean" }).notNull().default(false),
+    groupCursor: text("group_cursor"),
+    projectCursor: text("project_cursor"),
+    groupCount: integer("group_count").notNull().default(0),
+    projectCount: integer("project_count").notNull().default(0),
+    groupTotal: integer("group_total"),
+    projectTotal: integer("project_total")
   },
   (table) => [
-    index("tsj_uid").on(table.userId),
-    index("tsj_provider").on(table.provider),
-    index("tsj_aid").on(table.accountId),
-    index("tsj_uid_provider").on(table.userId, table.provider),
-    index("tsj_provider_path").on(table.provider),
-    primaryKey({ columns: [table.userId, table.provider] })
+    index("tsj_user_id_idx").on(table.userId),
+    index("tsj_provider_idx").on(table.provider),
+    index("tsj_account_id_idx").on(table.accountId),
+    index("tsj_authorization_id_idx").on(table.authorizationId),
+    index("tsj_user_provider_idx").on(table.userId, table.provider) // Kept for potential queries
   ]
 );
+
 export const tokenScopeJobRelations = relations(tokenScopeJob, ({ one, many }) => ({
-  fromUser: one(user, {
+  user: one(user, {
     fields: [tokenScopeJob.userId],
     references: [user.id]
   }),
-  forAreas: many(area)
+  account: one(account, { // Relation to the account table for accountId
+    fields: [tokenScopeJob.accountId],
+    references: [account.id]
+  }),
+  authorization: one(account, { // Relation to the account table for authorizationId
+    fields: [tokenScopeJob.authorizationId],
+    references: [account.id]
+  }),
+  areas: many(tokenScopeJobArea) // Renamed from forAreas to areas for clarity
 }));
 
 export const tokenScopeJobArea = sqliteTable(
   "token_scope_job_area",
   {
-    userId: text().notNull(),
-    provider: text({ enum: toDBEnum(TokenProvider) })
-      .notNull()
-      .default(TokenProvider.gitlab),
-    full_path: text().notNull()
+    token_scope_job_id: text("token_scope_job_id").notNull().references(() => tokenScopeJob.id, { onDelete: "cascade" }),
+    full_path: text("full_path").notNull().references(() => area.full_path, { onDelete: "cascade" })
   },
-  (table) => [primaryKey({ columns: [table.userId, table.provider, table.full_path] })]
+  (table) => [primaryKey({ columns: [table.token_scope_job_id, table.full_path] })]
 );
 
 export const tokenScopeJobAreaRelations = relations(tokenScopeJobArea, ({ one }) => ({
-  fromUser: one(user, {
-    fields: [tokenScopeJobArea.userId],
-    references: [user.id]
-  }),
-  forArea: one(area, {
+  // fromUser removed
+  area: one(area, { // Renamed from forArea to area
     fields: [tokenScopeJobArea.full_path],
     references: [area.full_path]
   }),
-  fromTokenScopeJob: one(tokenScopeJob, {
-    fields: [tokenScopeJobArea.userId, tokenScopeJobArea.provider],
-    references: [tokenScopeJob.userId, tokenScopeJob.provider]
+  tokenScopeJob: one(tokenScopeJob, { // Renamed from fromTokenScopeJob
+    fields: [tokenScopeJobArea.token_scope_job_id],
+    references: [tokenScopeJob.id]
   })
 }));
 

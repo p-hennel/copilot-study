@@ -23,8 +23,10 @@
         <BorderBeam duration={4} borderWidth={2.5} />
       {/if}
       {#if content.icon}
-        {@const Icon = icons[content.icon]}
-        <Icon class="mt-2.5" color="#581c87" strokeWidth={2} size={24} />
+        {@const Icon = icons[content.icon] as typeof import("@lucide/svelte")}
+        {#if Icon}
+          <Icon class="mt-2.5" color="#581c87" strokeWidth={2} size={24} />
+        {/if}
       {/if}
       <Alert.Title>
         <h1

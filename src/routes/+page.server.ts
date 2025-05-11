@@ -156,11 +156,13 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
         if (!token) return;
 
         // Trigger authorization scope job creation/check
-        await handleNewAuthorization(locals.user!.id!, x.id, opts.provider);
-
         const apiUrl = `${opts.baseUrl}/api/graphql`;
-        console.log("starting fetch all");
-        fetchAllGroupsAndProjects(locals.user.id, x.id, opts.provider, apiUrl, token);
+        await handleNewAuthorization(locals.user!.id!, x.id, opts.provider, token, apiUrl);
+
+        // The call to fetchAllGroupsAndProjects is now handled within initiateGitLabDiscovery,
+        // so the direct call here is removed.
+        // console.log("starting fetch all");
+        // fetchAllGroupsAndProjects(locals.user.id, x.id, opts.provider, apiUrl, token);
       });
   }
 
