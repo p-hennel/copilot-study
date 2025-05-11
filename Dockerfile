@@ -67,7 +67,12 @@ COPY --from=prerelease \
 
 COPY --from=prerelease \
   /usr/src/app/src/lib/server/db/*schema.ts \
+  /usr/src/app/src/lib/types.ts \
   ./schema/
+
+COPY --from=prerelease \
+  /usr/src/app/runtime-tsconfig.json \
+  /usr/src/app/tsconfig.json
   
 COPY drizzle /usr/src/app/
 

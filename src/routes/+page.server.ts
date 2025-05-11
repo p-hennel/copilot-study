@@ -7,13 +7,15 @@ import fetchAllGroupsAndProjects from "$lib/server/mini-crawler/main";
 import { manageOAuthToken, type TokenManagerOptions } from "$lib/server/mini-crawler/token-check";
 import { ensureUserIsAuthenticated, getMD } from "$lib/server/utils";
 import {
-  AreaType,
   ContentType,
+  type MarkdownContent,
+  type AlertContent
+} from "$lib/content-types";
+import {
+  AreaType,
   JobStatus,
   TokenProvider,
-  type MarkdownContent
-} from "$lib/content-types";
-import { type AlertContent } from "$lib/AlertContent";
+} from "$lib/types";
 import { forProvider } from "$lib/utils";
 import { m } from "$paraglide";
 import { and, count, eq, isNotNull, sql } from "drizzle-orm";

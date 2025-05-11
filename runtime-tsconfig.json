@@ -1,0 +1,29 @@
+{
+	"compilerOptions": {
+		"paths": {
+			"$lib": [
+				"./schema/lib"
+			],
+			"$lib/*": [
+				"./schema/*"
+			]
+		},
+		"rootDirs": [
+			".."
+		],
+		"verbatimModuleSyntax": true,
+		"isolatedModules": true,
+		"lib": [
+			"esnext",
+			"DOM",
+			"DOM.Iterable"
+		],
+		"moduleResolution": "bundler",
+		"module": "esnext",
+		"noEmit": true,
+		"target": "esnext"
+	},
+	"exclude": [
+		"../node_modules/**"
+	]
+}
