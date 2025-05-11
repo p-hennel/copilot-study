@@ -58,6 +58,10 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
         case "users":
           targetCommand = CrawlCommand.users;
           break;
+        case "discover_all": // New case for GROUP_PROJECT_DISCOVERY
+        case "group_project_discovery": // Alternative alias
+          targetCommand = CrawlCommand.GROUP_PROJECT_DISCOVERY;
+          break;
       }
       if (targetCommand) {
         jobQueryConditions.push(eq(job.command, targetCommand));
@@ -209,11 +213,15 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
       case CrawlCommand.vulnerabilities:
         resourceType = "project"; dataTypes = ["vulnerabilities"]; break;
       case CrawlCommand.pipelines:
-        resourceType = "project"; dataTypes = ["pipelines"]; break;
-      default:
-        logger.warn(`Unhandled job command '${currentJob.command}' for resourceType/dataTypes mapping.`, {jobId: currentJob.id, command: currentJob.command});
-        resourceType = "unknown";
-        dataTypes = ["unknown"];
+      resourceType = "project"; dataTypes = ["pipelines"]; break;
+    case CrawlCommand.GROUP_PROJECT_DISCOVERY: // New case for GROUP_PROJECT_DISCOVERY
+      resourceType = "instance"; // Or "discovery"
+      dataTypes = ["discover_all_groups_projects"]; // Or ["group_project_discovery"]
+      break;
+    default:
+      logger.warn(`Unhandled job command '${currentJob.command}' for resourceType/dataTypes mapping.`, {jobId: currentJob.id, command: currentJob.command});
+      resourceType = "unknown";
+      dataTypes = ["unknown"];
     }
 
     let resourceId: string | number | null = null;
@@ -234,7 +242,8 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
       }
     } else if (
       currentJob.command === CrawlCommand.authorizationScope ||
-      currentJob.command === CrawlCommand.users
+      currentJob.command === CrawlCommand.users ||
+      currentJob.command === CrawlCommand.GROUP_PROJECT_DISCOVERY // Add new command here
     ) {
       resourceId = null;
     }
