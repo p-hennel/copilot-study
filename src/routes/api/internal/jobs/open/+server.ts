@@ -39,7 +39,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
       return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
     }
   }
-  
+
   const resourceParam = url.searchParams.get("resource");
   logger.info(`Task request received. Resource parameter: ${resourceParam || "not provided"}`);
 
@@ -238,7 +238,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
     } else if (typeof e === 'string') {
       errorDetails.errorMessage = e;
     }
-    logger.error("Error during task provisioning:", errorDetails);
+    logger.error('Error during task provisioning:', errorDetails);
     return json({ error: "Internal server error while provisioning task" }, { status: 500 });
   }
 };

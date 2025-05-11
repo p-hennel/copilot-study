@@ -9,6 +9,8 @@ export PATH=$HOME/.bun/bin:$PATH
 #cron
 #autorestic check
 
+bun --bun run db-test.ts
+
 if [ "$SUPERVUSOR" -eq "pm2" ]; then
   bun pm2-runtime start ecosystem.config.cjs
 elif [ -f "$1" ]; then

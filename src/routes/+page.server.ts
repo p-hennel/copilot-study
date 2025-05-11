@@ -11,9 +11,9 @@ import {
   ContentType,
   JobStatus,
   TokenProvider,
-  type AlertContent,
   type MarkdownContent
-} from "$lib/types";
+} from "$lib/content-types";
+import { type AlertContent } from "$lib/AlertContent";
 import { forProvider } from "$lib/utils";
 import { m } from "$paraglide";
 import { and, count, eq, isNotNull, sql } from "drizzle-orm";

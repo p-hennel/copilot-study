@@ -62,7 +62,12 @@ COPY --from=prerelease \
   /usr/src/app/.autorestic.yml \
   /usr/src/app/backup.cron \
   /usr/src/app/dual-server.js \
+  /usr/src/app/db-test.ts \
   ./
+
+COPY --from=prerelease \
+  /usr/src/app/src/lib/server/db/*schema.ts \
+  ./schema/
   
 COPY drizzle /usr/src/app/
 

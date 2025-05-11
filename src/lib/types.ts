@@ -1,27 +1,3 @@
-import * as icons from "@lucide/svelte";
-
-export enum ContentType {
-  Markdown,
-  Alert
-}
-
-export interface ContentBase {
-  type: ContentType;
-}
-
-export interface MarkdownContent extends ContentBase {
-  type: ContentType.Markdown;
-  content: string;
-}
-
-export interface AlertContent extends ContentBase {
-  icon?: keyof typeof icons;
-  title: string;
-  content: string;
-}
-
-export type Content = MarkdownContent | AlertContent;
-
 export enum CrawlCommand {
   // Discovery/authorization
   authorizationScope = "authorizationScope",
