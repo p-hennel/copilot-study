@@ -14,6 +14,7 @@ export enum JobType {
   DISCOVER_GROUPS = "DISCOVER_GROUPS",
   DISCOVER_PROJECTS = "DISCOVER_PROJECTS",
   DISCOVER_SUBGROUPS = "DISCOVER_SUBGROUPS",
+  GROUP_PROJECT_DISCOVERY = "GROUP_PROJECT_DISCOVERY", // New job type for discovering all groups/projects for a token
 
   // Group jobs
   GROUP_DETAILS = "GROUP_DETAILS",
@@ -178,9 +179,10 @@ export const JOB_DEPENDENCIES: Record<JobType, JobType[]> = {
   [JobType.DISCOVER_GROUPS]: [],
   [JobType.DISCOVER_PROJECTS]: [],
   [JobType.DISCOVER_SUBGROUPS]: [JobType.GROUP_DETAILS],
+  [JobType.GROUP_PROJECT_DISCOVERY]: [], // No dependencies
 
   // Group jobs
-  [JobType.GROUP_DETAILS]: [JobType.DISCOVER_GROUPS],
+  [JobType.GROUP_DETAILS]: [JobType.DISCOVER_GROUPS], // Or potentially GROUP_PROJECT_DISCOVERY if it replaces initial discovery
   [JobType.GROUP_MEMBERS]: [JobType.GROUP_DETAILS],
   [JobType.GROUP_PROJECTS]: [JobType.GROUP_DETAILS],
   [JobType.GROUP_ISSUES]: [JobType.GROUP_DETAILS],
@@ -210,6 +212,7 @@ export const JOB_PRIORITIES: Record<JobType, number> = {
   [JobType.DISCOVER_GROUPS]: 1000,
   [JobType.DISCOVER_PROJECTS]: 900,
   [JobType.DISCOVER_SUBGROUPS]: 800,
+  [JobType.GROUP_PROJECT_DISCOVERY]: 1100, // Highest priority as it's a root discovery task
 
   // Group jobs
   [JobType.GROUP_DETAILS]: 700,
@@ -267,6 +270,7 @@ export const JOB_CATEGORIES: Record<JobType, JobCategory> = {
   [JobType.DISCOVER_GROUPS]: JobCategory.DISCOVERY,
   [JobType.DISCOVER_PROJECTS]: JobCategory.DISCOVERY,
   [JobType.DISCOVER_SUBGROUPS]: JobCategory.DISCOVERY,
+  [JobType.GROUP_PROJECT_DISCOVERY]: JobCategory.DISCOVERY,
 
   // Group jobs
   [JobType.GROUP_DETAILS]: JobCategory.GROUP,

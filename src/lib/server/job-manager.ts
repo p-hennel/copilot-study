@@ -3,14 +3,13 @@ import { db } from "$lib/server/db";
 import {
   area as areaSchema,
   job as jobSchema,
-  tokenScopeJob as tokenScopeJobSchema,
-  account as accountSchema // Import account schema for fetching PAT
+  tokenScopeJob as tokenScopeJobSchema
+  // account as accountSchema // No longer directly used here to fetch PAT
 } from "$lib/server/db/schema";
 import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
 import { monotonicFactory } from "ulid";
-import { startJob } from "../../hooks.server"; // This might be removed or repurposed
-import { fetchAllGroupsAndProjects } from "./mini-crawler/main"; // Import the new discovery function
+import { startJob } from "../../hooks.server";
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();
@@ -29,7 +28,8 @@ interface InitiateGitLabDiscoveryArgs {
  * Creates or updates a tokenScopeJob and then calls fetchAllGroupsAndProjects.
  */
 export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs): Promise<void> {
-  const { pat, gitlabGraphQLUrl, userId, providerId, authorizationDbId } = args;
+  // 'pat' is no longer used directly in this function, the worker will fetch it.
+  const { gitlabGraphQLUrl, userId, providerId, authorizationDbId } = args;
   logger.info(
     `Initiating GitLab discovery for authorization ID ${authorizationDbId} (User: ${userId}, Provider: ${providerId})`
   );
@@ -103,17 +103,44 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
       logger.info(`Created new tokenScopeJob ${currentScopeJobId} for authorization ${authorizationDbId}`);
     }
 
-    // Call fetchAllGroupsAndProjects
-    // The 'accountId' passed to fetchAllGroupsAndProjects is the system's account ID for data association,
-    // which is authorizationDbId (the PK of the account table record).
-    await fetchAllGroupsAndProjects(userId, authorizationDbId, providerId as TokenProvider, gitlabGraphQLUrl, pat);
+    // Create and start the GROUP_PROJECT_DISCOVERY job
+    const discoveryJobId = ulid();
+    const newJob = {
+      id: discoveryJobId,
+      accountId: authorizationDbId, // This is the PK of the 'account' table, used to fetch PAT etc.
+      full_path: currentScopeJobId, // Link to the tokenScopeJob
+      command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
+      status: JobStatus.queued,
+      // Add other necessary job parameters if any, e.g., payload with pat, gitlabGraphQLUrl if not derivable
+      // For now, assuming the worker for GROUP_PROJECT_DISCOVERY can fetch PAT and URL using authorizationDbId
+      // and can use currentScopeJobId (as full_path) to update the tokenScopeJob.
+      // The `userId` and `providerId` are available in the `tokenScopeJob` record via `currentScopeJobId`.
+      // The `pat` and `gitlabGraphQLUrl` are available in the `account` record via `authorizationDbId`.
+    };
+
+    await db.insert(jobSchema).values(newJob);
+    logger.info(
+      `Created new GROUP_PROJECT_DISCOVERY job ${discoveryJobId} for tokenScopeJob ${currentScopeJobId} (Authorization: ${authorizationDbId})`
+    );
+
+    // Start the job
+    // The startJob function might need to be aware of how to pass pat and gitlabGraphQLUrl if they are not
+    // directly stored or easily derivable by the worker using only accountId and full_path (tokenScopeJobId).
+    // For now, assuming startJob can handle this or the worker can fetch them.
+    await startJob({
+      jobId: newJob.id,
+      fullPath: newJob.full_path, // This is currentScopeJobId
+      command: newJob.command,
+      accountId: newJob.accountId // This is authorizationDbId
+    });
 
     logger.info(
-      `GitLab discovery process invoked for tokenScopeJob ${currentScopeJobId} (Authorization: ${authorizationDbId})`
+      `GROUP_PROJECT_DISCOVERY job ${discoveryJobId} started for tokenScopeJob ${currentScopeJobId} (Authorization: ${authorizationDbId})`
     );
   } catch (error) {
-    logger.error(`Error initiating GitLab discovery for authorization ${authorizationDbId}:`, { error });
-    // Consider updating the tokenScopeJob to an error state here if appropriate
+    logger.error(`Error initiating GitLab discovery or creating/starting job for authorization ${authorizationDbId}:`, { error });
+    // Consider updating the tokenScopeJob to an error state here
+    // Also, if the job was created but failed to start, update its status to 'failed'
   }
 }
 

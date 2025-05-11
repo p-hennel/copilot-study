@@ -6,8 +6,9 @@ export enum CrawlCommand {
   workItems = "workItems",
   groupProjects = "groupProjects",
   groupSubgroups = "groupSubgroups",
+  GROUP_PROJECT_DISCOVERY = "GROUP_PROJECT_DISCOVERY", // For discovering all groups/projects for a token
 
-  // Group services
+// Group services
   group = "group",
   groupMembers = "groupMembers",
   groupIssues = "groupIssues",

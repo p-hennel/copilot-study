@@ -3,8 +3,6 @@ import { account } from "$lib/server/db/auth-schema";
 import { area, area_authorization, job } from "$lib/server/db/base-schema";
 import { getAccounts } from "$lib/server/db/jobFactory";
 import { handleNewAuthorization } from "$lib/server/job-manager";
-import fetchAllGroupsAndProjects from "$lib/server/mini-crawler/main";
-import { manageOAuthToken, type TokenManagerOptions } from "$lib/server/mini-crawler/token-check";
 import { ensureUserIsAuthenticated, getMD } from "$lib/server/utils";
 import {
   ContentType,
@@ -82,17 +80,9 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
             .limit(100))
         );
 
-        const options = {
-          verifyUrl: "/oauth/verify",
-          refreshUrl: "/oauth/token",
-          clientId: "",
-          clientSecret: ""
-        };
-
         type ProviderTypes = {
           provider: TokenProvider;
           baseUrl: string;
-          options: TokenManagerOptions;
         };
 
         const opts = forProvider<ProviderTypes>(x.provider, {
@@ -100,58 +90,21 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
             const baseUrl = AppSettings().auth.providers.gitlabCloud.baseUrl;
             return {
               provider: TokenProvider.gitlabCloud,
-              baseUrl,
-              options: {
-                verifyUrl: `${baseUrl}${options.verifyUrl}`,
-                refreshUrl: `${baseUrl}${options.refreshUrl}`,
-                clientId: AppSettings().auth.providers.gitlabCloud.clientId ?? options.clientId,
-                clientSecret:
-                  AppSettings().auth.providers.gitlabCloud.clientSecret ?? options.clientSecret
-              }
+              baseUrl
             };
           },
           gitlabOnPrem: () => {
             const baseUrl = AppSettings().auth.providers.gitlabCloud.baseUrl;
             return {
               provider: TokenProvider.gitlab,
-              baseUrl,
-              options: {
-                verifyUrl: `${baseUrl}${options.verifyUrl}`,
-                refreshUrl: `${baseUrl}${options.refreshUrl}`,
-                clientId: AppSettings().auth.providers.gitlab.clientId ?? options.clientId,
-                clientSecret:
-                  AppSettings().auth.providers.gitlab.clientSecret ?? options.clientSecret
-              }
+              baseUrl
             };
           }
         });
 
-        if (!opts || !opts.baseUrl || !opts.options) return;
+        if (!opts || !opts.baseUrl) return;
 
-        const updatedTokens = await manageOAuthToken(
-          x.token ?? "",
-          x.refreshToken ?? "",
-          opts.options
-        );
-
-        let token = x.token ?? "";
-        if (
-          updatedTokens &&
-          (updatedTokens.accessToken != x.token || updatedTokens?.refreshToken != x.refreshToken)
-        ) {
-          // Save the updated tokens for later use
-          await db
-            .update(account)
-            .set({
-              refreshToken: updatedTokens.refreshToken,
-              accessToken: updatedTokens.accessToken,
-              accessTokenExpiresAt: updatedTokens.expiresAt
-                ? new Date(updatedTokens.expiresAt)
-                : null
-            })
-            .where(eq(account.id, x.id));
-          token = updatedTokens.accessToken;
-        }
+        const token = x.token ?? "";
 
         if (!token) return;
 
