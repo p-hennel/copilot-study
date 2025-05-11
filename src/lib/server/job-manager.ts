@@ -125,7 +125,7 @@ export async function handleNewArea(
 
   try {
     // First, check if area already exists in the database
-    let existingArea = await db.query.area.findFirst({
+    const existingArea = await db.query.area.findFirst({
       where: eq(areaSchema.full_path, areaPath)
     });
 
@@ -143,110 +143,30 @@ export async function handleNewArea(
     // Create appropriate jobs based on area type
     const jobsToCreate = [];
 
-    // For groups, we need to crawl group details and discover subgroups/projects
+    // --- Expanded job creation for all service handlers ---
     if (areaType === AreaType.group) {
-      // Check for existing group job
-      const existingGroupJob = await db.query.job.findFirst({
-        where: and(
-          eq(jobSchema.full_path, areaPath),
-          eq(jobSchema.command, CrawlCommand.group),
-          or(
-            eq(jobSchema.status, JobStatus.queued),
-            eq(jobSchema.status, JobStatus.running)
-          )
-        )
-      });
-
-      if (!existingGroupJob) {
-        jobsToCreate.push({
-          id: ulid(),
-          accountId,
-          full_path: areaPath,
-          command: CrawlCommand.group,
-          status: JobStatus.queued
-        });
-      }
-
-      // Check for existing groupProjects job
-      const existingGroupProjectsJob = await db.query.job.findFirst({
-        where: and(
-          eq(jobSchema.full_path, areaPath),
-          eq(jobSchema.command, CrawlCommand.groupProjects),
-          or(
-            eq(jobSchema.status, JobStatus.queued),
-            eq(jobSchema.status, JobStatus.running)
-          )
-        )
-      });
-
-      if (!existingGroupProjectsJob) {
-        jobsToCreate.push({
-          id: ulid(),
-          accountId,
-          full_path: areaPath,
-          command: CrawlCommand.groupProjects,
-          status: JobStatus.queued
-        });
-      }
-
-      // Check for existing groupSubgroups job
-      const existingGroupSubgroupsJob = await db.query.job.findFirst({
-        where: and(
-          eq(jobSchema.full_path, areaPath),
-          eq(jobSchema.command, CrawlCommand.groupSubgroups),
-          or(
-            eq(jobSchema.status, JobStatus.queued),
-            eq(jobSchema.status, JobStatus.running)
-          )
-        )
-      });
-
-      if (!existingGroupSubgroupsJob) {
-        jobsToCreate.push({
-          id: ulid(),
-          accountId,
-          full_path: areaPath,
-          command: CrawlCommand.groupSubgroups,
-          status: JobStatus.queued
-        });
-      }
-    }
-
-    // For projects, we need to crawl project details
-    if (areaType === AreaType.project) {
-      // Check for existing project job
-      const existingProjectJob = await db.query.job.findFirst({
-        where: and(
-          eq(jobSchema.full_path, areaPath),
-          eq(jobSchema.command, CrawlCommand.project),
-          or(
-            eq(jobSchema.status, JobStatus.queued),
-            eq(jobSchema.status, JobStatus.running)
-          )
-        )
-      });
-
-      if (!existingProjectJob) {
-        jobsToCreate.push({
-          id: ulid(),
-          accountId,
-          full_path: areaPath,
-          command: CrawlCommand.project,
-          status: JobStatus.queued
-        });
-      }
-
-      // Add other project-related jobs like commits, mergeRequests, issues, etc.
-      const projectCommands = [
-        CrawlCommand.commits,
-        CrawlCommand.mergeRequests,
-        CrawlCommand.issues,
-        CrawlCommand.vulnerabilities,
-        CrawlCommand.pipelines
+      // List of all group-related CrawlCommands (from servicehandlers.md)
+      const groupCommands = [
+        CrawlCommand.group, // group details
+        CrawlCommand.groupMembers,
+        CrawlCommand.groupProjects,
+        CrawlCommand.groupIssues,
+        CrawlCommand.groupSubgroups,
+        CrawlCommand.epics,
+        CrawlCommand.groupCustomAttributes,
+        CrawlCommand.groupAccessRequests,
+        CrawlCommand.groupVariables,
+        CrawlCommand.groupLabels,
+        CrawlCommand.groupBadges,
+        CrawlCommand.groupDeployTokens,
+        CrawlCommand.groupIssueBoards,
+        CrawlCommand.groupMilestones,
+        CrawlCommand.epicIssues,
+        CrawlCommand.epicNotes,
+        CrawlCommand.epicDiscussions
       ];
-
-      for (const command of projectCommands) {
-        const existingCommandJob = await db.query.job.findFirst({
+      for (const command of groupCommands) {
+        const existingJob = await db.query.job.findFirst({
           where: and(
             eq(jobSchema.full_path, areaPath),
             eq(jobSchema.command, command),
@@ -256,8 +176,70 @@ export async function handleNewArea(
             )
           )
         });
+        if (!existingJob) {
+          jobsToCreate.push({
+            id: ulid(),
+            accountId,
+            full_path: areaPath,
+            command,
+            status: JobStatus.queued
+          });
+        }
+      }
+    }
 
-        if (!existingCommandJob) {
+    if (areaType === AreaType.project) {
+      // List of all project-related CrawlCommands (from servicehandlers.md)
+      const projectCommands = [
+        CrawlCommand.project, // project details
+        CrawlCommand.projectVariables,
+        CrawlCommand.projectMembers,
+        CrawlCommand.issues,
+        CrawlCommand.pagesDomains,
+        CrawlCommand.projectCustomAttributes,
+        CrawlCommand.projectStatistics,
+        CrawlCommand.projectBadges,
+        CrawlCommand.projectTemplates,
+        CrawlCommand.projectAccessRequests,
+        CrawlCommand.projectHooks,
+        CrawlCommand.projectIssueBoards,
+        CrawlCommand.freezePeriods,
+        CrawlCommand.commits,
+        CrawlCommand.commitDiscussions,
+        CrawlCommand.branches,
+        CrawlCommand.tags,
+        CrawlCommand.mergeRequests,
+        CrawlCommand.mergeRequestNotes,
+        CrawlCommand.mergeRequestDiscussions,
+        CrawlCommand.mergeRequestAwardEmojis,
+        CrawlCommand.projectSnippets,
+        CrawlCommand.snippets,
+        CrawlCommand.pipelines,
+        CrawlCommand.pipelineSchedules,
+        CrawlCommand.jobs,
+        CrawlCommand.deployments,
+        CrawlCommand.environments,
+        CrawlCommand.pipelineScheduleVariables,
+        CrawlCommand.pipelineTriggers,
+        CrawlCommand.containerRegistryRepositories,
+        CrawlCommand.packages,
+        CrawlCommand.vulnerabilities,
+        CrawlCommand.protectedBranches,
+        CrawlCommand.protectedTags,
+        CrawlCommand.deployKeys
+      ];
+      for (const command of projectCommands) {
+        const existingJob = await db.query.job.findFirst({
+          where: and(
+            eq(jobSchema.full_path, areaPath),
+            eq(jobSchema.command, command),
+            or(
+              eq(jobSchema.status, JobStatus.queued),
+              eq(jobSchema.status, JobStatus.running)
+            )
+          )
+        });
+        if (!existingJob) {
           jobsToCreate.push({
             id: ulid(),
             accountId,

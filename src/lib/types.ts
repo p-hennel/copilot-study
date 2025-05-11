@@ -23,20 +23,72 @@ export interface AlertContent extends ContentBase {
 export type Content = MarkdownContent | AlertContent;
 
 export enum CrawlCommand {
+  // Discovery/authorization
   authorizationScope = "authorizationScope",
-  group = "group",
-  project = "project",
-  commits = "commits",
-  mergeRequests = "mergeRequests",
-  issues = "issues",
-  vulnerabilities = "vulnerabilities",
-  pipelines = "pipelines",
-  timelogs = "timelogs",
   users = "users",
+  timelogs = "timelogs",
   workItems = "workItems",
-  // Added for discovery
   groupProjects = "groupProjects",
-  groupSubgroups = "groupSubgroups"
+  groupSubgroups = "groupSubgroups",
+
+  // Group services
+  group = "group",
+  groupMembers = "groupMembers",
+  groupIssues = "groupIssues",
+  epics = "epics",
+  groupCustomAttributes = "groupCustomAttributes",
+  groupAccessRequests = "groupAccessRequests",
+  groupVariables = "groupVariables",
+  groupLabels = "groupLabels",
+  groupBadges = "groupBadges",
+  groupDeployTokens = "groupDeployTokens",
+  groupIssueBoards = "groupIssueBoards",
+  groupMilestones = "groupMilestones",
+  epicIssues = "epicIssues",
+  epicNotes = "epicNotes",
+  epicDiscussions = "epicDiscussions",
+
+  // Project services
+  project = "project",
+  projectVariables = "projectVariables",
+  projectMembers = "projectMembers",
+  issues = "issues",
+  pagesDomains = "pagesDomains",
+  projectCustomAttributes = "projectCustomAttributes",
+  projectStatistics = "projectStatistics",
+  projectBadges = "projectBadges",
+  projectTemplates = "projectTemplates",
+  projectAccessRequests = "projectAccessRequests",
+  projectHooks = "projectHooks",
+  projectIssueBoards = "projectIssueBoards",
+  freezePeriods = "freezePeriods",
+
+  // Repository services
+  commits = "commits",
+  commitDiscussions = "commitDiscussions",
+  branches = "branches",
+  tags = "tags",
+
+  // Merge requests, snippets, pipelines, etc.
+  mergeRequests = "mergeRequests",
+  mergeRequestNotes = "mergeRequestNotes",
+  mergeRequestDiscussions = "mergeRequestDiscussions",
+  mergeRequestAwardEmojis = "mergeRequestAwardEmojis",
+  projectSnippets = "projectSnippets",
+  snippets = "snippets",
+  pipelines = "pipelines",
+  pipelineSchedules = "pipelineSchedules",
+  jobs = "jobs",
+  deployments = "deployments",
+  environments = "environments",
+  pipelineScheduleVariables = "pipelineScheduleVariables",
+  pipelineTriggers = "pipelineTriggers",
+  containerRegistryRepositories = "containerRegistryRepositories",
+  packages = "packages",
+  vulnerabilities = "vulnerabilities",
+  protectedBranches = "protectedBranches",
+  protectedTags = "protectedTags",
+  deployKeys = "deployKeys"
 }
 export enum AreaType {
   group = "group",
