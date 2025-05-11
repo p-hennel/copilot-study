@@ -1,5 +1,5 @@
 // src/events/event-types.ts
-import { Job, JobType } from "../types/job-types";
+import { type Job, JobType } from "../types/job-types";
 
 /**
  * Event types emitted by the crawler
