@@ -4,8 +4,8 @@ import AppSettings from '$lib/server/settings';
 import { db } from '$lib/server/db';
 import { job as jobSchema, tokenScopeJob, area, area_authorization, tokenScopeJobArea } from '$lib/server/db/base-schema';
 import type { Job } from '$lib/server/db/base-schema';
-import { JobStatus, CrawlCommand, AreaType, TokenProvider } from '$lib/types';
-import { eq, and } from 'drizzle-orm';
+import { JobStatus, CrawlCommand, AreaType } from '$lib/types';
+import { eq, sql } from 'drizzle-orm';
 import { getLogger } from '$lib/logging';
 import { handleNewArea } from '$lib/server/job-manager';
 

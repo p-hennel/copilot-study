@@ -1,5 +1,3 @@
-import type { JobStatus } from "$lib/types";
-
 /**
  * Type definitions for the area discovery types used by the crawler
  * These types define the communication protocol between the crawler and the controlling app

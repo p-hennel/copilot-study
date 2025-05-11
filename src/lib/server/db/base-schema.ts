@@ -10,7 +10,7 @@ import {
   uniqueIndex
 } from "drizzle-orm/sqlite-core";
 import { monotonicFactory } from "ulid";
-import { account, user, session } from "./auth-schema"; // Added session for potential future use, account for authorizationId
+import { account, user } from "./auth-schema"; // Added session for potential future use, account for authorizationId
 
 const ulid = monotonicFactory();
 
