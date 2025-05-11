@@ -1,6 +1,6 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { getLogger } from "$lib/logging";
-import AppSettings from "$lib/server/settings"; // Use AppSettings
+import AppSettings, { type Settings } from "$lib/server/settings"; // Use AppSettings
 import { db } from "$lib/server/db";
 import { account } from "$lib/server/db/auth-schema";
 import { area, job, type Job } from "$lib/server/db/base-schema";
@@ -69,63 +69,109 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
       }
     }
 
-    const potentialJobs = await db
-      .select()
-      .from(job)
-      .where(and(...jobQueryConditions))
-      .orderBy(asc(job.created_at))
-      .limit(1)
-      .execute();
+    // Fetch the oldest queued job with its associated account information
+    const jobDetails = await db.query.job.findFirst({
+      where: and(...jobQueryConditions),
+      orderBy: [asc(job.created_at)],
+      with: {
+        usingAccount: true // Fetch related account
+      }
+    });
 
-    if (!potentialJobs || potentialJobs.length === 0) {
+    if (!jobDetails) {
       logger.info("No suitable queued job found.");
       return new Response(null, { status: 204 });
     }
 
-    // After the check above, potentialJobs[0] is guaranteed to exist.
-    let currentJob: Job = potentialJobs[0]!;
+    // Check if the associated account data was successfully fetched
+    if (!jobDetails.usingAccount) {
+      logger.error(
+        `Job ${jobDetails.id} with accountId ${jobDetails.accountId} is missing associated account data. Cannot process task.`
+      );
+      // Optionally, set job to failed, though it might indicate a deeper data integrity issue
+      await db
+        .update(job)
+        .set({ status: JobStatus.failed, finished_at: new Date() })
+        .where(eq(job.id, jobDetails.id));
+      return new Response(null, { status: 204 }); // No content, as the job cannot be processed by this worker
+    }
 
     const now = new Date();
-    const updatedJobs = await db
+    // Try to mark the job as running
+    const updatedJobArray = await db
       .update(job)
       .set({ status: JobStatus.running, started_at: now })
-      .where(eq(job.id, currentJob.id))
+      .where(eq(job.id, jobDetails.id))
       .returning();
 
-    if (!updatedJobs || updatedJobs.length === 0) {
-      logger.error(`Failed to update job ${currentJob.id} to running. It might have been picked by another process.`);
-      return new Response(null, { status: 204 });
-    }
-    // After this check, updatedJobs[0] is guaranteed to exist.
-    currentJob = updatedJobs[0]!;
-
-    const associatedAccounts = await db
-      .select()
-      .from(account)
-      .where(eq(account.id, currentJob.accountId))
-      .limit(1)
-      .execute();
-
-    if (!associatedAccounts || associatedAccounts.length === 0) {
-      logger.error(`No account found for job ${currentJob.id} with accountId ${currentJob.accountId}. Cannot process task.`);
-      await db.update(job).set({ status: JobStatus.failed, finished_at: new Date() }).where(eq(job.id, currentJob.id));
-      return new Response(null, { status: 204 });
+    if (!updatedJobArray || updatedJobArray.length === 0) {
+      logger.error(
+        `Failed to update job ${jobDetails.id} to running. It might have been picked by another process.`
+      );
+      return new Response(null, { status: 204 }); // No content, job was taken
     }
 
-    // After this check, associatedAccounts[0] is guaranteed to exist.
-    const acc: typeof account.$inferSelect = associatedAccounts[0]!;
-    
-    const providerInstanceUrl = (acc as any).provider_instance_url as string | undefined;
-    const providerAccessToken = (acc as any).provider_access_token as string | undefined || acc.accessToken;
+    // Use the updated job record from now on, but retain the 'usingAccount' from the initial fetch
+    const currentJob: Job & { usingAccount: typeof account.$inferSelect } = {
+      ...updatedJobArray[0]!,
+      usingAccount: jobDetails.usingAccount // Add the account details to the current job object
+    };
+
+    // Retrieve provider_access_token
+    const providerAccessToken = currentJob.usingAccount.accessToken;
+
+    if (!providerAccessToken) {
+      logger.error(
+        `Account ${currentJob.usingAccount.id} for job ${currentJob.id} is missing accessToken. Cannot process task.`
+      );
+      await db
+        .update(job)
+        .set({ status: JobStatus.failed, finished_at: new Date() })
+        .where(eq(job.id, currentJob.id));
+      return new Response(null, { status: 204 });
+    }
+
+    // Retrieve provider_instance_url
+    // 1. Primary Source: job.gitlabGraphQLUrl
+    let providerInstanceUrl = currentJob.gitlabGraphQLUrl;
+
+    // 2. Secondary Source: System Settings if gitlabGraphQLUrl is not available or not suitable
+    if (!providerInstanceUrl) {
+      const providerKey = currentJob.usingAccount.providerId; // e.g., "gitlab", "gitlabCloud"
+      if (providerKey) {
+        try {
+          const provKey = providerKey as keyof Settings["auth"]["providers"]
+          // Access baseUrl from AppSettings().auth.providers.{providerKey}.baseUrl
+          // The providerKey needs to match one of the keys in AppSettings().auth.providers (e.g., "gitlab", "gitlabCloud", "jira")
+          const providerSettings = AppSettings().auth?.providers?.[provKey];
+
+          if (providerSettings && 'baseUrl' in providerSettings && providerSettings.baseUrl) {
+            providerInstanceUrl = providerSettings.baseUrl;
+          } else {
+            logger.warn(
+              `Could not retrieve instance URL (baseUrl) from settings for providerKey '${providerKey}'. Job ${currentJob.id}. Provider settings found: ${providerSettings ? Object.keys(providerSettings).join(', ') : 'not found'}`
+            );
+          }
+        } catch (settingsError: any) {
+          logger.error(
+            `Error retrieving instance URL from settings for job ${currentJob.id} using providerKey '${providerKey}': ${settingsError.message}`
+          );
+        }
+      } else {
+        logger.warn(
+          `Missing providerId on usingAccount for job ${currentJob.id}, cannot fetch instance URL from settings.`
+        );
+      }
+    }
 
     if (!providerInstanceUrl) {
-      logger.error(`Account ${acc.id} for job ${currentJob.id} is missing provider_instance_url. Cannot process task.`);
-      await db.update(job).set({ status: JobStatus.failed, finished_at: new Date() }).where(eq(job.id, currentJob.id));
-      return new Response(null, { status: 204 });
-    }
-    if (!providerAccessToken) {
-      logger.error(`Account ${acc.id} for job ${currentJob.id} is missing provider_access_token/accessToken. Cannot process task.`);
-      await db.update(job).set({ status: JobStatus.failed, finished_at: new Date() }).where(eq(job.id, currentJob.id));
+      logger.error(
+        `Account ${currentJob.usingAccount.id} for job ${currentJob.id} is missing provider_instance_url (checked job.gitlabGraphQLUrl and system settings). Cannot process task.`
+      );
+      await db
+        .update(job)
+        .set({ status: JobStatus.failed, finished_at: new Date() })
+        .where(eq(job.id, currentJob.id));
       return new Response(null, { status: 204 });
     }
 

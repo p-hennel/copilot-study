@@ -8,12 +8,18 @@ import { syncAdminRoles } from "$lib/server/utils" // Import syncAdminRoles func
 import { configureLogging } from "$lib/logging"
 import type { Logger } from "@logtape/logtape"
 import doMigration from '$lib/server/db/migration'
-import { existsSync } from "node:fs"
+import { existsSync, mkdir } from "node:fs"
 import path from "node:path"
+import { mkdirSync } from "fs";
 
-const bunHomeData = path.join("home", "bun", "data", "logs")
+const bunHomeData = path.join("/", "home", "bun", "data")
+const logsDir = path.join(bunHomeData, "logs")
+if (existsSync(bunHomeData) && !existsSync(logsDir)) {
+  mkdirSync(logsDir)
+}
+console.error("bunHomeData", bunHomeData)
 const settings = AppSettings()
-const logger: Logger = await configureLogging("backend", existsSync(bunHomeData) ? bunHomeData : process.cwd())
+const logger: Logger = await configureLogging("backend", existsSync(logsDir) ? logsDir : process.cwd())
 
 if (logger === null) {
   console.error("CRITICAL: Logger initialization failed. Cannot set up event listeners.")
