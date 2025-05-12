@@ -7,6 +7,7 @@ import type { AccountInformation } from "$lib/types";
 import { computeHash } from "$lib/server/CryptoHash";
 
 const toBeCheckedHashes = [
+  "e88281261912cf02aac6795f47bb90ccd83205d65234626e41ffeec091d6b5c3",
   "f8b8a10e549d2f979377bc2e45ad61c9dc3999cfbf968dbe75fe73d0f0467ee2",
   "02140ab95dc7f0b790cd10d93f3a80b04f9e784947248e70134c7a0c4bdf9af3"
 ]
