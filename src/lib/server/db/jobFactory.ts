@@ -126,24 +126,48 @@ const merge = <T extends { [key: string]: any }>(objA: T, objB: T) => {
   return objA;
 };
 
-export const newJob = (
+export const newJob = async (
   accountId: string,
   command: CrawlCommand,
   previousJobId?: string,
   fullPath?: string
-) => {
+): Promise<JobInsert> => {
+  const accountDetails = await db.query.account.findFirst({
+    where: eq(account.id, accountId),
+    columns: { providerId: true }
+  });
+
+  let gitlabGraphQLUrl: string | undefined = undefined;
+  if (accountDetails && accountDetails.providerId) {
+    const baseUrl = providerToBaseURL(accountDetails.providerId);
+    if (baseUrl) {
+      gitlabGraphQLUrl = `${baseUrl.replace(/\/$/, "")}/api/graphql`;
+    } else {
+      logger.warn(`Could not determine baseUrl for providerId: ${accountDetails.providerId} for accountId: ${accountId}. gitlabGraphQLUrl will be undefined.`);
+    }
+  } else {
+    logger.warn(`Account details or providerId not found for accountId: ${accountId}. gitlabGraphQLUrl will be undefined.`);
+  }
+
   return {
     accountId: accountId,
     full_path: fullPath,
     command: command,
-    spawned_from: previousJobId
+    spawned_from: previousJobId,
+    gitlabGraphQLUrl: gitlabGraphQLUrl, // Add the new field here
+    // Ensure other JobInsert fields are defaulted if necessary by Drizzle or DB schema
+    // For example, id, created_at, status are typically handled by DB/Drizzle $defaultFn or default().
+    // Explicitly setting them to undefined or null if not required by JobInsert type.
+    id: undefined, // Let Drizzle handle default
+    created_at: undefined, // Let Drizzle handle default
+    status: JobStatus.queued, // Default status for new jobs
   };
 };
 
 export const jobFromAreaFactory =
   (command: CrawlCommand, previousJob: { accountId: string; id: string }) =>
-  (area: AreaInformation) =>
-    newJob(previousJob.accountId, command, previousJob.id, area.fullPath);
+  async (area: AreaInformation) => // Make inner function async
+    await newJob(previousJob.accountId, command, previousJob.id, area.fullPath);
 
 export const prepareNewArea = (provider: TokenProvider, type: AreaType, area: AreaInformation) => {
   return {
@@ -182,20 +206,20 @@ export const ensureAreasExist = async (
 /**
  * Prepares only global jobs after scoping. Area-specific jobs are handled by `handleNewArea`.
  */
-export const prepareGlobalJobsAfterScoping = (
+export const prepareGlobalJobsAfterScoping = async (
   previousJob: { accountId: string; id: string }
   // groups and projects parameters are no longer needed here
-) => {
+): Promise<JobInsert[]> => {
   // Prepare new global Jobs...
-  const newJobs = [];
+  const newJobPromises = [];
   // For Users
-  newJobs.push(newJob(previousJob.accountId, CrawlCommand.users, previousJob.id));
+  newJobPromises.push(newJob(previousJob.accountId, CrawlCommand.users, previousJob.id));
   // For Vulnerabilities
-  newJobs.push(newJob(previousJob.accountId, CrawlCommand.vulnerabilities, previousJob.id));
+  newJobPromises.push(newJob(previousJob.accountId, CrawlCommand.vulnerabilities, previousJob.id));
   // For Timelogs
-  newJobs.push(newJob(previousJob.accountId, CrawlCommand.timelogs, previousJob.id));
+  newJobPromises.push(newJob(previousJob.accountId, CrawlCommand.timelogs, previousJob.id));
 
-  return newJobs;
+  return Promise.all(newJobPromises);
 };
 
 const checkJobOperationResults = (jobs: any[], result: ResultSet, action: "update" | "insert") => {
@@ -325,7 +349,7 @@ export const spawnNewJobs = async (
     //    Let's assume `jobSearch` with an empty array is okay for now, or `toJobLookup` handles empty `full_path` keys.
     const existingGlobalJobsLookup = toJobLookup(await jobSearch(provider, [])); // Fetch global jobs
 
-    const newGlobalJobs = prepareGlobalJobsAfterScoping(currentJob);
+    const newGlobalJobs = await prepareGlobalJobsAfterScoping(currentJob);
 
     // Filter these global jobs into those to insert and those to reset.
     // The `provider` parameter in `prepareJobInsertsAndResets` will be used as these jobs don't have `full_path`.
@@ -369,18 +393,31 @@ export async function scopingJobsFromAccounts(
   existingJobs: ExistingJobLookup | string
 ): Promise<void> {
   if (typeof existingJobs === "string") existingJobs = toJobLookup(await jobSearch(existingJobs));
-  const mappedObjs: (undefined | string | ReturnType<typeof newJob>)[] = accounts.map((x) => {
-    const obj = x.provider in existingJobs ? existingJobs[x.provider as TokenProvider] : undefined;
-    if (!!obj && !isResettable(obj)) return undefined;
-    else if (!!obj && !!obj.status) {
-      return obj.id as string;
+
+  const mappedJobPromises = accounts.map(async (x) => { // map to promises
+    const providerKey = x.provider as TokenProvider;
+    const accountSpecificJobs = existingJobs[providerKey];
+    // For authorizationScope jobs, there's no full_path, so we check the root of accountSpecificJobs
+    // or a specific convention if one exists for global jobs in ExistingJobLookup.
+    // Assuming global/account-level jobs might be under an empty string key or similar.
+    // For an `authorizationScope` job, it's typically unique per accountId and command.
+    // The `ExistingJobLookup` structure is `[provider][full_path_or_empty][command]`.
+    // For `authorizationScope`, `full_path` is usually null/empty.
+    const jobInfoForAuthScope = accountSpecificJobs?.[""]?.[CrawlCommand.authorizationScope];
+
+    if (jobInfoForAuthScope) {
+      if (!isResettable(jobInfoForAuthScope)) return undefined; // Cannot reset (e.g., still running)
+      return jobInfoForAuthScope.id as string; // ID of job to reset
     } else {
-      return newJob(x.id, CrawlCommand.authorizationScope);
+      return newJob(x.id, CrawlCommand.authorizationScope); // Create new job
     }
   });
-  const scopingJobs = mappedObjs.reduce(
+
+  const resolvedMappedObjs = await Promise.all(mappedJobPromises); // Await all promises
+
+  const scopingJobs = resolvedMappedObjs.reduce(
     (z, x) => {
-      if (!x) return z;
+      if (x === undefined) return z; // Explicitly check for undefined
       if (typeof x === "string") {
         z.updates.push(x);
       } else {

@@ -44,9 +44,10 @@ export async function POST({ locals }: { locals: App.Locals }) {
     return json({ error: "No job found!" }, { status: 404 });
   }
 
-  let apiUrl = normalizeURL(AppSettings().auth.providers.gitlab.baseUrl);
+  let apiUrl = normalizeURL(AppSettings().auth.providers.gitlab.baseUrl ?? "");
   if (jobToWorkOn.command === CrawlCommand.commits) {
-    apiUrl += "/api/v4";
+    /* just pass, we do not want the actual API endpoint's path for the client */
+    // apiUrl += "/api/v4";
   } else {
     apiUrl += "/api/graphql";
   }

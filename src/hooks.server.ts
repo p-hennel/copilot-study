@@ -4,7 +4,7 @@ import type { Handle } from "@sveltejs/kit"
 import { sequence } from "@sveltejs/kit/hooks"
 import { svelteKitHandler } from "better-auth/svelte-kit"
 import AppSettings, { type Settings } from "$lib/server/settings"
-import { syncAdminRoles } from "$lib/server/utils" // Import syncAdminRoles function
+import { isAdmin, syncAdminRoles } from "$lib/server/utils" // Import syncAdminRoles function
 import { configureLogging } from "$lib/logging"
 import type { Logger } from "@logtape/logtape"
 import doMigration from '$lib/server/db/migration'
@@ -86,9 +86,11 @@ export async function reqSourceHandle({ event, resolve }: {event: any, resolve: 
   event.locals.requestSource = requestSource;
   event.locals.isSocketRequest = requestSource === 'unix';
 
-  if (event.url.pathname.startsWith('/api/internal') && !event.locals.isSocketRequest) {
+  /*
+  if (event.url.pathname.startsWith('/api/internal') && !event.locals.isSocketRequest && !isAdmin(event.locals)) {
     return new Response('Forbidden', { status: 403 });
   }
+  */
   
   return await resolve(event);
 }

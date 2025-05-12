@@ -117,25 +117,28 @@ async function processDiscoveredAreas(
   return { groupsCount: groups.length, projectsCount: projects.length };
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => { // Added locals
   // 1. Authentication
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
-  if (!currentCrawlerApiToken) {
-    logger.error('Attempted to access progress update endpoint: CRAWLER_API_TOKEN setting not set.');
-    return json({ error: 'Endpoint disabled due to missing configuration' }, { status: 503 });
-  }
 
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    logger.warn('Progress update: Missing or malformed Authorization header');
-    return json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!locals.isSocketRequest) { // Check token only if not a socket request
+    if (!currentCrawlerApiToken) {
+      logger.error('Attempted to access progress update endpoint: CRAWLER_API_TOKEN setting not set for non-socket request.');
+      return json({ error: 'Endpoint disabled due to missing configuration' }, { status: 503 });
+    }
 
-  const token = authHeader.substring('Bearer '.length);
-  if (token !== currentCrawlerApiToken) {
-    logger.warn('Progress update: Invalid CRAWLER_API_TOKEN provided');
-    return json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn('Progress update: Missing or malformed Authorization header');
+      return json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring('Bearer '.length);
+    if (token !== currentCrawlerApiToken) {
+      logger.warn('Progress update: Invalid CRAWLER_API_TOKEN provided');
+      return json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  } // End of if (!locals.isSocketRequest)
 
   let payload: ProgressUpdatePayload;
   try {
