@@ -52,24 +52,22 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 
     if (resourceParam) {
       const lowerResourceParam = resourceParam.toLowerCase();
-      // The string value of CrawlCommand.GROUP_PROJECT_DISCOVERY is 'GROUP_PROJECT_DISCOVERY'
-      const groupProjectDiscoveryCmdString = CrawlCommand.GROUP_PROJECT_DISCOVERY as unknown as string;
 
-      if (resourceParam === groupProjectDiscoveryCmdString) {
-        logger.info(`Filtering jobs where command is '${groupProjectDiscoveryCmdString}' for resource parameter '${resourceParam}'`);
-        jobQueryConditions.push(eq(job.command, groupProjectDiscoveryCmdString as CrawlCommand));
+      if (resourceParam === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
+        logger.info(`Filtering jobs where command is '${CrawlCommand.GROUP_PROJECT_DISCOVERY}' for resource parameter '${resourceParam}'`);
+        jobQueryConditions.push(eq(job.command, CrawlCommand.GROUP_PROJECT_DISCOVERY as CrawlCommand));
       } else {
         let typesToFilterBy: DataType[] | undefined;
         // Check if resourceParam is a CrawlCommandName (e.g., "project", "group")
         // This should exclude 'GROUP_PROJECT_DISCOVERY' here as it's handled above.
-        if (lowerResourceParam in crawlCommandConfig && lowerResourceParam !== groupProjectDiscoveryCmdString.toLowerCase()) {
+        if (lowerResourceParam in crawlCommandConfig && lowerResourceParam !== CrawlCommand.GROUP_PROJECT_DISCOVERY.toLowerCase()) {
           typesToFilterBy = crawlCommandConfig[lowerResourceParam as CrawlCommandName];
           if (typesToFilterBy && typesToFilterBy.length > 0) {
             logger.info(`Filtering jobs where command is one of [${typesToFilterBy.join(', ')}] for resource parameter (CrawlCommandName) '${lowerResourceParam}'`);
           }
         }
         // Check if resourceParam is a specific DataType (e.g., "ProjectDetails")
-        else if (lowerResourceParam !== groupProjectDiscoveryCmdString.toLowerCase()) { // also ensure it's not GPD here
+        else if (lowerResourceParam !== CrawlCommand.GROUP_PROJECT_DISCOVERY.toLowerCase()) { // also ensure it's not GPD here
           const allKnownDataTypes = Object.values(crawlCommandConfig).flat();
           const actualDataType = allKnownDataTypes.find(dt => dt.toLowerCase() === lowerResourceParam);
           if (actualDataType) {
@@ -80,7 +78,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 
         if (typesToFilterBy && typesToFilterBy.length > 0) {
           jobQueryConditions.push(inArray(job.command, typesToFilterBy as unknown as CrawlCommand[])); // job.command stores DataType strings
-        } else if (lowerResourceParam !== groupProjectDiscoveryCmdString.toLowerCase() && !(lowerResourceParam in crawlCommandConfig)) {
+        } else if (lowerResourceParam !== CrawlCommand.GROUP_PROJECT_DISCOVERY.toLowerCase() && !(lowerResourceParam in crawlCommandConfig)) {
           // Avoid warning if it was GPD (handled by first 'if') or a known CrawlCommandName that yielded no typesToFilterBy
           logger.warn(
             `Resource parameter '${resourceParam}' does not map to a known CrawlCommandName or DataType. Will pick from any command based on prioritization.`
@@ -209,10 +207,8 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
         let taskDataTypes: DataType[] | string[] = [];
         let taskCommand: CrawlCommand | DataType | string;
         let resourceId: string | number | null = null;
-        
-        const groupProjectDiscoveryCmdString = CrawlCommand.GROUP_PROJECT_DISCOVERY;
 
-        if (currentJob.command === groupProjectDiscoveryCmdString) {
+        if (currentJob.command === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
           determinedResourceType = 'GROUP_PROJECT_DISCOVERY' as CrawlCommandName;
           taskDataTypes = ["discover_all_groups_projects"];
           taskCommand = CrawlCommand.GROUP_PROJECT_DISCOVERY;
@@ -224,7 +220,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 
           for (const cmdNameKey in crawlCommandConfig) {
             const cmdName = cmdNameKey as CrawlCommandName;
-            if (cmdName === groupProjectDiscoveryCmdString) continue;
+            if (cmdName === CrawlCommand.GROUP_PROJECT_DISCOVERY) continue;
 
             if (crawlCommandConfig[cmdName].includes(currentDataType)) {
               determinedResourceType = cmdName;

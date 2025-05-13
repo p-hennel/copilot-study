@@ -10,7 +10,7 @@ import {
   uniqueIndex
 } from "drizzle-orm/sqlite-core";
 import { monotonicFactory } from "ulid";
-import { account, user } from "./auth-schema"; // Added session for potential future use, account for authorizationId
+import { account, user } from "./auth-schema"; 
 
 const ulid = monotonicFactory();
 
@@ -109,7 +109,7 @@ export const area = sqliteTable("area", {
   type: text({ enum: toDBEnum(AreaType) }).notNull(),
   created_at: integer({ mode: "timestamp" })
     .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`) // Use SQL default
+    .default(sql`(unixepoch())`) 
 });
 export const areaRelations = relations(area, ({ many }) => ({
   usingAccounts: many(account),
@@ -123,7 +123,7 @@ export const job = sqliteTable(
     id: text().notNull().$defaultFn(ulid).primaryKey(),
     created_at: integer({ mode: "timestamp" })
       .notNull()
-      .default(sql`(CURRENT_TIMESTAMP)`), // Use SQL default
+      .default(sql`(unixepoch())`),
     started_at: integer({ mode: "timestamp" }),
     finished_at: integer({ mode: "timestamp" }),
     status: text({ enum: toDBEnum(JobStatus) })
@@ -136,16 +136,15 @@ export const job = sqliteTable(
     branch: text(),
     from: integer({ mode: "timestamp" }).default(new Date(2022, 1, 1)),
     to: integer({ mode: "timestamp" }),
-    accountId: text().notNull(), //.references(() => account.id),
+    accountId: text().notNull().references(() => account.id),
     spawned_from: text(), //.references((): AnySQLiteColumn => job.id),
     // Added field to store resume state (e.g., cursors)
     resumeState: blob("resume_state", { mode: "json" }), // Stores JSON object for resume cursors
     progress: blob("progress", { mode: "json" }),
     userId: text("userId").references(() => user.id),
     provider: text("provider", { enum: toDBEnum(TokenProvider) }),
-    authorizationId: text("authorizationId").references(() => account.id),
     gitlabGraphQLUrl: text("gitlabGraphQLUrl"),
-    updated_at: integer("updatedAt", { mode: "timestamp" })
+    updated_at: integer("updatedAt", { mode: "timestamp" }).$onUpdateFn(() => sql`(unixepoch())`),
   },
   (table) => [
     index("job_created_at_idx").on(table.created_at),
@@ -189,10 +188,6 @@ export const jobRelations = relations(job, ({ one, many }) => ({
   user: one(user, {
     fields: [job.userId],
     references: [user.id]
-  }),
-  authorizationAccount: one(account, {
-    fields: [job.authorizationId],
-    references: [account.id]
   }),
   areas: many(jobArea)
 }));

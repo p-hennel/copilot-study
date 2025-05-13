@@ -45,7 +45,7 @@ CREATE TABLE `area` (
 	`gitlab_id` text NOT NULL,
 	`name` text,
 	`type` text NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL
 );
 
 CREATE UNIQUE INDEX `area_gitlab_id_unique` ON `area` (`gitlab_id`);
@@ -59,7 +59,7 @@ CREATE TABLE `area_authorization` (
 
 CREATE TABLE `job` (
 	`id` text PRIMARY KEY NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`started_at` integer,
 	`finished_at` integer,
 	`status` text DEFAULT 'queued' NOT NULL,
@@ -74,11 +74,10 @@ CREATE TABLE `job` (
 	`progress` blob,
 	`userId` text,
 	`provider` text,
-	`authorizationId` text,
 	`gitlabGraphQLUrl` text,
 	`updatedAt` integer,
-	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`authorizationId`) REFERENCES `account`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`accountId`) REFERENCES `account`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
 
 CREATE INDEX `job_created_at_idx` ON `job` (`created_at`);

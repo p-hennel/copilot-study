@@ -1,10 +1,12 @@
 import { getLogger } from "$lib/logging";
 import { db } from "$lib/server/db";
+import AppSettings from "$lib/server/settings";
 import {
   area as areaSchema,
   job as jobSchema
   // account as accountSchema // No longer directly used here to fetch PAT
 } from "$lib/server/db/schema";
+import { forProvider } from "$lib/utils";
 import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
 import type { JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
 import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
@@ -20,7 +22,6 @@ const ulid = monotonicFactory();
 const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
 
 interface InitiateGitLabDiscoveryArgs {
-  pat: string;
   gitlabGraphQLUrl: string;
   userId: string; // User who owns this authorization in our system
   providerId: string; // e.g., "gitlab"
@@ -44,7 +45,7 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
     // Check for recent completed jobs for this authorization
     const recentCompletedJob = await db.query.job.findFirst({
       where: and(
-        eq(jobSchema.authorizationId, authorizationDbId),
+        eq(jobSchema.accountId, authorizationDbId),
         eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY),
         eq(jobSchema.status, JobStatus.finished)
       ),
@@ -67,7 +68,7 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
     // Check if a GROUP_PROJECT_DISCOVERY job already exists for this authorization to reset, or create a new one
     const existingJobToReset = await db.query.job.findFirst({
       where: and(
-        eq(jobSchema.authorizationId, authorizationDbId),
+        eq(jobSchema.accountId, authorizationDbId),
         eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY)
       ),
       orderBy: [desc(jobSchema.updated_at)] // Get the most recent one to reset
@@ -99,10 +100,10 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
         id: currentDiscoveryJobId,
         command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
         userId,
+        created_at: new Date(), // Set to now
         provider: providerId as TokenProvider,
         accountId: authorizationDbId, // Account for PAT
-        authorizationId: authorizationDbId, // Specific authorization
-        gitlabGraphQLUrl, // Assumes this field exists on jobSchema.
+        gitlabGraphQLUrl,
         status: JobStatus.queued,
         resumeState: {}, // Store cursors here
         progress: { // Store counts and totals here
@@ -117,9 +118,9 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
         branch: null,
         to: null,
         spawned_from: null,
-        updated_at: null, // Will be set by DB on update, null on insert
-        // created_at, from are handled by DB defaults
+        updated_at: new Date(),
       };
+      logger.warn("NEW JOB", { newDiscoveryJobData })
       await db.insert(jobSchema).values(newDiscoveryJobData);
       logger.info(`Created new GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} for authorization ${authorizationDbId}`);
     }
@@ -150,20 +151,53 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
   }
 }
 
+export async function triggerDiscoveryForAccount(userId: string, accountId: string, provider: TokenProvider): Promise<void> {
+  type ProviderTypes = {
+    provider: TokenProvider;
+    baseUrl: string;
+  };
+
+  const opts = forProvider<ProviderTypes>(provider, {
+    gitlabCloud: () => {
+      const baseUrl = AppSettings().auth.providers.gitlabCloud.baseUrl;
+      return {
+        provider: TokenProvider.gitlabCloud,
+        baseUrl
+      };
+    },
+    gitlabOnPrem: () => {
+      const baseUrl = AppSettings().auth.providers.gitlab.baseUrl ?? "";
+      return {
+        provider: TokenProvider.gitlab,
+        baseUrl
+      };
+    }
+  });
+
+  if (!opts || !opts.baseUrl) return;
+
+  const apiUrl = `${opts.baseUrl}/api/graphql`;
+
+  await initiateGitLabDiscovery({
+      gitlabGraphQLUrl: apiUrl,
+      userId,
+      providerId: provider,
+      authorizationDbId: accountId
+    });
+}
+
 /**
  * Handles actions when a new authorization is successfully created or updated in the system.
  * This function is the new entry point for triggering GitLab discovery.
  * @param userId The internal system User ID.
  * @param authorizationDbId The unique ID of the authorization record in the database (e.g., from the 'account' table).
  * @param providerId The identifier for the provider (e.g., "gitlab", "gitlab-onprem").
- * @param pat The Personal Access Token (PAT) for GitLab.
  * @param gitlabGraphQLUrl The GraphQL endpoint for the GitLab instance.
  */
 export async function handleNewAuthorization(
   userId: string,
   authorizationDbId: string, // Renamed from accountId for clarity, this is the PK of the 'account' table
   providerId: string,
-  pat: string, // New parameter: PAT
   gitlabGraphQLUrl: string // New parameter: GitLab GraphQL URL
 ): Promise<void> {
   logger.info(
@@ -175,7 +209,6 @@ export async function handleNewAuthorization(
     // which creates a 'GROUP_PROJECT_DISCOVERY' job.
 
     await initiateGitLabDiscovery({
-      pat,
       gitlabGraphQLUrl,
       userId,
       providerId,

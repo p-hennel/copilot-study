@@ -72,6 +72,7 @@ export enum AreaType {
   project = "project"
 }
 export type AccountInformation = {
+  id: string|null;
   providerId: string;
   createdAt: Date;
   refreshTokenExpiresAt: Date | null;

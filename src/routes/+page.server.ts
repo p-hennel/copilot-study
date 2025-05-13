@@ -2,7 +2,6 @@ import { db } from "$lib/server/db";
 import { account } from "$lib/server/db/auth-schema";
 import { area, area_authorization, job } from "$lib/server/db/base-schema";
 import { getAccounts } from "$lib/server/db/jobFactory";
-import { handleNewAuthorization } from "$lib/server/job-manager";
 import { ensureUserIsAuthenticated, getMD } from "$lib/server/utils";
 import {
   ContentType,
@@ -109,28 +108,11 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
         if (!token) return;
 
         // Trigger authorization scope job creation/check
-        const apiUrl = `${opts.baseUrl}/api/graphql`;
-        await handleNewAuthorization(locals.user!.id!, x.id, opts.provider, token, apiUrl);
-
-        // The call to fetchAllGroupsAndProjects is now handled within initiateGitLabDiscovery,
-        // so the direct call here is removed.
-        // console.log("starting fetch all");
-        // fetchAllGroupsAndProjects(locals.user.id, x.id, opts.provider, apiUrl, token);
+        // FOR NOW NO ACCOUNT WILL AUTOMATICALLY START TO CRAWL OR TRIGGER "GROUP_PROJECT_DISCOVERY"
+        // const apiUrl = `${opts.baseUrl}/api/graphql`;
+        // await handleNewAuthorization(locals.user!.id!, x.id, opts.provider, token, apiUrl);
       });
   }
-
-  /*
-  if (ensureUserIsAuthenticated(locals)) {
-    const accounts = await getAccounts(locals.user!.id!)
-    linkedAccounts = accounts.map((x) => x.provider)
-
-    retriggerJob(locals.user, fetch)
-
-    await scopingJobsFromAccounts(accounts, locals.user!.id!)
-
-    
-  }
-  */
 
   const contents = await Promise.all([
     _getMD("what", depends, locals),

@@ -12,11 +12,12 @@
     id: string;
     provider: string;
     created_at: Date;
+    updated_at?: Date;
     full_path: string;
     status: JobStatus;
     command: CrawlCommand;
-    started_at: Date;
-    finished_at: Date;
+    started_at?: Date;
+    finished_at?: Date;
     branch: string;
     childrenCount: number | null;
     fromJob: {
@@ -72,7 +73,10 @@
       <Table.Head>{m["admin.dashboard.jobsTable.header.provider"]()}</Table.Head>
       <Table.Head>{m["admin.dashboard.jobsTable.header.status"]()}</Table.Head>
       <Table.Head class="text-center"
-        >{m["admin.dashboard.jobsTable.header.created_at"]()}</Table.Head
+        >{m["admin.dashboard.jobsTable.header.updated_at"]()}</Table.Head
+      >
+      <Table.Head class="text-center"
+        >{m["admin.dashboard.jobsTable.header.started_at"]()}</Table.Head
       >
       <Table.Head class="text-center"
         >{m["admin.dashboard.jobsTable.header.finished_at"]()}</Table.Head
@@ -112,21 +116,24 @@
           </Tooltip.Provider>
         </Table.Cell>
         <Table.Cell class="text-center">
-          <Tooltip.Provider delayDuration={0} disabled={!job.started_at}>
+          <Tooltip.Provider delayDuration={0} disabled={!job.updated_at}>
             <Tooltip.Root>
               <Tooltip.Trigger>
-                <Time timestamp={job.created_at} {format} />
+                <Time timestamp={job.updated_at ?? job.created_at} {format} />
               </Tooltip.Trigger>
               <Tooltip.Content>
-                {#if job.started_at}
-                  <Time timestamp={job.started_at} {format} />
-                {/if}
+                Created: <Time timestamp={job.created_at} {format} />
               </Tooltip.Content>
             </Tooltip.Root>
           </Tooltip.Provider>
         </Table.Cell>
         <Table.Cell class="text-center">
           {#if job.started_at}
+            <Time timestamp={job.started_at} {format} />
+          {/if}
+        </Table.Cell>
+        <Table.Cell class="text-center">
+          {#if job.finished_at}
             <Time timestamp={job.finished_at} {format} />
           {/if}
         </Table.Cell>

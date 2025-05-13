@@ -154,7 +154,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
   private async updateGroupsAndProjectsInDb(
     items: DiscoveredItem[],
     itemType: AreaType,
-    authorizationId: string,
+    accountId: string,
     discoveryJobId: string // Changed from tokenScopeJobId
   ) {
     if (!items || items.length === 0) return;
@@ -184,13 +184,13 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
       
       const areaAuthorizationInserts = areaPaths.map((path) => ({
         area_id: path,
-        accountId: authorizationId,
+        accountId: accountId,
       }));
       await db.insert(area_authorization).values(areaAuthorizationInserts).onConflictDoNothing();
-      logger.debug(`Linked ${areaAuthorizationInserts.length} areas to authorization ${authorizationId}`, { discoveryJobId });
+      logger.debug(`Linked ${areaAuthorizationInserts.length} areas to authorization ${accountId}`, { discoveryJobId });
 
       for (const item of items) {
-        await handleNewArea(item.fullPath, itemType, item.id, authorizationId);
+        await handleNewArea(item.fullPath, itemType, item.id, accountId);
         logger.info(`Triggered handleNewArea for ${itemType} ${item.fullPath}`, { discoveryJobId, gitlabId: item.id });
       }
     } catch (error: any) {
@@ -204,7 +204,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
     personalAccessToken: string,
     initialCursor: string | null,
     discoveryJobId: string, // Changed from tokenScopeJobId
-    authorizationId: string,
+    accountId: string,
     progressCallback: (progressUpdate: DiscoveryProgress) => Promise<void>,
     batchProcessCallback: (groups: DiscoveredItem[]) => Promise<void>,
     itemsPerPage: number = 20
@@ -280,7 +280,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
    personalAccessToken: string,
    initialCursor: string | null,
    discoveryJobId: string, // Changed from tokenScopeJobId
-   authorizationId: string,
+   accountId: string,
    progressCallback: (progressUpdate: DiscoveryProgress) => Promise<void>,
    batchProcessCallback: (projects: DiscoveredItem[]) => Promise<void>,
     itemsPerPage: number = 20 // Original used 5 for projects
@@ -377,12 +377,12 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
     // Ensure this is indeed a GROUP_PROJECT_DISCOVERY job, though job.type check should cover this.
     // if (discoveryJobRecord.command !== CrawlCommand.GROUP_PROJECT_DISCOVERY) { ... }
 
-    const authorizationId = discoveryJobRecord.authorizationId; // This should be the PK of the 'account' table
+    const accountId = discoveryJobRecord.accountId; // This should be the PK of the 'account' table
     const gitlabGraphQLEndpoint = discoveryJobRecord.gitlabGraphQLUrl;
 
-    if (!authorizationId) { // gitlabGraphQLEndpoint might be optional if default is used
-      logger.error(`Job ${discoveryJobId} is missing authorizationId`, { jobId: job.id });
-      return { job, success: false, error: "Missing authorizationId in job record" };
+    if (!accountId) { // gitlabGraphQLEndpoint might be optional if default is used
+      logger.error(`Job ${discoveryJobId} is missing accountId`, { jobId: job.id });
+      return { job, success: false, error: "Missing accountId in job record" };
     }
     if (!gitlabGraphQLEndpoint) {
         logger.warn(`Job ${discoveryJobId} is missing gitlabGraphQLEndpoint, will attempt to use default if PAT provides it.`, { jobId: job.id });
@@ -390,12 +390,12 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
     }
 
     const accountRecord = await db.query.account.findFirst({
-        where: eq(accountTable.id, authorizationId),
+        where: eq(accountTable.id, accountId),
     });
 
     if (!accountRecord || !accountRecord.accessToken) {
-        logger.error(`Account or PAT not found for authorizationId: ${authorizationId}`, { jobId: job.id });
-        return { job, success: false, error: `Account or PAT not found for authorizationId: ${authorizationId}` };
+        logger.error(`Account or PAT not found for accountId: ${accountId}`, { jobId: job.id });
+        return { job, success: false, error: `Account or PAT not found for accountId: ${accountId}` };
     }
     const personalAccessToken = accountRecord.accessToken;
     
@@ -435,7 +435,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
           personalAccessToken,
           currentGroupsCursor,
           discoveryJobId,
-          authorizationId!, // Assert non-null as checked
+          accountId!, // Assert non-null as checked
           async (progressUpdate) => { // progressCallback
             // Accumulate counts based on what's already in DB progress + this run's collection
             const baseGroupCount = (progressState.groupCount || 0) - (progressUpdate.collectedGroups || 0); // Subtract this run's to add accurately
@@ -448,7 +448,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
             });
           },
           async (groups) => { // batchProcessCallback
-            await this.updateGroupsAndProjectsInDb(groups, AreaType.group, authorizationId!, discoveryJobId);
+            await this.updateGroupsAndProjectsInDb(groups, AreaType.group, accountId!, discoveryJobId);
           }
         );
         currentGroupsCursor = groupResult.finalCursor;
@@ -474,7 +474,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
           personalAccessToken,
           currentProjectsCursor,
           discoveryJobId,
-          authorizationId!,
+          accountId!,
           async (progressUpdate) => { // progressCallback
             const baseProjectCount = (progressState.projectCount || 0) - (progressUpdate.collectedProjects || 0);
             currentCollectedProjects = baseProjectCount + (progressUpdate.collectedProjects || 0);
@@ -486,7 +486,7 @@ export class GroupProjectDiscoveryProcessor extends BaseProcessor {
             });
           },
           async (projects) => { // batchProcessCallback
-            await this.updateGroupsAndProjectsInDb(projects, AreaType.project, authorizationId!, discoveryJobId);
+            await this.updateGroupsAndProjectsInDb(projects, AreaType.project, accountId!, discoveryJobId);
           }
         );
         currentProjectsCursor = projectResult.finalCursor;

@@ -52,6 +52,7 @@ const authHandle2: Handle = async ({ event, resolve }) => {
     event.locals.user = session?.user
   } catch (error) {
     logger.error("Error getting session:", { error })
+    auth.api.signOut({ headers: event.request.headers })
   } finally {
     return await resolve(event)
   }

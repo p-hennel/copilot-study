@@ -90,7 +90,8 @@
           "finished_at": "Finished",
           "from_job": "Parent",
           "for_area": "For Area",
-          "children_count": "Children"
+          "children_count": "Children",
+          "updated_at": "Updated"
         },
         "no_jobs": "No Jobs"
       },
