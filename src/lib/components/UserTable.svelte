@@ -11,7 +11,7 @@
   import LoadingButton from "./LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
-    import { ClipboardCopy } from "@lucide/svelte";
+    import { ClipboardCopy, DatabaseBackup } from "@lucide/svelte";
 
   type UserInformationWithAccounts = UserInformation & { accounts: AccountInformation[] };
   type PreparedUserInformation = UserInformationWithAccounts & {
@@ -73,8 +73,14 @@
         });
       }}
     >
-      Backup
+      Backup (Mail)
     </LoadingButton>
+    <Button
+      target="_blank"
+      href="/admin/backup">
+      <DatabaseBackup />
+      Backup
+    </Button>
     <Button
       variant="secondary"
       onclick={async () => {
