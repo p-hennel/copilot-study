@@ -300,7 +300,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           customParameters: customParameters
         };
 
-        logger.info("Task constructed and ready to be returned", { taskId: taskObject.taskId, resourceType: taskObject.resourceType, resourceId: taskObject.resourceId });
+        logger.info("Task constructed and ready to be returned") //, { taskId: taskObject.taskId, resourceType: taskObject.resourceType, resourceId: taskObject.resourceId });
         logger.debug(`Full task object for ${taskObject.taskId}: ${JSON.stringify(taskObject)}`);
         return json([taskObject], { status: 200 }); // Return the first suitable job
       }

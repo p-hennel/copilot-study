@@ -297,7 +297,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
 
 
     await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
-    logger.info(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}`, { updateData });
+    logger.info(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}`);
 
     // If a GROUP_PROJECT_DISCOVERY job finishes, its status is already set to 'finished'.
     // No separate 'isComplete' flag to manage on the job itself.
