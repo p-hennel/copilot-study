@@ -99,3 +99,158 @@ export interface StandardProgressUpdatePayload extends ProgressUpdateBase {
  * Union type for all progress update payloads
  */
 export type ProgressUpdatePayload = NewAreasDiscoveredPayload | StandardProgressUpdatePayload;
+// New types for CrawlCommand and DataType
+
+export type DataType =
+  | 'Events'
+  | 'BroadcastMessages'
+  | 'Search'
+  | 'Namespaces'
+  | 'Users'
+  | 'UserEmails'
+  | 'UserImpersonationTokens'
+  | 'Keys'
+  | 'Projects'
+  | 'ProjectVariables'
+  | 'ProjectMembers'
+  | 'PagesDomains'
+  | 'ProjectCustomAttributes'
+  | 'ProjectStatistics'
+  | 'ProjectBadges'
+  | 'ProjectTemplates'
+  | 'ProjectAccessRequests'
+  | 'ProjectHooks'
+  | 'ProjectIssueBoards'
+  | 'FreezePeriods'
+  | 'Repositories'
+  | 'Commits'
+  | 'CommitDiscussions'
+  | 'Branches'
+  | 'Tags'
+  | 'Pipelines'
+  | 'PipelineSchedules'
+  | 'Jobs'
+  | 'Runners'
+  | 'ProjectRunners'
+  | 'GroupRunners'
+  | 'Deployments'
+  | 'Environments'
+  | 'PipelineScheduleVariables'
+  | 'PipelineTriggers'
+  | 'Groups'
+  | 'GroupMembers'
+  | 'Subgroups'
+  | 'Epics'
+  | 'GroupCustomAttributes'
+  | 'GroupAccessRequests'
+  | 'GroupVariables'
+  | 'GroupLabels'
+  | 'GroupBadges'
+  | 'GroupDeployTokens'
+  | 'GroupIssueBoards'
+  | 'GroupMilestones'
+  | 'EpicIssues'
+  | 'EpicNotes'
+  | 'EpicDiscussions'
+  | 'ProtectedBranches'
+  | 'ProtectedTags'
+  | 'DeployKeys'
+  | 'ContainerRegistryRepositories'
+  | 'Packages'
+  | 'Issues'
+  | 'IssuesStatistics'
+  | 'IssueNotes'
+  | 'IssueDiscussions'
+  | 'IssueAwardEmojis'
+  | 'MergeRequests'
+  | 'MergeRequestNotes'
+  | 'MergeRequestDiscussions'
+  | 'MergeRequestAwardEmojis'
+  | 'ProjectSnippets'
+  | 'Snippets';
+
+export type CrawlCommandName =
+  | 'instance'
+  | 'user'
+  | 'project'
+  | 'repository'
+  | 'cicd'
+  | 'group'
+  | 'security'
+  | 'container'
+  | 'workItems'
+  | 'GROUP_PROJECT_DISCOVERY';
+
+export interface CrawlCommand {
+  name: CrawlCommandName;
+  dataTypes: DataType[];
+}
+
+// It might be useful to have a structured way to access the data types for each command.
+// This is not strictly part of the type definition but can be a helpful constant.
+export const crawlCommandConfig: Record<CrawlCommandName, DataType[]> = {
+  instance: ['Events', 'BroadcastMessages', 'Search', 'Namespaces'],
+  user: ['Users', 'UserEmails', 'UserImpersonationTokens', 'Keys'],
+  project: [
+    'Projects',
+    'ProjectVariables',
+    'ProjectMembers',
+    'PagesDomains',
+    'ProjectCustomAttributes',
+    'ProjectStatistics',
+    'ProjectBadges',
+    'ProjectTemplates',
+    'ProjectAccessRequests',
+    'ProjectHooks',
+    'ProjectIssueBoards',
+    'FreezePeriods',
+    "Groups"
+  ],
+  repository: ['Repositories', 'Commits', 'CommitDiscussions', 'Branches', 'Tags'],
+  cicd: [
+    'Pipelines',
+    'PipelineSchedules',
+    'Jobs',
+    'Runners',
+    'ProjectRunners',
+    'GroupRunners',
+    'Deployments',
+    'Environments',
+    'PipelineScheduleVariables',
+    'PipelineTriggers'
+  ],
+  group: [
+    'Groups',
+    'GroupMembers',
+    'Subgroups',
+    'Epics',
+//    'GroupCustomAttributes',
+    'GroupAccessRequests',
+    'GroupVariables',
+    'GroupLabels',
+    'GroupBadges',
+    'GroupDeployTokens',
+    'GroupIssueBoards',
+    'GroupMilestones',
+    'EpicIssues',
+    'EpicNotes',
+    'EpicDiscussions',
+    "Projects"
+  ],
+  security: ['ProtectedBranches', 'ProtectedTags', 'DeployKeys'],
+  container: ['ContainerRegistryRepositories', 'Packages'],
+  workItems: [
+    'Issues',
+    'IssuesStatistics',
+    'IssueNotes',
+    'IssueDiscussions',
+    'IssueAwardEmojis',
+    'MergeRequests',
+    'MergeRequestNotes',
+    'MergeRequestDiscussions',
+    'MergeRequestAwardEmojis',
+    'ProjectSnippets',
+    'Snippets'
+  ],
+  GROUP_PROJECT_DISCOVERY: []
+};

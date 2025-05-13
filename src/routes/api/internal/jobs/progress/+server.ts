@@ -61,7 +61,7 @@ async function processDiscoveredAreas(
   const groups = areas.filter(area => area.type === 'group');
   const projects = areas.filter(area => area.type === 'project');
   
-  logger.info(`Processing ${groups.length} groups and ${projects.length} projects for job ${jobRecord.id}`);
+  logger.info(`Processing ${groups.length} groups and ${projects.length} projects for job ${jobRecord.id}. Areas received:`, { areas });
 
   // Transform areas for DB insertion
   const areaRecords = areas.map(area => ({
@@ -102,18 +102,20 @@ async function processDiscoveredAreas(
   // Trigger job creation for each discovered area
   for (const area of areas) {
     try {
+      logger.debug(`Calling handleNewArea for area: ${area.fullPath}, type: ${area.type}, gitlabId: ${area.gitlabId}, accountId: ${jobRecord.accountId}`);
       await handleNewArea(
-        area.fullPath, 
-        area.type === 'group' ? AreaType.group : AreaType.project, 
-        area.gitlabId, 
+        area.fullPath,
+        area.type === 'group' ? AreaType.group : AreaType.project,
+        area.gitlabId,
         jobRecord.accountId
       );
     } catch (error) {
-      logger.error(`Error handling new area ${area.fullPath}:`, { error });
+      logger.error(`Error handling new area ${area.fullPath}:`, { error, areaDetails: area });
       // Continue processing other areas
     }
   }
   
+  logger.info(`Finished processing discovered areas for job ${jobRecord.id}. Groups: ${groups.length}, Projects: ${projects.length}`);
   return { groupsCount: groups.length, projectsCount: projects.length };
 }
 
@@ -143,8 +145,9 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
   let payload: ProgressUpdatePayload;
   try {
     payload = (await request.json()) as ProgressUpdatePayload;
+    logger.info('Received progress update payload:', { payload });
   } catch (error) {
-    logger.error('Error parsing progress update payload:', { error });
+    logger.error('Error parsing progress update payload:', { error, requestBody: await request.text().catch(() => 'Could not read request body') });
     return json({ error: 'Invalid request body' }, { status: 400 });
   }
 
@@ -162,19 +165,22 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
     });
 
     if (!jobRecord) {
-      logger.warn(`Job not found for taskId: ${taskId}`);
+      logger.warn(`Job not found for taskId: ${taskId}. Payload was:`, { payload });
       return json({ error: 'Job not found' }, { status: 404 });
     }
+    logger.info(`Found jobRecord for taskId ${taskId}:`, { jobRecord });
 
     // Special case for new_areas_discovered
     if (crawlerStatus.toLowerCase() === 'new_areas_discovered') {
+      logger.info(`Processing 'new_areas_discovered' for job ${taskId}. Areas:`, { areas });
       if (!areas || !Array.isArray(areas) || areas.length === 0) {
-        logger.warn(`Received new_areas_discovered status but no areas in payload for job: ${taskId}`);
+        logger.warn(`Received new_areas_discovered status but no areas in payload for job: ${taskId}. Payload:`, { payload });
         return json({ error: 'Missing areas data in payload' }, { status: 400 });
       }
 
       // Process the discovered areas
       const { groupsCount, projectsCount } = await processDiscoveredAreas(areas, jobRecord);
+      logger.info(`processDiscoveredAreas returned: groupsCount=${groupsCount}, projectsCount=${projectsCount} for job ${taskId}`);
       
       // Update the job record
       const updateData: Partial<Job> & { updated_at?: Date } = { 
@@ -199,11 +205,14 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
         message: message || `Discovered ${groupsCount} groups and ${projectsCount} projects`
       };
       updateData.progress = jobProgress;
+      logger.debug(`Update data for 'new_areas_discovered' (before main update) for job ${taskId}:`, { updateData });
 
       await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
+      logger.info(`Updated job ${taskId} after 'new_areas_discovered' processing.`);
       
       // If this is a GROUP_PROJECT_DISCOVERY job, update its progress with counts
       if (jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
+        logger.debug(`Updating progress specifically for GROUP_PROJECT_DISCOVERY job ${jobRecord.id}. Current progress:`, { currentJobProgress: jobRecord.progress });
         const currentJobProgress = jobRecord.progress as Record<string, any> || {};
         const newProgress = {
           ...currentJobProgress,
@@ -217,7 +226,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
             updated_at: new Date() // Ensure updated_at is also set here
           })
           .where(eq(jobSchema.id, jobRecord.id)); // Update the specific job
-        logger.info(`Updated progress for GROUP_PROJECT_DISCOVERY job ${jobRecord.id} with ${groupsCount} groups, ${projectsCount} projects.`);
+        logger.info(`Updated progress for GROUP_PROJECT_DISCOVERY job ${jobRecord.id} with ${groupsCount} groups, ${projectsCount} projects. New progress:`, { newProgress });
       }
       
       return json(
@@ -294,10 +303,10 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
       ...(crawlerStatus.toLowerCase() === 'failed' && payloadError ? { error: typeof payloadError === 'string' ? payloadError : JSON.stringify(payloadError) } : {})
     };
     updateData.progress = jobProgress;
-
+    logger.debug(`Update data for standard status update for job ${taskId}:`, { updateData, crawlerStatus });
 
     await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
-    logger.info(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}`);
+    logger.info(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
 
     // If a GROUP_PROJECT_DISCOVERY job finishes, its status is already set to 'finished'.
     // No separate 'isComplete' flag to manage on the job itself.

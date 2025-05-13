@@ -4,8 +4,11 @@ import AppSettings from "$lib/server/settings"; // Use AppSettings
 import { db } from "$lib/server/db";
 import { account } from "$lib/server/db/auth-schema";
 import { area, job, type Job } from "$lib/server/db/base-schema";
-import { JobStatus, CrawlCommand } from "$lib/types";
-import { and, asc, eq, or, sql } from "drizzle-orm";
+import { JobStatus } from "$lib/types";
+import type { DataType, CrawlCommandName } from "$lib/server/types/area-discovery";
+import { CrawlCommand } from "$lib/types";
+import { crawlCommandConfig } from "$lib/server/types/area-discovery";
+import { and, asc, eq, or, sql, inArray } from "drizzle-orm";
 // import { TokenProvider } from '$lib/types'; // TokenProvider might not be needed if URL fallbacks are removed
 import { isAdmin } from "$lib/server/utils";
 
@@ -48,27 +51,41 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
     ];
 
     if (resourceParam) {
-      let targetCommand: CrawlCommand | undefined;
-      switch (resourceParam.toLowerCase()) {
-        case "projects": targetCommand = CrawlCommand.project; break;
-        case "groups": targetCommand = CrawlCommand.group; break;
-        case "users": targetCommand = CrawlCommand.users; break;
-        case "discover_all":
-        case "group_project_discovery": targetCommand = CrawlCommand.GROUP_PROJECT_DISCOVERY; break;
-        case "authorizationscope": targetCommand = CrawlCommand.authorizationScope; break;
-        case "commits": targetCommand = CrawlCommand.commits; break;
-        case "issues": targetCommand = CrawlCommand.issues; break;
-        case "mergerequests": targetCommand = CrawlCommand.mergeRequests; break;
-        case "vulnerabilities": targetCommand = CrawlCommand.vulnerabilities; break;
-        case "pipelines": targetCommand = CrawlCommand.pipelines; break;
-      }
-      if (targetCommand) {
-        jobQueryConditions.push(eq(job.command, targetCommand));
-        logger.info(`Filtering jobs by command: ${targetCommand} for resource: ${resourceParam}`);
+      const lowerResourceParam = resourceParam.toLowerCase();
+      // The string value of CrawlCommand.GROUP_PROJECT_DISCOVERY is 'GROUP_PROJECT_DISCOVERY'
+      const groupProjectDiscoveryCmdString = CrawlCommand.GROUP_PROJECT_DISCOVERY as unknown as string;
+
+      if (resourceParam === groupProjectDiscoveryCmdString) {
+        logger.info(`Filtering jobs where command is '${groupProjectDiscoveryCmdString}' for resource parameter '${resourceParam}'`);
+        jobQueryConditions.push(eq(job.command, groupProjectDiscoveryCmdString as CrawlCommand));
       } else {
-        logger.warn(
-          `Resource parameter '${resourceParam}' does not map to a specific command. Will pick from any command based on prioritization.`
-        );
+        let typesToFilterBy: DataType[] | undefined;
+        // Check if resourceParam is a CrawlCommandName (e.g., "project", "group")
+        // This should exclude 'GROUP_PROJECT_DISCOVERY' here as it's handled above.
+        if (lowerResourceParam in crawlCommandConfig && lowerResourceParam !== groupProjectDiscoveryCmdString.toLowerCase()) {
+          typesToFilterBy = crawlCommandConfig[lowerResourceParam as CrawlCommandName];
+          if (typesToFilterBy && typesToFilterBy.length > 0) {
+            logger.info(`Filtering jobs where command is one of [${typesToFilterBy.join(', ')}] for resource parameter (CrawlCommandName) '${lowerResourceParam}'`);
+          }
+        }
+        // Check if resourceParam is a specific DataType (e.g., "ProjectDetails")
+        else if (lowerResourceParam !== groupProjectDiscoveryCmdString.toLowerCase()) { // also ensure it's not GPD here
+          const allKnownDataTypes = Object.values(crawlCommandConfig).flat();
+          const actualDataType = allKnownDataTypes.find(dt => dt.toLowerCase() === lowerResourceParam);
+          if (actualDataType) {
+             typesToFilterBy = [actualDataType];
+             logger.info(`Filtering jobs where command is '${actualDataType}' for resource parameter (DataType) '${resourceParam}'`);
+          }
+        }
+
+        if (typesToFilterBy && typesToFilterBy.length > 0) {
+          jobQueryConditions.push(inArray(job.command, typesToFilterBy as unknown as CrawlCommand[])); // job.command stores DataType strings
+        } else if (lowerResourceParam !== groupProjectDiscoveryCmdString.toLowerCase() && !(lowerResourceParam in crawlCommandConfig)) {
+          // Avoid warning if it was GPD (handled by first 'if') or a known CrawlCommandName that yielded no typesToFilterBy
+          logger.warn(
+            `Resource parameter '${resourceParam}' does not map to a known CrawlCommandName or DataType. Will pick from any command based on prioritization.`
+          );
+        }
       }
     }
 
@@ -131,95 +148,136 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
         }
 
         const jobGitlabGraphQLUrl = currentJob.gitlabGraphQLUrl;
-        if (!jobGitlabGraphQLUrl) {
-          logger.error(
-            `Job ${currentJob.id} (candidate) is missing gitlabGraphQLUrl. This field is mandatory. Marking as failed.`
-          );
-          await db
-            .update(job)
-            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing gitlabGraphQLUrl" } })
-            .where(eq(job.id, currentJob.id));
-          continue; // Try next candidate in this batch
+        let gitlabApiUrl: string | undefined;
+        const appSettings = AppSettings(); // Get app settings once (this is the one we keep)
+
+        if (jobGitlabGraphQLUrl) {
+          try {
+            const parsedUrl = new URL(jobGitlabGraphQLUrl);
+            gitlabApiUrl = parsedUrl.origin;
+            logger.debug(`Constructed gitlabApiUrl: ${gitlabApiUrl} from job.gitlabGraphQLUrl: ${jobGitlabGraphQLUrl} for job ${currentJob.id}`);
+          } catch (urlError: any) {
+            logger.warn(
+              `Job ${currentJob.id} (candidate): Invalid format for job.gitlabGraphQLUrl '${jobGitlabGraphQLUrl}': ${urlError.message}. Will attempt fallback.`
+            );
+            // Don't fail yet, try fallback
+          }
         }
 
-        let gitlabApiUrl;
-        try {
-          const parsedUrl = new URL(jobGitlabGraphQLUrl);
-          gitlabApiUrl = parsedUrl.origin // `${parsedUrl.origin}/api/v4`;
-          logger.debug(`Constructed gitlabApiUrl: ${gitlabApiUrl} from jobGitlabGraphQLUrl: ${jobGitlabGraphQLUrl} for job ${currentJob.id}`);
-        } catch (urlError: any) {
+        if (!gitlabApiUrl) { // If GraphQL URL didn't provide it or was invalid
+          const providerId = currentJob.usingAccount.providerId;
+          if (providerId === "gitlabCloud" || providerId === "gitlab-cloud") {
+            gitlabApiUrl = "https://gitlab.com";
+            logger.info(`Using default gitlabApiUrl: ${gitlabApiUrl} for providerId '${providerId}' for job ${currentJob.id}.`);
+          } else if (providerId === "gitlab" || providerId === "gitlab-onprem") {
+            const onPremBaseUrl = appSettings.auth?.providers?.gitlab?.baseUrl; // Changed to baseUrl
+            if (onPremBaseUrl) {
+              try {
+                const parsedBaseUrl = new URL(onPremBaseUrl);
+                gitlabApiUrl = parsedBaseUrl.origin;
+                logger.info(`Constructed gitlabApiUrl: ${gitlabApiUrl} from AppSettings for providerId '${providerId}' ('${onPremBaseUrl}') for job ${currentJob.id}.`);
+              } catch (urlError: any) {
+                logger.error(
+                  `Job ${currentJob.id} (candidate): Invalid format for AppSettings baseUrl '${onPremBaseUrl}' for providerId '${providerId}': ${urlError.message}.`
+                );
+                // Fall through to the final !gitlabApiUrl check to fail the job
+              }
+            } else {
+              logger.warn(
+                `Job ${currentJob.id} (candidate): AppSettings missing 'auth.providers.gitlab.baseUrl' for on-prem providerId '${providerId}'. Cannot determine gitlabApiUrl.`
+              );
+              // Fall through to the final !gitlabApiUrl check to fail the job
+            }
+          } else {
+            logger.warn(`Job ${currentJob.id} (candidate): Unknown or unhandled providerId '${providerId}' for gitlabApiUrl determination.`);
+            // Fall through to the final !gitlabApiUrl check to fail the job
+          }
+        }
+
+        if (!gitlabApiUrl) {
           logger.error(
-            `Job ${currentJob.id} (candidate): Invalid format for gitlabGraphQLUrl '${jobGitlabGraphQLUrl}': ${urlError.message}. Marking as failed.`
+            `Job ${currentJob.id} (candidate): Could not determine gitlabApiUrl. job.gitlabGraphQLUrl was '${jobGitlabGraphQLUrl}', providerId was '${currentJob.usingAccount.providerId}'. Marking as failed.`
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: `Invalid gitlabGraphQLUrl: ${urlError.message}` } })
+            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing or invalid GitLab URL configuration" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }
         
-        let resourceType: string;
-        let dataTypes: string[];
-
-        switch (currentJob.command) {
-          case CrawlCommand.project:
-            resourceType = "project";
-            dataTypes = ["details", "members"];
-            break;
-          case CrawlCommand.group:
-            resourceType = "group";
-            dataTypes = ["details", "members", "projects", "subgroups"];
-            break;
-          case CrawlCommand.users:
-            resourceType = "user";
-            dataTypes = ["users_list"];
-            break;
-          case CrawlCommand.authorizationScope:
-            resourceType = "instance";
-            dataTypes = ["discover_groups", "discover_projects"];
-            break;
-          case CrawlCommand.commits:
-            resourceType = "project"; dataTypes = ["commits"]; break;
-          case CrawlCommand.issues:
-            resourceType = "project"; dataTypes = ["issues"]; break;
-          case CrawlCommand.mergeRequests:
-            resourceType = "project"; dataTypes = ["merge_requests"]; break;
-          case CrawlCommand.vulnerabilities:
-            resourceType = "project"; dataTypes = ["vulnerabilities"]; break;
-          case CrawlCommand.pipelines:
-          resourceType = "project"; dataTypes = ["pipelines"]; break;
-        case CrawlCommand.GROUP_PROJECT_DISCOVERY:
-          resourceType = "instance";
-          dataTypes = ["discover_all_groups_projects"];
-          break;
-        default:
-          logger.warn(`Unhandled job command '${currentJob.command}' for resourceType/dataTypes mapping.`, {jobId: currentJob.id, command: currentJob.command});
-          resourceType = "unknown";
-          dataTypes = ["unknown"];
-        }
-
+        let determinedResourceType: CrawlCommandName | undefined;
+        let taskDataTypes: DataType[] | string[] = [];
+        let taskCommand: CrawlCommand | DataType | string;
         let resourceId: string | number | null = null;
-        if (currentJob.full_path) {
-          const areaRecords = await db
-            .select({ gitlab_id: area.gitlab_id })
-            .from(area)
-            .where(eq(area.full_path, currentJob.full_path))
-            .limit(1)
-            .execute();
-          
-          const firstAreaRecord = areaRecords?.[0];
-          if (firstAreaRecord?.gitlab_id) {
-            resourceId = firstAreaRecord.gitlab_id;
-          } else {
-            logger.warn(`Area record not found for full_path: ${currentJob.full_path}, or gitlab_id missing. Using full_path as resourceId.`, {jobId: currentJob.id});
-            resourceId = currentJob.full_path;
-          }
-        } else if (
-          currentJob.command === CrawlCommand.authorizationScope ||
-          currentJob.command === CrawlCommand.users ||
-          currentJob.command === CrawlCommand.GROUP_PROJECT_DISCOVERY
-        ) {
+        
+        const groupProjectDiscoveryCmdString = CrawlCommand.GROUP_PROJECT_DISCOVERY;
+
+        if (currentJob.command === groupProjectDiscoveryCmdString) {
+          determinedResourceType = 'GROUP_PROJECT_DISCOVERY' as CrawlCommandName;
+          taskDataTypes = ["discover_all_groups_projects"];
+          taskCommand = CrawlCommand.GROUP_PROJECT_DISCOVERY;
           resourceId = null;
+          logger.info(`Job ${currentJob.id} is a GROUP_PROJECT_DISCOVERY command. Task resourceType: '${determinedResourceType}'.`);
+        } else {
+          const currentDataType = currentJob.command as unknown as DataType;
+          taskCommand = currentDataType;
+
+          for (const cmdNameKey in crawlCommandConfig) {
+            const cmdName = cmdNameKey as CrawlCommandName;
+            if (cmdName === groupProjectDiscoveryCmdString) continue;
+
+            if (crawlCommandConfig[cmdName].includes(currentDataType)) {
+              determinedResourceType = cmdName;
+              break;
+            }
+          }
+
+          if (!determinedResourceType) {
+            logger.error(`Could not determine CrawlCommandName (resourceType) for DataType: '${currentDataType}'. Job ID: ${currentJob.id}. Marking as failed.`);
+            await db
+              .update(job)
+              .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: `Unknown DataType mapping for ${currentDataType}` } })
+              .where(eq(job.id, currentJob.id));
+            continue;
+          }
+          taskDataTypes = [currentDataType];
+
+          if (determinedResourceType === 'instance') {
+              resourceId = null;
+          } else if (currentJob.full_path) {
+              const areaRecords = await db
+                .select({ gitlab_id: area.gitlab_id })
+                .from(area)
+                .where(eq(area.full_path, currentJob.full_path))
+                .limit(1)
+                .execute();
+              
+              const firstAreaRecord = areaRecords?.[0];
+              if (firstAreaRecord?.gitlab_id) {
+                resourceId = firstAreaRecord.gitlab_id;
+              } else {
+                logger.warn(`Area record not found for full_path: ${currentJob.full_path}, or gitlab_id missing. Using full_path as resourceId for job ${currentJob.id}.`);
+                resourceId = currentJob.full_path;
+              }
+          } else {
+              if (determinedResourceType === 'user' && currentDataType === ('Users' as DataType)) {
+                  resourceId = null;
+              } else {
+                  logger.warn(`Job ${currentJob.id} for ${determinedResourceType}/${currentDataType} (DataType) is missing full_path. resourceId will be null.`);
+                  resourceId = null;
+              }
+          }
+        }
+        
+        if (!determinedResourceType) {
+          // This check ensures determinedResourceType is set, especially if logic changes.
+          // For GPD, it's set directly. For DataType, it's found via crawlCommandConfig.
+          logger.error(`Critical: determinedResourceType is undefined for job ${currentJob.id} with command ${currentJob.command}. Marking as failed.`);
+          await db
+            .update(job)
+            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: `Undetermined resourceType for command ${currentJob.command}` } })
+            .where(eq(job.id, currentJob.id));
+          continue;
         }
 
         const customParameters: Record<string, any> = {};
@@ -252,7 +310,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
         
         logger.debug(`currentJob.usingAccount before taskObject assembly: ${JSON.stringify(currentJob.usingAccount, null, 2)}`);
 
-        const appSettings = AppSettings();
+        // const appSettings = AppSettings(); // This declaration is removed as it's now at line 135
         let clientId: string | undefined;
         let clientSecret: string | undefined;
 
@@ -280,6 +338,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 
         const taskObject = {
           taskId: currentJob.id,
+          command: taskCommand, // Added: The actual command (DataType string or CrawlCommand enum value)
           gitlabApiUrl: gitlabApiUrl,
           credentials: {
             accessToken: providerAccessToken,
@@ -288,12 +347,12 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
             clientId: clientId,
             clientSecret: clientSecret,
           },
-          resourceType: resourceType,
+          resourceType: determinedResourceType, // This is CrawlCommandName
           resourceId: resourceId,
-          dataTypes: dataTypes,
+          dataTypes: taskDataTypes, // For DataType commands, [DataType]. For GPD, [].
           outputConfig: {
             storageType: "filesystem",
-            basePath: archivePath, // Use archive path from settings
+            basePath: archivePath,
             format: "json"
           },
           lastProcessedId: lastProcessedId,

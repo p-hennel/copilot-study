@@ -6,10 +6,14 @@ import {
   // account as accountSchema // No longer directly used here to fetch PAT
 } from "$lib/server/db/schema";
 import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
-import type { Job, JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
+import type { JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
 import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
 import { monotonicFactory } from "ulid";
 import { startJob } from "$lib/server/supervisor";
+import {
+  type CrawlCommandName,
+  crawlCommandConfig
+} from "./types/area-discovery";
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();
@@ -222,113 +226,68 @@ export async function handleNewArea(
     // Create appropriate jobs based on area type
     const jobsToCreate = [];
 
-    // --- Expanded job creation for all service handlers ---
+    // --- Job creation based on CrawlCommandName and DataType ---
     if (areaType === AreaType.group) {
-      // List of all group-related CrawlCommands (from servicehandlers.md)
-      const groupCommands = [
-        CrawlCommand.group, // group details
-        CrawlCommand.groupMembers,
-        CrawlCommand.groupProjects,
-        CrawlCommand.groupIssues,
-        CrawlCommand.groupSubgroups,
-        CrawlCommand.epics,
-        CrawlCommand.groupCustomAttributes,
-        CrawlCommand.groupAccessRequests,
-        CrawlCommand.groupVariables,
-        CrawlCommand.groupLabels,
-        CrawlCommand.groupBadges,
-        CrawlCommand.groupDeployTokens,
-        CrawlCommand.groupIssueBoards,
-        CrawlCommand.groupMilestones,
-        CrawlCommand.epicIssues,
-        CrawlCommand.epicNotes,
-        CrawlCommand.epicDiscussions
-      ];
-      for (const command of groupCommands) {
-        const existingJob = await db.query.job.findFirst({
-          where: and(
-            eq(jobSchema.full_path, areaPath),
-            eq(jobSchema.command, command),
-            or(
-              eq(jobSchema.status, JobStatus.queued),
-              eq(jobSchema.status, JobStatus.running)
+      const commandName: CrawlCommandName = 'group'; // Assuming 'group' is a valid CrawlCommandName for groups
+      const dataTypesForCommand = crawlCommandConfig[commandName];
+
+      if (dataTypesForCommand) {
+        for (const dataType of dataTypesForCommand) {
+          const existingJob = await db.query.job.findFirst({
+            where: and(
+              eq(jobSchema.full_path, areaPath),
+              eq(jobSchema.command, dataType as any), // Use DataType as command
+              or(
+                eq(jobSchema.status, JobStatus.queued),
+                eq(jobSchema.status, JobStatus.running)
+              )
             )
-          )
-        });
-        if (!existingJob) {
-          jobsToCreate.push({
-            id: ulid(),
-            accountId,
-            full_path: areaPath,
-            command,
-            status: JobStatus.queued,
-            spawned_from: spawningJobId // Add spawned_from
           });
+          if (!existingJob) {
+            jobsToCreate.push({
+              id: ulid(),
+              accountId,
+              full_path: areaPath,
+              command: dataType as any, // Store DataType string as the command
+              status: JobStatus.queued,
+              spawned_from: spawningJobId
+            });
+          }
         }
+      } else {
+        logger.warn(`No DataTypes found in crawlCommandConfig for CrawlCommandName: ${commandName} (AreaType: ${areaType})`);
       }
     }
 
     if (areaType === AreaType.project) {
-      // List of all project-related CrawlCommands (from servicehandlers.md)
-      const projectCommands = [
-        CrawlCommand.project, // project details
-        CrawlCommand.projectVariables,
-        CrawlCommand.projectMembers,
-        CrawlCommand.issues,
-        CrawlCommand.pagesDomains,
-        CrawlCommand.projectCustomAttributes,
-        CrawlCommand.projectStatistics,
-        CrawlCommand.projectBadges,
-        CrawlCommand.projectTemplates,
-        CrawlCommand.projectAccessRequests,
-        CrawlCommand.projectHooks,
-        CrawlCommand.projectIssueBoards,
-        CrawlCommand.freezePeriods,
-        CrawlCommand.commits,
-        CrawlCommand.commitDiscussions,
-        CrawlCommand.branches,
-        CrawlCommand.tags,
-        CrawlCommand.mergeRequests,
-        CrawlCommand.mergeRequestNotes,
-        CrawlCommand.mergeRequestDiscussions,
-        CrawlCommand.mergeRequestAwardEmojis,
-        CrawlCommand.projectSnippets,
-        CrawlCommand.snippets,
-        CrawlCommand.pipelines,
-        CrawlCommand.pipelineSchedules,
-        CrawlCommand.jobs,
-        CrawlCommand.deployments,
-        CrawlCommand.environments,
-        CrawlCommand.pipelineScheduleVariables,
-        CrawlCommand.pipelineTriggers,
-        CrawlCommand.containerRegistryRepositories,
-        CrawlCommand.packages,
-        CrawlCommand.vulnerabilities,
-        CrawlCommand.protectedBranches,
-        CrawlCommand.protectedTags,
-        CrawlCommand.deployKeys
-      ];
-      for (const command of projectCommands) {
-        const existingJob = await db.query.job.findFirst({
-          where: and(
-            eq(jobSchema.full_path, areaPath),
-            eq(jobSchema.command, command),
-            or(
-              eq(jobSchema.status, JobStatus.queued),
-              eq(jobSchema.status, JobStatus.running)
+      const commandName: CrawlCommandName = 'project'; // Assuming 'project' is a valid CrawlCommandName for projects
+      const dataTypesForCommand = crawlCommandConfig[commandName];
+
+      if (dataTypesForCommand) {
+        for (const dataType of dataTypesForCommand) {
+          const existingJob = await db.query.job.findFirst({
+            where: and(
+              eq(jobSchema.full_path, areaPath),
+              eq(jobSchema.command, dataType as any), // Use DataType as command
+              or(
+                eq(jobSchema.status, JobStatus.queued),
+                eq(jobSchema.status, JobStatus.running)
+              )
             )
-          )
-        });
-        if (!existingJob) {
-          jobsToCreate.push({
-            id: ulid(),
-            accountId,
-            full_path: areaPath,
-            command,
-            status: JobStatus.queued,
-            spawned_from: spawningJobId // Add spawned_from
           });
+          if (!existingJob) {
+            jobsToCreate.push({
+              id: ulid(),
+              accountId,
+              full_path: areaPath,
+              command: dataType as any, // Store DataType string as the command
+              status: JobStatus.queued,
+              spawned_from: spawningJobId
+            });
+          }
         }
+      } else {
+        logger.warn(`No DataTypes found in crawlCommandConfig for CrawlCommandName: ${commandName} (AreaType: ${areaType})`);
       }
     }
 

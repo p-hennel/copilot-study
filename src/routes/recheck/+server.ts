@@ -2,11 +2,13 @@ import { db } from "$lib/server/db";
 import { getAccounts } from "$lib/server/db/jobFactory";
 import { handleNewAuthorization } from "$lib/server/job-manager";
 import { ensureUserIsAuthenticated } from "$lib/server/utils";
-import { TokenProvider } from "$lib/types";
+import { TokenProvider, CrawlCommand, JobStatus } from "$lib/types";
 import { forProvider } from "$lib/utils";
 import { getLogger } from "@logtape/logtape";
 import { redirect, type RequestHandler } from "@sveltejs/kit";
 import AppSettings from "$lib/server/settings";
+import { job } from "$lib/server/db/base-schema";
+import { and, eq } from "drizzle-orm";
 
 const logger = getLogger(["recheck", "server"]);
 
@@ -21,6 +23,33 @@ export const GET: RequestHandler = async ({ locals }) => {
   logger.info(`Processing recheck request for user ${userId}`);
 
   try {
+    // Reset GROUP_PROJECT_DISCOVERY jobs
+    logger.info(`Resetting GROUP_PROJECT_DISCOVERY jobs for user ${userId}`);
+    try {
+      const resetResult = await db
+        .update(job)
+        .set({
+          status: JobStatus.queued,
+          started_at: null,
+          finished_at: null,
+          updated_at: new Date(),
+          resumeState: null,
+          progress: null
+        })
+        .where(
+          and(
+            eq(job.userId, userId),
+            eq(job.command, CrawlCommand.GROUP_PROJECT_DISCOVERY)
+          )
+        )
+        .returning({ updatedId: job.id });
+
+      logger.info(`Reset ${resetResult.length} GROUP_PROJECT_DISCOVERY jobs for user ${userId}`);
+    } catch (e: any) {
+      logger.error(`Failed to reset GROUP_PROJECT_DISCOVERY jobs for user ${userId}:`, { error: e });
+      // Continue with other recheck operations even if this fails
+    }
+
     // Get all accounts for the current user
     const accounts = await getAccounts(userId);
     let recheckCount = 0;
@@ -51,7 +80,7 @@ export const GET: RequestHandler = async ({ locals }) => {
           };
         },
         gitlabOnPrem: () => {
-          const baseUrl = AppSettings().auth.providers.gitlab.baseUrl;
+          const baseUrl = AppSettings().auth.providers.gitlab.baseUrl ?? "";
           return {
             provider: TokenProvider.gitlab,
             baseUrl
