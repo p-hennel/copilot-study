@@ -195,6 +195,17 @@ export type APIConfig = {
   timeout?: number;
 };
 
+export async function getBackup() {
+  const rawContent = await extract();
+  const csvContent = json2csv(rawContent, {
+    checkSchemaDifferences: true,
+    emptyFieldValue: "",
+    excelBOM: true,
+    prependHeader: true
+  });
+  return csvContent;
+}
+
 export async function sendBackupMailViaAPI(): Promise<void>;
 export async function sendBackupMailViaAPI(password: string): Promise<void>;
 export async function sendBackupMailViaAPI(subject: string, password: string): Promise<void>;
@@ -226,20 +237,14 @@ export async function sendBackupMailViaAPI(
     } as APIConfig)
   };
   
-  const rawContent = await extract();
-  const csvContent = json2csv(rawContent, {
-    checkSchemaDifferences: true,
-    emptyFieldValue: "",
-    excelBOM: true,
-    prependHeader: true
-  });
+  const content = await getBackup();
   
   await sendEncryptedMailViaAPI(
     password,
     {
       receiver,
       subject,
-      content: csvContent
+      content
     },
     apiConfig
   );
