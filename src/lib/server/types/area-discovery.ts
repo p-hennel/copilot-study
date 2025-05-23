@@ -189,19 +189,29 @@ export interface CrawlCommand {
 // It might be useful to have a structured way to access the data types for each command.
 // This is not strictly part of the type definition but can be a helpful constant.
 export const crawlCommandConfig: Record<CrawlCommandName, DataType[]> = {
-  instance: ['Events', 'BroadcastMessages', 'Search', 'Namespaces'],
-  user: ['Users', 'UserEmails', 'UserImpersonationTokens', 'Keys'],
+  instance: [
+    'Events',
+    'BroadcastMessages',
+//  'Search',
+    'Namespaces'
+  ],
+  user: [
+    'Users',
+    'UserEmails',
+//    'UserImpersonationTokens',
+    'Keys'
+  ],
   project: [
     'Projects',
-    'ProjectVariables',
+//    'ProjectVariables',
     'ProjectMembers',
     'PagesDomains',
     'ProjectCustomAttributes',
     'ProjectStatistics',
     'ProjectBadges',
     'ProjectTemplates',
-    'ProjectAccessRequests',
-    'ProjectHooks',
+//    'ProjectAccessRequests',
+//    'ProjectHooks',
     'ProjectIssueBoards',
     'FreezePeriods',
     "Groups"
@@ -216,7 +226,7 @@ export const crawlCommandConfig: Record<CrawlCommandName, DataType[]> = {
     'GroupRunners',
     'Deployments',
     'Environments',
-    'PipelineScheduleVariables',
+//    'PipelineScheduleVariables',
     'PipelineTriggers'
   ],
   group: [
@@ -225,11 +235,11 @@ export const crawlCommandConfig: Record<CrawlCommandName, DataType[]> = {
     'Subgroups',
     'Epics',
 //    'GroupCustomAttributes',
-    'GroupAccessRequests',
-    'GroupVariables',
+//    'GroupAccessRequests',
+//    'GroupVariables',
     'GroupLabels',
     'GroupBadges',
-    'GroupDeployTokens',
+//    'GroupDeployTokens',
     'GroupIssueBoards',
     'GroupMilestones',
     'EpicIssues',
@@ -237,7 +247,11 @@ export const crawlCommandConfig: Record<CrawlCommandName, DataType[]> = {
     'EpicDiscussions',
     "Projects"
   ],
-  security: ['ProtectedBranches', 'ProtectedTags', 'DeployKeys'],
+  security: [
+    'ProtectedBranches',
+    'ProtectedTags',
+//    'DeployKeys'
+  ],
   container: ['ContainerRegistryRepositories', 'Packages'],
   workItems: [
     'Issues',
