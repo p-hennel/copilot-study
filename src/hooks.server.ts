@@ -8,7 +8,7 @@ import { isAdmin, syncAdminRoles } from "$lib/server/utils" // Import syncAdminR
 import { configureLogging } from "$lib/logging"
 import type { Logger } from "@logtape/logtape"
 import doMigration from '$lib/server/db/migration'
-import { existsSync, mkdir } from "node:fs"
+import { existsSync } from "node:fs"
 import path from "node:path"
 import { mkdirSync } from "fs";
 
