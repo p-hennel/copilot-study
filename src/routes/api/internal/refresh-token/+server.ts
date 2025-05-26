@@ -19,9 +19,20 @@ async function refreshTokenDirectly(refreshToken: string, providerId: string): P
   try {
     // Determine provider config
     const isCloud = providerId === 'gitlab-cloud';
-    const gitlabConfig = isCloud 
-      ? AppSettings().auth.providers.gitlabCloud 
+    const gitlabConfig = isCloud
+      ? AppSettings().auth.providers.gitlabCloud
       : AppSettings().auth.providers.gitlab;
+    
+    logger.warn(`[TEMP DEBUG] Provider config resolution:`, {
+      providerId,
+      isCloud,
+      hasConfig: !!gitlabConfig,
+      configKeys: gitlabConfig ? Object.keys(gitlabConfig) : null,
+      baseUrl: gitlabConfig?.baseUrl,
+      hasClientId: !!gitlabConfig?.clientId,
+      hasClientSecret: !!gitlabConfig?.clientSecret,
+      hasRedirectURI: !!gitlabConfig?.redirectURI
+    });
     
     if (!gitlabConfig) {
       logger.error(`GitLab provider (${providerId}) configuration not found`);
@@ -50,12 +61,27 @@ async function refreshTokenDirectly(refreshToken: string, providerId: string): P
     
     // Make token refresh request
     logger.debug(`Making refresh request to: ${tokenUrl}`);
+    logger.warn(`[TEMP DEBUG] GitLab refresh request details:`, {
+      tokenUrl,
+      params: Object.fromEntries(params.entries()),
+      hasClientId: !!gitlabConfig.clientId,
+      hasClientSecret: !!gitlabConfig.clientSecret,
+      hasRefreshToken: !!refreshToken,
+      refreshTokenLength: refreshToken?.length || 0
+    });
+    
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
+    });
+    
+    logger.warn(`[TEMP DEBUG] GitLab response:`, {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
     });
     
     if (!response.ok) {
@@ -66,7 +92,12 @@ async function refreshTokenDirectly(refreshToken: string, providerId: string): P
         errorInfo = await response.text();
       }
       
-      logger.error(`Failed to refresh GitLab token. Status: ${response.status}`, { error: errorInfo });
+      logger.error(`Failed to refresh GitLab token. Status: ${response.status}`, {
+        error: errorInfo,
+        tokenUrl,
+        providerId,
+        refreshTokenPreview: refreshToken ? `${refreshToken.substring(0, 12)}...` : 'none'
+      });
       return null;
     }
     
@@ -92,16 +123,26 @@ async function refreshTokenDirectly(refreshToken: string, providerId: string): P
 }
 
 export const POST: RequestHandler = async ({locals, request}) => {
+  // CRITICAL DEBUG: Log that the endpoint is being hit
+  logger.error('🔥 REFRESH TOKEN ENDPOINT HIT! 🔥');
+  
   // 1. Verify that event.locals.isSocketRequest is true
   if (!locals.isSocketRequest) {
+    logger.error('🔥 SOCKET REQUEST CHECK FAILED! 🔥', {
+      isSocketRequest: locals?.isSocketRequest,
+      localsKeys: Object.keys(locals || {})
+    });
     return json({ error: 'Forbidden. This endpoint is for socket requests only.' }, { status: 403 });
   }
+  
+  logger.error('🔥 SOCKET REQUEST CHECK PASSED! 🔥');
 
   let requestBody;
   let refreshToken: string|null = null;
   let providerId: string|null = null;
   try {
     requestBody = await request.json();
+    
     if (requestBody === null || typeof requestBody !== 'object') {
       return json({ error: 'Invalid JSON body' }, { status: 400 });
     }
@@ -110,8 +151,8 @@ export const POST: RequestHandler = async ({locals, request}) => {
     }
     if ("refreshToken" in requestBody) refreshToken = requestBody.refreshToken as string;
     if ("providerId" in requestBody) providerId = requestBody.providerId as string;
+    
   } catch (e) {
-    // Fix: Proper error logging format
     logger.error('Failed to parse JSON body', { error: e });
     return json({ error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -140,12 +181,11 @@ export const POST: RequestHandler = async ({locals, request}) => {
       logger.info(`Successfully refreshed token for provider ${providerId}`);
       return json(response, { status: 200 });
     } else {
-      return json({ 
+      return json({
         error: 'Failed to refresh token. Invalid refresh token or provider issue.'
       }, { status: 401 });
     }
   } catch (error) {
-    // Fix: Proper error logging format
     logger.error('Token refresh error', { error });
     return json({ error: 'Internal server error during token refresh.' }, { status: 500 });
   }
