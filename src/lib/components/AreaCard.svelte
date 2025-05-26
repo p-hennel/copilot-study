@@ -27,6 +27,9 @@
       area.jobsFinished > 0 &&
       area.jobsFinished >= area.jobsTotal
   );
+
+  const allowDataAccessAnyway = area.jobsFinished && area.jobsFinished > 0
+
 </script>
 
 <Card.Root class={cn("flex w-md flex-col", className)}>
@@ -61,9 +64,9 @@
     </div>
     <Button
       variant="outline"
-      disabled={!finished}
+      disabled={!finished && !allowDataAccessAnyway}
       target="_blank"
-      href={!finished ? undefined : `/data/${area.full_path}`}
+      href={!finished && !allowDataAccessAnyway ? undefined : `/data/${area.full_path}`}
     >
       <FolderOpen class="mr-2 size-4" />
       Open

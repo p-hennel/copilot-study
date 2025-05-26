@@ -11,7 +11,7 @@
   import LoadingButton from "./LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
-    import { ClipboardCopy, DatabaseBackup } from "@lucide/svelte";
+  import { ClipboardCopy, DatabaseBackup, Waypoints } from "@lucide/svelte";
 
   type UserInformationWithAccounts = UserInformation & { accounts: AccountInformation[] };
   type PreparedUserInformation = UserInformationWithAccounts & {
@@ -116,7 +116,7 @@
       <!--<Table.Head rowspan={2}>{m["admin.dashboard.userTable.header.name"]()}</Table.Head>-->
       <Table.Head rowspan={2}>{m["admin.dashboard.userTable.header.email"]()}</Table.Head>
       <Table.Head rowspan={2}>{m["admin.dashboard.userTable.header.created"]()}</Table.Head>
-      <Table.Head colspan={3} class="text-center"
+      <Table.Head colspan={4} class="text-center"
         >{m["admin.dashboard.userTable.header.accounts"]()}</Table.Head
       >
     </Table.Row>
@@ -124,6 +124,7 @@
       <Table.Head>{m["admin.dashboard.userTable.header.provider"]()}</Table.Head>
       <Table.Head class="text-center">{m["admin.dashboard.userTable.header.created"]()}</Table.Head>
       <Table.Head class="text-center">{m["admin.dashboard.userTable.header.expires"]()}</Table.Head>
+      <Table.Head></Table.Head>
     </Table.Row>
   </Table.Header>
   <Table.Body>
@@ -144,7 +145,7 @@
           ><Time timestamp={user.createdAt} {format} /></Table.Cell
         >
         {#if !user.firstAccount}
-          <Table.Cell colspan={3} class="text-center"
+          <Table.Cell colspan={4} class="text-center"
             >{m["admin.dashboard.userTable.no_accounts"]()}</Table.Cell
           >
         {:else}
@@ -155,6 +156,32 @@
           <Table.Cell class="text-center">
             {#if !!user.firstAccount.refreshTokenExpiresAt}
               <Time timestamp={user.firstAccount.refreshTokenExpiresAt} {format} />
+            {/if}
+          </Table.Cell>
+          <Table.Cell class="text-right">
+            {#if !!user.firstAccount.id}
+            <LoadingButton
+              variant="secondary"
+              icon={Waypoints}
+              fn={async () => {
+                if (!user.firstAccount) return;
+                const token = (await authClient.getSession())?.data?.session.token;
+                if (!token) return goto("/admin/sign-in");
+                await fetch("/api/admin/recheck", {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  },
+                  body: `{
+                    "accountId": "${user.firstAccount.id}",
+                    "userId": "${user.id}",
+                    "provider": "${user.firstAccount.providerId}"
+                  }`
+                });
+              }}
+            >
+              Re-Check
+            </LoadingButton>
             {/if}
           </Table.Cell>
         {/if}
@@ -169,6 +196,28 @@
             {#if !!account.refreshTokenExpiresAt}
               <Time timestamp={account.refreshTokenExpiresAt} {format} />
             {/if}
+          </Table.Cell>
+          <Table.Cell class="text-right">
+            <LoadingButton
+              variant="secondary"
+              icon={Waypoints}
+              fn={async () => {
+                const token = (await authClient.getSession())?.data?.session.token;
+                if (!token) return goto("/admin/sign-in");
+                await fetch("/api/admin/recheck", {
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  },
+                  body: `{
+                    "accountId": "${account.id}",
+                    "userId": "${user.id}",
+                    "provider": "${account.providerId}"
+                  }`
+                });
+              }}
+            >
+              Re-Check
+            </LoadingButton>
           </Table.Cell>
         </Table.Row>
       {/each}

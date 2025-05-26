@@ -1,5 +1,8 @@
 <script lang="ts">
+  import type { LayoutProps } from './$types';
   import "../app.css";
+
+  let { data, children }: LayoutProps = $props();
 </script>
 
 <!-- Added relative positioning to the main container -->
@@ -7,7 +10,7 @@
   <section>
     <!-- Added padding-top to avoid overlap -->
     <div class="overflow-hidden p-8">
-      <slot />
+      {@render children()}
     </div>
   </section>
 </div>

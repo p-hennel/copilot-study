@@ -2,7 +2,7 @@
   import BorderBeam from "$components/ui-mod/BorderBeam.svelte";
   import SparklesText from "$components/ui-mod/SparklesText.svelte";
   import * as Alert from "$lib/components/ui/alert/index.js";
-  import { ContentType, type Content } from "$lib/types";
+  import { ContentType, type Content } from "$lib/content-types";
   import { m } from "$paraglide";
   import * as icons from "@lucide/svelte";
   import Markdown from "svelte-exmarkdown";
@@ -23,8 +23,10 @@
         <BorderBeam duration={4} borderWidth={2.5} />
       {/if}
       {#if content.icon}
-        {@const Icon = icons[content.icon]}
-        <Icon class="mt-2.5" color="#581c87" strokeWidth={2} size={24} />
+        {@const Icon = icons[content.icon] as typeof import("@lucide/svelte")}
+        {#if Icon}
+          <Icon class="mt-2.5" color="#581c87" strokeWidth={2} size={24} />
+        {/if}
       {/if}
       <Alert.Title>
         <h1

@@ -1,75 +1,117 @@
 import { db } from "$lib/server/db";
-import { account } from "$lib/server/db/auth-schema";
-import { area, job } from "$lib/server/db/base-schema";
-import type { Group, Project } from "$lib/server/mini-crawler";
-import fetchAllGroupsAndProjects from "$lib/server/mini-crawler/main";
-import AppSettings from "$lib/server/settings";
-import { AreaType } from "$lib/types";
+import { getAccounts } from "$lib/server/db/jobFactory";
+import { handleNewAuthorization } from "$lib/server/job-manager";
+import { ensureUserIsAuthenticated } from "$lib/server/utils";
+import { TokenProvider, CrawlCommand, JobStatus } from "$lib/types";
+import { forProvider } from "$lib/utils";
 import { getLogger } from "@logtape/logtape";
 import { redirect, type RequestHandler } from "@sveltejs/kit";
-import { eq } from "drizzle-orm";
+import AppSettings from "$lib/server/settings";
+import { job } from "$lib/server/db/base-schema";
+import { and, eq } from "drizzle-orm";
 
-export const GET: RequestHandler = async ({ locals, fetch }) => {
-  if (true) // || !locals.session || !locals.user || !locals.user.id)
+const logger = getLogger(["recheck", "server"]);
+
+export const GET: RequestHandler = async ({ locals }) => {
+  // Verify user is authenticated
+  if (!ensureUserIsAuthenticated(locals)) {
+    logger.warn("Unauthorized recheck attempt - user not authenticated");
     return redirect(301, "/");
-  const _job = (
-    await db
-      .select({
-        id: job.id,
-        status: job.status,
-        progress: job.progress,
-        token: account.accessToken,
-        tokenExpiresAt: account.accessTokenExpiresAt,
-        refresher: account.refreshToken,
-        refreshTokenExpiresAt: account.refreshTokenExpiresAt
-      })
-      .from(job)
-      .innerJoin(account, eq(account.id, job.accountId))
-      .where(eq(account.userId, locals.user.id))
-      .limit(1)
-  ).at(0);
-  if (typeof _job?.progress === "string") {
-    _job.progress = JSON.parse(_job.progress) as any;
   }
 
-  if (_job && _job.token && _job.refresher) {
-    console.log("acces: {access} | refresh: {refresh}", {
-      access: _job.tokenExpiresAt,
-      refresh: _job.refreshTokenExpiresAt
-    });
-    fetchAllGroupsAndProjects(
-      locals.user.id,
-      `${AppSettings().auth.providers.gitlab.baseUrl}/api/graphql`,
-      _job?.token ?? "",
-      async (items: Group[] | Project[], itemType: "groups" | "projects") => {
-        if (!items || items.length <= 0) return;
-        console.log("inserting");
-        const result = await db.insert(area).values(
-          items?.map((x) => ({
-            full_path: x.fullPath,
-            gitlab_id: x.webUrl,
-            name: x.name,
-            type: itemType === "groups" ? AreaType.group : AreaType.project
-          }))
-        );
-        const logger = getLogger(["recheck", "resultProcessing"]);
-        if (result.rowsAffected < items.length) {
-          logger.warn("fewer {itemType} affected than received: {affected} < {received}", {
-            itemType,
-            affected: result.rowsAffected,
-            received: items.length
-          });
-        } else {
-          logger.info("Inserted {count} {itemType}", {
-            affected: result.rowsAffected,
-            received: items.length
-          });
+  const userId = locals.user!.id!;
+  logger.info(`Processing recheck request for user ${userId}`);
+
+  try {
+    // Reset GROUP_PROJECT_DISCOVERY jobs
+    logger.info(`Resetting GROUP_PROJECT_DISCOVERY jobs for user ${userId}`);
+    try {
+      const resetResult = await db
+        .update(job)
+        .set({
+          status: JobStatus.queued,
+          started_at: null,
+          finished_at: null,
+          updated_at: new Date(),
+          resumeState: null,
+          progress: null
+        })
+        .where(
+          and(
+            eq(job.userId, userId),
+            eq(job.command, CrawlCommand.GROUP_PROJECT_DISCOVERY)
+          )
+        )
+        .returning({ updatedId: job.id });
+
+      logger.info(`Reset ${resetResult.length} GROUP_PROJECT_DISCOVERY jobs for user ${userId}`);
+    } catch (e: any) {
+      logger.error(`Failed to reset GROUP_PROJECT_DISCOVERY jobs for user ${userId}:`, { error: e });
+      // Continue with other recheck operations even if this fails
+    }
+
+    // Get all accounts for the current user
+    const accounts = await getAccounts(userId);
+    let recheckCount = 0;
+    
+    // Process each GitLab account
+    for (const acct of accounts) {
+      if (!acct.id || !acct.provider || !acct.token || acct.provider === "credential") {
+        continue;
+      }
+      
+      // Only process GitLab accounts
+      if (acct.provider.toLowerCase().indexOf("gitlab") < 0) {
+        continue;
+      }
+
+      // Determine provider type and base URL
+      type ProviderTypes = {
+        provider: TokenProvider;
+        baseUrl: string;
+      };
+
+      const opts = forProvider<ProviderTypes>(acct.provider, {
+        gitlabCloud: () => {
+          const baseUrl = AppSettings().auth.providers.gitlabCloud.baseUrl;
+          return {
+            provider: TokenProvider.gitlabCloud,
+            baseUrl
+          };
+        },
+        gitlabOnPrem: () => {
+          const baseUrl = AppSettings().auth.providers.gitlab.baseUrl ?? "";
+          return {
+            provider: TokenProvider.gitlab,
+            baseUrl
+          };
         }
-      },
-      40,
-      fetch
-    );
+      });
+
+      if (!opts || !opts.baseUrl) {
+        logger.warn(`Skipping account ${acct.id} due to missing provider configuration`);
+        continue;
+      }
+
+      const token = acct.token;
+      if (!token) {
+        logger.warn(`Skipping account ${acct.id} due to missing token`);
+        continue;
+      }
+
+      // Trigger authorization scope job creation/check using the modern approach
+      const apiUrl = `${opts.baseUrl}/api/graphql`;
+      logger.info(`Initiating recheck for account ${acct.id} (${acct.provider})`);
+      
+      await handleNewAuthorization(userId, acct.id, opts.provider, token, apiUrl);
+      recheckCount++;
+    }
+
+    logger.info(`Successfully initiated recheck for ${recheckCount} accounts for user ${userId}`);
+  } catch (error) {
+    logger.error(`Error during recheck for user ${userId}:`, { error });
   }
 
+  // Redirect back to home page after completing the operation
   return redirect(301, "/");
 };

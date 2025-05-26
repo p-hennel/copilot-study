@@ -98,19 +98,73 @@ export function getCrawlerStates() {
 function mapCrawlCommandToJobType(command: string): string {
   // Map from CrawlCommand to JobType
   const mapping: Record<CrawlCommand, string> = {
+    // Discovery/authorization
     [CrawlCommand.authorizationScope]: JobType.DISCOVER_GROUPS,
-    [CrawlCommand.group]: JobType.GROUP_DETAILS,
-    [CrawlCommand.project]: JobType.PROJECT_DETAILS,
-    [CrawlCommand.commits]: JobType.PROJECT_BRANCHES,
-    [CrawlCommand.mergeRequests]: JobType.PROJECT_MERGE_REQUESTS,
-    [CrawlCommand.issues]: JobType.PROJECT_ISSUES,
-    [CrawlCommand.vulnerabilities]: JobType.PROJECT_VULNERABILITIES,
-    [CrawlCommand.pipelines]: JobType.PROJECT_PIPELINES,
-    [CrawlCommand.timelogs]: JobType.PROJECT_DETAILS, // No direct mapping
-    [CrawlCommand.users]: JobType.GROUP_MEMBERS,
-    [CrawlCommand.workItems]: JobType.PROJECT_ISSUES, // No direct mapping
+    [CrawlCommand.users]: JobType.GROUP_MEMBERS, // Assuming users are often related to group membership context
+    [CrawlCommand.timelogs]: JobType.PROJECT_DETAILS, // TODO: Review mapping for timelogs
+    [CrawlCommand.workItems]: JobType.PROJECT_ISSUES, // TODO: Review mapping for workItems
     [CrawlCommand.groupProjects]: JobType.GROUP_PROJECTS,
-    [CrawlCommand.groupSubgroups]: JobType.DISCOVER_SUBGROUPS
+    [CrawlCommand.groupSubgroups]: JobType.DISCOVER_SUBGROUPS,
+    [CrawlCommand.GROUP_PROJECT_DISCOVERY]: JobType.GROUP_PROJECT_DISCOVERY,
+
+    // Group services
+    [CrawlCommand.group]: JobType.GROUP_DETAILS,
+    [CrawlCommand.groupMembers]: JobType.GROUP_MEMBERS,
+    [CrawlCommand.groupIssues]: JobType.GROUP_ISSUES,
+    [CrawlCommand.epics]: JobType.GROUP_ISSUES, // TODO: Review mapping for epics (closest might be group issues or a new specific job type)
+    [CrawlCommand.groupCustomAttributes]: JobType.GROUP_DETAILS, // TODO: Review mapping
+    [CrawlCommand.groupAccessRequests]: JobType.GROUP_DETAILS, // TODO: Review mapping
+    [CrawlCommand.groupVariables]: JobType.GROUP_DETAILS, // TODO: Review mapping
+    [CrawlCommand.groupLabels]: JobType.GROUP_DETAILS, // TODO: Review mapping
+    [CrawlCommand.groupBadges]: JobType.GROUP_DETAILS, // TODO: Review mapping
+    [CrawlCommand.groupDeployTokens]: JobType.GROUP_DETAILS, // TODO: Review mapping
+    [CrawlCommand.groupIssueBoards]: JobType.GROUP_ISSUES, // TODO: Review mapping
+    [CrawlCommand.groupMilestones]: JobType.GROUP_DETAILS, // TODO: Review mapping (GitLab groups don't have milestones directly, projects do)
+    [CrawlCommand.epicIssues]: JobType.GROUP_ISSUES, // TODO: Review mapping
+    [CrawlCommand.epicNotes]: JobType.GROUP_ISSUES, // TODO: Review mapping
+    [CrawlCommand.epicDiscussions]: JobType.GROUP_ISSUES, // TODO: Review mapping
+
+    // Project services
+    [CrawlCommand.project]: JobType.PROJECT_DETAILS,
+    [CrawlCommand.projectVariables]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.projectMembers]: JobType.PROJECT_DETAILS, // TODO: Review mapping (or GROUP_MEMBERS if context implies project members)
+    [CrawlCommand.issues]: JobType.PROJECT_ISSUES, // This was duplicated, assuming project context here
+    [CrawlCommand.pagesDomains]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.projectCustomAttributes]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.projectStatistics]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.projectBadges]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.projectTemplates]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.projectAccessRequests]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.projectHooks]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.projectIssueBoards]: JobType.PROJECT_ISSUES, // TODO: Review mapping
+    [CrawlCommand.freezePeriods]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+
+    // Repository services
+    [CrawlCommand.commits]: JobType.PROJECT_BRANCHES, // Or a more specific commit job type if exists
+    [CrawlCommand.commitDiscussions]: JobType.PROJECT_MERGE_REQUESTS, // Discussions often on MRs or issues. TODO: Review mapping
+    [CrawlCommand.branches]: JobType.PROJECT_BRANCHES,
+    [CrawlCommand.tags]: JobType.PROJECT_RELEASES, // Tags are often used for releases. TODO: Review mapping
+
+    // Merge requests, snippets, pipelines, etc.
+    [CrawlCommand.mergeRequests]: JobType.PROJECT_MERGE_REQUESTS,
+    [CrawlCommand.mergeRequestNotes]: JobType.MERGE_REQUEST_DISCUSSIONS,
+    [CrawlCommand.mergeRequestDiscussions]: JobType.MERGE_REQUEST_DISCUSSIONS,
+    [CrawlCommand.mergeRequestAwardEmojis]: JobType.MERGE_REQUEST_DISCUSSIONS, // TODO: Review mapping
+    [CrawlCommand.projectSnippets]: JobType.PROJECT_DETAILS, // TODO: Review mapping (No specific snippet job type)
+    [CrawlCommand.snippets]: JobType.PROJECT_DETAILS, // TODO: Review mapping (No specific snippet job type)
+    [CrawlCommand.pipelines]: JobType.PROJECT_PIPELINES,
+    [CrawlCommand.pipelineSchedules]: JobType.PROJECT_PIPELINES, // TODO: Review mapping
+    [CrawlCommand.jobs]: JobType.PIPELINE_DETAILS, // Assuming these are pipeline jobs. TODO: Review mapping
+    [CrawlCommand.deployments]: JobType.PROJECT_RELEASES, // Deployments are related to releases. TODO: Review mapping
+    [CrawlCommand.environments]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.pipelineScheduleVariables]: JobType.PROJECT_PIPELINES, // TODO: Review mapping
+    [CrawlCommand.pipelineTriggers]: JobType.PROJECT_PIPELINES, // TODO: Review mapping
+    [CrawlCommand.containerRegistryRepositories]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.packages]: JobType.PROJECT_DETAILS, // TODO: Review mapping
+    [CrawlCommand.vulnerabilities]: JobType.PROJECT_VULNERABILITIES,
+    [CrawlCommand.protectedBranches]: JobType.PROJECT_BRANCHES, // TODO: Review mapping
+    [CrawlCommand.protectedTags]: JobType.PROJECT_RELEASES, // TODO: Review mapping
+    [CrawlCommand.deployKeys]: JobType.PROJECT_DETAILS // TODO: Review mapping
   };
   
   return mapping[command as CrawlCommand] || JobType.PROJECT_DETAILS;
@@ -584,23 +638,29 @@ export async function boot() {
     }
   });
 
-  // Connect to the supervisor
-  await client.connect();
-  logger.info("Connected to the supervisor");
-  
-  // Send GitLab authentication credentials to the supervisor for the crawler
-  try {
-    logger.info("Sending GitLab authentication credentials to supervisor");
-    Bun.sleepSync(125)
+  // Connect to the supervisor only if it's available
+  if (client.isSupervisorAvailable) {
+    await client.connect();
+    logger.info("Attempted to connect to the supervisor."); // Log attempt
 
-    //const clientId = (dev ? AppSettings().auth.providers.gitlabCloud.clientId : AppSettings().auth.providers.gitlab.clientId) || process.env.GITLAB_CLIENT_ID || ""
-    //const clientSecret = (dev ? AppSettings().auth.providers.gitlabCloud.clientSecret : AppSettings().auth.providers.gitlab.clientSecret) || process.env.GITLAB_CLIENT_SECRET || ""
-    
-    const tokenproviders = Object.values(TokenProvider)
-    client.broadcastMessage("auth_credentials", tokenproviders.map(x => buildAuthCredentials(x)));
-    logger.info("Successfully sent GitLab credentials to supervisor");
-  } catch (error) {
-    logger.error(`Error sending credentials to supervisor: ${error}`);
+    // Send GitLab authentication credentials to the supervisor for the crawler
+    if (client.connected) { // Check if connection was successful
+      logger.info("Connected to the supervisor.");
+      try {
+        logger.info("Sending GitLab authentication credentials to supervisor");
+        Bun.sleepSync(125);
+
+        const tokenproviders = Object.values(TokenProvider);
+        client.broadcastMessage("auth_credentials", tokenproviders.map(x => buildAuthCredentials(x)));
+        logger.info("Successfully sent GitLab credentials to supervisor");
+      } catch (error) {
+        logger.error(`Error sending credentials to supervisor: ${error}`);
+      }
+    } else {
+      logger.warn("Supervisor client is available but not connected. Skipping credential send.");
+    }
+  } else {
+    logger.warn("Supervisor not available. Skipping supervisor connection and credential send. Crawler functionalities will be disabled.");
   }
 
   // Set up a periodic check for queued jobs

@@ -34,6 +34,7 @@ const getUsers = async () => {
       email: user.email,
       name: user.name,
       userCreatedAt: user.createdAt,
+      accountId: account.id,
       accountProviderId: account.providerId,
       accountCreatedAt: account.createdAt,
       refreshTokenExpiresAt: account.refreshTokenExpiresAt
@@ -56,6 +57,7 @@ const getUsers = async () => {
         }
         if (!!user.accountProviderId && !!user.accountCreatedAt) {
           col[user.id]?.accounts.push({
+            id: user.accountId,
             providerId: user.accountProviderId,
             createdAt: user.accountCreatedAt,
             refreshTokenExpiresAt: user.refreshTokenExpiresAt
