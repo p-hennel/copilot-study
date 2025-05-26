@@ -118,12 +118,6 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
     _getMD("what", depends, locals),
     _getMD("responsibility", depends, locals),
     _getMD("for-you", depends, locals),
-    {
-      type: ContentType.Alert,
-      icon: "Gift",
-      title: m["home.prize.title"](),
-      content: m["home.prize.content"]()
-    } as AlertContent,
     _getMD("questions", depends, locals)
   ]);
 
