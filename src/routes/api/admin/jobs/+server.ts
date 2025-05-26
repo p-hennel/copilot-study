@@ -31,7 +31,9 @@ const getJobs = async () => {
             command: true,
             status: true,
             started_at: true,
-            finished_at: true
+            finished_at: true,
+            created_at: true,
+            updated_at: true,
           }
         }
       },

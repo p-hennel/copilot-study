@@ -61,7 +61,18 @@ COPY --from=prerelease \
   /usr/src/app/startup.sh \
   /usr/src/app/.autorestic.yml \
   /usr/src/app/backup.cron \
-  .
+  /usr/src/app/dual-server.js \
+  /usr/src/app/db-test.ts \
+  ./
+
+COPY --from=prerelease \
+  /usr/src/app/src/lib/server/db/*schema.ts \
+  /usr/src/app/src/lib/types.ts \
+  ./schema/
+
+COPY --from=prerelease \
+  /usr/src/app/runtime-tsconfig.json \
+  /usr/src/app/tsconfig.json
   
 COPY drizzle /usr/src/app/
 

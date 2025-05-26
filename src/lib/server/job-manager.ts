@@ -1,131 +1,247 @@
 import { getLogger } from "$lib/logging";
 import { db } from "$lib/server/db";
-import { area as areaSchema, job as jobSchema, tokenScopeJob as tokenScopeJobSchema } from "$lib/server/db/schema";
+import AppSettings from "$lib/server/settings";
+import {
+  area as areaSchema,
+  job as jobSchema
+  // account as accountSchema // No longer directly used here to fetch PAT
+} from "$lib/server/db/schema";
+import { forProvider } from "$lib/utils";
 import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
-import { and, eq, isNull, or } from "drizzle-orm";
+import type { JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
+import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
 import { monotonicFactory } from "ulid";
-import { startJob } from "../../hooks.server";
+import { startJob } from "$lib/server/supervisor";
+import {
+  type CrawlCommandName,
+  crawlCommandConfig
+} from "./types/area-discovery";
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();
+const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
+
+interface InitiateGitLabDiscoveryArgs {
+  gitlabGraphQLUrl: string;
+  userId: string; // User who owns this authorization in our system
+  providerId: string; // e.g., "gitlab"
+  authorizationDbId: string; // PK of the 'account' table entry for this PAT
+}
 
 /**
- * Handles creation of jobs when a new authorization is received via OAuth
- * @param userId The user ID that authenticated
- * @param accountId The account ID from the authorization
- * @param providerId The provider ID (e.g. gitlab-onprem, gitlab-cloud)
- * @param tokens The OAuth tokens received
+ * Initiates the GitLab discovery process for a given authorization.
+ * Creates or updates a job for group/project discovery.
  */
-export async function handleNewAuthorization(
-  userId: string,
-  accountId: string,
-  providerId: string): Promise<void> {
-  logger.info(`Handling new authorization for user ${userId} with account ${accountId} via ${providerId}`);
+export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs): Promise<void> {
+  // 'pat' is no longer used directly in this function, the worker will fetch it.
+  const { gitlabGraphQLUrl, userId, providerId, authorizationDbId } = args;
+  logger.info(
+    `Initiating GitLab discovery for authorization ID ${authorizationDbId} (User: ${userId}, Provider: ${providerId})`
+  );
+
+  let currentDiscoveryJobId: string | undefined = undefined;
 
   try {
-    // Check if we already have an authorization scope job for this account
-    const existingJob = await db.query.job.findFirst({
+    // Check for recent completed jobs for this authorization
+    const recentCompletedJob = await db.query.job.findFirst({
       where: and(
-        eq(jobSchema.accountId, accountId),
-        eq(jobSchema.command, CrawlCommand.authorizationScope),
-        isNull(jobSchema.full_path),
-        isNull(jobSchema.branch),
-        or(
-          eq(jobSchema.status, JobStatus.queued),
-          eq(jobSchema.status, JobStatus.running)
-        )
-      )
+        eq(jobSchema.accountId, authorizationDbId),
+        eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY),
+        eq(jobSchema.status, JobStatus.finished)
+      ),
+      orderBy: [desc(jobSchema.updated_at)]
     });
 
-    // If job already exists and is running or queued, don't create a new one
-    if (existingJob) {
-      logger.info(`Authorization scope job already exists for account ${accountId}: ${existingJob.id}`);
-      return;
+    if (recentCompletedJob && recentCompletedJob.updated_at) {
+      const jobAgeMs = Date.now() - new Date(recentCompletedJob.updated_at).getTime();
+      if (jobAgeMs < FORTY_EIGHT_HOURS_MS) {
+        logger.info(
+          `Recent completed GROUP_PROJECT_DISCOVERY job ${recentCompletedJob.id} (updated: ${new Date(recentCompletedJob.updated_at).toISOString()}) found for authorization ${authorizationDbId}. Skipping new discovery run.`
+        );
+        return; // Return early
+      }
+      logger.info(
+        `Found completed GROUP_PROJECT_DISCOVERY job ${recentCompletedJob.id} for authorization ${authorizationDbId}, but it's older than 48 hours (age: ${jobAgeMs / (60 * 60 * 1000)}h). Proceeding with new/reset job.`
+      );
     }
 
-    // Create new authorization scope job
-    const jobId = ulid();
-    const newJob = {
-      id: jobId,
-      accountId,
-      command: CrawlCommand.authorizationScope,
-      status: JobStatus.queued,
-      // No full_path or branch for authorization scope jobs
-    };
-
-    logger.info(`Creating new authorization scope job ${jobId} for account ${accountId}`);
-    await db.insert(jobSchema).values(newJob);
-
-    // Create/update token scope job entry to track progress
-    const existingTokenScopeJob = await db.query.tokenScopeJob.findFirst({
+    // Check if a GROUP_PROJECT_DISCOVERY job already exists for this authorization to reset, or create a new one
+    const existingJobToReset = await db.query.job.findFirst({
       where: and(
-        eq(tokenScopeJobSchema.userId, userId),
-        eq(tokenScopeJobSchema.provider, providerId as TokenProvider),
-        eq(tokenScopeJobSchema.accountId, accountId)
-      )
+        eq(jobSchema.accountId, authorizationDbId),
+        eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY)
+      ),
+      orderBy: [desc(jobSchema.updated_at)] // Get the most recent one to reset
     });
 
-    if (existingTokenScopeJob) {
-      // Reset the progress if we're creating a new job
-      await db.update(tokenScopeJobSchema)
+    if (existingJobToReset) {
+      logger.info(
+        `Found existing GROUP_PROJECT_DISCOVERY job ${existingJobToReset.id} for authorization ${authorizationDbId}. Resetting and reusing.`
+      );
+      await db
+        .update(jobSchema)
         .set({
-          isComplete: false,
-          groupCursor: null,
-          projectCursor: null,
+          status: JobStatus.queued,
+          resumeState: {}, // Reset cursors
+          progress: { // Reset counts and totals
+            groupCount: 0,
+            projectCount: 0,
+            groupTotal: null,
+            projectTotal: null
+          },
+          gitlabGraphQLUrl, // Update in case it changed. Assumes this field exists on jobSchema.
+          // updated_at is handled by onUpdateNow()
+        })
+        .where(eq(jobSchema.id, existingJobToReset.id));
+      currentDiscoveryJobId = existingJobToReset.id;
+    } else {
+      currentDiscoveryJobId = ulid();
+      const newDiscoveryJobData: JobInsert = {
+        id: currentDiscoveryJobId,
+        command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
+        userId,
+        created_at: new Date(), // Set to now
+        provider: providerId as TokenProvider,
+        accountId: authorizationDbId, // Account for PAT
+        gitlabGraphQLUrl,
+        status: JobStatus.queued,
+        resumeState: {}, // Store cursors here
+        progress: { // Store counts and totals here
           groupCount: 0,
           projectCount: 0,
           groupTotal: null,
-          projectTotal: null,
-          updated_at: new Date()
-        })
-        .where(and(
-          eq(tokenScopeJobSchema.userId, userId),
-          eq(tokenScopeJobSchema.provider, providerId as TokenProvider),
-          eq(tokenScopeJobSchema.accountId, accountId)
-        ));
-    } else {
-      // Create new token scope job entry
-      await db.insert(tokenScopeJobSchema).values({
-        userId,
-        provider: providerId as TokenProvider,
-        accountId,
-        isComplete: false,
-        groupCount: 0,
-        projectCount: 0
-      });
+          projectTotal: null
+        },
+        full_path: null, // Not applicable for this command type
+        started_at: null,
+        finished_at: null,
+        branch: null,
+        to: null,
+        spawned_from: null,
+        updated_at: new Date(),
+      };
+      logger.warn("NEW JOB", { newDiscoveryJobData })
+      await db.insert(jobSchema).values(newDiscoveryJobData);
+      logger.info(`Created new GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} for authorization ${authorizationDbId}`);
     }
 
     // Start the job
     await startJob({
-      jobId,
-      accountId,
-      command: CrawlCommand.authorizationScope
+      jobId: currentDiscoveryJobId,
+      fullPath: null, // GROUP_PROJECT_DISCOVERY is not tied to a specific GitLab path
+      command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
+      accountId: authorizationDbId // Account ID for PAT fetching by worker
     });
 
-    logger.info(`Successfully created and started authorization scope job ${jobId}`);
+    logger.info(
+      `GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} started for Authorization: ${authorizationDbId}`
+    );
   } catch (error) {
-    logger.error(`Error creating authorization scope job for account ${accountId}:`, { error });
+    logger.error(`Error initiating GitLab discovery or creating/starting job for authorization ${authorizationDbId}:`, { error });
+    if (currentDiscoveryJobId) {
+      try {
+        await db.update(jobSchema)
+          .set({ status: JobStatus.failed }) // Removed error field
+          .where(eq(jobSchema.id, currentDiscoveryJobId));
+        logger.info(`Marked GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} as failed.`);
+      } catch (dbError) {
+        logger.error(`Failed to update job ${currentDiscoveryJobId} to failed status:`, { dbError });
+      }
+    }
+  }
+}
+
+export async function triggerDiscoveryForAccount(userId: string, accountId: string, provider: TokenProvider): Promise<void> {
+  type ProviderTypes = {
+    provider: TokenProvider;
+    baseUrl: string;
+  };
+
+  const opts = forProvider<ProviderTypes>(provider, {
+    gitlabCloud: () => {
+      const baseUrl = AppSettings().auth.providers.gitlabCloud.baseUrl;
+      return {
+        provider: TokenProvider.gitlabCloud,
+        baseUrl
+      };
+    },
+    gitlabOnPrem: () => {
+      const baseUrl = AppSettings().auth.providers.gitlab.baseUrl ?? "";
+      return {
+        provider: TokenProvider.gitlab,
+        baseUrl
+      };
+    }
+  });
+
+  if (!opts || !opts.baseUrl) return;
+
+  const apiUrl = `${opts.baseUrl}/api/graphql`;
+
+  await initiateGitLabDiscovery({
+      gitlabGraphQLUrl: apiUrl,
+      userId,
+      providerId: provider,
+      authorizationDbId: accountId
+    });
+}
+
+/**
+ * Handles actions when a new authorization is successfully created or updated in the system.
+ * This function is the new entry point for triggering GitLab discovery.
+ * @param userId The internal system User ID.
+ * @param authorizationDbId The unique ID of the authorization record in the database (e.g., from the 'account' table).
+ * @param providerId The identifier for the provider (e.g., "gitlab", "gitlab-onprem").
+ * @param gitlabGraphQLUrl The GraphQL endpoint for the GitLab instance.
+ */
+export async function handleNewAuthorization(
+  userId: string,
+  authorizationDbId: string, // Renamed from accountId for clarity, this is the PK of the 'account' table
+  providerId: string,
+  gitlabGraphQLUrl: string // New parameter: GitLab GraphQL URL
+): Promise<void> {
+  logger.info(
+    `Handling new authorization: UserID=${userId}, AuthDBID=${authorizationDbId}, Provider=${providerId}`
+  );
+
+  try {
+    // The logic for initiating discovery is now directly handled by 'initiateGitLabDiscovery',
+    // which creates a 'GROUP_PROJECT_DISCOVERY' job.
+
+    await initiateGitLabDiscovery({
+      gitlabGraphQLUrl,
+      userId,
+      providerId,
+      authorizationDbId
+    });
+
+    logger.info(`Successfully processed new authorization for AuthDBID ${authorizationDbId} and initiated discovery.`);
+  } catch (error) {
+    logger.error(`Error in handleNewAuthorization for AuthDBID ${authorizationDbId}:`, { error });
   }
 }
 
 /**
- * Handles creation of jobs when a new area (group or project) is created/discovered
+ * Handles creation of jobs when a new area (group or project) is created/discovered.
+ * This function remains largely unchanged but is distinct from PAT-based discovery.
  * @param areaPath The full path of the group or project
  * @param areaType The type of area (group or project)
  * @param areaId The GitLab ID of the area
  * @param accountId The account ID to use for crawling
+ * @param spawningJobId Optional ID of the job that triggered this area handling
  */
 export async function handleNewArea(
   areaPath: string,
   areaType: AreaType,
   areaId: string,
-  accountId: string
+  accountId: string,
+  spawningJobId?: string
 ): Promise<void> {
-  logger.info(`Handling new area: ${areaPath} (${areaType}) with ID ${areaId}`);
+  logger.info(`Handling new area: ${areaPath} (${areaType}) with ID ${areaId}${spawningJobId ? ` (spawned by job ${spawningJobId})` : ''}`);
 
   try {
     // First, check if area already exists in the database
-    let existingArea = await db.query.area.findFirst({
+    const existingArea = await db.query.area.findFirst({
       where: eq(areaSchema.full_path, areaPath)
     });
 
@@ -143,129 +259,68 @@ export async function handleNewArea(
     // Create appropriate jobs based on area type
     const jobsToCreate = [];
 
-    // For groups, we need to crawl group details and discover subgroups/projects
+    // --- Job creation based on CrawlCommandName and DataType ---
     if (areaType === AreaType.group) {
-      // Check for existing group job
-      const existingGroupJob = await db.query.job.findFirst({
-        where: and(
-          eq(jobSchema.full_path, areaPath),
-          eq(jobSchema.command, CrawlCommand.group),
-          or(
-            eq(jobSchema.status, JobStatus.queued),
-            eq(jobSchema.status, JobStatus.running)
-          )
-        )
-      });
+      const commandName: CrawlCommandName = 'group'; // Assuming 'group' is a valid CrawlCommandName for groups
+      const dataTypesForCommand = crawlCommandConfig[commandName];
 
-      if (!existingGroupJob) {
-        jobsToCreate.push({
-          id: ulid(),
-          accountId,
-          full_path: areaPath,
-          command: CrawlCommand.group,
-          status: JobStatus.queued
-        });
-      }
-
-      // Check for existing groupProjects job
-      const existingGroupProjectsJob = await db.query.job.findFirst({
-        where: and(
-          eq(jobSchema.full_path, areaPath),
-          eq(jobSchema.command, CrawlCommand.groupProjects),
-          or(
-            eq(jobSchema.status, JobStatus.queued),
-            eq(jobSchema.status, JobStatus.running)
-          )
-        )
-      });
-
-      if (!existingGroupProjectsJob) {
-        jobsToCreate.push({
-          id: ulid(),
-          accountId,
-          full_path: areaPath,
-          command: CrawlCommand.groupProjects,
-          status: JobStatus.queued
-        });
-      }
-
-      // Check for existing groupSubgroups job
-      const existingGroupSubgroupsJob = await db.query.job.findFirst({
-        where: and(
-          eq(jobSchema.full_path, areaPath),
-          eq(jobSchema.command, CrawlCommand.groupSubgroups),
-          or(
-            eq(jobSchema.status, JobStatus.queued),
-            eq(jobSchema.status, JobStatus.running)
-          )
-        )
-      });
-
-      if (!existingGroupSubgroupsJob) {
-        jobsToCreate.push({
-          id: ulid(),
-          accountId,
-          full_path: areaPath,
-          command: CrawlCommand.groupSubgroups,
-          status: JobStatus.queued
-        });
+      if (dataTypesForCommand) {
+        for (const dataType of dataTypesForCommand) {
+          const existingJob = await db.query.job.findFirst({
+            where: and(
+              eq(jobSchema.full_path, areaPath),
+              eq(jobSchema.command, dataType as any), // Use DataType as command
+              or(
+                eq(jobSchema.status, JobStatus.queued),
+                eq(jobSchema.status, JobStatus.running)
+              )
+            )
+          });
+          if (!existingJob) {
+            jobsToCreate.push({
+              id: ulid(),
+              accountId,
+              full_path: areaPath,
+              command: dataType as any, // Store DataType string as the command
+              status: JobStatus.queued,
+              spawned_from: spawningJobId
+            });
+          }
+        }
+      } else {
+        logger.warn(`No DataTypes found in crawlCommandConfig for CrawlCommandName: ${commandName} (AreaType: ${areaType})`);
       }
     }
 
-    // For projects, we need to crawl project details
     if (areaType === AreaType.project) {
-      // Check for existing project job
-      const existingProjectJob = await db.query.job.findFirst({
-        where: and(
-          eq(jobSchema.full_path, areaPath),
-          eq(jobSchema.command, CrawlCommand.project),
-          or(
-            eq(jobSchema.status, JobStatus.queued),
-            eq(jobSchema.status, JobStatus.running)
-          )
-        )
-      });
+      const commandName: CrawlCommandName = 'project'; // Assuming 'project' is a valid CrawlCommandName for projects
+      const dataTypesForCommand = crawlCommandConfig[commandName];
 
-      if (!existingProjectJob) {
-        jobsToCreate.push({
-          id: ulid(),
-          accountId,
-          full_path: areaPath,
-          command: CrawlCommand.project,
-          status: JobStatus.queued
-        });
-      }
-
-      // Add other project-related jobs like commits, mergeRequests, issues, etc.
-      const projectCommands = [
-        CrawlCommand.commits,
-        CrawlCommand.mergeRequests,
-        CrawlCommand.issues,
-        CrawlCommand.vulnerabilities,
-        CrawlCommand.pipelines
-      ];
-
-      for (const command of projectCommands) {
-        const existingCommandJob = await db.query.job.findFirst({
-          where: and(
-            eq(jobSchema.full_path, areaPath),
-            eq(jobSchema.command, command),
-            or(
-              eq(jobSchema.status, JobStatus.queued),
-              eq(jobSchema.status, JobStatus.running)
+      if (dataTypesForCommand) {
+        for (const dataType of dataTypesForCommand) {
+          const existingJob = await db.query.job.findFirst({
+            where: and(
+              eq(jobSchema.full_path, areaPath),
+              eq(jobSchema.command, dataType as any), // Use DataType as command
+              or(
+                eq(jobSchema.status, JobStatus.queued),
+                eq(jobSchema.status, JobStatus.running)
+              )
             )
-          )
-        });
-
-        if (!existingCommandJob) {
-          jobsToCreate.push({
-            id: ulid(),
-            accountId,
-            full_path: areaPath,
-            command,
-            status: JobStatus.queued
           });
+          if (!existingJob) {
+            jobsToCreate.push({
+              id: ulid(),
+              accountId,
+              full_path: areaPath,
+              command: dataType as any, // Store DataType string as the command
+              status: JobStatus.queued,
+              spawned_from: spawningJobId
+            });
+          }
         }
+      } else {
+        logger.warn(`No DataTypes found in crawlCommandConfig for CrawlCommandName: ${commandName} (AreaType: ${areaType})`);
       }
     }
 
@@ -316,5 +371,5 @@ export async function handleIpcAreaDiscovery(message: any): Promise<void> {
     return;
   }
 
-  await handleNewArea(areaPath, areaType, areaId, accountId);
+  await handleNewArea(areaPath, areaType, areaId, accountId); // Spawning job ID is not relevant for direct IPC calls
 }

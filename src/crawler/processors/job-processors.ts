@@ -6,6 +6,7 @@ import { DetailProcessor } from "./detail";
 import { DiscoveryProcessor } from "./discovery";
 import { GroupProcessor } from "./group";
 import { ProjectProcessor } from "./project";
+import { GroupProjectDiscoveryProcessor } from "./group-project-discovery-processor"; // Import the new processor
 
 // Initialize logger
 const logger = getLogger(["crawlib", "job-processors"]);
@@ -18,6 +19,7 @@ export class JobProcessors {
   private groupProcessor: GroupProcessor;
   private projectProcessor: ProjectProcessor;
   private detailProcessor: DetailProcessor;
+  private groupProjectDiscoveryProcessor: GroupProjectDiscoveryProcessor; // Add new processor instance
 
   /**
    * Constructor
@@ -30,6 +32,7 @@ export class JobProcessors {
     this.groupProcessor = new GroupProcessor(config);
     this.projectProcessor = new ProjectProcessor(config);
     this.detailProcessor = new DetailProcessor(config);
+    this.groupProjectDiscoveryProcessor = new GroupProjectDiscoveryProcessor(config); // Instantiate new processor
 
     logger.debug("Job processors initialized");
   }
@@ -49,6 +52,9 @@ export class JobProcessors {
       [JobType.DISCOVER_SUBGROUPS]: this.discoveryProcessor.processDiscoverSubgroups.bind(
         this.discoveryProcessor
       ),
+      [JobType.GROUP_PROJECT_DISCOVERY]: this.groupProjectDiscoveryProcessor.process.bind(
+        this.groupProjectDiscoveryProcessor
+      ), // Register the new processor
 
       // Group processors
       [JobType.GROUP_DETAILS]: this.groupProcessor.processGroupDetails.bind(this.groupProcessor),

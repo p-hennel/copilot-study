@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { pauseCrawler } from "../../../../../hooks.server";
+import { pauseCrawler } from "$lib/server/supervisor";
 
 export async function POST({ locals }: { locals: App.Locals }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
