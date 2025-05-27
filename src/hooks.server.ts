@@ -48,7 +48,6 @@ const authHandle: Handle = ({ event, resolve }) => {
   // CRITICAL DEBUG - Skip auth for unix socket requests to /api/internal/refresh-token
   if (event.url.pathname.includes('/api/internal/refresh-token') &&
       event.request.headers.get('x-request-source') === 'unix') {
-    logger.error('🔥 HOOKS: Skipping auth for unix socket refresh-token request! 🔥');
     return resolve(event);
   }
   
@@ -58,7 +57,6 @@ const authHandle2: Handle = async ({ event, resolve }) => {
   // CRITICAL DEBUG - Skip session check for unix socket requests to /api/internal/refresh-token
   if (event.url.pathname.includes('/api/internal/refresh-token') &&
       event.request.headers.get('x-request-source') === 'unix') {
-    logger.error('🔥 HOOKS: Skipping session check for unix socket refresh-token request! 🔥');
     return await resolve(event);
   }
   
@@ -102,16 +100,6 @@ export async function reqSourceHandle({ event, resolve }: {event: any, resolve: 
   // Add to locals for use in routes
   event.locals.requestSource = requestSource;
   event.locals.isSocketRequest = requestSource === 'unix';
-
-  // CRITICAL DEBUG
-  if (event.url.pathname.includes('/api/internal/refresh-token')) {
-    logger.error('🔥 HOOKS: refresh-token request detected in reqSourceHandle! 🔥', {
-      pathname: event.url.pathname,
-      requestSource,
-      isSocketRequest: event.locals.isSocketRequest,
-      method: event.request.method
-    });
-  }
 
   /*
   if (event.url.pathname.startsWith('/api/internal') && !event.locals.isSocketRequest && !isAdmin(event.locals)) {
