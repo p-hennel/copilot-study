@@ -657,11 +657,15 @@
         <Button
           variant="outline"
           size="sm"
-          disabled={currentPage === 1}
-          onclick={() => currentPage = Math.max(1, currentPage - 1)}
+          disabled={!pagination?.hasPreviousPage || loading}
+          onclick={() => handlePageChange(Math.max(1, currentPage - 1))}
           class="gap-1"
         >
-          <ChevronLeft class="h-4 w-4" />
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronLeft class="h-4 w-4" />
+          {/if}
           Previous
         </Button>
 
@@ -675,7 +679,8 @@
             <Button
               variant={currentPage === pageNum ? "default" : "outline"}
               size="sm"
-              onclick={() => currentPage = pageNum}
+              onclick={() => handlePageChange(pageNum)}
+              disabled={loading}
               class="w-8 h-8 p-0"
             >
               {pageNum}
@@ -686,12 +691,16 @@
         <Button
           variant="outline"
           size="sm"
-          disabled={currentPage === totalPages}
-          onclick={() => currentPage = Math.min(totalPages, currentPage + 1)}
+          disabled={!pagination?.hasNextPage || loading}
+          onclick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
           class="gap-1"
         >
           Next
-          <ChevronRight class="h-4 w-4" />
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronRight class="h-4 w-4" />
+          {/if}
         </Button>
       </div>
     </div>
