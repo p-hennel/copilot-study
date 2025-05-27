@@ -1,11 +1,13 @@
 import { authClient } from "$lib/auth-client";
 
 export async function load(event) {
-  const token = authClient.getSession().then((response) => response.data?.session.token);
+  const response = await authClient.getSession()
+  const session = response.data?.session;
+  const token = session?.token // authClient.getSession().then((response) => response.data?.session.token);
 
   return {
     tokenInfos: fetchAdminData(event.fetch, "tokenInfos", token),
-    user: event.locals.user,
+    user: response.data?.user,
     sessiontoken: token
   };
 }

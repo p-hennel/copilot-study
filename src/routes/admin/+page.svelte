@@ -199,7 +199,8 @@
         <Card.Root class="hover:shadow-md transition-shadow">
           <Card.Header>
             <Card.Title class="flex items-center gap-2">
-              <svelte:component this={action.icon} class="h-5 w-5" />
+              {@const IconComponent = action.icon}
+              <IconComponent class="h-5 w-5" />
               {action.label}
             </Card.Title>
             <Card.Description>{action.description}</Card.Description>

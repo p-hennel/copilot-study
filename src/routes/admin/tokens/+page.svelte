@@ -48,7 +48,7 @@
         <div class="text-muted-foreground">Loading tokens...</div>
       </div>
     {:then tokenInfos}
-      <TokensInfo infos={tokenInfos.result} />
+      <TokensInfo infos={(tokenInfos as any).result} />
     {:catch error}
       <div class="text-destructive">Failed to load token information: {error.message}</div>
     {/await}

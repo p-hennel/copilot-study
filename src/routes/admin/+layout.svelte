@@ -47,7 +47,8 @@
               <Breadcrumb.Separator />
               <Breadcrumb.Item>
                 <Breadcrumb.Page>
-                  <svelte:component this={currentNavItem.icon} class="mr-2 h-4 w-4" />
+                  {@const IconComponent = currentNavItem.icon}
+                  <IconComponent class="mr-2 h-4 w-4" />
                   {currentNavItem.label}
                 </Breadcrumb.Page>
               </Breadcrumb.Item>
@@ -65,7 +66,8 @@
             href={item.path}
             class="flex items-center gap-2"
           >
-            <svelte:component this={item.icon} class="h-4 w-4" />
+            {@const IconComponent = item.icon}
+            <IconComponent class="h-4 w-4" />
             {item.label}
           </Button>
         {/each}
