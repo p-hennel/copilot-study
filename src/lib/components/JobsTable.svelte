@@ -421,7 +421,7 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each paginatedJobs as job, idx (job.id)}
+    {#each jobs as job, idx (job.id)}
       <!-- Add key -->
       <Table.Row>
         <Table.Cell>
@@ -590,7 +590,7 @@
       <Dialog.Description>
         <div class="space-y-3">
           <p class="text-red-600 font-semibold">
-            This will permanently delete ALL {data.jobs.length} jobs in the system.
+            This will permanently delete ALL {totalItems} jobs in the system.
           </p>
           <p>
             This action is irreversible and will remove all job data, including history and results.
