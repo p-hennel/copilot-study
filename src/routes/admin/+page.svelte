@@ -25,7 +25,7 @@
   const summaryStats = $derived.by(async () => {
     const [users, areas, jobs, tokenInfos] = await Promise.all([
       data.users,
-      data.areas, 
+      data.areas,
       data.jobs,
       data.tokenInfos
     ]);
@@ -34,7 +34,8 @@
       users: Array.isArray(users) ? users.length : 0,
       areas: Array.isArray(areas) ? areas.length : 0,
       jobs: Array.isArray(jobs) ? jobs.length : 0,
-      tokens: tokenInfos?.result ? Object.keys(tokenInfos.result).length : 0
+      tokens: (tokenInfos && typeof tokenInfos === 'object' && 'result' in tokenInfos && tokenInfos.result)
+        ? Object.keys(tokenInfos.result).length : 0
     };
   });
 
@@ -130,24 +131,24 @@
     <Card.Root>
       <Card.Header>
         <Card.Title>Crawler Status</Card.Title>
-        {#if crawler?.lastHeartbeat}
+        {#if crawler && typeof crawler === 'object' && 'lastHeartbeat' in crawler && crawler.lastHeartbeat}
           <Card.Description>
-            Last heartbeat: <Time timestamp={crawler.lastHeartbeat} format="DD. MMM YYYY, HH:mm:ss" />
+            Last heartbeat: <Time timestamp={crawler.lastHeartbeat as string} format="DD. MMM YYYY, HH:mm:ss" />
           </Card.Description>
         {/if}
       </Card.Header>
       <Card.Content>
-        {#if crawler}
-          {#if crawler.error}
+        {#if crawler && typeof crawler === 'object'}
+          {#if 'error' in crawler && crawler.error}
             <Alert.Root variant="destructive" class="mb-4">
               <CircleAlert class="size-4" />
               <Alert.Title>Error</Alert.Title>
               <Alert.Description>
                 {crawler.error}
-                {#if crawler.lastHeartbeat}
+                {#if 'lastHeartbeat' in crawler && crawler.lastHeartbeat}
                   <br />
-                  <Time timestamp={crawler.lastHeartbeat} format="DD. MMM YYYY, HH:mm:ss" />
-                  (<Time timestamp={crawler.lastHeartbeat} relative />)
+                  <Time timestamp={crawler.lastHeartbeat as string} format="DD. MMM YYYY, HH:mm:ss" />
+                  (<Time timestamp={crawler.lastHeartbeat as string} relative />)
                 {/if}
               </Alert.Description>
             </Alert.Root>
@@ -156,15 +157,15 @@
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
               <div class="text-sm font-medium">Status</div>
-              <div class="text-lg capitalize">{crawler.state}</div>
+              <div class="text-lg capitalize">{'state' in crawler ? crawler.state : 'Unknown'}</div>
             </div>
             <div>
               <div class="text-sm font-medium">Queue Size</div>
-              <div class="text-lg">{crawler.queueSize}</div>
+              <div class="text-lg">{'queueSize' in crawler ? crawler.queueSize : 0}</div>
             </div>
             <div class="col-span-2">
               <div class="text-sm font-medium">Current Job ID</div>
-              <div class="text-lg font-mono">{crawler.currentJobId ?? "[none]"}</div>
+              <div class="text-lg font-mono">{'currentJobId' in crawler ? (crawler.currentJobId ?? "[none]") : "[none]"}</div>
             </div>
           </div>
           

@@ -4,12 +4,8 @@ export async function load(event) {
   const token = authClient.getSession().then((response) => response.data?.session.token);
 
   return {
-    // Dashboard overview data - lightweight data for summary stats
-    users: fetchAdminData(event.fetch, "users", token),
-    areas: fetchAdminData(event.fetch, "areas", token),
-    jobs: fetchAdminData(event.fetch, "jobs", token),
     tokenInfos: fetchAdminData(event.fetch, "tokenInfos", token),
-    crawler: fetchAdminData(event.fetch, "crawler", token),
+    user: event.locals.user,
     sessiontoken: token
   };
 }
