@@ -370,7 +370,7 @@
 {/if}
 
 <!-- Bulk Actions Button -->
-{#if data.jobs.length > 0}
+{#if totalItems > 0}
   <div class="mb-4 flex justify-end">
     <Button
       variant="destructive"
