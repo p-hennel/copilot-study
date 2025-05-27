@@ -2,18 +2,26 @@ import { json } from "@sveltejs/kit";
 import { db } from "$lib/server/db";
 import { area, area_authorization, job } from "$lib/server/db/base-schema"; // Import schemas
 import { desc, sql } from "drizzle-orm"; // Removed unused eq, count
-import { getLogger } from "$lib/logging"; // Import logtape helper
 
-const logger = getLogger(["backend", "api", "admin", "areas"]); // Logger for this module
-
-export async function GET({ request, locals }) {
+export async function GET({ locals, url }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     // No need to log unauthorized attempts unless debugging specific issues
     return json({ error: "Unauthorized!" }, { status: 401 });
   }
 
   try {
-    // Fetch areas and count related accounts and jobs
+    // Parse pagination parameters
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+    const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '25')));
+    const offset = (page - 1) * limit;
+
+    // Get total count first
+    const totalCountResult = await db
+      .select({ count: sql<number>`COUNT(*)`.mapWith(Number) })
+      .from(area);
+    const totalCount = totalCountResult[0]?.count || 0;
+
+    // Fetch areas with pagination and count related accounts and jobs
     const areasWithCounts = await db
       .select({
         fullPath: area.full_path, // Rename column
@@ -33,11 +41,24 @@ export async function GET({ request, locals }) {
           )
       })
       .from(area)
-      .orderBy(desc(area.created_at));
+      .orderBy(desc(area.created_at))
+      .limit(limit)
+      .offset(offset);
 
-    return json(areasWithCounts);
+    return json({
+      data: areasWithCounts,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPreviousPage: page > 1
+      }
+    });
   } catch (error) {
     console.error("Error fetching areas with counts:", error);
+    return json({ error: "Failed to fetch areas" }, { status: 500 });
   }
 }
 

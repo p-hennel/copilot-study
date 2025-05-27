@@ -1,18 +1,22 @@
 import { json } from "@sveltejs/kit";
 import type { RequestEvent } from "@sveltejs/kit";
 import { db } from "$lib/server/db";
-import { eq, desc, and, inArray, gte } from "drizzle-orm";
+import { eq, desc, and, inArray, gte, sql } from "drizzle-orm";
 import { job } from "$lib/server/db/base-schema";
 import { JobStatus, TokenProvider } from "$lib/types";
 
-export async function GET({ locals }: RequestEvent) {
+export async function GET({ locals, url }: RequestEvent) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }
 
   try {
-    const jobs = await getJobs();
-    return json(jobs);
+    // Parse pagination parameters
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+    const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '25')));
+    
+    const result = await getJobs(page, limit);
+    return json(result);
   } catch (error) {
     console.error("Error fetching jobs:", error);
     return json({ error: "Failed to fetch jobs" }, { status: 500 });
@@ -152,8 +156,16 @@ export async function POST({ locals, request }: RequestEvent) {
   }
 }
 
-const getJobs = async () => {
-  const result = (
+const getJobs = async (page: number = 1, limit: number = 25) => {
+  const offset = (page - 1) * limit;
+
+  // Get total count first
+  const totalCountResult = await db
+    .select({ count: sql<number>`COUNT(*)`.mapWith(Number) })
+    .from(job);
+  const totalCount = totalCountResult[0]?.count || 0;
+
+  const jobs = (
     await db.query.job.findMany({
       // Explicitly select all columns or list required ones including resumeState
       // For now, let's assume findMany without 'columns' gets all, including resumeState.
@@ -180,7 +192,9 @@ const getJobs = async () => {
       extras: {
         childrenCount: db.$count(job, eq(job.spawned_from, job.id)).as("childrenCount")
       },
-      orderBy: [desc(job.id)]
+      orderBy: [desc(job.id)],
+      limit,
+      offset
     })
   ).map((x) => {
     const { usingAccount, ...rest } = x;
@@ -190,5 +204,15 @@ const getJobs = async () => {
     };
   });
 
-  return result;
+  return {
+    data: jobs,
+    pagination: {
+      page,
+      limit,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      hasNextPage: page < Math.ceil(totalCount / limit),
+      hasPreviousPage: page > 1
+    }
+  };
 };

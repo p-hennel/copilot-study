@@ -3,11 +3,17 @@
   import * as Alert from "$lib/components/ui/alert/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Skeleton } from "$ui/skeleton";
+  import Input from "@/input/input.svelte";
   import { m } from "$paraglide";
-  import { Users, Key, MapPin, Briefcase, Settings, CircleAlert, RefreshCw } from "lucide-svelte";
+  import { Users, Key, MapPin, Briefcase, Settings, CircleAlert, RefreshCw, ClipboardCopy, DatabaseBackup, FileDown, ArchiveRestore } from "lucide-svelte";
   import Time from "svelte-time/Time.svelte";
   import { invalidate } from "$app/navigation";
   import type { PageProps } from "./$types";
+  import { clickToCopy, dynamicHandleDownloadAsCSV } from "$lib/utils";
+  import { toast } from "svelte-sonner";
+  import LoadingButton from "$lib/components/LoadingButton.svelte";
+  import { authClient } from "$lib/auth-client";
+  import { goto } from "$app/navigation";
   
   let { data }: PageProps = $props();
 
@@ -19,6 +25,65 @@
   function afterCommand() {
     loading = false;
     invalidate("/api/admin/crawler");
+  }
+
+  // Hash generator state
+  let toBeHashed = $state(data.user?.email ?? "");
+  let hashedValue = $state("");
+
+  async function hashValue() {
+    try {
+      const response = await fetch("/api/admin/hash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: toBeHashed })
+      });
+      const result: any = await response.json();
+      if (result.error || !result.success) {
+        toast.error("Error hashing value", { description: result.error });
+        hashedValue = result.error;
+      } else {
+        hashedValue = result.hashedValue;
+      }
+    } catch (error) {
+      toast.error("Failed to hash value", {
+        description: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }
+
+  // Account management functions
+  async function backupAccounts() {
+    const token = (await authClient.getSession())?.data?.session.token;
+    if (!token) return goto("/admin/sign-in");
+    await fetch("/api/admin/backup", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    toast.success("Backup initiated", { description: "Backup email will be sent" });
+  }
+
+  async function copyAccountIds() {
+    const users = await data.users;
+    if (Array.isArray(users)) {
+      const idsText = users.map((x: any) => x.email).join("\n");
+      navigator.clipboard.writeText(idsText);
+      toast.success("Account IDs copied", { description: "Email addresses copied to clipboard" });
+    }
+  }
+
+  async function exportAccountsCSV() {
+    const users = await data.users;
+    if (Array.isArray(users)) {
+      dynamicHandleDownloadAsCSV(() =>
+        users.map((x: any) => ({
+          email: x.email,
+          accounts: x.accounts.map((acc: any) => acc.providerId).join(",")
+        }))
+      )();
+      toast.success("CSV export started", { description: "Download should begin shortly" });
+    }
   }
 
   // Summary stats derived from data
@@ -190,6 +255,82 @@
       </Card.Content>
     </Card.Root>
   {/await}
+
+  <!-- Hash Generator -->
+  <Card.Root>
+    <Card.Header>
+      <Card.Title>Hash Generator</Card.Title>
+      <Card.Description>Generate hashed values for secure storage and comparison</Card.Description>
+    </Card.Header>
+    <Card.Content class="space-y-4">
+      <div class="flex flex-row gap-4">
+        <Input
+          type="text"
+          bind:value={toBeHashed}
+          class="font-mono flex-1"
+          placeholder="Value to hash"
+        />
+        <Button onclick={hashValue}>
+          Hash Value
+        </Button>
+      </div>
+
+      <div
+        class="flex flex-wrap flex-row cursor-pointer font-mono border-2 border-slate-300 p-2 rounded-md min-h-[2.5rem] items-center"
+        use:clickToCopy={hashedValue}
+      >
+        <ClipboardCopy
+          color={hashedValue && hashedValue.length > 0 ? '#000000' : '#9ca3af'}
+          class="mr-2 flex-shrink-0"
+        />
+        <span class="break-all">{hashedValue || "Hashed value will appear here..."}</span>
+      </div>
+      
+      {#if hashedValue}
+        <p class="text-xs text-muted-foreground">
+          Click the box above to copy the hashed value to clipboard.
+        </p>
+      {/if}
+    </Card.Content>
+  </Card.Root>
+
+  <!-- Account Management Quick Actions -->
+  <Card.Root>
+    <Card.Header>
+      <Card.Title>Account Management</Card.Title>
+      <Card.Description>Quick actions for user account management</Card.Description>
+    </Card.Header>
+    <Card.Content>
+      <div class="flex flex-wrap gap-4">
+        <LoadingButton
+          variant="secondary"
+          icon={ArchiveRestore}
+          fn={backupAccounts}
+        >
+          Backup (Mail)
+        </LoadingButton>
+        <Button
+          target="_blank"
+          href="/admin/backup">
+          <DatabaseBackup class="h-4 w-4 mr-2" />
+          Backup
+        </Button>
+        <Button
+          variant="secondary"
+          onclick={copyAccountIds}>
+          <ClipboardCopy class="h-4 w-4 mr-2" />
+          Copy IDs
+        </Button>
+        <Button
+          variant="default"
+          onclick={exportAccountsCSV}
+        >
+          <FileDown class="h-4 w-4 mr-2" />
+          CSV Export
+        </Button>
+      </div>
+    </Card.Content>
+  </Card.Root>
 
   <!-- Quick Actions -->
   <div>

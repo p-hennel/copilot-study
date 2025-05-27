@@ -1,11 +1,15 @@
 <script lang="ts">
   import Time from "svelte-time";
   import * as Table from "$lib/components/ui/table/index.js";
+  import { Button } from "$lib/components/ui/button/index.js";
   import { m } from "$paraglide";
   import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { JobStatus } from "$lib/types";
   import { AreaType } from "$lib/types";
-  import { Check, Cross, FolderGit2, Logs, Repeat, UsersRound } from "lucide-svelte";
+  import { Check, Cross, FolderGit2, Logs, Repeat, UsersRound, ChevronLeft, ChevronRight, Loader2 } from "lucide-svelte";
+  import { authClient } from "$lib/auth-client";
+  import { goto } from "$app/navigation";
+  import { toast } from "svelte-sonner";
 
   // Updated type to match API response from /api/admin/areas
   type AreaInformation = {
@@ -18,13 +22,88 @@
     countJobs: number;
   };
 
-  type AreaTableProps = {
-    areas: AreaInformation[];
-    format?: string;
+  type PaginatedAreasResponse = {
+    data: AreaInformation[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
   };
 
-  let data: AreaTableProps = $props();
-  const format = $derived(data.format ?? "DD. MMM, HH:mm");
+  type AreaTableProps = {
+    format?: string;
+    initialData?: AreaInformation[]; // For backward compatibility
+  };
+
+  let props: AreaTableProps = $props();
+  const format = $derived(props.format ?? "DD. MMM, HH:mm");
+
+  // Pagination state
+  let currentPage = $state(1);
+  let itemsPerPage = $state(25);
+  let itemsPerPageOptions = [10, 25, 50, 100];
+  let loading = $state(false);
+  let areasData = $state<PaginatedAreasResponse | null>(null);
+
+  // Fetch areas data from API
+  const fetchAreas = async (page: number = currentPage, limit: number = itemsPerPage) => {
+    try {
+      loading = true;
+      const token = (await authClient.getSession())?.data?.session.token;
+      if (!token) {
+        await goto("/admin/sign-in");
+        throw new Error("No authentication token");
+      }
+
+      const response = await fetch(`/api/admin/areas?page=${page}&limit=${limit}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch areas: ${response.statusText}`);
+      }
+
+      const data = await response.json() as PaginatedAreasResponse;
+      areasData = data;
+    } catch (error) {
+      console.error("Error fetching areas:", error);
+      toast.error("Failed to fetch areas", {
+        description: error instanceof Error ? error.message : "An unknown error occurred"
+      });
+    } finally {
+      loading = false;
+    }
+  };
+
+  // Initial load and reactive updates
+  $effect(() => {
+    fetchAreas(currentPage, itemsPerPage);
+  });
+
+  // Handle page changes
+  const handlePageChange = (newPage: number) => {
+    currentPage = newPage;
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = () => {
+    currentPage = 1;
+    fetchAreas(1, itemsPerPage);
+  };
+
+  // Derived values for display
+  const areas = $derived(areasData?.data || []);
+  const pagination = $derived(areasData?.pagination);
+  const totalItems = $derived(pagination?.totalCount || 0);
+  const totalPages = $derived(pagination?.totalPages || 0);
+  const startIndex = $derived(pagination ? (pagination.page - 1) * pagination.limit : 0);
+  const endIndex = $derived(pagination ? Math.min(startIndex + pagination.limit, pagination.totalCount) : 0);
 </script>
 
 <Table.Root class="w-full gap-0.5">
@@ -46,10 +125,10 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each data.areas as area, idx (area.fullPath)}
+    {#each paginatedAreas as area, idx (area.fullPath)}
       <!-- Add key -->
       <Table.Row>
-        <Table.Cell class="text-right">{data.areas.length - idx}</Table.Cell>
+        <Table.Cell class="text-right">{startIndex + idx + 1}</Table.Cell>
         <Table.Cell class="font-mono">{area.fullPath}</Table.Cell>
         <Table.Cell>{area.name}</Table.Cell>
         <Table.Cell>
@@ -77,3 +156,75 @@
     {/each}
   </Table.Body>
 </Table.Root>
+
+<!-- Pagination Controls -->
+{#if totalPages > 1}
+  <div class="mt-4 flex items-center justify-between">
+    <div class="flex items-center gap-2 text-sm text-muted-foreground">
+      <span>
+        Showing {startIndex + 1} to {endIndex} of {totalItems} areas
+      </span>
+    </div>
+    
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-muted-foreground">Items per page:</span>
+        <select
+          bind:value={itemsPerPage}
+          onchange={() => currentPage = 1}
+          class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm"
+        >
+          {#each itemsPerPageOptions as option}
+            <option value={option}>{option}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === 1}
+          onclick={() => currentPage = Math.max(1, currentPage - 1)}
+          class="gap-1"
+        >
+          <ChevronLeft class="h-4 w-4" />
+          Previous
+        </Button>
+
+        <div class="flex items-center gap-1">
+          {#each Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const start = Math.max(1, currentPage - 2);
+            const end = Math.min(totalPages, start + 4);
+            const adjustedStart = Math.max(1, end - 4);
+            return adjustedStart + i;
+          }) as pageNum}
+            <Button
+              variant={currentPage === pageNum ? "default" : "outline"}
+              size="sm"
+              onclick={() => currentPage = pageNum}
+              class="w-8 h-8 p-0"
+            >
+              {pageNum}
+            </Button>
+          {/each}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === totalPages}
+          onclick={() => currentPage = Math.min(totalPages, currentPage + 1)}
+          class="gap-1"
+        >
+          Next
+          <ChevronRight class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  </div>
+{:else}
+  <div class="mt-4 text-sm text-muted-foreground">
+    Showing {totalItems} area{totalItems === 1 ? '' : 's'}
+  </div>
+{/if}

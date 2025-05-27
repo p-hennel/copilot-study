@@ -9,7 +9,7 @@
   import { JobStatus } from "$lib/types";
   import type { AreaType } from "$lib/types";
   import type { CrawlCommand } from "$lib/types";
-  import { Check, Cross, Logs, Repeat, Trash2, AlertTriangle, Minus } from "lucide-svelte";
+  import { Check, Cross, Logs, Repeat, Trash2, AlertTriangle, Minus, ChevronLeft, ChevronRight } from "lucide-svelte";
   import LoadingButton from "./LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
@@ -56,10 +56,33 @@
   let data: JobsTableProps = $props();
   const format = $derived(data.format ?? "DD. MMM, HH:mm");
 
-  // Selection state
+  // Pagination state
+  let currentPage = $state(1);
+  let itemsPerPage = $state(25);
+  let itemsPerPageOptions = [10, 25, 50, 100];
+
+  // Pagination logic
+  const totalItems = $derived(data.jobs.length);
+  const totalPages = $derived(Math.ceil(totalItems / itemsPerPage));
+  const startIndex = $derived((currentPage - 1) * itemsPerPage);
+  const endIndex = $derived(Math.min(startIndex + itemsPerPage, totalItems));
+  const paginatedJobs = $derived(data.jobs.slice(startIndex, endIndex));
+
+  // Selection state - modified to work with pagination
   let selectedJobIds = $state<Set<string>>(new Set());
-  let allSelected = $derived(selectedJobIds.size === data.jobs.length && data.jobs.length > 0);
-  let someSelected = $derived(selectedJobIds.size > 0 && selectedJobIds.size < data.jobs.length);
+  let allVisibleSelected = $derived(
+    paginatedJobs.length > 0 && paginatedJobs.every(job => selectedJobIds.has(job.id))
+  );
+  let someVisibleSelected = $derived(
+    paginatedJobs.some(job => selectedJobIds.has(job.id)) && !allVisibleSelected
+  );
+
+  // Reset to first page when items per page changes
+  $effect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      currentPage = 1;
+    }
+  });
 
   // Dialog states
   let deleteDialogOpen = $state(false);
@@ -82,10 +105,14 @@
   };
 
   const handleSelectAll = () => {
-    if (allSelected) {
-      selectedJobIds.clear();
+    if (allVisibleSelected) {
+      // Remove all visible jobs from selection
+      paginatedJobs.forEach(job => selectedJobIds.delete(job.id));
+      selectedJobIds = new Set(selectedJobIds); // Trigger reactivity
     } else {
-      selectedJobIds = new Set(data.jobs.map(job => job.id));
+      // Add all visible jobs to selection
+      paginatedJobs.forEach(job => selectedJobIds.add(job.id));
+      selectedJobIds = new Set(selectedJobIds); // Trigger reactivity
     }
   };
 
@@ -167,7 +194,7 @@
         description: `${result.deletedCount || 0} jobs have been deleted`
       });
 
-      selectedJobIds.clear();
+      selectedJobIds = new Set(); // Create new Set to trigger reactivity
       await refreshJobs();
     } catch (error) {
       console.error("Error deleting selected jobs:", error);
@@ -202,7 +229,7 @@
         description: `${result.deletedCount || 0} jobs have been deleted`
       });
 
-      selectedJobIds.clear();
+      selectedJobIds = new Set(); // Create new Set to trigger reactivity
       await refreshJobs();
     } catch (error) {
       console.error("Error deleting all jobs:", error);
@@ -245,10 +272,20 @@
     <div class="flex items-center gap-2">
       <AlertTriangle class="h-4 w-4 text-orange-500" />
       <span class="text-sm font-medium">
-        {selectedJobIds.size} job{selectedJobIds.size === 1 ? '' : 's'} selected
+        {selectedJobIds.size} job{selectedJobIds.size === 1 ? '' : 's'} selected across all pages
       </span>
     </div>
     <div class="flex gap-2">
+      <Button
+        variant="outline"
+        onclick={() => {
+          // Select all jobs on all pages
+          data.jobs.forEach(job => selectedJobIds.add(job.id));
+          selectedJobIds = new Set(selectedJobIds);
+        }}
+      >
+        Select All {totalItems} Jobs
+      </Button>
       <LoadingButton
         variant="destructive"
         icon={Trash2}
@@ -261,7 +298,7 @@
       <Button
         variant="outline"
         onclick={() => {
-          selectedJobIds.clear();
+          selectedJobIds = new Set(); // Create new Set to trigger reactivity
         }}
       >
         <Minus class="h-4 w-4" />
@@ -291,10 +328,10 @@
     <Table.Row>
       <Table.Head class="w-[3rem]">
         <Checkbox.Root
-          checked={allSelected}
-          indeterminate={someSelected}
+          checked={allVisibleSelected}
+          indeterminate={someVisibleSelected}
           onCheckedChange={handleSelectAll}
-          aria-label="Select all jobs"
+          aria-label="Select all visible jobs"
         />
       </Table.Head>
       <Table.Head class="w-[2.5rem] text-right"
@@ -323,7 +360,7 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each data.jobs as job, idx (job.id)}
+    {#each paginatedJobs as job, idx (job.id)}
       <!-- Add key -->
       <Table.Row>
         <Table.Cell>
@@ -333,7 +370,7 @@
             aria-label={`Select job ${job.id}`}
           />
         </Table.Cell>
-        <Table.Cell class="text-right">{data.jobs.length - idx}</Table.Cell>
+        <Table.Cell class="text-right">{startIndex + idx + 1}</Table.Cell>
         <Table.Cell class="font-mono">{job.id}</Table.Cell>
         <Table.Cell>{job.command}</Table.Cell>
         <Table.Cell>{job.provider}</Table.Cell>
@@ -526,3 +563,85 @@
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>
+
+<!-- Pagination Controls -->
+{#if totalPages > 1}
+  <div class="mt-4 flex items-center justify-between">
+    <div class="flex items-center gap-2 text-sm text-muted-foreground">
+      <span>
+        Showing {startIndex + 1} to {endIndex} of {totalItems} jobs
+      </span>
+      {#if selectedJobIds.size > 0}
+        <span class="text-orange-600 font-medium">
+          ({selectedJobIds.size} selected across all pages)
+        </span>
+      {/if}
+    </div>
+    
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-muted-foreground">Items per page:</span>
+        <select
+          bind:value={itemsPerPage}
+          onchange={() => currentPage = 1}
+          class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm"
+        >
+          {#each itemsPerPageOptions as option}
+            <option value={option}>{option}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === 1}
+          onclick={() => currentPage = Math.max(1, currentPage - 1)}
+          class="gap-1"
+        >
+          <ChevronLeft class="h-4 w-4" />
+          Previous
+        </Button>
+
+        <div class="flex items-center gap-1">
+          {#each Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const start = Math.max(1, currentPage - 2);
+            const end = Math.min(totalPages, start + 4);
+            const adjustedStart = Math.max(1, end - 4);
+            return adjustedStart + i;
+          }) as pageNum}
+            <Button
+              variant={currentPage === pageNum ? "default" : "outline"}
+              size="sm"
+              onclick={() => currentPage = pageNum}
+              class="w-8 h-8 p-0"
+            >
+              {pageNum}
+            </Button>
+          {/each}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === totalPages}
+          onclick={() => currentPage = Math.min(totalPages, currentPage + 1)}
+          class="gap-1"
+        >
+          Next
+          <ChevronRight class="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  </div>
+{:else}
+  <div class="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+    <span>Showing {totalItems} job{totalItems === 1 ? '' : 's'}</span>
+    {#if selectedJobIds.size > 0}
+      <span class="text-orange-600 font-medium">
+        {selectedJobIds.size} selected
+      </span>
+    {/if}
+  </div>
+{/if}
