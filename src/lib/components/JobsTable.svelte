@@ -338,10 +338,11 @@
     <div class="flex gap-2">
       <Button
         variant="outline"
-        onclick={() => {
-          // Select all jobs on all pages
-          data.jobs.forEach(job => selectedJobIds.add(job.id));
-          selectedJobIds = new Set(selectedJobIds);
+        onclick={async () => {
+          // This would require fetching all jobs from API - for now, warn user
+          toast.warning("Feature not implemented", {
+            description: "Selecting all jobs across all pages is not yet implemented"
+          });
         }}
       >
         Select All {totalItems} Jobs
