@@ -47,42 +47,107 @@
     > | null; // Added resumeState
   };
 
-  type JobsTableProps = {
-    jobs: JobInformation[];
-    format?: string;
-    onRefresh?: () => Promise<void>;
+  type PaginatedJobsResponse = {
+    data: JobInformation[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
   };
 
-  let data: JobsTableProps = $props();
-  const format = $derived(data.format ?? "DD. MMM, HH:mm");
+  type JobsTableProps = {
+    format?: string;
+    onRefresh?: () => Promise<void>;
+    initialJobs?: JobInformation[]; // For backward compatibility
+  };
+
+  let props: JobsTableProps = $props();
+  const format = $derived(props.format ?? "DD. MMM, HH:mm");
 
   // Pagination state
   let currentPage = $state(1);
   let itemsPerPage = $state(25);
   let itemsPerPageOptions = [10, 25, 50, 100];
+  let loading = $state(false);
+  let jobsData = $state<PaginatedJobsResponse | null>(null);
 
-  // Pagination logic
-  const totalItems = $derived(data.jobs.length);
-  const totalPages = $derived(Math.ceil(totalItems / itemsPerPage));
-  const startIndex = $derived((currentPage - 1) * itemsPerPage);
-  const endIndex = $derived(Math.min(startIndex + itemsPerPage, totalItems));
-  const paginatedJobs = $derived(data.jobs.slice(startIndex, endIndex));
-
-  // Selection state - modified to work with pagination
+  // Selection state - works across all pages
   let selectedJobIds = $state<Set<string>>(new Set());
-  let allVisibleSelected = $derived(
-    paginatedJobs.length > 0 && paginatedJobs.every(job => selectedJobIds.has(job.id))
+  
+  // Derived values for current page
+  const jobs = $derived(jobsData?.data || []);
+  const pagination = $derived(jobsData?.pagination);
+  const totalItems = $derived(pagination?.totalCount || 0);
+  const totalPages = $derived(pagination?.totalPages || 0);
+  const startIndex = $derived(pagination ? (pagination.page - 1) * pagination.limit : 0);
+  const endIndex = $derived(pagination ? Math.min(startIndex + pagination.limit, pagination.totalCount) : 0);
+
+  const allVisibleSelected = $derived(
+    jobs.length > 0 && jobs.every(job => selectedJobIds.has(job.id))
   );
-  let someVisibleSelected = $derived(
-    paginatedJobs.some(job => selectedJobIds.has(job.id)) && !allVisibleSelected
+  const someVisibleSelected = $derived(
+    jobs.some(job => selectedJobIds.has(job.id)) && !allVisibleSelected
   );
 
-  // Reset to first page when items per page changes
-  $effect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      currentPage = 1;
+  // Fetch jobs data from API
+  const fetchJobs = async (page: number = currentPage, limit: number = itemsPerPage) => {
+    try {
+      loading = true;
+      const token = (await authClient.getSession())?.data?.session.token;
+      if (!token) {
+        await goto("/admin/sign-in");
+        throw new Error("No authentication token");
+      }
+
+      const response = await fetch(`/api/admin/jobs?page=${page}&limit=${limit}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch jobs: ${response.statusText}`);
+      }
+
+      const data = await response.json() as PaginatedJobsResponse;
+      jobsData = data;
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      toast.error("Failed to fetch jobs", {
+        description: error instanceof Error ? error.message : "An unknown error occurred"
+      });
+    } finally {
+      loading = false;
     }
+  };
+
+  // Initial load and reactive updates
+  $effect(() => {
+    fetchJobs(currentPage, itemsPerPage);
   });
+
+  // Handle page changes
+  const handlePageChange = (newPage: number) => {
+    currentPage = newPage;
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = () => {
+    currentPage = 1;
+    fetchJobs(1, itemsPerPage);
+  };
+
+  // Refresh function for external calls
+  const refreshJobs = async () => {
+    await fetchJobs(currentPage, itemsPerPage);
+    if (props.onRefresh) {
+      await props.onRefresh();
+    }
+  };
 
   // Dialog states
   let deleteDialogOpen = $state(false);
