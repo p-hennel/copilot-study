@@ -172,11 +172,11 @@
   const handleSelectAll = () => {
     if (allVisibleSelected) {
       // Remove all visible jobs from selection
-      paginatedJobs.forEach(job => selectedJobIds.delete(job.id));
+      jobs.forEach(job => selectedJobIds.delete(job.id));
       selectedJobIds = new Set(selectedJobIds); // Trigger reactivity
     } else {
       // Add all visible jobs to selection
-      paginatedJobs.forEach(job => selectedJobIds.add(job.id));
+      jobs.forEach(job => selectedJobIds.add(job.id));
       selectedJobIds = new Set(selectedJobIds); // Trigger reactivity
     }
   };
@@ -199,11 +199,6 @@
     return token;
   };
 
-  const refreshJobs = async () => {
-    if (data.onRefresh) {
-      await data.onRefresh();
-    }
-  };
 
   const deleteJob = async (jobId: string) => {
     try {
