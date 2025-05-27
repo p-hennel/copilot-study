@@ -56,7 +56,7 @@
       </div>
     {:then users}
       {#if users && Array.isArray(users)}
-        <UserTable users={users} />
+        <UserTable users={users as any[]} />
       {:else}
         <div class="text-center py-8 text-muted-foreground">
           No user data available
