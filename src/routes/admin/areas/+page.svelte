@@ -13,22 +13,6 @@
 
   <!-- Areas Table -->
   <div class="space-y-4">
-    {#await data.areas}
-      <div class="flex items-center justify-center p-8">
-        <div class="text-muted-foreground">Loading areas...</div>
-      </div>
-    {:then areas}
-      {#if areas && Array.isArray(areas)}
-        <AreasTable areas={areas as any[]} />
-      {:else}
-        <div class="text-center py-8 text-muted-foreground">
-          No area data available
-        </div>
-      {/if}
-    {:catch error}
-      <div class="text-destructive text-center py-8">
-        Failed to load survey areas: {error.message}
-      </div>
-    {/await}
+    <AreasTable />
   </div>
 </div>
