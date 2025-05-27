@@ -125,7 +125,7 @@
     </Table.Row>
   </Table.Header>
   <Table.Body>
-    {#each paginatedAreas as area, idx (area.fullPath)}
+    {#each areas as area, idx (area.fullPath)}
       <!-- Add key -->
       <Table.Row>
         <Table.Cell class="text-right">{startIndex + idx + 1}</Table.Cell>
