@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "DATABASE_URL=\"$PWD/data.private/config/main.db\" DATA_ROOT=$PWD/data.private SETTINGS_FILE=$PWD/data.private/config/settings.yaml bun --bun x vite dev",
     "dev:exposed": "DATABASE_URL=\"$PWD/data.private/config/main.db\" DATA_ROOT=$PWD/data.private SETTINGS_FILE=$PWD/data.private/config/settings.yaml bun --bun x vite dev --host 0.0.0.0 --port 3000",
+    "dev:dual": "DATABASE_URL=\"$PWD/data.private/config/main.db\" DATA_ROOT=$PWD/data.private SETTINGS_FILE=$PWD/data.private/config/settings.yaml bun --bun ./dev-dual-server.js",
     "build": "bun run prepare && bun --bun x vite build",
     "preview": "bun --bun x vite preview",
     "serve": "bun --bun ./build/index.js",
