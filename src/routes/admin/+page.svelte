@@ -183,6 +183,7 @@
   </div>
 
   <!-- Crawler Status -->
+  <!--
   {#await data.crawler}
     <Card.Root>
       <Card.Header>
@@ -255,6 +256,45 @@
       </Card.Content>
     </Card.Root>
   {/await}
+  -->
+
+<!-- Account Management Quick Actions -->
+  <Card.Root>
+    <Card.Header>
+      <Card.Title>Account Management</Card.Title>
+      <Card.Description>Quick actions for user account management</Card.Description>
+    </Card.Header>
+    <Card.Content>
+      <div class="flex flex-wrap gap-4">
+        <LoadingButton
+          variant="secondary"
+          icon={ArchiveRestore}
+          fn={backupAccounts}
+        >
+          Backup (Mail)
+        </LoadingButton>
+        <Button
+          target="_blank"
+          href="/admin/backup">
+          <DatabaseBackup class="h-4 w-4 mr-2" />
+          Backup
+        </Button>
+        <Button
+          variant="secondary"
+          onclick={copyAccountIds}>
+          <ClipboardCopy class="h-4 w-4 mr-2" />
+          Copy IDs
+        </Button>
+        <Button
+          variant="default"
+          onclick={exportAccountsCSV}
+        >
+          <FileDown class="h-4 w-4 mr-2" />
+          CSV Export
+        </Button>
+      </div>
+    </Card.Content>
+  </Card.Root>
 
   <!-- Hash Generator -->
   <Card.Root>
@@ -291,44 +331,6 @@
           Click the box above to copy the hashed value to clipboard.
         </p>
       {/if}
-    </Card.Content>
-  </Card.Root>
-
-  <!-- Account Management Quick Actions -->
-  <Card.Root>
-    <Card.Header>
-      <Card.Title>Account Management</Card.Title>
-      <Card.Description>Quick actions for user account management</Card.Description>
-    </Card.Header>
-    <Card.Content>
-      <div class="flex flex-wrap gap-4">
-        <LoadingButton
-          variant="secondary"
-          icon={ArchiveRestore}
-          fn={backupAccounts}
-        >
-          Backup (Mail)
-        </LoadingButton>
-        <Button
-          target="_blank"
-          href="/admin/backup">
-          <DatabaseBackup class="h-4 w-4 mr-2" />
-          Backup
-        </Button>
-        <Button
-          variant="secondary"
-          onclick={copyAccountIds}>
-          <ClipboardCopy class="h-4 w-4 mr-2" />
-          Copy IDs
-        </Button>
-        <Button
-          variant="default"
-          onclick={exportAccountsCSV}
-        >
-          <FileDown class="h-4 w-4 mr-2" />
-          CSV Export
-        </Button>
-      </div>
     </Card.Content>
   </Card.Root>
 

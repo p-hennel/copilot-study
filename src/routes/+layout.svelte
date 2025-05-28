@@ -9,7 +9,7 @@
 <div class="relative m-0 p-0">
   <section>
     <!-- Added padding-top to avoid overlap -->
-    <div class="overflow-hidden p-8">
+    <div class="overflow-hidden">
       {@render children()}
     </div>
   </section>

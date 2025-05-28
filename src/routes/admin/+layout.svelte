@@ -27,11 +27,6 @@
 
 <div class="min-h-screen bg-background">
   <!-- Top bar with profile -->
-  <div class="border-b bg-card">
-    <div class="container mx-auto px-4 py-4">
-      <ProfileWidget user={data.user} class="mb-0" />
-    </div>
-  </div>
 
   <!-- Main navigation -->
   <nav class="border-b bg-muted/40">
@@ -41,12 +36,16 @@
         <Breadcrumb.Root>
           <Breadcrumb.List>
             <Breadcrumb.Item>
+              <Breadcrumb.Link href="/">Home</Breadcrumb.Link>
+            </Breadcrumb.Item>
+            <Breadcrumb.Separator />
+            <Breadcrumb.Item>
               <Breadcrumb.Link href="/admin">Admin</Breadcrumb.Link>
             </Breadcrumb.Item>
             {#if currentPath !== "/admin" && currentNavItem}
               <Breadcrumb.Separator />
               <Breadcrumb.Item>
-                <Breadcrumb.Page>
+                <Breadcrumb.Page class="flex items-center">
                   {@const IconComponent = currentNavItem.icon}
                   <IconComponent class="mr-2 h-4 w-4" />
                   {currentNavItem.label}
@@ -59,18 +58,35 @@
       
       <!-- Navigation buttons -->
       <div class="flex flex-wrap gap-2 pb-4">
-        {#each navItems as item (item.path)}
+        {#if !currentPath.endsWith("/sign-in")}
+          {#each navItems as item (item.path)}
+            <Button
+              variant={currentPath === item.path || (item.path !== "/admin" && currentPath.startsWith(item.path)) ? "default" : "outline"}
+              size="sm"
+              href={item.path}
+              class="flex items-center gap-2"
+            >
+              {@const IconComponent = item.icon}
+              <IconComponent class="h-4 w-4" />
+              {item.label}
+            </Button>
+          {/each}
+        {:else}
           <Button
-            variant={currentPath === item.path || (item.path !== "/admin" && currentPath.startsWith(item.path)) ? "default" : "outline"}
-            size="sm"
-            href={item.path}
-            class="flex items-center gap-2"
-          >
-            {@const IconComponent = item.icon}
-            <IconComponent class="h-4 w-4" />
-            {item.label}
-          </Button>
-        {/each}
+              variant="outline"
+              size="sm"
+              href="/"
+              class="flex items-center gap-2"
+            >
+              <Home class="h-4 w-4" />
+              Home
+            </Button>
+        {/if}
+
+        <div class="grow"></div>
+        <div class="card">
+          <ProfileWidget user={data.user} class="mb-0 [&_button]:py-2" />
+        </div>
       </div>
     </div>
   </nav>
