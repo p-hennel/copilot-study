@@ -22,8 +22,11 @@ async function fetchAdminData(
         Authorization: `Bearer ${token}`
       }
     });
-
-    if (!response.ok) throw new Error(`Failed to fetch ${part}: ${response.text()}`);
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch ${part}:`, response);
+      throw new Error(`Failed to fetch ${part}: ${response.text()}`);
+    }
     return await response.json();
   } catch (error) {
     console.error(`Failed to fetch ${part}:`, error);

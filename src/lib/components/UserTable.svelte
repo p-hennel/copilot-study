@@ -1,5 +1,6 @@
 <script lang="ts">
   import Time from "svelte-time";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { Button } from "$ui/button";
   import * as Table from "$lib/components/ui/table/index.js";
   import { m } from "$paraglide";
@@ -151,7 +152,18 @@
         {:else}
           <Table.Cell>{user.firstAccount.providerId}</Table.Cell>
           <Table.Cell class="text-center"
-            ><Time timestamp={user.firstAccount.createdAt} {format} /></Table.Cell
+            >
+            <Tooltip.Provider delayDuration={0}>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <Time timestamp={user.firstAccount.createdAt} {format} />
+                </Tooltip.Trigger>
+                <Tooltip.Content>
+                  <Time timestamp={user.firstAccount.createdAt} {format} />
+                </Tooltip.Content>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+            </Table.Cell
           >
           <Table.Cell class="text-center">
             {#if !!user.firstAccount.refreshTokenExpiresAt}
@@ -190,7 +202,16 @@
         <Table.Row>
           <Table.Cell>{account.providerId}</Table.Cell>
           <Table.Cell class="text-center"
-            ><Time timestamp={account.createdAt} {format} /></Table.Cell
+            >
+            <Tooltip.Root>
+              <Tooltip.Trigger>
+                <Time timestamp={account.createdAt} {format} />
+              </Tooltip.Trigger>
+              <Tooltip.Content>
+                <Time timestamp={account.createdAt} {format} />
+              </Tooltip.Content>
+            </Tooltip.Root>
+            </Table.Cell
           >
           <Table.Cell class="text-center">
             {#if !!account.refreshTokenExpiresAt}

@@ -3,9 +3,9 @@
   import * as Table from "$lib/components/ui/table/index.js";
   import * as Dialog from "$lib/components/ui/dialog/index.js";
   import * as Checkbox from "$lib/components/ui/checkbox/index.js";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { Button } from "$ui/button";
   import { m } from "$paraglide";
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { JobStatus } from "$lib/types";
   import type { AreaType } from "$lib/types";
   import type { CrawlCommand } from "$lib/types";
@@ -454,13 +454,16 @@
           </Tooltip.Provider>
         </Table.Cell>
         <Table.Cell class="text-center">
-          <Tooltip.Provider delayDuration={0} disabled={!job.updated_at}>
+          <Tooltip.Provider delayDuration={0}>
             <Tooltip.Root>
               <Tooltip.Trigger>
                 <Time timestamp={job.updated_at ?? job.created_at} {format} />
               </Tooltip.Trigger>
               <Tooltip.Content>
                 Created: <Time timestamp={job.created_at} {format} />
+                {#if job.updated_at}
+                  <br /> Updated: <Time timestamp={job.updated_at} {format} />
+                {/if}
               </Tooltip.Content>
             </Tooltip.Root>
           </Tooltip.Provider>
