@@ -9,7 +9,7 @@
   import { JobStatus } from "$lib/types";
   import type { AreaType } from "$lib/types";
   import type { CrawlCommand } from "$lib/types";
-  import { Check, Cross, Logs, Repeat, Trash2, AlertTriangle, Minus, ChevronLeft, ChevronRight } from "lucide-svelte";
+  import { Check, Cross, Logs, Repeat, Trash2, AlertTriangle, Minus, ChevronLeft, ChevronRight, Loader2 } from "lucide-svelte";
   import LoadingButton from "./LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
