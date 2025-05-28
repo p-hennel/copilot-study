@@ -26,6 +26,7 @@
   let data: UserTableProps = $props();
 
   const format = $derived(data.format ?? "DD. MMM YY");
+  const formatTooltip = $derived(data.format ?? "DD. MMM YYYY, HH:mm:ss");
 
   const users: PreparedUserInformation[] = $derived.by(() => {
     return data.users.map((x: UserInformationWithAccounts) => {
@@ -151,20 +152,18 @@
           >
         {:else}
           <Table.Cell>{user.firstAccount.providerId}</Table.Cell>
-          <Table.Cell class="text-center"
-            >
+          <Table.Cell class="text-center">
             <Tooltip.Provider delayDuration={0}>
               <Tooltip.Root>
                 <Tooltip.Trigger>
                   <Time timestamp={user.firstAccount.createdAt} {format} />
                 </Tooltip.Trigger>
                 <Tooltip.Content>
-                  <Time timestamp={user.firstAccount.createdAt} {format} />
+                  <Time timestamp={user.firstAccount.createdAt} format={formatTooltip} />
                 </Tooltip.Content>
               </Tooltip.Root>
             </Tooltip.Provider>
-            </Table.Cell
-          >
+          </Table.Cell>
           <Table.Cell class="text-center">
             {#if !!user.firstAccount.refreshTokenExpiresAt}
               <Time timestamp={user.firstAccount.refreshTokenExpiresAt} {format} />
@@ -203,16 +202,17 @@
           <Table.Cell>{account.providerId}</Table.Cell>
           <Table.Cell class="text-center"
             >
-            <Tooltip.Root>
-              <Tooltip.Trigger>
-                <Time timestamp={account.createdAt} {format} />
-              </Tooltip.Trigger>
-              <Tooltip.Content>
-                <Time timestamp={account.createdAt} {format} />
-              </Tooltip.Content>
-            </Tooltip.Root>
-            </Table.Cell
-          >
+            <Tooltip.Provider delayDuration={0}>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <Time timestamp={account.createdAt} {format} />
+                </Tooltip.Trigger>
+                <Tooltip.Content>
+                  <Time timestamp={account.createdAt} format={formatTooltip} />
+                </Tooltip.Content>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+          </Table.Cell>
           <Table.Cell class="text-center">
             {#if !!account.refreshTokenExpiresAt}
               <Time timestamp={account.refreshTokenExpiresAt} {format} />

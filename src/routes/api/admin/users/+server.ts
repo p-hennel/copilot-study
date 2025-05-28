@@ -41,7 +41,7 @@ const getUsers = async () => {
     })
     .from(user)
     .leftJoin(account, eq(account.userId, user.id))
-    .orderBy(desc(user.createdAt));
+    .orderBy(desc(user.createdAt), account.providerId, desc(account.createdAt));
 
   const users = Object.values(
     db_users.reduce(

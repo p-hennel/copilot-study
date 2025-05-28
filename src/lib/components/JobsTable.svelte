@@ -67,6 +67,7 @@
 
   let props: JobsTableProps = $props();
   const format = $derived(props.format ?? "DD. MMM, HH:mm");
+  const formatTooltip = $derived(props.format ?? "DD. MMM YYYY, HH:mm:ss");
 
   // Pagination state
   let currentPage = $state(1);
@@ -460,9 +461,9 @@
                 <Time timestamp={job.updated_at ?? job.created_at} {format} />
               </Tooltip.Trigger>
               <Tooltip.Content>
-                Created: <Time timestamp={job.created_at} {format} />
+                Created: <Time timestamp={job.created_at} format={formatTooltip} />
                 {#if job.updated_at}
-                  <br /> Updated: <Time timestamp={job.updated_at} {format} />
+                  <br /> Updated: <Time timestamp={job.updated_at} format={formatTooltip} />
                 {/if}
               </Tooltip.Content>
             </Tooltip.Root>

@@ -45,7 +45,7 @@ const fetchScopingInfo = async (_fetch: typeof fetch = fetch) => {
           headers: {
             Authorization: `Bearer ${_token}`
           }
-        });
+        }).catch(() => ({ok: false} as Response));
         if (!data.ok) {
           return undefined;
         } else {
