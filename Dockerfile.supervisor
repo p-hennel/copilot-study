@@ -29,4 +29,4 @@ ENTRYPOINT ["bun", "run", "src/subvisor/cli.ts", "start", "--foreground", "--con
 
 # Health check using the built-in monitoring capabilities
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:9090/health || exit 1
+    CMD curl -f http://localhost:9090/api/admin/health || exit 1

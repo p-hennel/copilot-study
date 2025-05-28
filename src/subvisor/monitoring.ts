@@ -81,7 +81,7 @@ export class MonitoringServer {
           return this.handleMetricsRequest();
         }
 
-        if (url.pathname === "/health") {
+        if (url.pathname === "/health" || url.pathname === "/api/admin/health") {
           return this.handleHealthRequest();
         }
 
