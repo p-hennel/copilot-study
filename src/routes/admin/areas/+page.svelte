@@ -1,5 +1,6 @@
 <script lang="ts">
   import AreasTable from "$lib/components/AreasTable.svelte";
+  import AdminDataLoader from "$lib/components/admin/AdminDataLoader.svelte";
   
   let { data } = $props();
 </script>
@@ -11,8 +12,15 @@
     <p class="text-muted-foreground mt-2">Configure and manage survey areas and regions</p>
   </div>
 
-  <!-- Areas Table -->
-  <div class="space-y-4">
-    <AreasTable />
-  </div>
+  <!-- Areas Table with Consistent Loading -->
+  <AdminDataLoader
+    data={data.areas}
+    loadingType="table"
+    operationId="areas-table"
+    errorMessage="Failed to load survey areas"
+  >
+    {#snippet children()}
+      <AreasTable />
+    {/snippet}
+  </AdminDataLoader>
 </div>

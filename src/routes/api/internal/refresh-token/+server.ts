@@ -92,12 +92,19 @@ async function refreshTokenDirectly(refreshToken: string, providerId: string): P
         errorInfo = await response.text();
       }
       
-      logger.error(`Failed to refresh GitLab token. Status: ${response.status}`, {
+      // Enhanced error logging for OAuth2 credential issues
+      const isCredentialError = response.status === 401;
+      const logLevel = isCredentialError ? 'error' : 'warn';
+      
+      logger[logLevel](`Failed to refresh GitLab token. Status: ${response.status}`, {
         error: errorInfo,
         tokenUrl,
         providerId,
-        refreshTokenPreview: refreshToken ? `${refreshToken.substring(0, 12)}...` : 'none'
+        refreshTokenPreview: refreshToken ? `${refreshToken.substring(0, 12)}...` : 'none',
+        isCredentialExpiry: isCredentialError,
+        recommendedAction: isCredentialError ? 'Manual OAuth2 credential renewal required' : 'Check GitLab instance availability'
       });
+      
       return null;
     }
     
@@ -181,8 +188,26 @@ export const POST: RequestHandler = async ({locals, request}) => {
       logger.info(`Successfully refreshed token for provider ${providerId}`);
       return json(response, { status: 200 });
     } else {
+      // Enhanced error response for OAuth2 credential issues
+      logger.error(`[CREDENTIAL EXPIRY] OAuth2 refresh token invalid for provider ${providerId}`, {
+        providerId,
+        refreshTokenPreview: refreshToken ? `${refreshToken.substring(0, 12)}...` : 'none',
+        recommendedAction: 'Manual OAuth2 credential renewal required',
+        documentationRef: 'See OAUTH2_CREDENTIAL_RENEWAL_GUIDE.md for step-by-step instructions'
+      });
+      
       return json({
-        error: 'Failed to refresh token. Invalid refresh token or provider issue.'
+        error: 'Failed to refresh token. Invalid refresh token or provider issue.',
+        errorType: 'OAUTH2_EXPIRED',
+        providerId,
+        severity: 'HIGH',
+        adminGuidance: [
+          'OAuth2 refresh token has expired or been revoked',
+          'Manual credential renewal required',
+          'Follow procedures in OAUTH2_CREDENTIAL_RENEWAL_GUIDE.md',
+          `Estimated resolution time: 30-45 minutes`
+        ],
+        escalationRequired: true
       }, { status: 401 });
     }
   } catch (error) {

@@ -2,7 +2,6 @@
   import * as Card from "$lib/components/ui/card/index.js";
   import * as Alert from "$lib/components/ui/alert/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
-  import { Skeleton } from "$ui/skeleton";
   import Input from "@/input/input.svelte";
   import { m } from "$paraglide";
   import { Users, Key, MapPin, Briefcase, Settings, CircleAlert, RefreshCw, ClipboardCopy, DatabaseBackup, FileDown, ArchiveRestore } from "lucide-svelte";
@@ -14,6 +13,8 @@
   import LoadingButton from "$lib/components/LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
+  import AdminDataLoader from "$lib/components/admin/AdminDataLoader.svelte";
+  import { invalidateWithLoading } from "$lib/utils/admin-fetch";
   
   let { data }: PageProps = $props();
 
@@ -25,6 +26,14 @@
   function afterCommand() {
     loading = false;
     invalidate("/api/admin/crawler");
+  }
+
+  // Enhanced refresh function
+  async function refreshCrawlerStatus() {
+    await invalidateWithLoading(
+      () => invalidate("/api/admin/crawler"),
+      'Refreshing crawler status...'
+    );
   }
 
   // Hash generator state
@@ -120,67 +129,61 @@
     <p class="text-muted-foreground mt-2">Overview of your admin dashboard</p>
   </div>
 
-  <!-- Summary Cards -->
-  <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-    {#await summaryStats}
-      {#each Array(4) as _}
+  <!-- Summary Cards with Loading -->
+  <AdminDataLoader
+    data={summaryStats}
+    loadingType="stats"
+    operationId="dashboard-stats"
+    errorMessage="Failed to load dashboard statistics"
+  >
+    {#snippet children({ data: stats })}
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <Skeleton class="h-4 w-20" />
-            <Skeleton class="h-4 w-4" />
+            <Card.Title class="text-sm font-medium">Total Users</Card.Title>
+            <Users class="h-4 w-4 text-muted-foreground" />
           </Card.Header>
           <Card.Content>
-            <Skeleton class="h-8 w-16" />
-            <Skeleton class="h-3 w-24 mt-2" />
+            <div class="text-2xl font-bold">{stats.users}</div>
+            <p class="text-xs text-muted-foreground">Registered accounts</p>
           </Card.Content>
         </Card.Root>
-      {/each}
-    {:then stats}
-      <Card.Root>
-        <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Card.Title class="text-sm font-medium">Total Users</Card.Title>
-          <Users class="h-4 w-4 text-muted-foreground" />
-        </Card.Header>
-        <Card.Content>
-          <div class="text-2xl font-bold">{stats.users}</div>
-          <p class="text-xs text-muted-foreground">Registered accounts</p>
-        </Card.Content>
-      </Card.Root>
 
-      <Card.Root>
-        <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Card.Title class="text-sm font-medium">Active Tokens</Card.Title>
-          <Key class="h-4 w-4 text-muted-foreground" />
-        </Card.Header>
-        <Card.Content>
-          <div class="text-2xl font-bold">{stats.tokens}</div>
-          <p class="text-xs text-muted-foreground">API tokens configured</p>
-        </Card.Content>
-      </Card.Root>
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">Active Tokens</Card.Title>
+            <Key class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">{stats.tokens}</div>
+            <p class="text-xs text-muted-foreground">API tokens configured</p>
+          </Card.Content>
+        </Card.Root>
 
-      <Card.Root>
-        <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Card.Title class="text-sm font-medium">Survey Areas</Card.Title>
-          <MapPin class="h-4 w-4 text-muted-foreground" />
-        </Card.Header>
-        <Card.Content>
-          <div class="text-2xl font-bold">{stats.areas}</div>
-          <p class="text-xs text-muted-foreground">Configured areas</p>
-        </Card.Content>
-      </Card.Root>
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">Survey Areas</Card.Title>
+            <MapPin class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">{stats.areas}</div>
+            <p class="text-xs text-muted-foreground">Configured areas</p>
+          </Card.Content>
+        </Card.Root>
 
-      <Card.Root>
-        <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Card.Title class="text-sm font-medium">Total Jobs</Card.Title>
-          <Briefcase class="h-4 w-4 text-muted-foreground" />
-        </Card.Header>
-        <Card.Content>
-          <div class="text-2xl font-bold">{stats.jobs}</div>
-          <p class="text-xs text-muted-foreground">Jobs in system</p>
-        </Card.Content>
-      </Card.Root>
-    {/await}
-  </div>
+        <Card.Root>
+          <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card.Title class="text-sm font-medium">Total Jobs</Card.Title>
+            <Briefcase class="h-4 w-4 text-muted-foreground" />
+          </Card.Header>
+          <Card.Content>
+            <div class="text-2xl font-bold">{stats.jobs}</div>
+            <p class="text-xs text-muted-foreground">Jobs in system</p>
+          </Card.Content>
+        </Card.Root>
+      </div>
+    {/snippet}
+  </AdminDataLoader>
 
   <!-- Crawler Status -->
   <!--

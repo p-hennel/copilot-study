@@ -4,7 +4,7 @@ import AppSettings from '$lib/server/settings';
 import { db } from '$lib/server/db';
 import { job as jobSchema, area, area_authorization, jobArea } from '$lib/server/db/base-schema'; // Removed tokenScopeJob, tokenScopeJobArea
 import type { Job } from '$lib/server/db/base-schema';
-import { JobStatus, CrawlCommand, AreaType } from '$lib/types';
+import { JobStatus, CrawlCommand, AreaType, type CredentialStatusUpdate } from '$lib/types';
 import { eq } from 'drizzle-orm';
 import { getLogger } from '$lib/logging';
 import { handleNewArea } from '$lib/server/job-manager';
@@ -34,7 +34,7 @@ interface DiscoveredAreaData {
 // Extended payload interface to include areas for the new status type
 interface ProgressUpdatePayload {
   taskId: string;
-  status: string; // "started", "processing", "completed", "failed", "paused", "new_areas_discovered"
+  status: string; // "started", "processing", "completed", "failed", "paused", "new_areas_discovered", "credential_expiry", "credential_renewal", "credential_resumed"
   processedItems?: number;
   totalItems?: number;
   currentDataType?: string;
@@ -43,6 +43,7 @@ interface ProgressUpdatePayload {
   error?: string | Record<string, any>;
   progress?: any; // For resume state, e.g., lastProcessedId or customParameters object
   areas?: DiscoveredAreaData[]; // New field for area discoveries
+  credentialStatus?: CredentialStatusUpdate; // New field for credential status updates
 }
 
 /**
@@ -157,7 +158,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
     return json({ error: 'Missing required fields: taskId, status, timestamp' }, { status: 400 });
   }
 
-  const { taskId, status: crawlerStatus, timestamp, processedItems, totalItems, currentDataType, message, error: payloadError, progress: resumePayload, areas } = payload;
+  const { taskId, status: crawlerStatus, timestamp, processedItems, totalItems, currentDataType, message, error: payloadError, progress: resumePayload, areas, credentialStatus } = payload;
 
   try {
     const jobRecord = await db.query.job.findFirst({
@@ -233,6 +234,63 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
         {
           status: 'received',
           message: `Areas discovery processed for task ${taskId}: ${groupsCount} groups, ${projectsCount} projects`
+        },
+        { status: 200 }
+      );
+    }
+
+    // Handle credential status updates
+    if (crawlerStatus.toLowerCase() === 'credential_expiry' || 
+        crawlerStatus.toLowerCase() === 'credential_renewal' || 
+        crawlerStatus.toLowerCase() === 'credential_resumed') {
+      
+      logger.warn(`[CREDENTIAL STATUS] Received ${crawlerStatus} for job ${taskId}`, { credentialStatus, message });
+      
+      const updateData: Partial<Job> & { updated_at?: Date } = { 
+        updated_at: new Date(),
+      };
+
+      // Set appropriate job status based on credential status
+      switch (crawlerStatus.toLowerCase()) {
+        case 'credential_expiry':
+          updateData.status = JobStatus.credential_expired;
+          logger.error(`[HIGH SEVERITY] Credential expiry detected for job ${taskId}. Administrative action required.`);
+          break;
+        case 'credential_renewal':
+          updateData.status = JobStatus.waiting_credential_renewal;
+          logger.warn(`[MEDIUM SEVERITY] Job ${taskId} waiting for credential renewal.`);
+          break;
+        case 'credential_resumed':
+          updateData.status = JobStatus.credential_renewed;
+          logger.info(`[LOW SEVERITY] Job ${taskId} credentials renewed, ready to resume.`);
+          break;
+      }
+
+      // Update job.progress blob with credential status information
+      const currentProgress = jobRecord.progress as Record<string, any> || {};
+      const jobProgress = {
+        ...currentProgress,
+        processed: processedItems || currentProgress.processed,
+        total: totalItems || currentProgress.total,
+        currentDataType: currentDataType || currentProgress.currentDataType,
+        credentialStatus: {
+          ...credentialStatus,
+          timestamp,
+          lastUpdate: crawlerStatus
+        },
+        message: message || `Credential status: ${crawlerStatus}`
+      };
+      updateData.progress = jobProgress;
+
+      await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
+      logger.info(`Job ${taskId} updated with credential status: ${crawlerStatus}`);
+
+      // Return appropriate response
+      return json(
+        {
+          status: 'received',
+          message: `Credential status update processed for task ${taskId}: ${crawlerStatus}`,
+          credentialGuidance: credentialStatus?.adminGuidance || []
         },
         { status: 200 }
       );

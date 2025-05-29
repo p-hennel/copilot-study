@@ -83,7 +83,41 @@ export enum JobStatus {
   running = "running",
   paused = "paused", // Added paused state
   failed = "failed",
-  finished = "finished"
+  finished = "finished",
+  // Enhanced OAuth2 credential-specific statuses
+  credential_expired = "credential_expired",           // OAuth2/PAT credentials expired
+  waiting_credential_renewal = "waiting_credential_renewal", // Waiting for admin credential update
+  credential_renewed = "credential_renewed"           // Credentials updated, ready to resume
+}
+
+// Credential error severity levels for enhanced error handling
+export enum CredentialErrorSeverity {
+  HIGH = "HIGH",     // Immediate administrative action required
+  MEDIUM = "MEDIUM", // Action required within hours
+  LOW = "LOW"        // Informational/warning
+}
+
+// Credential error types for enhanced classification
+export enum CredentialErrorType {
+  OAUTH2_EXPIRED = "OAUTH2_EXPIRED",
+  OAUTH2_REVOKED = "OAUTH2_REVOKED", 
+  PAT_EXPIRED = "PAT_EXPIRED",
+  PAT_REVOKED = "PAT_REVOKED",
+  NETWORK_ERROR = "NETWORK_ERROR",
+  PROVIDER_ERROR = "PROVIDER_ERROR"
+}
+
+// Enhanced progress update interface for credential status
+export interface CredentialStatusUpdate {
+  type: 'credential_expiry' | 'credential_renewal' | 'credential_resumed';
+  severity: CredentialErrorSeverity;
+  errorType: CredentialErrorType;
+  providerId: string;
+  instanceType: 'gitlab-cloud' | 'gitlab-self-hosted';
+  message: string;
+  adminGuidance: string[];
+  estimatedResolutionTime: string;
+  escalationCriteria?: string;
 }
 export enum TokenProvider {
   jira = "jiralocal",
