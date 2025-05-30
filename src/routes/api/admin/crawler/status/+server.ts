@@ -74,6 +74,25 @@ export const GET: RequestHandler = async ({ request, locals }) => {
             }
           };
 
+          // Listen for job failure logs
+          const onJobFailure = (failureData: any) => {
+            logger.info("DEBUG: Received job failure data from MessageBusClient", { failureData });
+            console.log("DEBUG SSE: Broadcasting job failure logs via SSE", failureData);
+            const data = JSON.stringify({
+              type: "jobFailure",
+              payload: failureData,
+              timestamp: new Date().toISOString()
+            });
+            console.log("DEBUG SSE: Sending failure data:", data);
+            try {
+              controller.enqueue(`data: ${data}\n\n`);
+              console.log("DEBUG SSE: Successfully enqueued failure data");
+            } catch (error) {
+              logger.error("Error sending SSE job failure:", { error });
+              console.error("DEBUG SSE: Error sending job failure:", error);
+            }
+          };
+
           // Listen for heartbeat events
           const onHeartbeat = (payload: any) => {
             logger.debug("Broadcasting heartbeat via SSE", { payload });
@@ -86,6 +105,100 @@ export const GET: RequestHandler = async ({ request, locals }) => {
               controller.enqueue(`data: ${data}\n\n`);
             } catch (error) {
               logger.error("Error sending SSE heartbeat:", { error });
+            }
+          };
+
+          // Listen for token refresh requests and handle them
+          const onTokenRefreshRequest = async (requestData: any) => {
+            console.log("🔄 DEBUG SSE: *** TOKEN REFRESH REQUEST RECEIVED ***");
+            console.log("🔄 DEBUG SSE: Request data:", JSON.stringify(requestData, null, 2));
+            logger.info("Received token refresh request via SSE MessageBusClient", { requestData });
+            
+            if (!messageBusClient) {
+              console.error('❌ DEBUG SSE: MessageBusClient became null during token refresh processing');
+              return;
+            }
+            
+            try {
+              const { requestId, providerId, accountId, userId } = requestData;
+              console.log("🔄 DEBUG SSE: Extracted request parameters:", { requestId, providerId, accountId, userId });
+              
+              // Call our internal token refresh API with session cookies
+              console.log("🔄 DEBUG SSE: Making fetch request to localhost:3000/api/internal/refresh-token");
+              
+              // Get session cookie from the current request context
+              const sessionCookie = request.headers.get('cookie');
+              console.log("🔄 DEBUG SSE: Session cookie available:", !!sessionCookie);
+              
+              const response = await fetch('http://localhost:3000/api/internal/refresh-token', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Cookie': sessionCookie || ''
+                },
+                body: JSON.stringify({
+                  providerId,
+                  accountId,
+                  userId
+                })
+              });
+              
+              console.log("🔄 DEBUG SSE: Fetch response status:", response.status, response.statusText);
+              
+              if (response.ok) {
+                const tokenData = await response.json() as {
+                  success?: boolean;
+                  accessToken?: string;
+                  expiresAt?: string;
+                  refreshToken?: string;
+                  providerId?: string;
+                };
+                console.log('✅ DEBUG SSE: Token refresh successful, token data:', tokenData);
+                console.log('✅ DEBUG SSE: Sending response to crawler with requestId:', requestId);
+                
+                // Send successful response back to crawler
+                if (messageBusClient) {
+                  messageBusClient.sendTokenRefreshResponse(requestId, {
+                    success: true,
+                    accessToken: tokenData.accessToken,
+                    expiresAt: tokenData.expiresAt,
+                    refreshToken: tokenData.refreshToken,
+                    providerId: tokenData.providerId
+                  });
+                  console.log('✅ DEBUG SSE: Response sent to crawler successfully');
+                } else {
+                  console.error('❌ DEBUG SSE: MessageBusClient became null when sending response');
+                }
+              } else {
+                console.log("❌ DEBUG SSE: Fetch response not OK, reading error data...");
+                const errorData = await response.json() as {
+                  error?: string;
+                };
+                console.error('❌ DEBUG SSE: Token refresh failed with error data:', errorData);
+                
+                // Send error response back to crawler
+                if (messageBusClient) {
+                  console.log('❌ DEBUG SSE: Sending error response to crawler');
+                  messageBusClient.sendTokenRefreshResponse(requestId, {
+                    success: false,
+                    error: errorData.error || 'Token refresh failed'
+                  });
+                  console.log('❌ DEBUG SSE: Error response sent to crawler');
+                }
+              }
+            } catch (error) {
+              console.error('❌ DEBUG SSE: Exception in token refresh processing:', error);
+              logger.error("Token refresh processing error:", { error });
+              
+              // Send error response back to crawler
+              if (messageBusClient) {
+                console.log('❌ DEBUG SSE: Sending exception error response to crawler');
+                messageBusClient.sendTokenRefreshResponse(requestData.requestId, {
+                  success: false,
+                  error: error instanceof Error ? error.message : 'Unknown error during token refresh'
+                });
+                console.log('❌ DEBUG SSE: Exception error response sent to crawler');
+              }
             }
           };
 
@@ -119,9 +232,13 @@ export const GET: RequestHandler = async ({ request, locals }) => {
           // Attach event listeners
           messageBusClient.onStatusUpdate(onStatusUpdate);
           messageBusClient.onJobUpdate(onJobUpdate);
+          messageBusClient.onJobFailure(onJobFailure);
           messageBusClient.onHeartbeat(onHeartbeat);
+          messageBusClient.onTokenRefreshRequest(onTokenRefreshRequest);
           messageBusClient.on("connected", onConnected);
           messageBusClient.on("disconnected", onDisconnected);
+
+          console.log("🔧 DEBUG SSE: Token refresh handler attached to MessageBusClient");
 
           // Clean up when client disconnects
           request.signal?.addEventListener('abort', () => {
@@ -129,7 +246,9 @@ export const GET: RequestHandler = async ({ request, locals }) => {
             if (messageBusClient) {
               messageBusClient.off("statusUpdate", onStatusUpdate);
               messageBusClient.off("jobUpdate", onJobUpdate);
+              messageBusClient.off("jobFailure", onJobFailure);
               messageBusClient.off("heartbeat", onHeartbeat);
+              messageBusClient.off("tokenRefreshRequest", onTokenRefreshRequest);
               messageBusClient.off("connected", onConnected);
               messageBusClient.off("disconnected", onDisconnected);
             }

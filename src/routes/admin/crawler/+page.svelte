@@ -38,6 +38,10 @@
   // Real-time crawler status (starts with initial data, gets updated via WebSocket)
   let crawlerStatus = $state<any>(null);
   
+  // Job failure logs state
+  let jobFailureLogs = $state<any[]>([]);
+  const MAX_LOGS = 50; // Keep only the last 50 log entries
+  
   // Real-time connection (WebSocket or EventSource)
   let ws: WebSocket | EventSource | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -77,6 +81,7 @@
       eventSource.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
+          console.log("DEBUG SSE: Received message from server:", message);
           handleWebSocketMessage(message);
         } catch (error) {
           console.error("Error parsing SSE message:", error);
@@ -154,12 +159,30 @@
         }
         break;
         
+      case "jobFailure":
+        if (message.payload) {
+          console.log("DEBUG: Received job failure log:", message.payload);
+          console.log("DEBUG: Current jobFailureLogs before update:", jobFailureLogs.length);
+          // Add the log to the beginning of the array and trim to max size
+          jobFailureLogs = [
+            {
+              ...message.payload,
+              timestamp: message.timestamp || new Date().toISOString()
+            },
+            ...jobFailureLogs
+          ].slice(0, MAX_LOGS);
+          console.log("DEBUG: jobFailureLogs after update:", jobFailureLogs.length, jobFailureLogs);
+        } else {
+          console.log("DEBUG: Received jobFailure message with no payload:", message);
+        }
+        break;
+        
       case "heartbeat":
         if (message.payload) {
           console.log("Received crawler heartbeat:", message.payload);
           if (crawlerStatus) {
-            crawlerStatus = { 
-              ...crawlerStatus, 
+            crawlerStatus = {
+              ...crawlerStatus,
               lastHeartbeat: message.timestamp || new Date().toISOString()
             };
           }
@@ -234,6 +257,36 @@
     } catch (error) {
       console.error("Error resuming crawler:", error);
       toast.error("Failed to resume crawler");
+    } finally {
+      loading = false;
+    }
+  }
+
+  // Clear job failure logs
+  function clearJobFailureLogs() {
+    jobFailureLogs = [];
+    toast.success("Job failure logs cleared");
+  }
+
+  // Test job failure logs
+  async function testJobFailure() {
+    loading = true;
+    try {
+      const response = await fetch("/api/admin/crawler/test-failure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        toast.success("Test failure log sent");
+        console.log("Test failure result:", result);
+      } else {
+        throw new Error("Failed to send test failure");
+      }
+    } catch (error) {
+      console.error("Error sending test failure:", error);
+      toast.error("Failed to send test failure");
     } finally {
       loading = false;
     }
@@ -480,6 +533,16 @@
                   Resume
                 </Button>
               {/if}
+              
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={loading}
+                onclick={testJobFailure}
+              >
+                <XCircle class="h-4 w-4 mr-2" />
+                Test Failure
+              </Button>
             </div>
 
             <!-- Progress visualization -->
@@ -533,6 +596,72 @@
           </Card.Content>
         </Card.Root>
       </div>
+
+      <!-- Job Failure Logs Section -->
+      <Card.Root>
+        <Card.Header>
+          <div class="flex items-center justify-between">
+            <div>
+              <Card.Title class="flex items-center gap-2">
+                <XCircle class="h-5 w-5 text-red-500" />
+                Recent Job Failures
+              </Card.Title>
+              <Card.Description>Real-time logs from failed tasks</Card.Description>
+            </div>
+            {#if jobFailureLogs.length > 0}
+              <Button
+                size="sm"
+                variant="outline"
+                onclick={clearJobFailureLogs}
+              >
+                Clear Logs
+              </Button>
+            {/if}
+          </div>
+        </Card.Header>
+        <Card.Content>
+          {#if jobFailureLogs.length > 0}
+            <div class="max-h-64 overflow-y-auto space-y-2">
+              {#each jobFailureLogs as log (log.timestamp)}
+                <Alert.Root variant="destructive">
+                  <Alert.Title class="text-sm font-medium">
+                    {log.jobId} - {log.taskType}
+                  </Alert.Title>
+                  <Alert.Description class="text-xs space-y-1">
+                    <div class="flex items-center gap-2">
+                      <Time timestamp={log.timestamp} format="HH:mm:ss" />
+                      <span>•</span>
+                      <span class="font-mono">{log.error}</span>
+                    </div>
+                    {#if log.stackTrace}
+                      <details class="mt-2">
+                        <summary class="cursor-pointer text-xs opacity-75 hover:opacity-100">
+                          View stack trace
+                        </summary>
+                        <pre class="mt-1 text-xs bg-muted/50 p-2 rounded overflow-x-auto whitespace-pre-wrap">{log.stackTrace}</pre>
+                      </details>
+                    {/if}
+                    {#if log.context}
+                      <details class="mt-1">
+                        <summary class="cursor-pointer text-xs opacity-75 hover:opacity-100">
+                          View context
+                        </summary>
+                        <pre class="mt-1 text-xs bg-muted/50 p-2 rounded overflow-x-auto">{JSON.stringify(log.context, null, 2)}</pre>
+                      </details>
+                    {/if}
+                  </Alert.Description>
+                </Alert.Root>
+              {/each}
+            </div>
+          {:else}
+            <div class="text-center py-8 text-muted-foreground">
+              <XCircle class="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p class="text-sm">No job failures recorded</p>
+              <p class="text-xs">Failed task logs will appear here in real-time</p>
+            </div>
+          {/if}
+        </Card.Content>
+      </Card.Root>
     {:else}
       <!-- Error State -->
       <Alert.Root variant="destructive">

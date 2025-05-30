@@ -355,15 +355,23 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           customParameters: customParameters
         };
 
-        logger.info("Task constructed and ready to be returned") //, { taskId: taskObject.taskId, resourceType: taskObject.resourceType, resourceId: taskObject.resourceId });
-        logger.debug(`Full task object for ${taskObject.taskId}: ${JSON.stringify(taskObject)}`);
+        logger.info("✅ JOB-OPEN: Task constructed and ready to be returned", {
+          taskId: taskObject.taskId,
+          resourceType: taskObject.resourceType,
+          resourceId: taskObject.resourceId,
+          command: taskObject.command,
+          gitlabApiUrl: taskObject.gitlabApiUrl
+        });
+        logger.debug(`📤 JOB-OPEN: Full task object for ${taskObject.taskId}: ${JSON.stringify(taskObject)}`);
+        console.log(`🚀 JOB-OPEN: Returning job ${taskObject.taskId} with command ${taskObject.command} to external crawler`);
         return json([taskObject], { status: 200 }); // Return the first suitable job
       }
       // If inner loop finishes for this batch, continue to next fetchAttempt (outer loop)
     }
 
     // If the outer loop finishes (all attempts made or broke early due to no more jobs), no suitable job was found.
-    logger.info("No suitable job found after checking all fetched candidates across all attempts.");
+    logger.info("📭 JOB-OPEN: No suitable job found after checking all fetched candidates across all attempts.");
+    console.log("📭 JOB-OPEN: Returning empty array - no jobs available");
     return json([], { status: 200 });
 
   } catch (e: unknown) {

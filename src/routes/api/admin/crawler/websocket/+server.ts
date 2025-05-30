@@ -1,7 +1,6 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { getLogger } from "$lib/logging";
 import { isAdmin } from "$lib/server/utils";
-import { error } from "@sveltejs/kit";
 import messageBusClient from "$lib/messaging/MessageBusClient";
 
 const logger = getLogger(["backend", "api", "admin", "crawler", "websocket"]);
@@ -106,6 +105,18 @@ if (messageBusClient) {
       payload: update,
       timestamp: new Date().toISOString()
     });
+  });
+
+  // Listen for job failure events
+  messageBusClient.onJobFailure((failureData) => {
+    logger.debug("Received crawler job failure via MessageBus", { failureData });
+    console.log("DEBUG SSE: Broadcasting job failure logs via SSE", failureData);
+    broadcastToCrawlerClients({
+      type: "jobFailure",
+      payload: failureData,
+      timestamp: new Date().toISOString()
+    });
+    console.log("DEBUG SSE: Successfully enqueued failure data");
   });
 
   // Listen for heartbeat events

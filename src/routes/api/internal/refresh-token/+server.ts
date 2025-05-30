@@ -1,217 +1,125 @@
-// src/routes/api/internal/refresh-token/+server.ts
-import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
-import { getLogger } from '$lib/logging';
-import AppSettings from '$lib/server/settings';
+import type { RequestHandler } from './$types';
+import { refreshGitLabTokens } from '$lib/gitlabTokenRefresh';
+import { db } from '$lib/server/db/index';
+import { eq } from 'drizzle-orm';
+import * as schema from '$lib/server/db/schema';
 
-const logger = getLogger(["api", "refresh-token"]);
-
-/**
- * Directly refreshes a token without requiring a user ID
- * This provides backward compatibility with the previous implementation
- */
-async function refreshTokenDirectly(refreshToken: string, providerId: string): Promise<{
-  accessToken: string;
-  refreshToken: string;
-  expiresIn?: number;
-  createdAt?: number;
-} | null> {
+export const POST: RequestHandler = async ({ request }) => {
+  console.log('🔄 DEBUG: Token refresh API endpoint called');
+  
   try {
-    // Determine provider config
-    const isCloud = providerId === 'gitlab-cloud';
-    const gitlabConfig = isCloud
-      ? AppSettings().auth.providers.gitlabCloud
-      : AppSettings().auth.providers.gitlab;
+    const body = await request.json();
+    console.log('🔄 DEBUG: Request body:', JSON.stringify(body, null, 2));
     
-    logger.warn(`[TEMP DEBUG] Provider config resolution:`, {
-      providerId,
-      isCloud,
-      hasConfig: !!gitlabConfig,
-      configKeys: gitlabConfig ? Object.keys(gitlabConfig) : null,
-      baseUrl: gitlabConfig?.baseUrl,
-      hasClientId: !!gitlabConfig?.clientId,
-      hasClientSecret: !!gitlabConfig?.clientSecret,
-      hasRedirectURI: !!gitlabConfig?.redirectURI
-    });
+    // Type check the request body
+    if (typeof body !== 'object' || body === null) {
+      console.log('❌ DEBUG: Invalid request body type');
+      return json({ error: 'Invalid request body' }, { status: 400 });
+    }
     
-    if (!gitlabConfig) {
-      logger.error(`GitLab provider (${providerId}) configuration not found`);
-      return null;
+    const { providerId, accountId, userId, refreshToken } = body as {
+      providerId?: string;
+      accountId?: string;
+      userId?: string;
+      refreshToken?: string;
+    };
+
+    console.log('🔄 DEBUG: Extracted parameters:', { providerId, accountId, userId, hasRefreshToken: !!refreshToken });
+
+    if (!providerId) {
+      console.log('❌ DEBUG: Provider ID missing');
+      return json({ error: 'Provider ID is required' }, { status: 400 });
     }
 
-    let tokenUrl: string;
-    if (isCloud) {
-      tokenUrl = `${gitlabConfig.baseUrl || 'https://gitlab.com'}/oauth/token`;
-    } else {
-      if (gitlabConfig.baseUrl) {
-        tokenUrl = `${gitlabConfig.baseUrl}/oauth/token`;
+    try {
+      console.log('🔄 DEBUG: Using GitLab token refresh for background token refresh...');
+      
+      // Handle GitLab providers specifically
+      if (providerId === 'gitlab' || providerId === 'gitlab-cloud' || providerId === 'gitlab-onprem') {
+        let targetUserId = userId;
+        
+        // If we don't have userId, try to find it from accountId or refreshToken
+        if (!targetUserId) {
+          if (accountId) {
+            console.log('🔄 DEBUG: Looking up userId from accountId:', accountId);
+            const accountResult = await db.query.account.findFirst({
+              where: eq(schema.account.id, accountId),
+              columns: { userId: true }
+            });
+            
+            if (accountResult) {
+              targetUserId = accountResult.userId;
+              console.log('🔄 DEBUG: Found userId from accountId:', targetUserId);
+            }
+          } else if (refreshToken) {
+            console.log('🔄 DEBUG: Looking up userId from refreshToken');
+            const accountResult = await db.query.account.findFirst({
+              where: eq(schema.account.refreshToken, refreshToken),
+              columns: { userId: true, providerId: true }
+            });
+            
+            if (accountResult) {
+              targetUserId = accountResult.userId;
+              console.log('🔄 DEBUG: Found userId from refreshToken:', targetUserId, 'provider:', accountResult.providerId);
+            }
+          } else {
+            // If no specific user info is provided, try to find the most recent account for this provider
+            console.log('🔄 DEBUG: No user identification provided, looking for most recent account with provider:', providerId);
+            const mappedProviderId = providerId === 'gitlab' ? 'gitlab-cloud' : providerId;
+            const accountResult = await db.query.account.findFirst({
+              where: eq(schema.account.providerId, mappedProviderId),
+              columns: { userId: true },
+              orderBy: (accounts, { desc }) => [desc(accounts.createdAt)]
+            });
+            
+            if (accountResult) {
+              targetUserId = accountResult.userId;
+              console.log('🔄 DEBUG: Found most recent userId for provider:', targetUserId);
+            }
+          }
+        }
+        
+        if (!targetUserId) {
+          console.log('❌ DEBUG: Could not determine target user ID');
+          return json({ error: 'Could not determine target user ID for token refresh' }, { status: 400 });
+        }
+        
+        // Map provider names to the correct format
+        const mappedProviderId = providerId === 'gitlab' ? 'gitlab-cloud' : providerId;
+        
+        console.log('🔄 DEBUG: Refreshing GitLab tokens for user:', targetUserId, 'provider:', mappedProviderId);
+        const refreshResult = await refreshGitLabTokens(targetUserId, mappedProviderId);
+        
+        if (refreshResult) {
+          console.log('✅ DEBUG: GitLab token refresh successful');
+          const responseData = {
+            success: true,
+            accessToken: refreshResult.accessToken,
+            expiresAt: refreshResult.accessTokenExpiresAt.toISOString(),
+            refreshToken: refreshResult.refreshToken,
+            providerId: mappedProviderId
+          };
+          console.log('✅ DEBUG: Returning response data:', { ...responseData, accessToken: '***', refreshToken: '***' });
+          return json(responseData);
+        } else {
+          console.error('❌ DEBUG: GitLab token refresh failed');
+          return json({ error: 'Failed to refresh GitLab token' }, { status: 500 });
+        }
       } else {
-        logger.error(`No baseUrl configured for provider ${providerId}`);
-        return null;
+        console.log('❌ DEBUG: Unsupported provider for background refresh:', providerId);
+        return json({ error: `Unsupported provider for background refresh: ${providerId}` }, { status: 400 });
       }
-    }
-    
-    // Prepare request parameters
-    const params = new URLSearchParams();
-    params.append('client_id', gitlabConfig.clientId || '');
-    params.append('client_secret', gitlabConfig.clientSecret || '');
-    params.append('refresh_token', refreshToken);
-    params.append('grant_type', 'refresh_token');
-    params.append('redirect_uri', gitlabConfig.redirectURI);
-    
-    // Make token refresh request
-    logger.debug(`Making refresh request to: ${tokenUrl}`);
-    logger.warn(`[TEMP DEBUG] GitLab refresh request details:`, {
-      tokenUrl,
-      params: Object.fromEntries(params.entries()),
-      hasClientId: !!gitlabConfig.clientId,
-      hasClientSecret: !!gitlabConfig.clientSecret,
-      hasRefreshToken: !!refreshToken,
-      refreshTokenLength: refreshToken?.length || 0
-    });
-    
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    });
-    
-    logger.warn(`[TEMP DEBUG] GitLab response:`, {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
-    });
-    
-    if (!response.ok) {
-      let errorInfo: any;
-      try {
-        errorInfo = await response.json();
-      } catch {
-        errorInfo = await response.text();
-      }
-      
-      // Enhanced error logging for OAuth2 credential issues
-      const isCredentialError = response.status === 401;
-      const logLevel = isCredentialError ? 'error' : 'warn';
-      
-      logger[logLevel](`Failed to refresh GitLab token. Status: ${response.status}`, {
-        error: errorInfo,
-        tokenUrl,
-        providerId,
-        refreshTokenPreview: refreshToken ? `${refreshToken.substring(0, 12)}...` : 'none',
-        isCredentialExpiry: isCredentialError,
-        recommendedAction: isCredentialError ? 'Manual OAuth2 credential renewal required' : 'Check GitLab instance availability'
-      });
-      
-      return null;
-    }
-    
-    // Process successful response
-    const tokenData = await response.json() as {
-      access_token: string;
-      token_type: string;
-      expires_in: number;
-      refresh_token: string;
-      created_at: number;
-    };
-    
-    return {
-      accessToken: tokenData.access_token,
-      refreshToken: tokenData.refresh_token,
-      expiresIn: tokenData.expires_in,
-      createdAt: tokenData.created_at
-    };
-  } catch (error) {
-    logger.error(`Error refreshing token directly`, { error });
-    return null;
-  }
-}
-
-export const POST: RequestHandler = async ({locals, request}) => {
-  // CRITICAL DEBUG: Log that the endpoint is being hit
-  logger.error('🔥 REFRESH TOKEN ENDPOINT HIT! 🔥');
-  
-  // 1. Verify that event.locals.isSocketRequest is true
-  if (!locals.isSocketRequest) {
-    logger.error('🔥 SOCKET REQUEST CHECK FAILED! 🔥', {
-      isSocketRequest: locals?.isSocketRequest,
-      localsKeys: Object.keys(locals || {})
-    });
-    return json({ error: 'Forbidden. This endpoint is for socket requests only.' }, { status: 403 });
-  }
-  
-  logger.error('🔥 SOCKET REQUEST CHECK PASSED! 🔥');
-
-  let requestBody;
-  let refreshToken: string|null = null;
-  let providerId: string|null = null;
-  try {
-    requestBody = await request.json();
-    
-    if (requestBody === null || typeof requestBody !== 'object') {
-      return json({ error: 'Invalid JSON body' }, { status: 400 });
-    }
-    if ("requestBody" in requestBody) {
-      requestBody = requestBody.requestBody as any;
-    }
-    if ("refreshToken" in requestBody) refreshToken = requestBody.refreshToken as string;
-    if ("providerId" in requestBody) providerId = requestBody.providerId as string;
-    
-  } catch (e) {
-    logger.error('Failed to parse JSON body', { error: e });
-    return json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  if (typeof refreshToken !== 'string' || typeof providerId !== 'string') {
-    return json({ error: 'Missing or invalid refresh_token or providerId in request body' }, { status: 400 });
-  }
-
-  if (!refreshToken || !providerId) {
-    return json({ error: 'refresh_token and providerId are required' }, { status: 400 });
-  }
-
-  try {
-    // Use our direct token refresh function for backward compatibility
-    const refreshed = await refreshTokenDirectly(refreshToken, providerId);
-
-    if (refreshed && refreshed.accessToken) {
-      // Format the response as expected by the client
-      const response = {
-        access_token: refreshed.accessToken,
-        refresh_token: refreshed.refreshToken,
-        expires_in: refreshed.expiresIn,
-        created_at: refreshed.createdAt
-      };
-      
-      logger.info(`Successfully refreshed token for provider ${providerId}`);
-      return json(response, { status: 200 });
-    } else {
-      // Enhanced error response for OAuth2 credential issues
-      logger.error(`[CREDENTIAL EXPIRY] OAuth2 refresh token invalid for provider ${providerId}`, {
-        providerId,
-        refreshTokenPreview: refreshToken ? `${refreshToken.substring(0, 12)}...` : 'none',
-        recommendedAction: 'Manual OAuth2 credential renewal required',
-        documentationRef: 'See OAUTH2_CREDENTIAL_RENEWAL_GUIDE.md for step-by-step instructions'
-      });
-      
+    } catch (refreshError) {
+      console.error('❌ DEBUG: Error during token refresh:', refreshError);
       return json({
-        error: 'Failed to refresh token. Invalid refresh token or provider issue.',
-        errorType: 'OAUTH2_EXPIRED',
-        providerId,
-        severity: 'HIGH',
-        adminGuidance: [
-          'OAuth2 refresh token has expired or been revoked',
-          'Manual credential renewal required',
-          'Follow procedures in OAUTH2_CREDENTIAL_RENEWAL_GUIDE.md',
-          `Estimated resolution time: 30-45 minutes`
-        ],
-        escalationRequired: true
-      }, { status: 401 });
+        error: `Failed to refresh token: ${refreshError instanceof Error ? refreshError.message : 'Unknown refresh error'}`
+      }, { status: 500 });
     }
   } catch (error) {
-    logger.error('Token refresh error', { error });
-    return json({ error: 'Internal server error during token refresh.' }, { status: 500 });
+    console.error('❌ DEBUG: Token refresh endpoint error:', error);
+    return json({
+      error: `Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    }, { status: 500 });
   }
 };

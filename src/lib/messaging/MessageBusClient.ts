@@ -96,38 +96,42 @@ export class MessageBusClient extends EventEmitter {
     this.logger.info("MessageBusClient initializing with Unix socket IPC...");
     console.log("MessageBusClient initializing with path:", this.socketPath);
     
-    // Check if socket path exists
+    // Check if socket path exists - don't throw errors, just log warnings
     const socketDir = this.socketPath.substring(0, this.socketPath.lastIndexOf('/'));
     if (!existsSync(socketDir)) {
-      this.logger.error(`Socket directory does not exist: ${socketDir}`);
-      console.error(`Socket directory does not exist: ${socketDir}`);
-      throw new Error(`Socket directory does not exist: ${socketDir}`);
+      this.logger.warn(`Socket directory does not exist: ${socketDir}`);
+      console.warn(`Socket directory does not exist: ${socketDir}`);
+      this.logger.info("Web server will start without external crawler connection. Connection will be attempted periodically.");
+      console.log("Web server will start without external crawler connection. Connection will be attempted periodically.");
+    } else {
+      console.log("Socket directory exists:", socketDir);
     }
     
-    console.log("Socket directory exists:", socketDir);
-    
-    // Connect to the socket
+    // Attempt initial connection but don't block startup
     this.connect();
   }
   
   /**
    * Connect to the supervisor socket
    */
-  private async connect(): Promise<void> {
+  private async connect(): Promise<boolean> {
     console.log("MessageBusClient.connect() called, connected:", this.connected);
     if (this.connected) {
-      return;
+      return true;
     }
 
     try {
       this.logger.info(`Connecting to supervisor via Unix socket: ${this.socketPath}`);
       console.log(`Attempting to connect to Unix socket: ${this.socketPath}`);
       
-      // Check if socket exists
+      // Check if socket exists - don't throw error, just warn and return false
       if (!existsSync(this.socketPath)) {
-        const error = `Socket file does not exist: ${this.socketPath}`;
-        console.error(error);
-        throw new Error(error);
+        this.logger.warn(`Socket file does not exist: ${this.socketPath}`);
+        console.warn(`Socket file does not exist: ${this.socketPath}`);
+        this.logger.info("External crawler not available. Connection will be retried later.");
+        console.log("External crawler not available. Connection will be retried later.");
+        this.scheduleReconnect();
+        return false;
       }
       
       console.log("Socket file exists, creating Bun.connect...");
@@ -140,11 +144,11 @@ export class MessageBusClient extends EventEmitter {
             this.handleSocketData(data);
           },
           open: () => {
-            this.connected = true;
-            this.reconnectAttempts = 0;
-            this.logger.info(`Connected to supervisor at ${this.socketPath}`);
-            console.log(`MessageBusClient successfully connected to ${this.socketPath}`);
-            this.emit("connected");
+          this.connected = true;
+          this.reconnectAttempts = 0;
+          this.logger.info(`Connected to supervisor at ${this.socketPath}`);
+          console.log(`🔌 MessageBusClient successfully connected to ${this.socketPath}`);
+          this.emit("connected");
             
             // Process queued messages
             this.processQueue();
@@ -179,11 +183,13 @@ export class MessageBusClient extends EventEmitter {
       });
       
       console.log("Bun.connect created, socket:", !!this.socket);
+      return true;
     } catch (err) {
-      this.logger.error(`Failed to connect to supervisor: ${err}`);
-      console.error("MessageBusClient connection failed:", err);
+      this.logger.warn(`Failed to connect to supervisor: ${err}`);
+      console.warn("MessageBusClient connection failed:", err);
       this.emit("error", err);
       this.scheduleReconnect();
+      return false;
     }
   }
   
@@ -195,8 +201,8 @@ export class MessageBusClient extends EventEmitter {
       clearTimeout(this.reconnectTimer);
     }
 
-    // Calculate backoff with jitter
-    const baseDelay = 1000; // Start with 1 second
+    // Calculate backoff with jitter - start with longer delays
+    const baseDelay = 5000; // Start with 5 seconds
     const exponentialDelay = Math.min(
       baseDelay * Math.pow(1.5, this.reconnectAttempts),
       this.maxReconnectDelay
@@ -206,12 +212,17 @@ export class MessageBusClient extends EventEmitter {
     const jitter = exponentialDelay * 0.2 * (Math.random() * 2 - 1);
     const delay = Math.floor(exponentialDelay + jitter);
 
-    this.reconnectTimer = setTimeout(() => {
-      this.logger.info(`Attempting to reconnect (attempt ${this.reconnectAttempts + 1})...`);
+    this.reconnectTimer = setTimeout(async () => {
+      this.logger.debug(`Attempting to reconnect to external crawler (attempt ${this.reconnectAttempts + 1})...`);
       this.reconnectAttempts++;
-      this.connect().catch((err) => {
-        this.logger.error(`Reconnection failed: ${err instanceof Error ? err.message : String(err)}`);
-      });
+      
+      const connected = await this.connect();
+      if (!connected) {
+        // Only log every 5th attempt to reduce noise
+        if (this.reconnectAttempts % 5 === 0) {
+          this.logger.info(`Still waiting for external crawler connection (${this.reconnectAttempts} attempts). Next retry in ${Math.floor(delay/1000)}s`);
+        }
+      }
     }, delay);
   }
   
@@ -219,56 +230,161 @@ export class MessageBusClient extends EventEmitter {
    * Handle incoming data from the socket
    */
   private handleSocketData(data: Buffer): void {
-    try {
-      const message = JSON.parse(data.toString()) as IPCMessage;
-      
-      // Validate the message format
-      IPCMessageSchema.parse(message);
-      
-      // Check if message is intended for us
-      if (message.destination !== this.id && message.destination !== "*") {
-        this.logger.warn(`Received message for ${message.destination}, but our ID is ${this.id}`);
-        return;
+    const dataStr = data.toString();
+    console.log("DEBUG MessageBusClient: Raw data received:", dataStr);
+    
+    // Handle multiple concatenated JSON messages
+    const messages = this.parseMultipleJsonMessages(dataStr);
+    
+    for (const message of messages) {
+      try {
+        // Validate the message format
+        IPCMessageSchema.parse(message);
+        
+        // Check if message is intended for us
+        if (message.destination !== this.id && message.destination !== "*") {
+          this.logger.warn(`Received message for ${message.destination}, but our ID is ${this.id}`);
+          continue;
+        }
+        
+        this.logger.debug(`Received ${message.type}:${message.key} from ${message.origin}`);
+        this.processMessage(message);
+      } catch (err) {
+        if (err instanceof z.ZodError) {
+          this.logger.error("Invalid message format received", { errors: err.errors });
+        } else {
+          this.logger.error(`Error processing individual message: ${err instanceof Error ? err.message : String(err)}`);
+        }
       }
-      
-      this.logger.debug(`Received ${message.type}:${message.key} from ${message.origin}`);
-      
-      // Handle different message types
-      switch (message.type) {
-        case MessageType.HEARTBEAT:
-          this.emit("heartbeat", message.payload);
-          break;
+    }
+  }
+  
+  /**
+   * Parse multiple concatenated JSON messages from a string
+   */
+  private parseMultipleJsonMessages(dataStr: string): IPCMessage[] {
+    const messages: IPCMessage[] = [];
+    let currentPos = 0;
+    
+    while (currentPos < dataStr.length) {
+      try {
+        // Find the end of the current JSON object
+        let braceCount = 0;
+        let inString = false;
+        let escaped = false;
+        let jsonStart = currentPos;
+        let jsonEnd = currentPos;
+        
+        // Skip any whitespace at the beginning
+        while (jsonStart < dataStr.length && /\s/.test(dataStr.charAt(jsonStart))) {
+          jsonStart++;
+        }
+        
+        if (jsonStart >= dataStr.length) break;
+        
+        // Parse JSON object by counting braces
+        for (let i = jsonStart; i < dataStr.length; i++) {
+          const char = dataStr[i];
           
-        case MessageType.MESSAGE:
-          // Handle specific message types 
-          if (message.key === "statusUpdate") {
-            this.emit("statusUpdate", message.payload);
-          } else if (message.key === "jobUpdate") {
-            this.emit("jobUpdate", message.payload);
-          } else if (message.key === "shutdown") {
-            this.emit("shutdown", message.payload?.signal);
-          } else {
-            // Generic message
-            this.emit("message", message);
+          if (escaped) {
+            escaped = false;
+            continue;
           }
-          break;
           
-        case MessageType.COMMAND:
-          // Handle commands
-          this.emit("command", message.key, message.payload);
-          break;
+          if (char === '\\' && inString) {
+            escaped = true;
+            continue;
+          }
           
-        default:
-          this.logger.warn(`Unknown message type: ${message.type}`);
+          if (char === '"') {
+            inString = !inString;
+            continue;
+          }
+          
+          if (!inString) {
+            if (char === '{') {
+              braceCount++;
+            } else if (char === '}') {
+              braceCount--;
+              if (braceCount === 0) {
+                jsonEnd = i + 1;
+                break;
+              }
+            }
+          }
+        }
+        
+        if (braceCount === 0 && jsonEnd > jsonStart) {
+          const jsonStr = dataStr.substring(jsonStart, jsonEnd);
+          console.log("DEBUG MessageBusClient: Parsing individual JSON:", jsonStr);
+          const message = JSON.parse(jsonStr) as IPCMessage;
+          messages.push(message);
+          currentPos = jsonEnd;
+        } else {
+          // Invalid JSON or incomplete, skip
+          break;
+        }
+      } catch (parseErr) {
+        console.error("DEBUG MessageBusClient: Failed to parse JSON at position", currentPos, parseErr);
+        // Try to find the next '{' to continue parsing
+        currentPos = dataStr.indexOf('{', currentPos + 1);
+        if (currentPos === -1) break;
       }
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        this.logger.error("Invalid message format received", { errors: err.errors });
-      } else if (err instanceof SyntaxError) {
-        this.logger.error("Invalid JSON received from socket");
-      } else {
-        this.logger.error(`Error processing message: ${err instanceof Error ? err.message : String(err)}`);
-      }
+    }
+    
+    return messages;
+  }
+  
+  /**
+   * Process a validated message
+   */
+  private processMessage(message: IPCMessage): void {
+    console.log("🔍 DEBUG MessageBusClient: Processing message:", message.type, message.key);
+    console.log("🔍 DEBUG MessageBusClient: Full message:", JSON.stringify(message, null, 2));
+      
+    // Handle different message types
+    switch (message.type) {
+      case MessageType.HEARTBEAT:
+        console.log("💓 DEBUG MessageBusClient: Processing HEARTBEAT");
+        this.emit("heartbeat", message.payload);
+        break;
+        
+      case MessageType.MESSAGE:
+        console.log("📨 DEBUG MessageBusClient: Processing MESSAGE with key:", message.key);
+        // Handle specific message types
+        if (message.key === "statusUpdate") {
+          console.log("📊 DEBUG MessageBusClient: Emitting statusUpdate");
+          this.emit("statusUpdate", message.payload);
+        } else if (message.key === "jobUpdate") {
+          console.log("🔄 DEBUG MessageBusClient: Emitting jobUpdate");
+          this.emit("jobUpdate", message.payload);
+        } else if (message.key === "JOB_FAILURE_LOGS") {
+          console.log("❌ DEBUG MessageBusClient: Received JOB_FAILURE_LOGS, emitting jobFailure event with payload:", message.payload);
+          this.emit("jobFailure", message.payload);
+          console.log("❌ DEBUG MessageBusClient: jobFailure event emitted");
+        } else if (message.key === "TOKEN_REFRESH_REQUEST") {
+          console.log("🔄 DEBUG MessageBusClient: *** TOKEN_REFRESH_REQUEST RECEIVED ***");
+          console.log("🔄 DEBUG MessageBusClient: Payload:", JSON.stringify(message.payload, null, 2));
+          console.log("🔄 DEBUG MessageBusClient: Emitting tokenRefreshRequest event...");
+          this.emit("tokenRefreshRequest", message.payload);
+          console.log("🔄 DEBUG MessageBusClient: tokenRefreshRequest event emitted successfully");
+        } else if (message.key === "shutdown") {
+          console.log("🛑 DEBUG MessageBusClient: Processing shutdown");
+          this.emit("shutdown", message.payload?.signal);
+        } else {
+          console.log("📝 DEBUG MessageBusClient: Generic message, emitting 'message' event");
+          // Generic message
+          this.emit("message", message);
+        }
+        break;
+        
+      case MessageType.COMMAND:
+        // Handle commands
+        this.emit("command", message.key, message.payload);
+        break;
+        
+      default:
+        this.logger.warn(`Unknown message type: ${message.type}`);
     }
   }
   
@@ -349,6 +465,21 @@ export class MessageBusClient extends EventEmitter {
       type: MessageType.COMMAND,
       key: command.type,
       payload: command,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Sends a START_JOB command to the external crawler
+   * @param jobData The job data to send to the crawler
+   */
+  public sendStartJobToCrawler(jobData: any): void {
+    this.sendMessage({
+      origin: this.id,
+      destination: "external-crawler",
+      type: MessageType.COMMAND,
+      key: "START_JOB",
+      payload: jobData,
       timestamp: Date.now()
     });
   }
@@ -447,6 +578,10 @@ export class MessageBusClient extends EventEmitter {
     return this.on("jobUpdate", listener);
   }
 
+  public onJobFailure(listener: (failureData: any) => void): this {
+    return this.on("jobFailure", listener);
+  }
+
   public onHeartbeat(listener: (payload: unknown) => void): this {
     return this.on("heartbeat", listener);
   }
@@ -457,6 +592,43 @@ export class MessageBusClient extends EventEmitter {
 
   public onDisconnected(listener: () => void): this {
     return this.on("disconnected", listener);
+  }
+
+  public onTokenRefreshRequest(listener: (requestData: any) => void): this {
+    return this.on("tokenRefreshRequest", listener);
+  }
+
+  /**
+   * Send a token refresh response back to the crawler
+   */
+  public sendTokenRefreshResponse(requestId: string, response: {
+    success: boolean;
+    accessToken?: string;
+    expiresAt?: string;
+    refreshToken?: string;
+    providerId?: string;
+    error?: string;
+  }): void {
+    console.log("🔄 DEBUG: sendTokenRefreshResponse called with requestId:", requestId);
+    console.log("🔄 DEBUG: Response data:", JSON.stringify(response, null, 2));
+    console.log("🔄 DEBUG: Connected status:", this.connected);
+    console.log("🔄 DEBUG: Socket available:", !!this.socket);
+    
+    const message = {
+      origin: this.id,
+      destination: "external-crawler",
+      type: MessageType.MESSAGE,
+      key: "TOKEN_REFRESH_RESPONSE",
+      payload: {
+        requestId,
+        ...response
+      },
+      timestamp: Date.now()
+    };
+    
+    console.log("🔄 DEBUG: Sending TOKEN_REFRESH_RESPONSE message:", JSON.stringify(message, null, 2));
+    this.sendMessage(message);
+    console.log("🔄 DEBUG: TOKEN_REFRESH_RESPONSE message sent successfully");
   }
 }
 
@@ -472,25 +644,25 @@ console.log("Environment check:", {
   socketPath: process?.env?.SOCKET_PATH
 });
 
-// Only create the instance if we're in a Node.js environment and the socket path is set
-if (
-  typeof process !== "undefined" &&
-  process.env &&
-  process.env.SUPERVISOR_SOCKET_PATH
-) {
+// Only create the instance if we're in a Node.js environment
+if (typeof process !== "undefined" && process.env) {
   try {
-    console.log("Creating MessageBusClient instance with SUPERVISOR_SOCKET_PATH");
+    if (process.env.SUPERVISOR_SOCKET_PATH) {
+      console.log("Creating MessageBusClient instance with SUPERVISOR_SOCKET_PATH");
+    } else {
+      console.log("Creating MessageBusClient instance with fallback path");
+    }
     messageBusClientInstance = new MessageBusClient();
+    console.log("MessageBusClient instance created successfully");
   } catch (err) {
-    console.error("Failed to initialize MessageBusClient:", err);
-  }
-} else {
-  // Try to create anyway with fallback path for debugging
-  try {
-    console.log("Creating MessageBusClient instance with fallback path");
-    messageBusClientInstance = new MessageBusClient();
-  } catch (err) {
-    console.error("Failed to initialize MessageBusClient with fallback:", err);
+    console.warn("MessageBusClient initialization had issues, but server can continue:", err);
+    // Still create the instance to provide graceful degradation
+    try {
+      messageBusClientInstance = new MessageBusClient();
+    } catch (finalErr) {
+      console.error("Failed to create MessageBusClient instance entirely:", finalErr);
+      messageBusClientInstance = null;
+    }
   }
 }
 
