@@ -4,7 +4,7 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import { page } from "$app/stores";
   import { navigating } from '$app/stores';
-  import { Home, Settings, Users, MapPin, Briefcase, Key } from "lucide-svelte";
+  import { Home, Settings, Users, MapPin, Briefcase, Key, Activity } from "lucide-svelte";
   import LoadingProvider from "$lib/components/admin/LoadingProvider.svelte";
   import NavigationLoadingBar from "$lib/components/admin/NavigationLoadingBar.svelte";
   import { isNavigationLoading } from "$lib/stores/admin-loading";
@@ -17,6 +17,7 @@
   // Navigation items with icons and paths
   const navItems = [
     { label: "Dashboard", path: "/admin", icon: Home },
+    { label: "Crawler Status", path: "/admin/crawler", icon: Activity },
     { label: "Tokens", path: "/admin/tokens", icon: Key },
     { label: "Accounts", path: "/admin/accounts", icon: Users },
     { label: "Areas", path: "/admin/areas", icon: MapPin },
@@ -150,14 +151,33 @@
           </div>
           <TableSkeleton columns={6} rows={12} />
         </div>
+      {:else if destinationPath.includes('/crawler')}
+       <div class="space-y-6">
+         <div class="space-y-2">
+           <div class="h-8 w-64 bg-muted rounded animate-pulse"></div>
+           <div class="h-4 w-96 bg-muted rounded animate-pulse"></div>
+         </div>
+         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+           {#each Array(4) as _}
+             <div class="space-y-3">
+               <div class="h-4 w-20 bg-muted rounded animate-pulse"></div>
+               <div class="h-8 w-16 bg-muted rounded animate-pulse"></div>
+             </div>
+           {/each}
+         </div>
+         <div class="grid gap-6 md:grid-cols-2">
+           <AdminPageSkeleton />
+           <AdminPageSkeleton />
+         </div>
+       </div>
       {:else if destinationPath.includes('/settings')}
-        <div class="space-y-6">
-          <div class="space-y-2">
-            <div class="h-8 w-64 bg-muted rounded animate-pulse"></div>
-            <div class="h-4 w-96 bg-muted rounded animate-pulse"></div>
-          </div>
-          <AdminPageSkeleton />
-        </div>
+       <div class="space-y-6">
+         <div class="space-y-2">
+           <div class="h-8 w-64 bg-muted rounded animate-pulse"></div>
+           <div class="h-4 w-96 bg-muted rounded animate-pulse"></div>
+         </div>
+         <AdminPageSkeleton />
+       </div>
       {:else}
         <!-- Dashboard skeleton -->
         <div class="space-y-6">

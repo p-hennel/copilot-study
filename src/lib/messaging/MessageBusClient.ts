@@ -77,21 +77,34 @@ export class MessageBusClient extends EventEmitter {
     
     // Configure process ID and socket path
     this.id = process.env.SUPERVISOR_PROCESS_ID || "web-server";
-    this.socketPath = process.env.SUPERVISOR_SOCKET_PATH || "";
+    this.socketPath = process.env.SUPERVISOR_SOCKET_PATH ||
+                     process.env.SOCKET_PATH ||
+                     "/Users/philhennel/Code/copilot-survey/data.private/config/api.sock";
+    
+    console.log("MessageBusClient constructor:", {
+      id: this.id,
+      socketPath: this.socketPath,
+      supervisorSocketPath: process.env.SUPERVISOR_SOCKET_PATH,
+      socketPathEnv: process.env.SOCKET_PATH
+    });
     
     if (!this.socketPath) {
-      throw new Error("SUPERVISOR_SOCKET_PATH environment variable not set");
+      throw new Error("SUPERVISOR_SOCKET_PATH or SOCKET_PATH environment variable not set");
     }
     
     this.logger = getLogger(["messageBus", this.id]);
     this.logger.info("MessageBusClient initializing with Unix socket IPC...");
+    console.log("MessageBusClient initializing with path:", this.socketPath);
     
     // Check if socket path exists
     const socketDir = this.socketPath.substring(0, this.socketPath.lastIndexOf('/'));
     if (!existsSync(socketDir)) {
       this.logger.error(`Socket directory does not exist: ${socketDir}`);
+      console.error(`Socket directory does not exist: ${socketDir}`);
       throw new Error(`Socket directory does not exist: ${socketDir}`);
     }
+    
+    console.log("Socket directory exists:", socketDir);
     
     // Connect to the socket
     this.connect();
@@ -101,52 +114,74 @@ export class MessageBusClient extends EventEmitter {
    * Connect to the supervisor socket
    */
   private async connect(): Promise<void> {
+    console.log("MessageBusClient.connect() called, connected:", this.connected);
     if (this.connected) {
       return;
     }
 
     try {
       this.logger.info(`Connecting to supervisor via Unix socket: ${this.socketPath}`);
+      console.log(`Attempting to connect to Unix socket: ${this.socketPath}`);
       
       // Check if socket exists
       if (!existsSync(this.socketPath)) {
-        throw new Error(`Socket file does not exist: ${this.socketPath}`);
+        const error = `Socket file does not exist: ${this.socketPath}`;
+        console.error(error);
+        throw new Error(error);
       }
+      
+      console.log("Socket file exists, creating Bun.connect...");
       
       this.socket = await Bun.connect({
         unix: this.socketPath,
         socket: {
-          data: (_socket, data) => this.handleSocketData(data),
+          data: (_socket, data) => {
+            console.log("MessageBusClient received data:", data.toString());
+            this.handleSocketData(data);
+          },
           open: () => {
             this.connected = true;
             this.reconnectAttempts = 0;
             this.logger.info(`Connected to supervisor at ${this.socketPath}`);
+            console.log(`MessageBusClient successfully connected to ${this.socketPath}`);
             this.emit("connected");
             
             // Process queued messages
             this.processQueue();
             
-            // Register with the supervisor
-            this.sendCommandToSupervisor("register", { 
-              id: this.id,
-              pid: process.pid,
-              type: "web-server"
+            // Register with the external crawler
+            this.sendMessage({
+              origin: this.id,
+              destination: "external-crawler",
+              type: MessageType.COMMAND,
+              key: "register",
+              payload: {
+                id: this.id,
+                pid: process.pid,
+                type: "web-server"
+              },
+              timestamp: Date.now()
             });
           },
           close: () => {
             this.connected = false;
             this.logger.warn("Disconnected from supervisor");
+            console.log("MessageBusClient disconnected from supervisor");
             this.emit("disconnected");
             this.scheduleReconnect();
           },
           error: (_socket, error) => {
             this.logger.error(`Socket error: ${error}`);
+            console.error("MessageBusClient socket error:", error);
             this.emit("error", error);
           }
         }
       });
+      
+      console.log("Bun.connect created, socket:", !!this.socket);
     } catch (err) {
       this.logger.error(`Failed to connect to supervisor: ${err}`);
+      console.error("MessageBusClient connection failed:", err);
       this.emit("error", err);
       this.scheduleReconnect();
     }
@@ -278,10 +313,13 @@ export class MessageBusClient extends EventEmitter {
         message.timestamp = Date.now();
       }
       
-      this.socket.write(JSON.stringify(message));
+      const messageStr = JSON.stringify(message);
+      console.log("MessageBusClient sending message:", messageStr);
+      this.socket.write(messageStr);
       this.logger.debug(`Sent ${message.type}:${message.key} to ${message.destination}`);
     } catch (err) {
       this.logger.error(`Failed to send message: ${err instanceof Error ? err.message : String(err)}`);
+      console.error("Failed to send message:", err);
       this.queueMessage(message);
     }
   }
@@ -425,17 +463,37 @@ export class MessageBusClient extends EventEmitter {
 // Create a singleton instance for use throughout the application
 let messageBusClientInstance: MessageBusClient | null = null;
 
+// Debug logging for singleton creation
+console.log("MessageBusClient module loading...");
+console.log("Environment check:", {
+  hasProcess: typeof process !== "undefined",
+  hasEnv: typeof process !== "undefined" && !!process.env,
+  supervisorSocketPath: process?.env?.SUPERVISOR_SOCKET_PATH,
+  socketPath: process?.env?.SOCKET_PATH
+});
+
 // Only create the instance if we're in a Node.js environment and the socket path is set
 if (
-  typeof process !== "undefined" && 
-  process.env && 
+  typeof process !== "undefined" &&
+  process.env &&
   process.env.SUPERVISOR_SOCKET_PATH
 ) {
   try {
+    console.log("Creating MessageBusClient instance with SUPERVISOR_SOCKET_PATH");
     messageBusClientInstance = new MessageBusClient();
   } catch (err) {
     console.error("Failed to initialize MessageBusClient:", err);
   }
+} else {
+  // Try to create anyway with fallback path for debugging
+  try {
+    console.log("Creating MessageBusClient instance with fallback path");
+    messageBusClientInstance = new MessageBusClient();
+  } catch (err) {
+    console.error("Failed to initialize MessageBusClient with fallback:", err);
+  }
 }
+
+console.log("MessageBusClient singleton created:", !!messageBusClientInstance);
 
 export default messageBusClientInstance; // May be null if initialization failed

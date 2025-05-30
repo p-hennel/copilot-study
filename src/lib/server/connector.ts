@@ -1,4 +1,5 @@
-import { dev } from "$app/environment";
+// Use environment variable or default to development mode detection
+const dev = process.env.NODE_ENV !== 'production';
 import type {
   CrawlerConfig,
   Job,

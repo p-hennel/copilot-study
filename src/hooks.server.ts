@@ -12,6 +12,17 @@ import { existsSync } from "node:fs"
 import path from "node:path"
 import { mkdirSync } from "fs";
 
+// Set up socket path for external crawler connection
+if (!process.env.SOCKET_PATH) {
+  const socketDir = path.join(process.cwd(), "data.private", "config");
+  process.env.SOCKET_PATH = path.join(socketDir, "api.sock");
+  
+  // Ensure socket directory exists
+  if (!existsSync(socketDir)) {
+    mkdirSync(socketDir, { recursive: true });
+  }
+}
+
 const bunHomeData = path.join("/", "home", "bun", "data")
 const logsDir = path.join(bunHomeData, "logs")
 if (existsSync(bunHomeData) && !existsSync(logsDir)) {
