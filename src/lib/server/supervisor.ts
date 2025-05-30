@@ -17,6 +17,35 @@ import { getLogger } from "@logtape/logtape";
 
 const logger = getLogger(["backend", "supervisor"])
 
+/**
+ * Reset all running jobs to queued status when crawler connection is lost
+ */
+async function resetRunningJobsOnDisconnect(): Promise<void> {
+  try {
+    logger.info("Supervisor detected connection loss - resetting running jobs to queued status");
+    console.log("🔄 Supervisor detected connection loss - resetting running jobs to queued status");
+    
+    const result = await db
+      .update(jobSchema)
+      .set({
+        status: JobStatus.queued,
+        started_at: null // Reset start time since job will need to restart
+      })
+      .where(eq(jobSchema.status, JobStatus.running));
+    
+    if (result.rowsAffected > 0) {
+      logger.info(`Successfully reset ${result.rowsAffected} running jobs to queued status`);
+      console.log(`✅ Successfully reset ${result.rowsAffected} running jobs to queued status`);
+    } else {
+      logger.info("No running jobs found to reset");
+      console.log("ℹ️ No running jobs found to reset");
+    }
+  } catch (error) {
+    logger.error("Failed to reset running jobs to queued status:", { error });
+    console.error("❌ Failed to reset running jobs to queued status:", error);
+  }
+}
+
 // Define crawler-related types
 interface JobCompletionUpdate {
   jobId: string;
@@ -238,6 +267,9 @@ if (SUPERVISED) {
       logger.warn(`IPC connection to supervisor lost (stdin closed or errored).`)
       currentCrawlerStatus = null
       lastHeartbeat = 0
+      
+      // Reset running jobs to queued when connection is lost
+      resetRunningJobsOnDisconnect();
     })
 
     messageBusClientInstance.on("error", (error) => {
@@ -445,12 +477,19 @@ if (SUPERVISED) {
     console.log("🔧 DEBUG: MessageBusClient not available in non-supervised mode either");
   }
 
-  // Optional: Monitor heartbeat
+  // Monitor heartbeat and reset jobs if connection is stale
   setInterval(() => {
     if (messageBusClientInstance && lastHeartbeat !== 0 && Date.now() - lastHeartbeat > HEARTBEAT_TIMEOUT) {
       logger.warn(
         `No heartbeat or status update received from crawler via supervisor in over ${HEARTBEAT_TIMEOUT / 1000} seconds. Communication might be stale.`
       )
+      
+      // Reset running jobs if heartbeat timeout indicates lost connection
+      if (Date.now() - lastHeartbeat > HEARTBEAT_TIMEOUT * 2) { // Wait 2x timeout before resetting jobs
+        logger.warn("Extended heartbeat timeout detected - resetting running jobs to queued");
+        resetRunningJobsOnDisconnect();
+        lastHeartbeat = 0; // Reset to prevent repeated calls
+      }
     }
   }, HEARTBEAT_TIMEOUT / 2)
 

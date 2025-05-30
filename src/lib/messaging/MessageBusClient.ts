@@ -6,6 +6,20 @@ import { z } from "zod";
 
 // Import types for crawler communication
 import { getLogger, type Logger } from "@logtape/logtape";
+
+// Import database functionality for job management
+import { db } from "$lib/server/db";
+import { job } from "$lib/server/db/base-schema";
+import { JobStatus } from "$lib/types";
+import { eq } from "drizzle-orm";
+
+// Import cache functions for persistent status storage
+import {
+  updateCrawlerStatus,
+  updateMessageBusConnection,
+  updateHeartbeat,
+  addJobFailureLog
+} from "$lib/stores/crawler-cache";
 // TODO: Create these types if they don't exist
 // For now using placeholder types to fix compilation errors
 type JobCompletionUpdate = {
@@ -148,6 +162,10 @@ export class MessageBusClient extends EventEmitter {
           this.reconnectAttempts = 0;
           this.logger.info(`Connected to supervisor at ${this.socketPath}`);
           console.log(`🔌 MessageBusClient successfully connected to ${this.socketPath}`);
+          
+          // Update cache with connection status
+          updateMessageBusConnection(true);
+          
           this.emit("connected");
             
             // Process queued messages
@@ -171,13 +189,28 @@ export class MessageBusClient extends EventEmitter {
             this.connected = false;
             this.logger.warn("Disconnected from supervisor");
             console.log("MessageBusClient disconnected from supervisor");
+            
+            // Update cache with connection status
+            updateMessageBusConnection(false);
+            
             this.emit("disconnected");
+            
+            // Reset running jobs to queued when connection is lost
+            this.resetRunningJobsToQueued();
+            
             this.scheduleReconnect();
           },
           error: (_socket, error) => {
             this.logger.error(`Socket error: ${error}`);
             console.error("MessageBusClient socket error:", error);
+            
+            // Update cache with connection status
+            updateMessageBusConnection(false);
+            
             this.emit("error", error);
+            
+            // Reset running jobs on socket error as this indicates connection loss
+            this.resetRunningJobsToQueued();
           }
         }
       });
@@ -344,22 +377,34 @@ export class MessageBusClient extends EventEmitter {
       
     // Handle different message types
     switch (message.type) {
-      case MessageType.HEARTBEAT:
+      case MessageType.HEARTBEAT: {
         console.log("💓 DEBUG MessageBusClient: Processing HEARTBEAT");
+        // Update cache with heartbeat
+        const heartbeatTimestamp = message.payload?.timestamp || message.timestamp || new Date().toISOString();
+        updateHeartbeat(heartbeatTimestamp);
         this.emit("heartbeat", message.payload);
         break;
+      }
         
       case MessageType.MESSAGE:
         console.log("📨 DEBUG MessageBusClient: Processing MESSAGE with key:", message.key);
         // Handle specific message types
         if (message.key === "statusUpdate") {
           console.log("📊 DEBUG MessageBusClient: Emitting statusUpdate");
+          // Update cache with status
+          if (message.payload) {
+            updateCrawlerStatus(message.payload);
+          }
           this.emit("statusUpdate", message.payload);
         } else if (message.key === "jobUpdate") {
           console.log("🔄 DEBUG MessageBusClient: Emitting jobUpdate");
           this.emit("jobUpdate", message.payload);
         } else if (message.key === "JOB_FAILURE_LOGS") {
           console.log("❌ DEBUG MessageBusClient: Received JOB_FAILURE_LOGS, emitting jobFailure event with payload:", message.payload);
+          // Update cache with job failure log
+          if (message.payload) {
+            addJobFailureLog(message.payload);
+          }
           this.emit("jobFailure", message.payload);
           console.log("❌ DEBUG MessageBusClient: jobFailure event emitted");
         } else if (message.key === "TOKEN_REFRESH_REQUEST") {
@@ -551,6 +596,35 @@ export class MessageBusClient extends EventEmitter {
     });
   }
   
+  /**
+   * Reset all running jobs to queued status when crawler connection is lost
+   */
+  private async resetRunningJobsToQueued(): Promise<void> {
+    try {
+      this.logger.info("Connection to crawler lost - resetting running jobs to queued status");
+      console.log("🔄 Connection to crawler lost - resetting running jobs to queued status");
+      
+      const result = await db
+        .update(job)
+        .set({
+          status: JobStatus.queued,
+          started_at: null // Reset start time since job will need to restart
+        })
+        .where(eq(job.status, JobStatus.running));
+      
+      if (result.rowsAffected > 0) {
+        this.logger.info(`Successfully reset ${result.rowsAffected} running jobs to queued status`);
+        console.log(`✅ Successfully reset ${result.rowsAffected} running jobs to queued status`);
+      } else {
+        this.logger.info("No running jobs found to reset");
+        console.log("ℹ️ No running jobs found to reset");
+      }
+    } catch (error) {
+      this.logger.error("Failed to reset running jobs to queued status:", { error });
+      console.error("❌ Failed to reset running jobs to queued status:", error);
+    }
+  }
+
   /**
    * Clean up resources and disconnect
    */

@@ -12,6 +12,9 @@ import { existsSync } from "node:fs"
 import path from "node:path"
 import { mkdirSync } from "fs";
 
+// Import initialization to ensure socket connection starts immediately
+import "$lib/startup/initialize";
+
 // Set up socket path for external crawler connection
 if (!process.env.SOCKET_PATH) {
   const socketDir = path.join(process.cwd(), "data.private", "config");

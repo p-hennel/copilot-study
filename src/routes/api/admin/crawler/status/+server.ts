@@ -2,6 +2,13 @@ import { json, type RequestHandler } from "@sveltejs/kit";
 import { getLogger } from "$lib/logging";
 import { isAdmin } from "$lib/server/utils";
 import messageBusClient from "$lib/messaging/MessageBusClient";
+import {
+  updateCrawlerStatus,
+  updateMessageBusConnection,
+  updateHeartbeat,
+  addJobFailureLog,
+  getCachedStatus
+} from "$lib/stores/crawler-cache";
 
 const logger = getLogger(["backend", "api", "admin", "crawler", "status"]);
 
@@ -31,15 +38,24 @@ export const GET: RequestHandler = async ({ request, locals }) => {
         });
         controller.enqueue(`data: ${data}\n\n`);
 
-        // Send current MessageBusClient status
+        // Send current MessageBusClient status and cached data
+        const cachedData = getCachedStatus();
         const clientStatus = {
           type: "client_status",
           payload: {
-            connected: !!messageBusClient,
-            timestamp: new Date().toISOString()
+            messageBusConnected: !!messageBusClient,
+            timestamp: new Date().toISOString(),
+            cachedStatus: cachedData.status,
+            lastHeartbeat: cachedData.lastHeartbeat?.toISOString() || null,
+            lastStatusUpdate: cachedData.lastStatusUpdate?.toISOString() || null,
+            isHealthy: cachedData.isHealthy,
+            jobFailureLogs: cachedData.jobFailureLogs
           }
         };
         controller.enqueue(`data: ${JSON.stringify(clientStatus)}\n\n`);
+        
+        // Update cache with current connection status
+        updateMessageBusConnection(!!messageBusClient);
 
         if (messageBusClient) {
           logger.info("MessageBusClient available, setting up event listeners");
@@ -47,6 +63,10 @@ export const GET: RequestHandler = async ({ request, locals }) => {
           // Listen for status updates
           const onStatusUpdate = (status: any) => {
             logger.debug("Broadcasting status update via SSE", { status });
+            
+            // Update cache
+            updateCrawlerStatus(status);
+            
             const data = JSON.stringify({
               type: "statusUpdate",
               payload: status,
@@ -78,6 +98,10 @@ export const GET: RequestHandler = async ({ request, locals }) => {
           const onJobFailure = (failureData: any) => {
             logger.info("DEBUG: Received job failure data from MessageBusClient", { failureData });
             console.log("DEBUG SSE: Broadcasting job failure logs via SSE", failureData);
+            
+            // Update cache
+            addJobFailureLog(failureData);
+            
             const data = JSON.stringify({
               type: "jobFailure",
               payload: failureData,
@@ -96,6 +120,11 @@ export const GET: RequestHandler = async ({ request, locals }) => {
           // Listen for heartbeat events
           const onHeartbeat = (payload: any) => {
             logger.debug("Broadcasting heartbeat via SSE", { payload });
+            
+            // Update cache with heartbeat
+            const timestamp = payload?.timestamp || new Date().toISOString();
+            updateHeartbeat(timestamp);
+            
             const data = JSON.stringify({
               type: "heartbeat",
               payload,
@@ -205,9 +234,17 @@ export const GET: RequestHandler = async ({ request, locals }) => {
           // Listen for connection events
           const onConnected = () => {
             logger.info("MessageBusClient connected - notifying SSE clients");
+            
+            // Update cache
+            updateMessageBusConnection(true);
+            
             const data = JSON.stringify({
               type: "connection",
-              payload: { status: "connected", timestamp: new Date().toISOString() }
+              payload: {
+                status: "connected",
+                component: "messageBus",
+                timestamp: new Date().toISOString()
+              }
             });
             try {
               controller.enqueue(`data: ${data}\n\n`);
@@ -218,9 +255,17 @@ export const GET: RequestHandler = async ({ request, locals }) => {
 
           const onDisconnected = () => {
             logger.warn("MessageBusClient disconnected - notifying SSE clients");
+            
+            // Update cache
+            updateMessageBusConnection(false);
+            
             const data = JSON.stringify({
               type: "connection",
-              payload: { status: "disconnected", timestamp: new Date().toISOString() }
+              payload: {
+                status: "disconnected",
+                component: "messageBus",
+                timestamp: new Date().toISOString()
+              }
             });
             try {
               controller.enqueue(`data: ${data}\n\n`);
@@ -276,13 +321,19 @@ export const GET: RequestHandler = async ({ request, locals }) => {
     });
   }
 
-  // Fallback: return current status as JSON
+  // Fallback: return current status as JSON including cached data
   logger.info("Returning current crawler status as JSON");
   
+  const cachedData = getCachedStatus();
   const status = {
-    connected: !!messageBusClient,
+    messageBusConnected: !!messageBusClient,
     timestamp: new Date().toISOString(),
-    message: messageBusClient ? "MessageBusClient available" : "MessageBusClient not available"
+    message: messageBusClient ? "MessageBusClient available" : "MessageBusClient not available",
+    cachedStatus: cachedData.status,
+    lastHeartbeat: cachedData.lastHeartbeat?.toISOString() || null,
+    lastStatusUpdate: cachedData.lastStatusUpdate?.toISOString() || null,
+    isHealthy: cachedData.isHealthy,
+    jobFailureLogs: cachedData.jobFailureLogs
   };
 
   return json(status);
