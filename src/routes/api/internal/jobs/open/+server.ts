@@ -43,7 +43,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
   const batchSize = 10;
   const maxFetchAttempts = 5;
 
-  logger.info(`Task request received. Resource: ${resourceParam || "any"}. Will fetch in batches of ${batchSize}, max ${maxFetchAttempts} attempts.`);
+  logger.debug(`Task request received. Resource: ${resourceParam || "any"}. Will fetch in batches of ${batchSize}, max ${maxFetchAttempts} attempts.`);
 
   try {
     const jobQueryConditions = [
@@ -54,7 +54,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
       const lowerResourceParam = resourceParam.toLowerCase();
 
       if (resourceParam === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
-        logger.info(`Filtering jobs where command is '${CrawlCommand.GROUP_PROJECT_DISCOVERY}' for resource parameter '${resourceParam}'`);
+        logger.debug(`Filtering jobs where command is '${CrawlCommand.GROUP_PROJECT_DISCOVERY}' for resource parameter '${resourceParam}'`);
         jobQueryConditions.push(eq(job.command, CrawlCommand.GROUP_PROJECT_DISCOVERY as CrawlCommand));
       } else {
         let typesToFilterBy: DataType[] | undefined;
@@ -63,7 +63,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
         if (lowerResourceParam in crawlCommandConfig && lowerResourceParam !== CrawlCommand.GROUP_PROJECT_DISCOVERY.toLowerCase()) {
           typesToFilterBy = crawlCommandConfig[lowerResourceParam as CrawlCommandName];
           if (typesToFilterBy && typesToFilterBy.length > 0) {
-            logger.info(`Filtering jobs where command is one of [${typesToFilterBy.join(', ')}] for resource parameter (CrawlCommandName) '${lowerResourceParam}'`);
+            logger.debug(`Filtering jobs where command is one of [${typesToFilterBy.join(', ')}] for resource parameter (CrawlCommandName) '${lowerResourceParam}'`);
           }
         }
         // Check if resourceParam is a specific DataType (e.g., "ProjectDetails")
@@ -72,7 +72,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           const actualDataType = allKnownDataTypes.find(dt => dt.toLowerCase() === lowerResourceParam);
           if (actualDataType) {
              typesToFilterBy = [actualDataType];
-             logger.info(`Filtering jobs where command is '${actualDataType}' for resource parameter (DataType) '${resourceParam}'`);
+             logger.debug(`Filtering jobs where command is '${actualDataType}' for resource parameter (DataType) '${resourceParam}'`);
           }
         }
 
@@ -89,7 +89,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 
     for (let fetchAttempt = 0; fetchAttempt < maxFetchAttempts; fetchAttempt++) {
       const offset = fetchAttempt * batchSize;
-      logger.info(`Fetching job batch ${fetchAttempt + 1}/${maxFetchAttempts}, offset: ${offset}, limit: ${batchSize}`);
+      logger.debug(`Fetching job batch ${fetchAttempt + 1}/${maxFetchAttempts}, offset: ${offset}, limit: ${batchSize}`);
 
       const jobDetailsList = await db.query.job.findMany({
         where: and(...jobQueryConditions),
@@ -107,7 +107,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
       });
 
       if (!jobDetailsList || jobDetailsList.length === 0) {
-        logger.info(`No more jobs found in batch ${fetchAttempt + 1}. Stopping fetch attempts.`);
+        logger.debug(`No more jobs found in batch ${fetchAttempt + 1}. Stopping fetch attempts.`);
         break; // No more jobs to fetch that match criteria, exit outer loop
       }
     
@@ -166,14 +166,14 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           const providerId = currentJob.usingAccount.providerId;
           if (providerId === "gitlabCloud" || providerId === "gitlab-cloud") {
             gitlabApiUrl = "https://gitlab.com";
-            logger.info(`Using default gitlabApiUrl: ${gitlabApiUrl} for providerId '${providerId}' for job ${currentJob.id}.`);
+            logger.debug(`Using default gitlabApiUrl: ${gitlabApiUrl} for providerId '${providerId}' for job ${currentJob.id}.`);
           } else if (providerId === "gitlab" || providerId === "gitlab-onprem") {
             const onPremBaseUrl = appSettings.auth?.providers?.gitlab?.baseUrl; // Changed to baseUrl
             if (onPremBaseUrl) {
               try {
                 const parsedBaseUrl = new URL(onPremBaseUrl);
                 gitlabApiUrl = parsedBaseUrl.origin;
-                logger.info(`Constructed gitlabApiUrl: ${gitlabApiUrl} from AppSettings for providerId '${providerId}' ('${onPremBaseUrl}') for job ${currentJob.id}.`);
+                logger.debug(`Constructed gitlabApiUrl: ${gitlabApiUrl} from AppSettings for providerId '${providerId}' ('${onPremBaseUrl}') for job ${currentJob.id}.`);
               } catch (urlError: any) {
                 logger.error(
                   `Job ${currentJob.id} (candidate): Invalid format for AppSettings baseUrl '${onPremBaseUrl}' for providerId '${providerId}': ${urlError.message}.`
@@ -213,7 +213,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           taskDataTypes = ["discover_all_groups_projects"];
           taskCommand = CrawlCommand.GROUP_PROJECT_DISCOVERY;
           resourceId = null;
-          logger.info(`Job ${currentJob.id} is a GROUP_PROJECT_DISCOVERY command. Task resourceType: '${determinedResourceType}'.`);
+          logger.debug(`Job ${currentJob.id} is a GROUP_PROJECT_DISCOVERY command. Task resourceType: '${determinedResourceType}'.`);
         } else {
           const currentDataType = currentJob.command as unknown as DataType;
           taskCommand = currentDataType;
@@ -355,7 +355,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           customParameters: customParameters
         };
 
-        logger.info("✅ JOB-OPEN: Task constructed and ready to be returned", {
+        logger.debug("✅ JOB-OPEN: Task constructed and ready to be returned", {
           taskId: taskObject.taskId,
           resourceType: taskObject.resourceType,
           resourceId: taskObject.resourceId,
@@ -363,15 +363,15 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           gitlabApiUrl: taskObject.gitlabApiUrl
         });
         logger.debug(`📤 JOB-OPEN: Full task object for ${taskObject.taskId}: ${JSON.stringify(taskObject)}`);
-        logger.info(`🚀 JOB-OPEN: Returning job ${taskObject.taskId} with command ${taskObject.command} to external crawler`);
+        logger.debug(`🚀 JOB-OPEN: Returning job ${taskObject.taskId} with command ${taskObject.command} to external crawler`);
         return json([taskObject], { status: 200 }); // Return the first suitable job
       }
       // If inner loop finishes for this batch, continue to next fetchAttempt (outer loop)
     }
 
     // If the outer loop finishes (all attempts made or broke early due to no more jobs), no suitable job was found.
-    logger.info("📭 JOB-OPEN: No suitable job found after checking all fetched candidates across all attempts.");
-    logger.info("📭 JOB-OPEN: Returning empty array - no jobs available");
+    logger.debug("📭 JOB-OPEN: No suitable job found after checking all fetched candidates across all attempts.");
+    logger.debug("📭 JOB-OPEN: Returning empty array - no jobs available");
     return json([], { status: 200 });
 
   } catch (e: unknown) {

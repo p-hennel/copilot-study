@@ -104,7 +104,7 @@ export class MessageBusClient extends EventEmitter {
                      "/Users/philhennel/Code/copilot-survey/data.private/config/api.sock";
     this.logger = getLogger(["messageBus", this.id]);
     
-    this.logger.info("MessageBusClient constructor:", {
+    this.logger.debug("MessageBusClient constructor:", {
       id: this.id,
       socketPath: this.socketPath,
       supervisorSocketPath: process.env.SUPERVISOR_SOCKET_PATH,
@@ -115,14 +115,14 @@ export class MessageBusClient extends EventEmitter {
       throw new Error("SUPERVISOR_SOCKET_PATH or SOCKET_PATH environment variable not set");
     }
   
-    this.logger.info("MessageBusClient initializing with Unix socket IPC...");
+    this.logger.debug("MessageBusClient initializing with Unix socket IPC...");
     this.logger.debug("MessageBusClient initializing with path:", { socketPath: this.socketPath });
     
     // Check if socket path exists - don't throw errors, just log warnings
     const socketDir = this.socketPath.substring(0, this.socketPath.lastIndexOf('/'));
     if (!existsSync(socketDir)) {
       this.logger.warn(`Socket directory does not exist: ${socketDir}`);
-      this.logger.info("Web server will start without external crawler connection. Connection will be attempted periodically.");
+      this.logger.debug("Web server will start without external crawler connection. Connection will be attempted periodically.");
     } else {
       this.logger.debug("Socket directory exists:", { socketDir });
     }
@@ -180,13 +180,13 @@ export class MessageBusClient extends EventEmitter {
     }
 
     try {
-      this.logger.info(`Connecting to supervisor via Unix socket: ${this.socketPath}`);
+      this.logger.debug(`Connecting to supervisor via Unix socket: ${this.socketPath}`);
       this.logger.debug(`Attempting to connect to Unix socket: ${this.socketPath}`);
       
       // Check if socket exists - don't throw error, just warn and return false
       if (!existsSync(this.socketPath)) {
         this.logger.warn(`Socket file does not exist: ${this.socketPath}`);
-        this.logger.info("External crawler not available. Connection will be retried later.");
+        this.logger.debug("External crawler not available. Connection will be retried later.");
         this.scheduleReconnect();
         return false;
       }
@@ -203,7 +203,7 @@ export class MessageBusClient extends EventEmitter {
           open: () => {
             this.connected = true;
             this.reconnectAttempts = 0;
-            this.logger.info(`Connected to supervisor at ${this.socketPath}`);
+            this.logger.debug(`Connected to supervisor at ${this.socketPath}`);
             
             // Update cache with connection status
             updateMessageBusConnection(true);
@@ -301,7 +301,7 @@ export class MessageBusClient extends EventEmitter {
       if (!connected) {
         // Only log every 5th attempt to reduce noise
         if (this.reconnectAttempts % 5 === 0) {
-          this.logger.info(`Still waiting for external crawler connection (${this.reconnectAttempts} attempts). Next retry in ${Math.floor(delay/1000)}s`);
+          this.logger.debug(`Still waiting for external crawler connection (${this.reconnectAttempts} attempts). Next retry in ${Math.floor(delay/1000)}s`);
         }
       }
     }, delay);
@@ -670,9 +670,9 @@ export class MessageBusClient extends EventEmitter {
         .where(eq(job.status, JobStatus.running));
       
       if (result.rowsAffected > 0) {
-        this.logger.info(`Successfully reset ${result.rowsAffected} running jobs to queued status`);
+        this.logger.debug(`Successfully reset ${result.rowsAffected} running jobs to queued status`);
       } else {
-        this.logger.info("No running jobs found to reset");
+        this.logger.debug("No running jobs found to reset");
       }
     } catch (error) {
       this.logger.error("Failed to reset running jobs to queued status:", { error });
@@ -774,7 +774,7 @@ let messageBusClientInstance: MessageBusClient | null = null;
 const logger = getLogger(["messaging", "client", "singleton"]);
 
 // Debug logging for singleton creation
-logger.info("MessageBusClient module loading...");
+logger.debug("MessageBusClient module loading...");
 logger.info("Environment check:", {
   hasProcess: typeof process !== "undefined",
   hasEnv: typeof process !== "undefined" && !!process.env,
