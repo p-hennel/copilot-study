@@ -41,4 +41,5 @@ src/hooks.server.ts
 *.private
 *.private.*
 *.log
+*.log.*
 .DS_Store
