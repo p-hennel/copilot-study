@@ -291,7 +291,7 @@
       case "heartbeat":
         if (message.payload) {
           console.log("Received crawler heartbeat:", message.payload);
-          const timestamp = message.payload.timestamp || message.timestamp || new Date().toISOString();
+          const timestamp = message.payload.timestamp || message.timestamp || new Date()?.toISOString();
           updateHeartbeat(timestamp);
           if (crawlerStatus) {
             crawlerStatus = {
@@ -480,10 +480,10 @@
               <Tooltip.Provider delayDuration={0}>
                 <Tooltip.Root>
                   <Tooltip.Trigger>
-                    <Time timestamp={lastUpdate.toISOString()} relative />
+                    <Time timestamp={lastUpdate?.toISOString()} relative />
                   </Tooltip.Trigger>
                   <Tooltip.Content>
-                    <Time timestamp={lastUpdate.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                    <Time timestamp={lastUpdate?.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
                   </Tooltip.Content>
                 </Tooltip.Root>
               </Tooltip.Provider>
@@ -591,9 +591,18 @@
             </Card.Title>
             <div class="space-y-1">
               <Card.Description>
-              {#if crawlerStatus.lastHeartbeat}
-                  Last heartbeat: <Time timestamp={crawlerStatus.lastHeartbeat} format="DD. MMM YYYY, HH:mm:ss" />
-                  (<Time timestamp={crawlerStatus.lastHeartbeat} relative />)
+              {#if crawlerStatus?.lastHeartbeat}
+                  Last heartbeat: 
+                  <Tooltip.Provider delayDuration={0}>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <Time timestamp={crawlerStatus?.lastHeartbeat?.toISOString()} relative />
+                      </Tooltip.Trigger>
+                      <Tooltip.Content>
+                        <Time timestamp={crawlerStatus?.lastHeartbeat?.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                      </Tooltip.Content>
+                    </Tooltip.Root>
+                  </Tooltip.Provider>
               {:else}
                 <div class="flex flex-row gap-2 items-center">
                   <Tooltip.Provider delayDuration={0}>
@@ -613,10 +622,10 @@
                         <Tooltip.Provider delayDuration={0}>
                           <Tooltip.Root>
                             <Tooltip.Trigger>
-                              <Time timestamp={cache.lastHeartbeat.toISOString()} relative />
+                              <Time timestamp={cache.lastHeartbeat?.toISOString()} relative />
                             </Tooltip.Trigger>
                             <Tooltip.Content>
-                              <Time timestamp={cache.lastHeartbeat.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                              <Time timestamp={cache.lastHeartbeat?.toISOString()} format="DD. MMM YYYY, HH:mm:ss" /> (cached)
                             </Tooltip.Content>
                           </Tooltip.Root>
                         </Tooltip.Provider>
@@ -639,10 +648,10 @@
                         <Tooltip.Provider delayDuration={0}>
                           <Tooltip.Root>
                             <Tooltip.Trigger>
-                              <Time timestamp={cache.cacheTimestamp.toISOString()} relative />
+                              <Time timestamp={cache.cacheTimestamp?.toISOString()} relative />
                             </Tooltip.Trigger>
                             <Tooltip.Content>
-                              <Time timestamp={cache.cacheTimestamp.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                              <Time timestamp={cache.cacheTimestamp?.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
                             </Tooltip.Content>
                           </Tooltip.Root>
                         </Tooltip.Provider>
@@ -710,7 +719,7 @@
               <div class="grow">
                 Manage crawler operations and view real-time updates
               </div>
-              <div class="-mt-8 -mr-2">
+              <div class="-mt-7 -mr-2">
                 <Button
                   size="sm"
                   variant="outline"
@@ -725,6 +734,7 @@
           </Card.Header>
           <Card.Content class="flex flex-col gap-4">
             <!-- Control Buttons -->
+            <!--
             <div class="flex flex-wrap gap-2 ">
 
               {#if !crawlerStatus.paused && crawlerStatus.running}
@@ -749,6 +759,7 @@
                 </Button>
               {/if}
             </div>
+            -->
 
             <!-- Progress visualization -->
             {#if crawlerStatus.completed || crawlerStatus.failed || crawlerStatus.processing || crawlerStatus.queued}
@@ -836,32 +847,30 @@
               <div class="space-y-2">
                 <div class="text-xs font-medium text-muted-foreground">System Health</div>
                 <div class="flex items-center gap-2">
-                  {#if cache.isHealthy}
-                    <Badge variant="default" class="text-xs">
-                      <CheckCircle2 class="h-3 w-3 mr-1" />
-                      Healthy
-                    </Badge>
-                  {:else}
-                    <Badge variant="destructive" class="text-xs">
-                      <AlertCircle class="h-3 w-3 mr-1" />
-                      Unhealthy
-                    </Badge>
-                  {/if}
-                  
-                  {#if cache.lastHeartbeat}
-                    <span class="text-xs text-muted-foreground">
-                      <Tooltip.Provider delayDuration={0}>
-                        <Tooltip.Root>
-                          <Tooltip.Trigger>
-                            Last heartbeat: <Time timestamp={cache.lastHeartbeat.toISOString()} relative />
-                          </Tooltip.Trigger>
-                          <Tooltip.Content>
-                            <Time timestamp={cache.lastHeartbeat.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
-                          </Tooltip.Content>
-                        </Tooltip.Root>
-                      </Tooltip.Provider>
-                    </span>
-                  {/if}
+                  <span class="text-xs text-muted-foreground">
+                    <Tooltip.Provider delayDuration={300} disabled={!cache.lastHeartbeat}>
+                      <Tooltip.Root>
+                        <Tooltip.Trigger>
+                          {#if cache.isHealthy}
+                            <Badge variant="default" class="text-xs">
+                              <CheckCircle2 class="h-3 w-3 mr-1" />
+                              Healthy
+                            </Badge>
+                          {:else}
+                            <Badge variant="destructive" class="text-xs">
+                              <AlertCircle class="h-3 w-3 mr-1" />
+                              Unhealthy
+                            </Badge>
+                          {/if}
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>
+                          {#if cache.lastHeartbeat}
+                            <Time timestamp={cache.lastHeartbeat?.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                          {/if}
+                        </Tooltip.Content>
+                      </Tooltip.Root>
+                    </Tooltip.Provider>
+                  </span>
                 </div>
               </div>
             </div>

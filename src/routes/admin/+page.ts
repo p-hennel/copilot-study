@@ -10,6 +10,7 @@ export async function load(event) {
     areas: fetchAdminData(event.fetch, "areas", token, { description: "Loading areas..." }),
     jobs: fetchAdminData(event.fetch, "jobs", token, { description: "Loading jobs..." }),
     tokenInfos: fetchAdminData(event.fetch, "tokenInfos", token, { description: "Loading tokens..." }),
+    statistics: fetchAdminData(event.fetch, "statistics", token, { description: "Loading statistics..." }),
     crawler: fetchAdminData(event.fetch, "crawler", token, { description: "Loading crawler status..." }),
     sessiontoken: token
   };
