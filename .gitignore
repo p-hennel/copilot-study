@@ -11,8 +11,8 @@ cache
 .wrangler
 /.svelte-kit
 /build
-logs/
-data/
+/logs
+/data
 
 # OS
 .DS_Store
