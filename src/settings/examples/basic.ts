@@ -3,10 +3,12 @@
  */
 import { z } from "zod";
 import { SettingsManager, createSettingsManager, getSettings } from "./bun-settings-lib";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["settings","examples"]);
 
 // 1. Basic usage - get default settings
 const defaultSettings = getSettings();
-console.log("Data root:", defaultSettings.paths.dataRoot);
+logger.info("Data root:", defaultSettings.paths.dataRoot);
 
 // 2. Custom schema with application-specific settings
 const appSettingsSchema = z.object({
@@ -35,7 +37,7 @@ const appSettingsSchema = z.object({
       logs: z.string(),
       assets: z.string().default("./assets") // Add custom path
     })
-    .default({}),
+    .default({} as any),
 
   // Rest of default settings structure...
   hashing: z
@@ -65,23 +67,23 @@ const appSettings = createSettingsManager<AppSettings>(appSettingsSchema, {
 
 // 3. Using the settings
 const settings = appSettings.getSettings();
-console.log(`Starting ${settings.app.name} v${settings.app.version} on port ${settings.app.port}`);
+logger.info(`Starting ${settings.app.name} v${settings.app.version} on port ${settings.app.port}`);
 
 // 4. Getting specific settings with path and default value
 const maxWorkers = appSettings.get("app.features.maxWorkers", 2);
-console.log(`Using ${maxWorkers} workers`);
+logger.info(`Using ${maxWorkers} workers`);
 
 // 5. Updating settings
 appSettings.set("app.features.theme", "dark");
-console.log(`Theme set to: ${appSettings.get("app.features.theme")}`);
+logger.info(`Theme set to: ${appSettings.get("app.features.theme")}`);
 
 // 6. Listen for setting changes
-const unsubscribe = appSettings.onChange((event) => {
-  console.log("Settings changed:", event);
+appSettings.onChange((event: any) => {
+  logger.info("Settings changed:", event);
 
   // Reload services or apply changes as needed
   if (event.currentSettings.app?.port !== event.previousSettings.app?.port) {
-    console.log("Port changed - server restart required");
+    logger.info("Port changed - server restart required");
   }
 });
 
@@ -89,7 +91,7 @@ const unsubscribe = appSettings.onChange((event) => {
 // unsubscribe();
 
 // 8. Working with multiple settings files
-const configSettings = SettingsManager.getInstance({
+SettingsManager.getInstance({
   filename: "config.yaml",
   autoCreate: true
 });
@@ -111,7 +113,7 @@ appSettings.reload();
 
 // Example for handling environment-specific configurations
 const env = Bun.env.NODE_ENV || "development";
-const envSettings = SettingsManager.getInstance({
+SettingsManager.getInstance({
   filename: `settings.${env}.yaml`,
   autoCreate: true
 });
@@ -123,11 +125,11 @@ function initializeApp() {
   // Configure logging
   if (settings.app.features.enableLogging) {
     // Setup logging with path from settings
-    console.log(`Setting up logs at ${settings.paths.logs}`);
+    logger.info(`Setting up logs at ${settings.paths.logs}`);
   }
 
   // Set up database
-  console.log(`Connecting to database at ${settings.paths.database}`);
+  logger.info(`Connecting to database at ${settings.paths.database}`);
 
   // And so on...
 }

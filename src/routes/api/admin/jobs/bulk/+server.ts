@@ -4,6 +4,8 @@ import { db } from "$lib/server/db";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { job } from "$lib/server/db/base-schema";
 import { JobStatus, TokenProvider } from "$lib/types";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","api","admin","jobs","bulk"]);
 
 export async function POST({ locals, request }: RequestEvent) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
@@ -72,7 +74,7 @@ export async function POST({ locals, request }: RequestEvent) {
       return deletedJobs;
     });
 
-    console.log(`Admin ${locals.user.email} performed bulk deletion of ${result.length} jobs with filters:`, filters);
+    logger.info(`Admin ${locals.user.email} performed bulk deletion of ${result.length} jobs with filters:`, filters);
     return json({ 
       success: true, 
       message: `${result.length} jobs deleted successfully with applied filters`,
@@ -81,7 +83,7 @@ export async function POST({ locals, request }: RequestEvent) {
       appliedFilters: filters
     });
   } catch (error) {
-    console.error("Error in bulk job deletion:", error);
+    logger.error("Error in bulk job deletion:", {error});
     return json({ error: "Failed to perform bulk job deletion" }, { status: 500 });
   }
 }
@@ -116,7 +118,7 @@ export async function DELETE({ locals, request }: RequestEvent) {
       return deletedJobs;
     });
 
-    console.log(`Admin ${locals.user.email} performed COMPLETE deletion of ALL ${result.length} jobs`);
+    logger.info(`Admin ${locals.user.email} performed COMPLETE deletion of ALL ${result.length} jobs`);
     return json({ 
       success: true, 
       message: `ALL ${result.length} jobs deleted successfully`,
@@ -124,7 +126,7 @@ export async function DELETE({ locals, request }: RequestEvent) {
       warning: "All jobs have been permanently deleted"
     });
   } catch (error) {
-    console.error("Error in complete job deletion:", error);
+    logger.error("Error in complete job deletion:", {error});
     return json({ error: "Failed to delete all jobs" }, { status: 500 });
   }
 }

@@ -1,6 +1,8 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { isAdmin } from "$lib/server/utils";
 import messageBusClient from "$lib/messaging/MessageBusClient";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","api","admin","crawler","test-failure"]);
 
 /**
  * POST /api/admin/crawler/test-failure - Trigger a test failure for demonstration
@@ -42,7 +44,7 @@ export const POST: RequestHandler = async ({ locals }) => {
       testData: testFailureData
     });
   } catch (error) {
-    console.error("Error triggering test failure:", error);
+    logger.error("Error triggering test failure:", {error});
     return json({ 
       error: "Failed to trigger test failure",
       details: error instanceof Error ? error.message : "Unknown error"

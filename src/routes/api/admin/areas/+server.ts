@@ -2,6 +2,8 @@ import { json } from "@sveltejs/kit";
 import { db } from "$lib/server/db";
 import { area, area_authorization, job } from "$lib/server/db/base-schema"; // Import schemas
 import { desc, sql } from "drizzle-orm"; // Removed unused eq, count
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","api","admin","areas"]);
 
 export async function GET({ locals, url }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
@@ -57,7 +59,7 @@ export async function GET({ locals, url }) {
       }
     });
   } catch (error) {
-    console.error("Error fetching areas with counts:", error);
+    logger.error("Error fetching areas with counts: {error}", { error });
     return json({ error: "Failed to fetch areas" }, { status: 500 });
   }
 }

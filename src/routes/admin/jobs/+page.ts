@@ -1,4 +1,6 @@
 import { authClient } from "$lib/auth-client";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","admin","jobs"]);
 
 export async function load(event) {
   const token = authClient.getSession().then((response) => response.data?.session.token);
@@ -26,7 +28,7 @@ async function fetchAdminData(
     if (!response.ok) throw new Error(`Failed to fetch ${part}: ${response.text()}`);
     return await response.json();
   } catch (error) {
-    console.error(`Failed to fetch ${part}:`, error);
+    logger.error("Failed to fetch {part}: {error}", { part, error });
     return [];
   }
 }

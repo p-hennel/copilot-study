@@ -31,7 +31,7 @@ export class MessageBusServer {
             await this.handleJobProgress(msg.data);
             break;
           default:
-            logger.debug("[MessageBusServer] Unrecognized message type:", msg.type);
+            logger.debug("[MessageBusServer] Unrecognized message type: {type}", { type: msg.type });
         }
       }
     });
@@ -60,7 +60,7 @@ export class MessageBusServer {
         }
       }
     } catch (error: any) {
-      logger.error("[MessageBusServer] Error handling job request:", error);
+      logger.error("[MessageBusServer] Error handling job request: {error}", { error });
       if (process.send) {
         process.send({ type: "job", data: null, error: error?.message });
       }
@@ -80,15 +80,15 @@ export class MessageBusServer {
         where: (table, { eq }) => eq(table.id, data.jobId)
       });
       if (!currentJob) {
-        logger.error("[MessageBusServer] Job not found:", data.jobId);
+        logger.error("[MessageBusServer] Job not found: {jobId}", { jobId: data.jobId });
         return;
       }
       if (currentJob.status === data.status) {
-        logger.warn("[MessageBusServer] Job status did not change:", data.jobId);
+        logger.warn("[MessageBusServer] Job status did not change: {jobId}", { jobId: data.jobId });
         return;
       }
       if (currentJob.status === JobStatus.finished) {
-        logger.warn("[MessageBusServer] Job already finished:", data.jobId);
+        logger.warn("[MessageBusServer] Job already finished: {jobId}", { jobId: data.jobId });
         return;
       }
 
@@ -108,12 +108,12 @@ export class MessageBusServer {
       }
       const result = await db.update(job).set(updates).where(eq(job.id, data.jobId));
       if (result.rowsAffected < 1) {
-        logger.error("[MessageBusServer] Could not update job in DB:", data.jobId);
+        logger.error("[MessageBusServer] Could not update job in DB: {jobId}", { jobId: data.jobId });
       } else {
-        logger.info("[MessageBusServer] Job updated successfully:", data.jobId);
+        logger.info("[MessageBusServer] Job updated successfully: {jobId}", { jobId: data.jobId });
       }
     } catch (error) {
-      logger.error("[MessageBusServer] Error handling job progress:", error);
+      logger.error("[MessageBusServer] Error handling job progress: {error}", { error });
     }
   }
 }

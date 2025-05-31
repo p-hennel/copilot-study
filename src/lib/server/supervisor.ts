@@ -23,7 +23,6 @@ const logger = getLogger(["backend", "supervisor"])
 async function resetRunningJobsOnDisconnect(): Promise<void> {
   try {
     logger.info("Supervisor detected connection loss - resetting running jobs to queued status");
-    console.log("🔄 Supervisor detected connection loss - resetting running jobs to queued status");
     
     const result = await db
       .update(jobSchema)
@@ -35,14 +34,11 @@ async function resetRunningJobsOnDisconnect(): Promise<void> {
     
     if (result.rowsAffected > 0) {
       logger.info(`Successfully reset ${result.rowsAffected} running jobs to queued status`);
-      console.log(`✅ Successfully reset ${result.rowsAffected} running jobs to queued status`);
     } else {
       logger.info("No running jobs found to reset");
-      console.log("ℹ️ No running jobs found to reset");
     }
   } catch (error) {
     logger.error("Failed to reset running jobs to queued status:", { error });
-    console.error("❌ Failed to reset running jobs to queued status:", error);
   }
 }
 
@@ -94,7 +90,7 @@ interface StartJobCommand extends CrawlerCommand {
 // These are now defined after potential logger initialization
 let lastHeartbeat: number = 0
 let currentCrawlerStatus: CrawlerStatus | null = null
-const HEARTBEAT_TIMEOUT = 60000 // 60 seconds
+const HEARTBEAT_TIMEOUT = 30000 // 30 seconds - matches cache and MessageBusClient timeout
 
 // --- Helper Functions ---
 // Defined after potential logger initialization
@@ -156,22 +152,19 @@ async function handleJobUpdate(update: JobCompletionUpdate) {
  */
 export function sendCommandToCrawler(command: CrawlerCommand): boolean {
   if (!SUPERVISED) {
-    console.log("[DEBUG] Not supervised, cannot send command to crawler", { command })
+    logger?.debug("Not supervised, cannot send command to crawler", { command })
     return false
   }
   if (!messageBusClientInstance) {
-    console.log("[DEBUG] MessageBusClient not available", { command })
     logger?.error("Cannot send command: MessageBusClient not available (not running under supervisor?).", { command })
     return false
   }
 
   try {
-    console.log(`[DEBUG] Sending command to crawler via MessageBusClient: ${command.type}`, { command })
     logger?.info(`Sending command to crawler via MessageBusClient: ${command.type}`, { command })
     messageBusClientInstance.sendCommandToCrawler(command)
     return true
   } catch (error) {
-    console.log("[DEBUG] Failed to send command to crawler", { error, command })
     logger?.error("Failed to send command to crawler via MessageBusClient:", { error, command })
     return false
   }
@@ -225,14 +218,14 @@ export function getLastHeartbeat(): number {
 }
 
 
-console.log("🔧 DEBUG: SUPERVISED value:", SUPERVISED);
-console.log("🔧 DEBUG: messageBusClientInstance available:", !!messageBusClientInstance);
+logger.debug("SUPERVISED value:", { supervised: SUPERVISED });
+logger.debug("messageBusClientInstance available:", { available: !!messageBusClientInstance });
 
 if (SUPERVISED) {
-  console.log("🔧 DEBUG: SUPERVISED is true, setting up event listeners...");
+  logger.debug("SUPERVISED is true, setting up event listeners...");
   // --- Setup Event Listeners for MessageBusClient ---
   if (messageBusClientInstance) {
-    console.log("🔧 DEBUG: MessageBusClient instance available, initializing event listeners...");
+    logger.debug("MessageBusClient instance available, initializing event listeners...");
     logger.info("Initializing MessageBusClient event listeners...") // Logger is guaranteed here
 
     messageBusClientInstance.onStatusUpdate((status) => {
@@ -278,31 +271,30 @@ if (SUPERVISED) {
 
     // Listen for token refresh requests
     logger.info("Setting up token refresh request handler...");
-    console.log("🔧 DEBUG: Setting up token refresh request handler...");
-    console.log("🔧 DEBUG: MessageBusClient instance available:", !!messageBusClientInstance);
+    logger.debug("MessageBusClient instance available:", { available: !!messageBusClientInstance });
     
     // Test if event listener is working
     messageBusClientInstance.on('tokenRefreshRequest', (data) => {
-      console.log("🔄 DEBUG: tokenRefreshRequest event fired in supervisor with data:", data);
+      logger.debug("tokenRefreshRequest event fired in supervisor", { data });
     });
     
     messageBusClientInstance.onTokenRefreshRequest(async (requestData) => {
-      console.log("🔄 DEBUG: *** TOKEN REFRESH HANDLER TRIGGERED ***");
-      console.log("🔄 DEBUG: Handler received data:", JSON.stringify(requestData, null, 2));
+      logger.debug("TOKEN REFRESH HANDLER TRIGGERED");
+      logger.debug("Handler received data:", { requestData });
       logger.info("Received token refresh request via MessageBus", { requestData });
-      console.log("🔄 Processing token refresh request:", requestData);
+      logger.info("Processing token refresh request:", { requestData });
       
       if (!messageBusClientInstance) {
-        console.error('❌ DEBUG: MessageBusClient became null during token refresh processing');
+        logger.error('MessageBusClient became null during token refresh processing');
         return;
       }
       
       try {
         const { requestId, providerId, accountId, userId } = requestData;
-        console.log("🔄 DEBUG: Extracted request parameters:", { requestId, providerId, accountId, userId });
+        logger.debug("Extracted request parameters:", { requestId, providerId, accountId, userId });
         
         // Call our internal token refresh API
-        console.log("🔄 DEBUG: Making fetch request to localhost:3000/api/internal/refresh-token");
+        logger.debug("Making fetch request to localhost:3000/api/internal/refresh-token");
         const response = await fetch('http://localhost:3000/api/internal/refresh-token', {
           method: 'POST',
           headers: {
@@ -315,7 +307,7 @@ if (SUPERVISED) {
           })
         });
         
-        console.log("🔄 DEBUG: Fetch response status:", response.status, response.statusText);
+        logger.debug("Fetch response status:", { status: response.status, statusText: response.statusText });
         
         if (response.ok) {
           const tokenData = await response.json() as {
@@ -325,8 +317,8 @@ if (SUPERVISED) {
             refreshToken?: string;
             providerId?: string;
           };
-          console.log('✅ DEBUG: Token refresh successful, token data:', tokenData);
-          console.log('✅ DEBUG: Sending response to crawler with requestId:', requestId);
+          logger.debug('Token refresh successful', { tokenData });
+          logger.debug('Sending response to crawler', { requestId });
           
           // Send successful response back to crawler
           if (messageBusClientInstance) {
@@ -337,71 +329,71 @@ if (SUPERVISED) {
               refreshToken: tokenData.refreshToken,
               providerId: tokenData.providerId
             });
-            console.log('✅ DEBUG: Response sent to crawler successfully');
+            logger.debug('Response sent to crawler successfully');
           } else {
-            console.error('❌ DEBUG: MessageBusClient became null when sending response');
+            logger.error('MessageBusClient became null when sending response');
           }
         } else {
-          console.log("❌ DEBUG: Fetch response not OK, reading error data...");
+          logger.debug("Fetch response not OK, reading error data...");
           const errorData = await response.json() as {
             error?: string;
           };
-          console.error('❌ DEBUG: Token refresh failed with error data:', errorData);
+          logger.error('Token refresh failed with error data:', { errorData });
           
           // Send error response back to crawler
           if (messageBusClientInstance) {
-            console.log('❌ DEBUG: Sending error response to crawler');
+            logger.debug('Sending error response to crawler');
             messageBusClientInstance.sendTokenRefreshResponse(requestId, {
               success: false,
               error: errorData.error || 'Token refresh failed'
             });
-            console.log('❌ DEBUG: Error response sent to crawler');
+            logger.debug('Error response sent to crawler');
           }
         }
       } catch (error) {
-        console.error('❌ DEBUG: Exception in token refresh processing:', error);
+        logger.error('Exception in token refresh processing:', { error });
         
         // Send error response back to crawler
         if (messageBusClientInstance) {
-          console.log('❌ DEBUG: Sending exception error response to crawler');
+          logger.debug('Sending exception error response to crawler');
           messageBusClientInstance.sendTokenRefreshResponse(requestData.requestId, {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error during token refresh'
           });
-          console.log('❌ DEBUG: Exception error response sent to crawler');
+          logger.debug('Exception error response sent to crawler');
         }
       }
     });
     
-    console.log("🔧 DEBUG: Token refresh handler setup completed");
+    logger.debug("Token refresh handler setup completed");
   } else {
-    console.log("🔧 DEBUG: MessageBusClient not available in SUPERVISED=true branch");
+    logger.debug("MessageBusClient not available in SUPERVISED=true branch");
     logger.warn("MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.")
   }
 } else {
-  console.log("🔧 DEBUG: SUPERVISED is false, but we still need to set up token refresh handlers!");
-  console.log("🔧 DEBUG: Setting up event listeners anyway for token refresh support...");
+  logger.debug("SUPERVISED is false, but we still need to set up token refresh handlers!");
+  logger.debug("Setting up event listeners anyway for token refresh support...");
   
   // Even if not supervised, we still need token refresh handlers for the crawler
   if (messageBusClientInstance) {
-    console.log("🔧 DEBUG: MessageBusClient available in non-supervised mode, setting up token refresh handler...");
+    logger.debug("MessageBusClient available in non-supervised mode, setting up token refresh handler...");
     
     // Set up minimal event listeners including token refresh
     messageBusClientInstance.onTokenRefreshRequest(async (requestData) => {
-      console.log("🔄 DEBUG: *** TOKEN REFRESH HANDLER TRIGGERED (non-supervised mode) ***");
-      console.log("🔄 DEBUG: Handler received data:", JSON.stringify(requestData, null, 2));
+      logger.debug("TOKEN REFRESH HANDLER TRIGGERED (non-supervised mode)");
+      logger.debug("Handler received data:", { requestData });
       
       if (!messageBusClientInstance) {
-        console.error('❌ DEBUG: MessageBusClient became null during token refresh processing');
+        logger.error('MessageBusClient became null during token refresh processing');
         return;
       }
       
       try {
         const { requestId, providerId, accountId, userId } = requestData;
-        console.log("🔄 DEBUG: Extracted request parameters:", { requestId, providerId, accountId, userId });
+        logger.debug("Extracted request parameters:", { requestId, providerId, accountId, userId });
         
         // Call our internal token refresh API
-        console.log("🔄 DEBUG: Making fetch request to localhost:3000/api/internal/refresh-token");
+        logger.debug("Making fetch request to localhost:3000/api/internal/refresh-token");
         const response = await fetch('http://localhost:3000/api/internal/refresh-token', {
           method: 'POST',
           headers: {
@@ -414,7 +406,7 @@ if (SUPERVISED) {
           })
         });
         
-        console.log("🔄 DEBUG: Fetch response status:", response.status, response.statusText);
+        logger.debug("Fetch response status:", { status: response.status, statusText: response.statusText });
         
         if (response.ok) {
           const tokenData = await response.json() as {
@@ -424,8 +416,8 @@ if (SUPERVISED) {
             refreshToken?: string;
             providerId?: string;
           };
-          console.log('✅ DEBUG: Token refresh successful, token data:', tokenData);
-          console.log('✅ DEBUG: Sending response to crawler with requestId:', requestId);
+          logger.debug('Token refresh successful', { tokenData });
+          logger.debug('Sending response to crawler', { requestId });
           
           // Send successful response back to crawler
           if (messageBusClientInstance) {
@@ -436,45 +428,45 @@ if (SUPERVISED) {
               refreshToken: tokenData.refreshToken,
               providerId: tokenData.providerId
             });
-            console.log('✅ DEBUG: Response sent to crawler successfully');
+            logger.debug('Response sent to crawler successfully');
           } else {
-            console.error('❌ DEBUG: MessageBusClient became null when sending response');
+            logger.error('MessageBusClient became null when sending response');
           }
         } else {
-          console.log("❌ DEBUG: Fetch response not OK, reading error data...");
+          logger.debug("Fetch response not OK, reading error data...");
           const errorData = await response.json() as {
             error?: string;
           };
-          console.error('❌ DEBUG: Token refresh failed with error data:', errorData);
+          logger.error('Token refresh failed with error data:', { errorData });
           
           // Send error response back to crawler
           if (messageBusClientInstance) {
-            console.log('❌ DEBUG: Sending error response to crawler');
+            logger.debug('Sending error response to crawler');
             messageBusClientInstance.sendTokenRefreshResponse(requestId, {
               success: false,
               error: errorData.error || 'Token refresh failed'
             });
-            console.log('❌ DEBUG: Error response sent to crawler');
+            logger.debug('Error response sent to crawler');
           }
         }
       } catch (error) {
-        console.error('❌ DEBUG: Exception in token refresh processing:', error);
+        logger.error('Exception in token refresh processing:', { error });
         
         // Send error response back to crawler
         if (messageBusClientInstance) {
-          console.log('❌ DEBUG: Sending exception error response to crawler');
+          logger.debug('Sending exception error response to crawler');
           messageBusClientInstance.sendTokenRefreshResponse(requestData.requestId, {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error during token refresh'
           });
-          console.log('❌ DEBUG: Exception error response sent to crawler');
+          logger.debug('Exception error response sent to crawler');
         }
       }
     });
     
-    console.log("🔧 DEBUG: Token refresh handler setup completed (non-supervised mode)");
+    logger.debug("Token refresh handler setup completed (non-supervised mode)");
   } else {
-    console.log("🔧 DEBUG: MessageBusClient not available in non-supervised mode either");
+    logger.debug("MessageBusClient not available in non-supervised mode either");
   }
 
   // Monitor heartbeat and reset jobs if connection is stale
@@ -491,21 +483,17 @@ if (SUPERVISED) {
         lastHeartbeat = 0; // Reset to prevent repeated calls
       }
     }
-  }, HEARTBEAT_TIMEOUT / 2)
+  }, 10000) // Check every 10 seconds for more responsive timeout detection
 
   // Boot the connector immediately to ensure credentials are sent to the supervisor
   // This is crucial for the crawler to start properly
   boot().then(() => {
-    if (logger) {
-      logger.info("Connector booted successfully - credentials will be sent to supervisor");
-    } else {
-      console.log("Connector booted successfully - credentials will be sent to supervisor");
-    }
+    logger.info("Connector booted successfully - credentials will be sent to supervisor");
     
     // Force log output for debugging
-    console.log("Website started and connector booted - credentials should be sent to supervisor");
+    logger.info("Website started and connector booted - credentials should be sent to supervisor");
   }).catch(err => {
-    console.error(`Error in data processor: ${err}`);
+    logger.error(`Error in data processor:`, { error: err });
     //process.exit(1);
   });
 }

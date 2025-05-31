@@ -3,33 +3,156 @@
   import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { Button } from "$ui/button";
   import * as Table from "$lib/components/ui/table/index.js";
+  import * as Select from "$lib/components/ui/select/index.js";
   import { m } from "$paraglide";
   import { dynamicHandleDownloadAsCSV } from "$lib/utils";
   import { type UserInformation } from "$lib/types";
   import { type AccountInformation } from "$lib/types";
   import { Separator } from "$ui/separator";
-  import { ArchiveRestore, FileDown } from "lucide-svelte";
+  import { ArchiveRestore, FileDown, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Loader2 } from "lucide-svelte";
   import LoadingButton from "./LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
+  import { toast } from "svelte-sonner";
   import { ClipboardCopy, DatabaseBackup, Waypoints } from "@lucide/svelte";
 
   type UserInformationWithAccounts = UserInformation & { accounts: AccountInformation[] };
   type PreparedUserInformation = UserInformationWithAccounts & {
     firstAccount: AccountInformation | undefined;
   };
-  type UserTableProps = {
-    users: UserInformationWithAccounts[];
-    format?: string;
+
+  type PaginatedUsersResponse = {
+    data: UserInformationWithAccounts[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
   };
 
-  let data: UserTableProps = $props();
+  type UserTableProps = {
+    users?: UserInformationWithAccounts[]; // For backward compatibility
+    format?: string;
+    onRefresh?: () => Promise<void>;
+  };
 
-  const format = $derived(data.format ?? "DD. MMM YY");
-  const formatTooltip = $derived(data.format ?? "DD. MMM YYYY, HH:mm:ss");
+  let props: UserTableProps = $props();
+  const format = $derived(props.format ?? "DD. MMM YY");
+  const formatTooltip = $derived(props.format ?? "DD. MMM YYYY, HH:mm:ss");
+
+  // Pagination state
+  let currentPage = $state(1);
+  let itemsPerPage = $state(25);
+  let itemsPerPageOptions = [10, 25, 50, 100];
+  let loading = $state(false);
+  let usersData = $state<PaginatedUsersResponse | null>(null);
+
+  // Fetch users data from API
+  const fetchUsers = async (page: number = currentPage, limit: number = itemsPerPage) => {
+    try {
+      loading = true;
+      const token = (await authClient.getSession())?.data?.session.token;
+      if (!token) {
+        await goto("/admin/sign-in");
+        throw new Error("No authentication token");
+      }
+
+      const response = await fetch(`/api/admin/users?page=${page}&limit=${limit}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch users: ${response.statusText}`);
+      }
+
+      const data = await response.json() as PaginatedUsersResponse;
+      usersData = data;
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Failed to fetch users", {
+        description: error instanceof Error ? error.message : "An unknown error occurred"
+      });
+      // Fallback to props.users if API fails
+      if (props.users) {
+        usersData = {
+          data: props.users,
+          pagination: {
+            page: 1,
+            limit: props.users.length,
+            totalCount: props.users.length,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false
+          }
+        };
+      }
+    } finally {
+      loading = false;
+    }
+  };
+
+  // Initial load and reactive updates
+  $effect(() => {
+    if (props.users) {
+      // Use provided users data (backward compatibility)
+      usersData = {
+        data: props.users,
+        pagination: {
+          page: 1,
+          limit: props.users.length,
+          totalCount: props.users.length,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false
+        }
+      };
+    } else {
+      // Fetch from API
+      fetchUsers(currentPage, itemsPerPage);
+    }
+  });
+
+  // Handle page changes
+  const handlePageChange = (newPage: number) => {
+    currentPage = newPage;
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (val:string|undefined = undefined) => {
+    if (val) {
+      itemsPerPage = parseInt(val, 10);
+    }
+    currentPage = 1;
+    if (!props.users) {
+      fetchUsers(1, itemsPerPage);
+    }
+  };
+
+  // Refresh function for external calls
+  const refreshUsers = async () => {
+    if (!props.users) {
+      await fetchUsers(currentPage, itemsPerPage);
+    }
+    if (props.onRefresh) {
+      await props.onRefresh();
+    }
+  };
+
+  // Derived values for display
+  const rawUsers = $derived(usersData?.data || []);
+  const pagination = $derived(usersData?.pagination);
+  const totalItems = $derived(pagination?.totalCount || 0);
+  const totalPages = $derived(pagination?.totalPages || 0);
+  const startIndex = $derived(pagination ? (pagination.page - 1) * pagination.limit : 0);
+  const endIndex = $derived(pagination ? Math.min(startIndex + pagination.limit, pagination.totalCount) : 0);
 
   const users: PreparedUserInformation[] = $derived.by(() => {
-    return data.users.map((x: UserInformationWithAccounts) => {
+    return rawUsers.map((x: UserInformationWithAccounts) => {
       if (x.accounts.length > 0)
         return {
           ...x,
@@ -46,16 +169,16 @@
   });
 
   const maxNumAccounts = $derived(() =>
-    data.users.reduce((res, usr) => Math.max(res, usr.accounts.length), 0)
+    rawUsers.reduce((res, usr) => Math.max(res, usr.accounts.length), 0)
   );
   const lessThanMaxAccounts = $derived(() =>
-    data.users.reduce((res, usr) => res + (usr.accounts.length < maxNumAccounts() ? 1 : 0), 0)
+    rawUsers.reduce((res, usr) => res + (usr.accounts.length < maxNumAccounts() ? 1 : 0), 0)
   );
 </script>
 
 <div class="flex flex-row flex-wrap items-center justify-between">
   <p class="prose justify-between">
-    {m["admin.dashboard.summary.total"]({ user_count: data.users.length })}<br />
+    {m["admin.dashboard.summary.total"]({ user_count: totalItems })}<br />
     {m["admin.dashboard.summary.lessThanMaxAccounts"]({
       maxAccounts: maxNumAccounts(),
       user_count: lessThanMaxAccounts() <= 0 ? "None" : lessThanMaxAccounts()
@@ -86,7 +209,7 @@
     <Button
       variant="secondary"
       onclick={async () => {
-        const idsText = data.users.map(x => x.email).join("\n");
+        const idsText = rawUsers.map((x: UserInformationWithAccounts) => x.email).join("\n");
         navigator.clipboard.writeText(idsText);
       }}>
       <ClipboardCopy />
@@ -95,9 +218,9 @@
     <Button
       variant="default"
       onclick={dynamicHandleDownloadAsCSV(() =>
-        data.users.map((x) => ({
+        rawUsers.map((x: UserInformationWithAccounts) => ({
           email: x.email,
-          accounts: x.accounts.map((x) => x.providerId).join(",")
+          accounts: x.accounts.map((acc: AccountInformation) => acc.providerId).join(",")
         }))
       )}
     >
@@ -133,7 +256,7 @@
     {#each users as user, idx (idx)}
       <Table.Row>
         <Table.Cell rowspan={user.accounts.length + 1} class="text-right"
-          >{users.length - idx}</Table.Cell
+          >{startIndex + idx + 1}</Table.Cell
         >
         <!--<Table.Cell rowspan={user.accounts.length + 1}>{user.name}</Table.Cell>-->
         <Table.Cell rowspan={user.accounts.length + 1}>
@@ -245,3 +368,117 @@
     {/each}
   </Table.Body>
 </Table.Root>
+
+<!-- Pagination Controls -->
+{#if totalPages > 1}
+  <div class="mt-4 flex items-center justify-between">
+    <div class="flex items-center gap-2 text-sm text-muted-foreground">
+      <span>
+        Showing {startIndex + 1} to {endIndex} of {totalItems} users
+      </span>
+    </div>
+    
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <Select.Root
+          type="single"
+          onValueChange={(v) => {currentPage = 1; handleItemsPerPageChange(v)}}
+          value={`${itemsPerPage}`}>
+          <Select.Trigger>
+            <span class="text-sm text-muted-foreground">
+              Items per page: {itemsPerPage}
+            </span>
+          </Select.Trigger>
+          <Select.Content>
+            {#each itemsPerPageOptions as option}
+              <Select.Item value={`${option}`} label={`${option}`} />
+            {/each}
+          </Select.Content>
+        </Select.Root>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === 1 || loading}
+          onclick={() => handlePageChange(1)}
+          class="w-8 h-8 p-0"
+          aria-label="Go to first page"
+        >
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronFirst class="h-4 w-4" />
+          {/if}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!pagination?.hasPreviousPage || loading}
+          onclick={() => handlePageChange(Math.max(1, currentPage - 1))}
+          class="w-8 h-8 p-0"
+        >
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronLeft class="h-4 w-4" />
+          {/if}
+        </Button>
+
+        <div class="flex items-center gap-1">
+          {#each Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const start = Math.max(1, currentPage - 2);
+            const end = Math.min(totalPages, start + 4);
+            const adjustedStart = Math.max(1, end - 4);
+            return adjustedStart + i;
+          }) as pageNum}
+            <Button
+              variant={currentPage === pageNum ? "default" : "outline"}
+              size="sm"
+              onclick={() => handlePageChange(pageNum)}
+              disabled={loading}
+              class="w-8 h-8 p-0"
+            >
+              {pageNum}
+            </Button>
+          {/each}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!pagination?.hasNextPage || loading}
+          onclick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+          class="w-8 h-8 p-0"
+        >
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronRight class="h-4 w-4" />
+          {/if}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === totalPages || loading}
+          onclick={() => handlePageChange(totalPages)}
+          class="w-8 h-8 p-0"
+          aria-label="Go to last page"
+        >
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronLast class="h-4 w-4" />
+          {/if}
+        </Button>
+      </div>
+    </div>
+  </div>
+{:else}
+  <div class="mt-4 text-sm text-muted-foreground">
+    Showing {totalItems} user{totalItems === 1 ? '' : 's'}
+  </div>
+{/if}

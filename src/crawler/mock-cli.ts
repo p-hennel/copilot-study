@@ -92,7 +92,7 @@ async function main() {
     });
     
     // Log progress for debugging
-    console.log("Crawler connected to supervisor and waiting for auth credentials");
+    logger.info("Crawler connected to supervisor and waiting for auth credentials");
   });
 
   // Handle disconnection from supervisor

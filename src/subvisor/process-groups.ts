@@ -1,5 +1,7 @@
 import { Supervisor } from "./supervisor";
 import { ProcessState } from "./types";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["subvisor"]);
 
 export interface ProcessGroupConfig {
   name: string;
@@ -49,7 +51,7 @@ export class ProcessGroupManager {
       throw new Error(`Group not found: ${name}`);
     }
 
-    console.log(`Starting group: ${name}`);
+    logger.info(`Starting group: ${name}`);
 
     // Start all processes in the group
     for (const processId of group.processes) {
@@ -68,7 +70,7 @@ export class ProcessGroupManager {
       throw new Error(`Group not found: ${name}`);
     }
 
-    console.log(`Stopping group: ${name}`);
+    logger.info(`Stopping group: ${name}`);
 
     // Stop all processes in the group
     const stopPromises = [];

@@ -12,10 +12,6 @@ import type { JobInsert } from "$lib/server/db/base-schema"; // Corrected import
 import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
 import { monotonicFactory } from "ulid";
 import { startJob } from "$lib/server/supervisor";
-import {
-  type CrawlCommandName,
-  crawlCommandConfig
-} from "./types/area-discovery";
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();
@@ -222,8 +218,34 @@ export async function handleNewAuthorization(
 }
 
 /**
+ * Maps area types and discovered data to actual crawler JobType enum values
+ */
+const getJobTypesForArea = (areaType: AreaType): CrawlCommand[] => {
+  if (areaType === AreaType.group) {
+    return [
+      CrawlCommand.group, // Maps to GROUP_DETAILS in crawler
+      CrawlCommand.groupMembers, // Maps to GROUP_MEMBERS in crawler
+      CrawlCommand.groupProjects, // Maps to GROUP_PROJECTS in crawler
+      CrawlCommand.groupIssues, // Maps to GROUP_ISSUES in crawler
+    ];
+  }
+
+  if (areaType === AreaType.project) {
+    return [
+      CrawlCommand.project, // Maps to PROJECT_DETAILS in crawler
+      CrawlCommand.issues, // Maps to PROJECT_ISSUES in crawler
+      CrawlCommand.mergeRequests, // Maps to PROJECT_MERGE_REQUESTS in crawler
+      CrawlCommand.branches, // Maps to PROJECT_BRANCHES in crawler
+      CrawlCommand.pipelines, // Maps to PROJECT_PIPELINES in crawler
+    ];
+  }
+
+  return [];
+};
+
+/**
  * Handles creation of jobs when a new area (group or project) is created/discovered.
- * This function remains largely unchanged but is distinct from PAT-based discovery.
+ * Updated to create jobs that match what the crawler actually implements.
  * @param areaPath The full path of the group or project
  * @param areaType The type of area (group or project)
  * @param areaId The GitLab ID of the area
@@ -258,69 +280,34 @@ export async function handleNewArea(
 
     // Create appropriate jobs based on area type
     const jobsToCreate = [];
+    const commandsForArea = getJobTypesForArea(areaType);
 
-    // --- Job creation based on CrawlCommandName and DataType ---
-    if (areaType === AreaType.group) {
-      const commandName: CrawlCommandName = 'group'; // Assuming 'group' is a valid CrawlCommandName for groups
-      const dataTypesForCommand = crawlCommandConfig[commandName];
+    logger.info(`Creating jobs for ${areaType} area ${areaPath}: ${commandsForArea.join(', ')}`);
 
-      if (dataTypesForCommand) {
-        for (const dataType of dataTypesForCommand) {
-          const existingJob = await db.query.job.findFirst({
-            where: and(
-              eq(jobSchema.full_path, areaPath),
-              eq(jobSchema.command, dataType as any), // Use DataType as command
-              or(
-                eq(jobSchema.status, JobStatus.queued),
-                eq(jobSchema.status, JobStatus.running)
-              )
-            )
-          });
-          if (!existingJob) {
-            jobsToCreate.push({
-              id: ulid(),
-              accountId,
-              full_path: areaPath,
-              command: dataType as any, // Store DataType string as the command
-              status: JobStatus.queued,
-              spawned_from: spawningJobId
-            });
-          }
-        }
+    for (const command of commandsForArea) {
+      // Check if a job of this type already exists for this area
+      const existingJob = await db.query.job.findFirst({
+        where: and(
+          eq(jobSchema.full_path, areaPath),
+          eq(jobSchema.command, command),
+          or(
+            eq(jobSchema.status, JobStatus.queued),
+            eq(jobSchema.status, JobStatus.running)
+          )
+        )
+      });
+
+      if (!existingJob) {
+        jobsToCreate.push({
+          id: ulid(),
+          accountId,
+          full_path: areaPath,
+          command, // Use the actual CrawlCommand enum value that matches crawler JobType
+          status: JobStatus.queued,
+          spawned_from: spawningJobId
+        });
       } else {
-        logger.warn(`No DataTypes found in crawlCommandConfig for CrawlCommandName: ${commandName} (AreaType: ${areaType})`);
-      }
-    }
-
-    if (areaType === AreaType.project) {
-      const commandName: CrawlCommandName = 'project'; // Assuming 'project' is a valid CrawlCommandName for projects
-      const dataTypesForCommand = crawlCommandConfig[commandName];
-
-      if (dataTypesForCommand) {
-        for (const dataType of dataTypesForCommand) {
-          const existingJob = await db.query.job.findFirst({
-            where: and(
-              eq(jobSchema.full_path, areaPath),
-              eq(jobSchema.command, dataType as any), // Use DataType as command
-              or(
-                eq(jobSchema.status, JobStatus.queued),
-                eq(jobSchema.status, JobStatus.running)
-              )
-            )
-          });
-          if (!existingJob) {
-            jobsToCreate.push({
-              id: ulid(),
-              accountId,
-              full_path: areaPath,
-              command: dataType as any, // Store DataType string as the command
-              status: JobStatus.queued,
-              spawned_from: spawningJobId
-            });
-          }
-        }
-      } else {
-        logger.warn(`No DataTypes found in crawlCommandConfig for CrawlCommandName: ${commandName} (AreaType: ${areaType})`);
+        logger.debug(`Job of type ${command} already exists for area ${areaPath}, skipping`);
       }
     }
 

@@ -5,6 +5,8 @@ import AppSettings from "$lib/server/settings";
 import { error, json, text } from "@sveltejs/kit";
 import { count, eq } from "drizzle-orm";
 import { user } from "../../../lib/server/db/auth-schema";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","api","init"]);
 
 export async function GET({ url }) {
   try {
@@ -33,12 +35,12 @@ export async function GET({ url }) {
       });
 
       if (!user) {
-        console.log("sign up failed", usr);
+        logger.info("sign up failed", usr);
         return text("signup failed");
       }
       userId = usr.id;
       const pwd = await ctx.password.hash(password);
-      console.log("passwd", pwd);
+      logger.info("passwd", {pwd});
 
       const accnt = ctx.internalAdapter.createAccount({
         providerId: "credential",
@@ -49,7 +51,7 @@ export async function GET({ url }) {
         updatedAt: new Date()
       });
       if (!accnt) {
-        console.log("sign up (accounts) failed", accnt);
+        logger.info("sign up (accounts) failed", accnt);
         return text("signup (accounts) failed");
       }
 
@@ -62,11 +64,11 @@ export async function GET({ url }) {
           .where(eq(user.email, email))
           .limit(1)
       ).at(0) ?? {}) as { role: string | null; id: undefined };
-      console.log("role: ", usrRole);
+      logger.info("role: ", usrRole);
 
       if (usrRole.role !== "admin") {
         await db.update(user).set({ role: "admin" }).where(eq(user.id, user.id));
-        console.log("updated role");
+        logger.info("updated role");
         //await ctx.internalAdapter.updateUserByEmail(email, { role: "admin" })
       }
 
@@ -97,7 +99,7 @@ export async function GET({ url }) {
       });
     }
   } catch (e: any) {
-    console.error(e);
+    logger.error(e);
     return text(`error: ${e}`);
   }
 }

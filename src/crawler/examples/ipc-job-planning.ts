@@ -10,6 +10,8 @@ import { EventType } from "../events/event-types";
 import { GitLabCrawlerWithIPC } from "../gitlab-crawler-ipc";
 import { type AuthConfig, type CrawlerConfig } from "../types/config-types";
 import { JobType } from "../types/job-types";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["crawler","examples"]);
 
 // Initialize the SupervisorClient (for Unix socket IPC)
 const supervisorClient = new SupervisorClient();
@@ -39,17 +41,17 @@ const crawler = new GitLabCrawlerWithIPC(config, supervisorClient);
 
 // Listen for crawler events
 crawler.on(EventType.CRAWLER_STARTED, (event) => {
-  console.log(`Crawler started at ${event.timestamp.toISOString()}`);
+  logger.info(`Crawler started at ${event.timestamp.toISOString()}`);
 });
 
 crawler.on(EventType.JOB_COMPLETED, (event) => {
   if (event.type === EventType.JOB_COMPLETED) {
-    console.log(`Job ${event.job.id} completed in ${event.duration}ms`);
+    logger.info(`Job ${event.job.id} completed in ${event.duration}ms`);
     
     // The crawler will automatically use the hook to report discovered jobs
     // but you can also do it directly if needed
     if (event.discoveredJobs && event.discoveredJobs.length > 0) {
-      console.log(`Discovered ${event.discoveredJobs.length} jobs`);
+      logger.info(`Discovered ${event.discoveredJobs.length} jobs`);
     }
   }
 });
@@ -63,7 +65,7 @@ await crawler.startResourceType(
 
 // Stay running for the life of the process
 process.on("SIGINT", () => {
-  console.log("Received SIGINT, shutting down...");
+  logger.info("Received SIGINT, shutting down...");
   crawler.stop();
   supervisorClient.disconnect();
   process.exit(0);

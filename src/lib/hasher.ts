@@ -5,6 +5,8 @@ import path from "node:path";
 import { transform } from "stream-transform";
 import * as csvParse from "csv-parse";
 import * as csvStringify from "csv-stringify";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["app"]);
 
 const { values, positionals } = parseArgs({
   args: Bun.argv,
@@ -72,7 +74,7 @@ function getEmailColumn(record: object) {
   const keys = _keys.map((x) => x.toLowerCase());
   const foundIndex = candidates.map((x) => keys.indexOf(x)).filter((x) => x >= 0);
   if (foundIndex.length <= 0) {
-    console.error("Could not find email address in keys!");
+    logger.error("Could not find email address in keys!");
     process.exit(4);
   }
   return _keys[Math.min(...foundIndex)];
@@ -89,11 +91,11 @@ if (positionals.length !== 3) {
       _sourcePath = _sourcePath.substring(0, _sourcePath.length - 1);
     break;
   }
-  //console.error("Need exactly one argument: path to source CSV.")
+  //logger.error("Need exactly one argument: path to source CSV.")
   //process.exit(1);
 } else {
   if (positionals[2] === undefined) {
-    console.error("Error: Missing required source CSV file path argument.");
+    logger.error("Error: Missing required source CSV file path argument.");
     process.exit(1);
   }
   _sourcePath = positionals[2];
@@ -104,18 +106,18 @@ if (!path.isAbsolute(_sourcePath) && !_sourcePath.startsWith("/"))
 const sourcePath = _sourcePath;
 const sourceFile = Bun.file(sourcePath);
 if (!(await sourceFile.exists())) {
-  console.error(`Source file does not exist: ${sourcePath}`);
+  logger.error(`Source file does not exist: ${sourcePath}`);
   process.exit(2);
 }
 
 const extension = path.extname(sourcePath);
 if (extension.toLowerCase() !== ".csv") {
-  console.error(`Source file is not a CSV-file: ${sourcePath} (${extension})`);
+  logger.error(`Source file is not a CSV-file: ${sourcePath} (${extension})`);
   process.exit(3);
 }
 
 const { targetPath, targetFile } = await getTargetPath(sourcePath);
-console.log("Will write to", targetPath);
+logger.info("Will write to {targetPath}", { targetPath });
 
 const targetWriter = targetFile.writer();
 
@@ -132,10 +134,9 @@ const serializeOptions: csvStringify.Options = {
   header: true
 };
 
-const decoder = new TextDecoder();
 const nodeTranslator = new WritableStream({
-  start(_) {},
-  write(value, _) {
+  start() {},
+  write(value) {
     parser.write(value);
   },
   close() {
@@ -145,7 +146,7 @@ const nodeTranslator = new WritableStream({
 
 const parser = csvParse.parse(parseOptions);
 parser.on("error", function (err: any) {
-  console.error("Parser:", err);
+  logger.error("Parser:", err);
 });
 
 let emailColumn: string | undefined;
@@ -154,7 +155,7 @@ const transformer = transform<any, any>((record, callback) => {
 
   // If email column couldn't be determined, skip this record
   if (!emailColumn) {
-    console.warn("Could not determine email column for record, skipping:", record);
+    logger.warn("Could not determine email column for record, skipping:", record);
     return callback(); // Skip record
   }
 
@@ -166,12 +167,12 @@ const transformer = transform<any, any>((record, callback) => {
   callback(undefined, record);
 });
 transformer.on("error", function (err) {
-  console.error("Transformer:", err);
+  logger.error("Transformer: {error}", { error: err });
 });
 
 const stringifier = csvStringify.stringify(serializeOptions);
 stringifier.on("error", function (err) {
-  console.error("Serializer:", err);
+  logger.error("Serializer: {error}", { error: err });
 });
 
 const writer = transform<any, any>(async (record, callback) => {
@@ -179,7 +180,7 @@ const writer = transform<any, any>(async (record, callback) => {
   callback();
 });
 writer.on("error", function (err) {
-  console.error("Writer:", err);
+  logger.error("Writer: {error}", { error: err });
 });
 
 const piping = parser.pipe(transformer).pipe(stringifier).pipe(writer);
@@ -190,7 +191,7 @@ const finishedWriting = new Promise<void>((resolve, reject) => {
     resolve();
   });
   piping.on("error", function (err) {
-    console.error("Piping:", err);
+    logger.error("Piping: {error}", { error: err });
     reject(err);
   });
 });

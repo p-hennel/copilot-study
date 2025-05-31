@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Card from "$lib/components/ui/card/index.js";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import * as Alert from "$lib/components/ui/alert/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Badge } from "$lib/components/ui/badge/index.js";
@@ -22,7 +23,13 @@
     AlertCircle,
     CheckCircle2,
     Zap,
-    Database
+    Database,
+
+    ChevronsLeftRightEllipsisIcon,
+
+    CircleOff
+
+
   } from "lucide-svelte";
   import Time from "svelte-time/Time.svelte";
   import { invalidate } from "$app/navigation";
@@ -40,6 +47,7 @@
     clearJobFailureLogs,
     getCachedStatus
   } from "$lib/stores/crawler-cache";
+    import { Archive, Binoculars, CirclePause, ClipboardList, Ellipsis, Radio } from "@lucide/svelte";
 
   let { data }: { data: PageData } = $props();
 
@@ -62,6 +70,23 @@
   // Real-time connection (WebSocket or EventSource)
   let ws: WebSocket | EventSource | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let cacheValidationInterval: ReturnType<typeof setInterval> | null = null;
+  
+  // Connection status computed from cache
+  let connectionStatus = $derived((() => {
+    if (!cache.messageBusConnected && !cache.lastHeartbeat) {
+      return { status: 'never-connected', message: 'Crawler not available' };
+    } else if (!cache.messageBusConnected && cache.lastHeartbeat) {
+      const timeSinceHeartbeat = new Date().getTime() - cache.lastHeartbeat.getTime();
+      if (timeSinceHeartbeat > 30000) {
+        return { status: 'timeout', message: 'Connection timeout' };
+      } else {
+        return { status: 'disconnected', message: 'Connection lost' };
+      }
+    } else {
+      return { status: 'connected', message: 'Connected' };
+    }
+  })());
   
   // Initialize with cached data from loader for immediate display
   onMount(async () => {
@@ -111,10 +136,29 @@
     
     // Connect to SSE for real-time updates
     connectWebSocket();
+    
+    // Add periodic validation of cached data
+    cacheValidationInterval = setInterval(() => {
+      const currentCache = getCachedStatus();
+      if (currentCache.lastHeartbeat) {
+        const timeSinceHeartbeat = new Date().getTime() - currentCache.lastHeartbeat.getTime();
+        if (timeSinceHeartbeat > 30000 && currentCache.messageBusConnected) {
+          // Force update cache if heartbeat is stale but shows connected
+          console.warn('[Dashboard] Detected stale heartbeat, forcing cache update');
+          updateMessageBusConnection(false);
+        }
+      }
+    }, 10000); // Check every 10 seconds
   });
 
   onDestroy(() => {
     disconnectWebSocket();
+    
+    // Clean up cache validation interval
+    if (cacheValidationInterval) {
+      clearInterval(cacheValidationInterval);
+      cacheValidationInterval = null;
+    }
   });
 
   function connectWebSocket() {
@@ -204,7 +248,8 @@
           updateMessageBusConnection(message.payload.messageBusConnected);
           if (message.payload.cachedStatus) {
             crawlerStatus = message.payload.cachedStatus;
-            updateCrawlerStatus(message.payload.cachedStatus);
+            // Don't update cache timestamp - this is just restoring cached data, not new data
+            updateCrawlerStatus(message.payload.cachedStatus, false);
           }
           if (message.payload.lastHeartbeat) {
             updateHeartbeat(message.payload.lastHeartbeat);
@@ -261,6 +306,17 @@
         if (message.payload) {
           if (message.payload.component === "messageBus") {
             updateMessageBusConnection(message.payload.status === "connected");
+          }
+        }
+        break;
+        
+      case "health_check":
+        if (message.payload) {
+          console.log("[Dashboard] Received health check:", message.payload);
+          // Update connection status based on health check
+          updateMessageBusConnection(message.payload.messageBusConnected);
+          if (message.payload.lastHeartbeat) {
+            updateHeartbeat(message.payload.lastHeartbeat);
           }
         }
         break;
@@ -344,30 +400,6 @@
     toast.success("Job failure logs cleared");
   }
 
-  // Test job failure logs
-  async function testJobFailure() {
-    loading = true;
-    try {
-      const response = await fetch("/api/admin/crawler/test-failure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        toast.success("Test failure log sent");
-        console.log("Test failure result:", result);
-      } else {
-        throw new Error("Failed to send test failure");
-      }
-    } catch (error) {
-      console.error("Error sending test failure:", error);
-      toast.error("Failed to send test failure");
-    } finally {
-      loading = false;
-    }
-  }
-
   // Helper functions
   function getStatusBadgeVariant(status: string) {
     switch (status?.toLowerCase()) {
@@ -378,7 +410,7 @@
       case "stopped":
         return "destructive";
       default:
-        return "outline";
+        return "destructive";
     }
   }
 
@@ -391,7 +423,7 @@
       case "stopped":
         return Square;
       default:
-        return Clock;
+        return Binoculars;
     }
   }
 </script>
@@ -427,12 +459,12 @@
         {#if sseConnected}
           <div class="flex items-center gap-2 text-sm text-green-600">
             <Wifi class="h-4 w-4" />
-            <span>UI Connected</span>
+            <span>API</span>
           </div>
         {:else}
           <div class="flex items-center gap-2 text-sm text-red-600">
             <WifiOff class="h-4 w-4" />
-            <span>UI Disconnected</span>
+            <span>API</span>
             {#if sseReconnectAttempts > 0}
               <span class="text-xs">({sseReconnectAttempts} attempts)</span>
             {/if}
@@ -440,24 +472,24 @@
         {/if}
       </div>
       
-      <!-- Backend Connection -->
-      <div class="flex items-center gap-2">
-        {#if cache.messageBusConnected}
-          <div class="flex items-center gap-2 text-sm text-green-600">
-            <Database class="h-4 w-4" />
-            <span>Backend Connected</span>
-          </div>
-        {:else}
-          <div class="flex items-center gap-2 text-sm text-red-600">
-            <XCircle class="h-4 w-4" />
-            <span>Backend Disconnected</span>
-          </div>
-        {/if}
-      </div>
-      
       {#if lastUpdate}
         <div class="text-xs text-muted-foreground">
-          Last update: <Time timestamp={lastUpdate.toISOString()} relative />
+          <div class="flex items-center gap-2">
+            <Radio class="h-4 w-4" />
+            <span>
+              <Tooltip.Provider delayDuration={0}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <Time timestamp={lastUpdate.toISOString()} relative />
+                  </Tooltip.Trigger>
+                  <Tooltip.Content>
+                    <Time timestamp={lastUpdate.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                  </Tooltip.Content>
+                </Tooltip.Root>
+              </Tooltip.Provider>
+              
+            </span>
+          </div>
         </div>
       {/if}
     </div>
@@ -486,16 +518,25 @@
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
             <Card.Title class="text-sm font-medium">Status</Card.Title>
-            {@const StatusIcon = getStatusIcon(crawlerStatus.state || "unknown")}
-            <StatusIcon class="h-4 w-4 text-muted-foreground" />
+            {#if !crawlerStatus.state}
+              <div class="h-5 w-5 text-red-600 relative">
+                <Binoculars class="absolute h-5 w-5" />
+                <Binoculars class="absolute h-5 w-5 animate-ping" />
+              </div>
+            {:else}
+              {@const StatusIcon = getStatusIcon(crawlerStatus.state)}
+              <StatusIcon class="h-5 w-5 text-muted-foreground" />
+            {/if}
           </Card.Header>
           <Card.Content>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
               <Badge variant={getStatusBadgeVariant(crawlerStatus.state || "unknown")}>
-                {crawlerStatus.state || "Unknown"}
+                {crawlerStatus.state || "Unavailable"}
               </Badge>
               {#if crawlerStatus.running}
-                <Heart class="h-3 w-3 text-green-500 animate-pulse" />
+                <Heart class="h-5 w-5 text-green-500 animate-pulse" />
+              {:else if crawlerStatus.paused}
+                <CirclePause class="h-5 w-5 text-yellow-500 animate-ping" />
               {/if}
             </div>
           </Card.Content>
@@ -505,7 +546,7 @@
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
             <Card.Title class="text-sm font-medium">Queued Jobs</Card.Title>
-            <Clock class="h-4 w-4 text-muted-foreground" />
+            <ClipboardList class="h-5 w-5 text-muted-foreground" />
           </Card.Header>
           <Card.Content>
             <div class="text-2xl font-bold">{crawlerStatus.queued || 0}</div>
@@ -516,7 +557,11 @@
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
             <Card.Title class="text-sm font-medium">Processing</Card.Title>
-            <Loader2 class="h-4 w-4 text-muted-foreground {crawlerStatus.processing > 0 ? 'animate-spin' : ''}" />
+            {#if crawlerStatus.processing > 0}
+              <Loader2 class="h-5 w-5 text-muted-foreground animate-spin" />
+            {:else}
+              <CirclePause class="h-5 w-5 text-muted-foreground" />
+            {/if}
           </Card.Header>
           <Card.Content>
             <div class="text-2xl font-bold">{crawlerStatus.processing || 0}</div>
@@ -527,7 +572,7 @@
         <Card.Root>
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
             <Card.Title class="text-sm font-medium">Completed</Card.Title>
-            <CheckCircle class="h-4 w-4 text-muted-foreground" />
+            <CheckCircle class="h-5 w-5 text-muted-foreground" />
           </Card.Header>
           <Card.Content>
             <div class="text-2xl font-bold text-green-600">{crawlerStatus.completed || 0}</div>
@@ -545,22 +590,68 @@
               Crawler Details
             </Card.Title>
             <div class="space-y-1">
+              <Card.Description>
               {#if crawlerStatus.lastHeartbeat}
-                <Card.Description>
                   Last heartbeat: <Time timestamp={crawlerStatus.lastHeartbeat} format="DD. MMM YYYY, HH:mm:ss" />
                   (<Time timestamp={crawlerStatus.lastHeartbeat} relative />)
-                </Card.Description>
-              {:else if cache.lastHeartbeat}
-                <Card.Description>
-                  Last heartbeat (cached): <Time timestamp={cache.lastHeartbeat.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
-                  (<Time timestamp={cache.lastHeartbeat.toISOString()} relative />)
-                </Card.Description>
+              {:else}
+                <div class="flex flex-row gap-2 items-center">
+                  <Tooltip.Provider delayDuration={0}>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <Archive class="w-5 h-5" />
+                      </Tooltip.Trigger>
+                      <Tooltip.Content>
+                        Data is Cached
+                      </Tooltip.Content>
+                    </Tooltip.Root>
+                  </Tooltip.Provider>
+                  <div class="grow flex flex-row flex-wrap justify-between">
+                    <div class="flex flex-row gap-1">
+                      Last heartbeat:
+                      {#if cache.lastHeartbeat}
+                        <Tooltip.Provider delayDuration={0}>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger>
+                              <Time timestamp={cache.lastHeartbeat.toISOString()} relative />
+                            </Tooltip.Trigger>
+                            <Tooltip.Content>
+                              <Time timestamp={cache.lastHeartbeat.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                            </Tooltip.Content>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+                      {:else}
+                        <Tooltip.Provider delayDuration={0}>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger>
+                              <Ellipsis class="w-4 h-4 mt-0.5" />
+                            </Tooltip.Trigger>
+                            <Tooltip.Content>
+                              No heartbeat received yet
+                            </Tooltip.Content>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+                      {/if}
+                    </div>
+                    {#if cache.cacheTimestamp}
+                      <span>
+                        Cache age:
+                        <Tooltip.Provider delayDuration={0}>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger>
+                              <Time timestamp={cache.cacheTimestamp.toISOString()} relative />
+                            </Tooltip.Trigger>
+                            <Tooltip.Content>
+                              <Time timestamp={cache.cacheTimestamp.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                            </Tooltip.Content>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+                      </span>
+                    {/if}
+                  </div>
+                </div>
               {/if}
-              {#if cache.cacheTimestamp}
-                <Card.Description class="text-xs opacity-75">
-                  Data cached: <Time timestamp={cache.cacheTimestamp.toISOString()} relative />
-                </Card.Description>
-              {/if}
+              </Card.Description>
             </div>
           </Card.Header>
           <Card.Content class="space-y-4">
@@ -572,7 +663,7 @@
               </Alert.Root>
             {/if}
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-2">
               <div>
                 <div class="text-sm font-medium text-muted-foreground">Running</div>
                 <div class="text-lg font-semibold">
@@ -615,22 +706,26 @@
         <Card.Root>
           <Card.Header>
             <Card.Title>Crawler Controls</Card.Title>
-            <Card.Description>
-              Manage crawler operations and view real-time updates
+            <Card.Description class="flex flex-row flex-wrap justify-items-between">
+              <div class="grow">
+                Manage crawler operations and view real-time updates
+              </div>
+              <div class="-mt-8 -mr-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={loading}
+                  onclick={refreshCrawlerStatus}
+                >
+                  <RefreshCw class="h-4 w-4 mr-2 {loading ? 'animate-spin' : ''}" />
+                  Refresh
+                </Button>
+              </div>
             </Card.Description>
           </Card.Header>
-          <Card.Content class="space-y-4">
+          <Card.Content class="flex flex-col gap-4">
             <!-- Control Buttons -->
-            <div class="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={loading}
-                onclick={refreshCrawlerStatus}
-              >
-                <RefreshCw class="h-4 w-4 mr-2 {loading ? 'animate-spin' : ''}" />
-                Refresh
-              </Button>
+            <div class="flex flex-wrap gap-2 ">
 
               {#if !crawlerStatus.paused && crawlerStatus.running}
                 <Button
@@ -653,16 +748,6 @@
                   Resume
                 </Button>
               {/if}
-              
-              <Button
-                size="sm"
-                variant="destructive"
-                disabled={loading}
-                onclick={testJobFailure}
-              >
-                <XCircle class="h-4 w-4 mr-2" />
-                Test Failure
-              </Button>
             </div>
 
             <!-- Progress visualization -->
@@ -687,12 +772,11 @@
 
             <!-- Connection Status -->
             <Separator />
-            <div class="space-y-4">
-              <div class="text-sm font-medium">Connection Status</div>
+            <div class="flex flex-row flex-wrap justify-between gap-4">
               
               <!-- SSE Connection -->
               <div class="space-y-2">
-                <div class="text-xs font-medium text-muted-foreground">WebSocket API (Real-time Updates)</div>
+                <div class="text-xs font-medium text-muted-foreground">API Connection</div>
                 <div class="flex items-center gap-2">
                   {#if sseConnected}
                     <Badge variant="default" class="text-xs">
@@ -706,31 +790,43 @@
                     </Badge>
                   {/if}
                   
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    class="h-6 px-2 text-xs"
-                    onclick={connectWebSocket}
-                    disabled={sseConnected}
-                  >
-                    Reconnect
-                  </Button>
+                  {#if !sseConnected}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      class="h-6 px-2 text-xs"
+                      onclick={connectWebSocket}
+                      disabled={sseConnected}
+                    >
+                      Connect
+                    </Button>
+                  {/if}
                 </div>
               </div>
               
-              <!-- MessageBus Connection -->
+              <!-- MessageBus Connection with enhanced status -->
               <div class="space-y-2">
-                <div class="text-xs font-medium text-muted-foreground">Crawler Backend Connection</div>
+                <div class="text-xs font-medium text-muted-foreground">Crawler Connection</div>
                 <div class="flex items-center gap-2">
-                  {#if cache.messageBusConnected}
+                  {#if connectionStatus.status === 'connected'}
                     <Badge variant="default" class="text-xs">
                       <Database class="h-3 w-3 mr-1" />
                       Connected
                     </Badge>
-                  {:else}
+                  {:else if connectionStatus.status === 'timeout'}
+                    <Badge variant="secondary" class="text-xs">
+                      <Clock class="h-3 w-3 mr-1" />
+                      Timeout
+                    </Badge>
+                  {:else if connectionStatus.status === 'disconnected'}
                     <Badge variant="destructive" class="text-xs">
                       <XCircle class="h-3 w-3 mr-1" />
                       Disconnected
+                    </Badge>
+                  {:else}
+                    <Badge variant="destructive" class="text-xs">
+                      <CircleOff class="h-3 w-3 mr-1" />
+                      Unavailable
                     </Badge>
                   {/if}
                 </div>
@@ -754,7 +850,16 @@
                   
                   {#if cache.lastHeartbeat}
                     <span class="text-xs text-muted-foreground">
-                      Last heartbeat: <Time timestamp={cache.lastHeartbeat.toISOString()} relative />
+                      <Tooltip.Provider delayDuration={0}>
+                        <Tooltip.Root>
+                          <Tooltip.Trigger>
+                            Last heartbeat: <Time timestamp={cache.lastHeartbeat.toISOString()} relative />
+                          </Tooltip.Trigger>
+                          <Tooltip.Content>
+                            <Time timestamp={cache.lastHeartbeat.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                          </Tooltip.Content>
+                        </Tooltip.Root>
+                      </Tooltip.Provider>
                     </span>
                   {/if}
                 </div>

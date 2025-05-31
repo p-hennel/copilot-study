@@ -17,6 +17,8 @@ import { dirname, join } from "path";
 import { SupervisorClient } from "./client";
 import type { IPCMessage } from "./types";
 import { MessageType } from "./types";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["subvisor"]);
 
 // Authentication credentials interface
 export interface AuthCredentials {
@@ -62,22 +64,22 @@ ensureDirExists(logDir);
 
 // Print usage information
 function printUsage(): void {
-  console.log("Usage: bun run simple-supervisor start [website,crawler]");
-  console.log("");
-  console.log("Commands:");
-  console.log("  start [processes]    Start the specified processes");
-  console.log("  help                 Show this help");
-  console.log("");
-  console.log("Processes:");
-  console.log("  website              The web server");
-  console.log("  crawler              The GitLab crawler");
-  console.log("");
-  console.log("Examples:");
-  console.log("  bun run simple-supervisor start            # Start both");
-  console.log("  bun run simple-supervisor start website    # Start only website");
-  console.log("  bun run simple-supervisor start crawler    # Start only crawler");
-  console.log("");
-  console.log("Note: The crawler will not start until GitLab credentials are received from the website via IPC.");
+  logger.info("Usage: bun run simple-supervisor start [website,crawler]");
+  logger.info("");
+  logger.info("Commands:");
+  logger.info("  start [processes]    Start the specified processes");
+  logger.info("  help                 Show this help");
+  logger.info("");
+  logger.info("Processes:");
+  logger.info("  website              The web server");
+  logger.info("  crawler              The GitLab crawler");
+  logger.info("");
+  logger.info("Examples:");
+  logger.info("  bun run simple-supervisor start            # Start both");
+  logger.info("  bun run simple-supervisor start website    # Start only website");
+  logger.info("  bun run simple-supervisor start crawler    # Start only crawler");
+  logger.info("");
+  logger.info("Note: The crawler will not start until GitLab credentials are received from the website via IPC.");
 }
 
 // Helper to ensure directories exist
@@ -89,7 +91,7 @@ function ensureDirExists(dir: string): void {
 
 // Start a process
 function startProcess(cmd: string, name: string, env: Record<string, string> = {}): ChildProcess {
-  console.log(`Starting ${name}...`);
+  logger.info(`Starting ${name}...`);
   
   // Split the command into program and arguments
   const parts = cmd.split(" ");
@@ -122,11 +124,11 @@ function startProcess(cmd: string, name: string, env: Record<string, string> = {
   };
   
   typedProc.on("exit", (code: number | null, signal: string | null) => {
-    console.log(`${name} exited with code ${code} and signal ${signal}`);
+    logger.info(`${name} exited with code ${code} and signal ${signal}`);
     
     // Restart if unexpected exit
     if (code !== 0 && signal !== "SIGTERM" && signal !== "SIGINT") {
-      console.log(`Restarting ${name} in ${restartDelay}ms...`);
+      logger.info(`Restarting ${name} in ${restartDelay}ms...`);
       setTimeout(() => {
         if (processes.includes(name)) {
           startProcess(cmd, name, env);
@@ -136,10 +138,10 @@ function startProcess(cmd: string, name: string, env: Record<string, string> = {
   });
   
   typedProc.on("error", (err: Error) => {
-    console.error(`${name} error: ${err.message}`);
+    logger.error(`${name} error: ${err.message}`);
     
     // Restart on error
-    console.log(`Restarting ${name} in ${restartDelay}ms...`);
+    logger.info(`Restarting ${name} in ${restartDelay}ms...`);
     setTimeout(() => {
       if (processes.includes(name)) {
         startProcess(cmd, name, env);
@@ -168,7 +170,7 @@ function setupSupervisorClient(): SupervisorSetup {
     }
   } catch (err: unknown) {
     const error = err as Error;
-    console.warn(`Could not remove existing socket file: ${error.message}`);
+    logger.warn(`Could not remove existing socket file: ${error.message}`);
   }
   
   // Create SupervisorClient instance
@@ -190,17 +192,17 @@ function setupSupervisorClient(): SupervisorSetup {
           handleIncomingMessage(supervisorClient, socket, message);
         } catch (err: unknown) {
           const error = err as Error;
-          console.error(`Error handling message: ${error.message}`);
+          logger.error(`Error handling message: ${error.message}`);
         }
       },
       open: () => {
-        console.log(`Client connected to socket: ${socketPath}`);
+        logger.info(`Client connected to socket: ${socketPath}`);
       },
       close: () => {
-        console.log(`Client disconnected from socket: ${socketPath}`);
+        logger.info(`Client disconnected from socket: ${socketPath}`);
       },
       error: (_: any, error: Error) => {
-        console.error(`Socket error: ${error.message}`);
+        logger.error(`Socket error: ${error.message}`);
       }
     }
   });
@@ -208,9 +210,9 @@ function setupSupervisorClient(): SupervisorSetup {
   // Set up event listeners for auth credentials
   supervisorClient.on("message", (originId: string, key: string, payload: any) => {
     if (key === "auth_credentials") {
-      console.log(`Received authentication credentials from ${originId}`);
+      logger.info(`Received authentication credentials from ${originId}`);
       if (!payload) {
-        console.error("empty auth credentials as payload")
+        logger.error("empty auth credentials as payload")
         return
       }
 
@@ -236,7 +238,7 @@ function setupSupervisorClient(): SupervisorSetup {
 function handleIncomingMessage(client: SupervisorClient, _socket: any, message: IPCMessage): void {
   // Make sure message has required fields
   if (!message.origin || !message.type) {
-    console.warn("Invalid message format received");
+    logger.warn("Invalid message format received");
     return;
   }
   
@@ -259,7 +261,7 @@ function handleIncomingMessage(client: SupervisorClient, _socket: any, message: 
       break;
       
     default:
-      console.warn(`Unknown message type: ${message.type}`);
+      logger.warn(`Unknown message type: ${message.type}`);
   }
 }
 
@@ -283,7 +285,7 @@ function startCrawlerWithCredentials(): ChildProcess | null {
     _authCredentials.push(...(tokenproviders.filter(x => !presentproviders.includes(x))).map(x => buildAuthCredentials(x)))
   }
   
-  console.log('Starting crawler with received authentication credentials');
+  logger.info('Starting crawler with received authentication credentials');
   
   const crawlerProc = startProcess(crawlerCmd, "crawler", authCredentialsToEnvVars(_authCredentials));
   runningProcesses.push({ name: "crawler", process: crawlerProc });
@@ -298,12 +300,12 @@ async function main(): Promise<void> {
   }
   
   if (command !== "start") {
-    console.error(`Unknown command: ${command}`);
+    logger.error(`Unknown command: ${command}`);
     printUsage();
     process.exit(1);
   }
   
-  console.log(`Starting processes: ${processes.join(", ")}`);
+  logger.info(`Starting processes: ${processes.join(", ")}`);
   
   // Set up the SupervisorClient for IPC
   const supervisor = setupSupervisorClient();
@@ -324,13 +326,13 @@ async function main(): Promise<void> {
     
     // Log that we're waiting for credentials before starting crawler
     if (processes.includes("crawler")) {
-      console.log("Waiting for authentication credentials from website before starting crawler...");
+      logger.info("Waiting for authentication credentials from website before starting crawler...");
     }
   }
   
   // First, check if we have environment variables for crawler authentication
   if (processes.includes("crawler") && process.env.GITLAB_TOKEN && !authCredentials) {
-    console.log("Using environment variables for crawler authentication");
+    logger.info("Using environment variables for crawler authentication");
     // Set auth credentials from environment variables
     authCredentials = {
       token: process.env.GITLAB_TOKEN || "placeholder_token",
@@ -342,12 +344,12 @@ async function main(): Promise<void> {
   } 
   // If we need to wait for credentials from the website
   else if (processes.includes("crawler") && !authCredentials) {
-    console.log("Waiting for credentials from website before starting crawler...");
+    logger.info("Waiting for credentials from website before starting crawler...");
     
     // Set a timeout to start with placeholder credentials if we don't receive real ones
     setTimeout(() => {
       if (!authCredentials && processes.includes("crawler")) {
-        console.log("No credentials received from website after timeout. Creating placeholder credentials to allow crawler initialization");
+        logger.info("No credentials received from website after timeout. Creating placeholder credentials to allow crawler initialization");
         authCredentials = {
           token: "placeholder_token_for_init_only",
           clientId: "dummy_client_id",
@@ -358,16 +360,16 @@ async function main(): Promise<void> {
     }, 60000); // 60 second timeout
   }
   
-  console.log("Supervisor started. Press Ctrl+C to stop all processes.");
+  logger.info("Supervisor started. Press Ctrl+C to stop all processes.");
   
   // Set up signal handling for clean shutdown
   process.on("SIGINT", () => {
-    console.log("\nShutting down all processes...");
+    logger.info("\nShutting down all processes...");
     processes = []; // Prevent restarts
     
     // Kill all processes
     for (const proc of runningProcesses) {
-      console.log(`Stopping ${proc.name}...`);
+      logger.info(`Stopping ${proc.name}...`);
       proc.process.kill("SIGTERM");
     }
     
@@ -385,12 +387,12 @@ async function main(): Promise<void> {
       }
     } catch (err: unknown) {
       const error = err as Error;
-      console.warn(`Could not remove socket file: ${error.message}`);
+      logger.warn(`Could not remove socket file: ${error.message}`);
     }
     
     // Exit after a short delay
     setTimeout(() => {
-      console.log("All processes stopped.");
+      logger.info("All processes stopped.");
       process.exit(0);
     }, 2000);
   });
@@ -402,6 +404,6 @@ async function main(): Promise<void> {
 // Run the main function
 main().catch((err: unknown) => {
   const error = err as Error;
-  console.error(`Error: ${error.message}`);
+  logger.error(`Error: ${error.message}`);
   process.exit(1);
 });

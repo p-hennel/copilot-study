@@ -5,9 +5,12 @@ import { db } from "$lib/server/db";
 import { job } from "$lib/server/db/base-schema";
 import { JobStatus } from "$lib/types";
 import { eq } from "drizzle-orm";
+import { getLogger } from "@logtape/logtape";
+
+const logger = getLogger(["test", "connection-handling"]);
 
 async function testJobResetFunctionality() {
-  console.log("🧪 Testing job reset functionality...");
+  logger.info("🧪 Testing job reset functionality...");
   
   try {
     // Check for running jobs
@@ -16,13 +19,13 @@ async function testJobResetFunctionality() {
       .from(job)
       .where(eq(job.status, JobStatus.running));
     
-    console.log(`Found ${runningJobs.length} running jobs`);
-    
+    logger.info(`Found running jobs`, { count: runningJobs.length });
+
     if (runningJobs.length > 0) {
-      console.log("Running jobs:", runningJobs.map(j => ({ id: j.id, status: j.status, started_at: j.started_at })));
-      
+      logger.info("Running jobs:", { jobs: runningJobs.map(j => ({ id: j.id, status: j.status, started_at: j.started_at })) });
+
       // Simulate connection loss by resetting jobs
-      console.log("🔄 Simulating connection loss - resetting running jobs to queued...");
+      logger.info("🔄 Simulating connection loss - resetting running jobs to queued...");
       
       const result = await db
         .update(job)
@@ -32,7 +35,7 @@ async function testJobResetFunctionality() {
         })
         .where(eq(job.status, JobStatus.running));
       
-      console.log(`✅ Reset ${result.rowsAffected} jobs to queued status`);
+      logger.info(`✅ Reset jobs to queued status`, { count: result.rowsAffected });
       
       // Verify the reset
       const queuedJobs = await db
@@ -40,9 +43,9 @@ async function testJobResetFunctionality() {
         .from(job)
         .where(eq(job.status, JobStatus.queued));
       
-      console.log(`Now have ${queuedJobs.length} queued jobs`);
+      logger.info(`Now have queued jobs`, { count: queuedJobs.length });
     } else {
-      console.log("ℹ️ No running jobs found to test with");
+      logger.info("ℹ️ No running jobs found to test with");
     }
     
     // Show current job status distribution
@@ -55,18 +58,18 @@ async function testJobResetFunctionality() {
       return acc;
     }, {} as Record<string, number>);
     
-    console.log("📊 Current job status distribution:", statusDistribution);
+    logger.info("📊 Current job status distribution:", statusDistribution);
     
   } catch (error) {
-    console.error("❌ Error testing job reset functionality:", error);
+    logger.error("❌ Error testing job reset functionality: {error}", { error });
   }
 }
 
 // Run the test
 testJobResetFunctionality().then(() => {
-  console.log("🧪 Test completed");
+  logger.info("🧪 Test completed");
   process.exit(0);
 }).catch((error) => {
-  console.error("❌ Test failed:", error);
+  logger.error("❌ Test failed: {error}", { error });
   process.exit(1);
 });

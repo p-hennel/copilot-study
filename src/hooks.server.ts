@@ -31,14 +31,15 @@ const logsDir = path.join(bunHomeData, "logs")
 if (existsSync(bunHomeData) && !existsSync(logsDir)) {
   mkdirSync(logsDir)
 }
-console.error("bunHomeData", bunHomeData)
 const settings = AppSettings()
 const logger: Logger = await configureLogging("backend", existsSync(logsDir) ? logsDir : process.cwd())
 
 if (logger === null) {
-  console.error("CRITICAL: Logger initialization failed. Cannot set up event listeners.")
-  throw new Error("Logger initialization failed")
+  // Can't use logger here since it failed to initialize
+  throw new Error("CRITICAL: Logger initialization failed. Cannot set up event listeners.")
 }
+
+logger.debug("bunHomeData", { bunHomeData })
 
 try {
   if (settings) doMigration(settings.paths.database)

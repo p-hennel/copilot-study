@@ -7,6 +7,8 @@ import { JobStatus } from "$lib/types"
 import AppSettings from "$lib/server/settings" // Assuming settings has dataRoot path
 import path from "node:path"
 import fs from "node:fs/promises" // For reading directory
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","data","[...path]"]);
 
 export async function load({ locals, params }) {
   // 1. Authentication Check (already done implicitly by hooks, but double-check)
@@ -71,10 +73,10 @@ export async function load({ locals, params }) {
     }
   } catch (err: any) {
     if (err.code === "ENOENT") {
-      console.warn(`Storage directory not found for area ${areaPath}`)
+      logger.warn(`Storage directory not found for area ${areaPath}`)
       // Return empty files list, UI will show no files
     } else {
-      console.error(`Error reading storage directory for area ${areaPath}:`, err)
+      logger.error(`Error reading storage directory for area ${areaPath}:`, err)
       throw error(500, "Could not list data files")
     }
   }

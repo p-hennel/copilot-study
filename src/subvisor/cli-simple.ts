@@ -144,38 +144,38 @@ function createSupervisor(): SimplifiedSupervisor {
 
 // Print usage information
 function printUsage(): void {
-  console.log("Usage: bun run supervisor <command> [processes] [options]");
-  console.log("");
-  console.log("Commands:");
-  console.log("  start [processes]    Start the supervisor with specified processes (default: website,crawler)");
-  console.log("  stop [processes]     Stop the specified processes");
-  console.log("  status [processes]   Show status of the specified processes");
-  console.log("  restart [processes]  Restart the specified processes");
-  console.log("  help                 Show this help message");
-  console.log("");
-  console.log("Processes:");
-  console.log("  website              The web server process");
-  console.log("  crawler              The crawler process");
-  console.log("  website,crawler      Specify multiple processes (no spaces)");
-  console.log("");
-  console.log("Options:");
-  console.log("  --socket-path <path>       Path to Unix socket (default: ./tmp/supervisor.sock)");
-  console.log("  --log-dir <path>           Directory for logs (default: ./logs)");
-  console.log("  --website-cmd <command>    Command to run the website (default: 'bun run dev')");
-  console.log("  --crawler-cmd <command>    Command to run the crawler (default: 'bun run crawler:start')");
-  console.log("  --no-restart               Disable automatic restarts");
-  console.log("  --max-restarts <number>    Maximum number of restarts (default: 10)");
-  console.log("  --restart-delay <number>   Delay between restarts in ms (default: 5000)");
-  console.log("");
-  console.log("Examples:");
-  console.log("  # Start both website and crawler with default settings");
-  console.log("  bun run supervisor start");
-  console.log("");
-  console.log("  # Start only the website");
-  console.log("  bun run supervisor start website");
-  console.log("");
-  console.log("  # Start with custom settings");
-  console.log("  bun run supervisor start --website-cmd 'bun run dev --port 3001'");
+  logger.info("Usage: bun run supervisor <command> [processes] [options]");
+  logger.info("");
+  logger.info("Commands:");
+  logger.info("  start [processes]    Start the supervisor with specified processes (default: website,crawler)");
+  logger.info("  stop [processes]     Stop the specified processes");
+  logger.info("  status [processes]   Show status of the specified processes");
+  logger.info("  restart [processes]  Restart the specified processes");
+  logger.info("  help                 Show this help message");
+  logger.info("");
+  logger.info("Processes:");
+  logger.info("  website              The web server process");
+  logger.info("  crawler              The crawler process");
+  logger.info("  website,crawler      Specify multiple processes (no spaces)");
+  logger.info("");
+  logger.info("Options:");
+  logger.info("  --socket-path <path>       Path to Unix socket (default: ./tmp/supervisor.sock)");
+  logger.info("  --log-dir <path>           Directory for logs (default: ./logs)");
+  logger.info("  --website-cmd <command>    Command to run the website (default: 'bun run dev')");
+  logger.info("  --crawler-cmd <command>    Command to run the crawler (default: 'bun run crawler:start')");
+  logger.info("  --no-restart               Disable automatic restarts");
+  logger.info("  --max-restarts <number>    Maximum number of restarts (default: 10)");
+  logger.info("  --restart-delay <number>   Delay between restarts in ms (default: 5000)");
+  logger.info("");
+  logger.info("Examples:");
+  logger.info("  # Start both website and crawler with default settings");
+  logger.info("  bun run supervisor start");
+  logger.info("");
+  logger.info("  # Start only the website");
+  logger.info("  bun run supervisor start website");
+  logger.info("");
+  logger.info("  # Start with custom settings");
+  logger.info("  bun run supervisor start --website-cmd 'bun run dev --port 3001'");
 }
 
 // Main function to execute commands
@@ -253,28 +253,28 @@ async function main() {
       // Display status for specific processes or all processes
       const processesToCheck = processes.length > 0 ? processes : ['website', 'crawler'];
       
-      console.log("Process Status:");
-      console.log("--------------");
+      logger.info("Process Status:");
+      logger.info("--------------");
       
       for (const processId of processesToCheck) {
         try {
           const state = await supervisor.getProcessState(processId);
           const stateStr = state ? getColoredState(state) : "\x1b[90mNOT FOUND\x1b[0m";
           
-          console.log(`${processId}: ${stateStr}`);
+          logger.info(`${processId}: ${stateStr}`);
           
           const processConfig = supervisor.getProcessConfig(processId);
           if (processConfig) {
-            console.log(`  Command: ${processConfig.script} ${processConfig.args?.join(" ") || ""}`);
-            console.log(`  Auto-restart: ${processConfig.autoRestart}`);
-            console.log(`  Restart delay: ${processConfig.restartDelay}ms`);
-            console.log(`  Max restarts: ${processConfig.maxRestarts}`);
+            logger.info(`  Command: ${processConfig.script} ${processConfig.args?.join(" ") || ""}`);
+            logger.info(`  Auto-restart: ${processConfig.autoRestart}`);
+            logger.info(`  Restart delay: ${processConfig.restartDelay}ms`);
+            logger.info(`  Max restarts: ${processConfig.maxRestarts}`);
           }
           
-          console.log("--------------");
+          logger.info("--------------");
         } catch (error) {
-          console.log(`${processId}: \x1b[31mERROR\x1b[0m - ${error}`);
-          console.log("--------------");
+          logger.info(`${processId}: \x1b[31mERROR\x1b[0m - ${error}`);
+          logger.info("--------------");
         }
       }
       
@@ -340,6 +340,6 @@ function getColoredState(state: ProcessState): string {
 
 // Execute the main function
 main().catch((err) => {
-  console.error(`Error: ${err}`);
+  logger.error(`Error: ${err}`);
   process.exit(1);
 });

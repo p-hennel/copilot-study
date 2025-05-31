@@ -268,18 +268,18 @@ export class AppSettings {
   // Method to reload settings from file
   private reloadSettings() {
     if (this.isWriting) {
-      // console.log("Skipping reload during write operation.");
+      // logger.info("Skipping reload during write operation.");
       return; // Don't reload if we are currently writing
     }
-    console.log(`Settings file ${this.filePath} changed, reloading...`);
+    logger.info(`Settings file changed, reloading...`, { filePath: this.filePath });
     try {
       const fileContents = readFileSync(this.filePath, "utf8");
       const data = yaml.load(fileContents);
       this.settings = settingsSchema.parse(data);
-      console.log("Settings reloaded successfully.");
+      logger.info("Settings reloaded successfully.");
       // TODO: Optionally notify other parts of the application about the change
     } catch (error) {
-      console.error("Error reloading settings file:", error);
+      logger.error("Error reloading settings file:", { error });
       // Keep old settings in case of error? Or throw?
     }
   }
@@ -297,15 +297,15 @@ export class AppSettings {
       });
 
       this.watcher.on("error", (error) => {
-        console.error(`Error watching settings file ${this.filePath}:`, error);
+        logger.error(`Error watching settings file:`, { filePath: this.filePath, error });
         // Attempt to restart watcher?
         this.watcher = null; // Clear watcher reference
         // Maybe add a delay before retrying watchFile()
       });
 
-      console.log(`Watching settings file: ${this.filePath}`);
+      logger.info(`Watching settings file:`, { filePath: this.filePath });
     } catch (error) {
-      console.error(`Failed to start watching settings file ${this.filePath}:`, error);
+      logger.error(`Failed to start watching settings file:`, { filePath: this.filePath, error });
       this.watcher = null;
     }
   }
@@ -325,8 +325,7 @@ export class AppSettings {
       }
       if (!existsSync(filePath)) {
         const temp = settingsSchema.parse({});
-        console.log("temp", temp);
-        console.log("yaml", yaml.dump(temp));
+        logger.debug("Generated default settings", { temp, yaml: yaml.dump(temp) });
         writeFileSync(filePath, yaml.dump(temp), "utf8");
       }
       AppSettings.instance = new AppSettings(filePath);
@@ -359,9 +358,9 @@ export class AppSettings {
       // Convert the updated settings back to YAML format.
       const yamlStr = yaml.dump(this.settings);
       writeFileSync(this.filePath, yamlStr, "utf8");
-      console.log("Settings updated and saved.");
+      logger.info("Settings updated and saved.");
     } catch (error) {
-      console.error("Error updating settings:", error);
+      logger.error("Error updating settings:", { error });
       // Optionally re-throw or handle error
     } finally {
       // Ensure flag is reset even if write fails, after a short delay

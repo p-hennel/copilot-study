@@ -50,7 +50,7 @@ for (let i = 0; i < args.length; i++) {
       if (name === "website" || name === "crawler") {
         processNames.push(name);
       } else {
-        console.error(`Unknown process name: ${name}`);
+        logger.error(`Unknown process name: ${name}`);
         printUsage();
         process.exit(1);
       }
@@ -84,7 +84,7 @@ for (let i = 0; i < args.length; i++) {
     if (arg === "website" || arg === "crawler") {
       processNames.push(arg);
     } else {
-      console.error(`Unknown argument: ${arg}`);
+      logger.error(`Unknown argument: ${arg}`);
       printUsage();
       process.exit(1);
     }
@@ -179,42 +179,42 @@ function initializeSupervisor(): Supervisor {
 }
 
 function printUsage() {
-  console.log("Usage: supervisor <command> [processes] [options]");
-  console.log("");
-  console.log("Commands:");
-  console.log("  start [processes]    Start the supervisor with specified processes (default: website,crawler)");
-  console.log("  stop [processes]     Stop the specified processes or all if none specified");
-  console.log("  restart [processes]  Restart the specified processes");
-  console.log("  status [processes]   Show status of the specified processes");
-  console.log("  list                 List all managed processes and their status");
-  console.log("  help                 Show this help message");
-  console.log("");
-  console.log("Processes:");
-  console.log("  website              The web server process");
-  console.log("  crawler              The crawler process");
-  console.log("");
-  console.log("Options:");
-  console.log("  --socket-path <path>       Path to Unix socket (default: ./tmp/supervisor.sock)");
-  console.log("  --log-dir <path>           Directory for logs (default: ./logs)");
-  console.log("  --website-cmd <command>    Command to run the website (default: 'bun run dev')");
-  console.log("  --crawler-cmd <command>    Command to run the crawler (default: 'bun run crawler:start')");
-  console.log("  --foreground               Run in foreground mode (ideal for Docker)");
-  console.log("  --no-restart               Disable automatic restarts");
-  console.log("  --max-restarts <number>    Maximum number of restarts (default: 10)");
-  console.log("  --restart-delay <ms>       Delay between restarts in ms (default: 5000)");
-  console.log("");
-  console.log("Examples:");
-  console.log("  # Start both website and crawler with default settings");
-  console.log("  bun run supervisor start");
-  console.log("");
-  console.log("  # Start only the website");
-  console.log("  bun run supervisor start website");
-  console.log("");
-  console.log("  # Start with custom settings");
-  console.log("  bun run supervisor start --website-cmd 'bun run dev --port 3001' --crawler-cmd 'bun run crawler --debug'");
-  console.log("");
-  console.log("  # Restart the crawler only");
-  console.log("  bun run supervisor restart crawler");
+  logger.info("Usage: supervisor <command> [processes] [options]");
+  logger.info("");
+  logger.info("Commands:");
+  logger.info("  start [processes]    Start the supervisor with specified processes (default: website,crawler)");
+  logger.info("  stop [processes]     Stop the specified processes or all if none specified");
+  logger.info("  restart [processes]  Restart the specified processes");
+  logger.info("  status [processes]   Show status of the specified processes");
+  logger.info("  list                 List all managed processes and their status");
+  logger.info("  help                 Show this help message");
+  logger.info("");
+  logger.info("Processes:");
+  logger.info("  website              The web server process");
+  logger.info("  crawler              The crawler process");
+  logger.info("");
+  logger.info("Options:");
+  logger.info("  --socket-path <path>       Path to Unix socket (default: ./tmp/supervisor.sock)");
+  logger.info("  --log-dir <path>           Directory for logs (default: ./logs)");
+  logger.info("  --website-cmd <command>    Command to run the website (default: 'bun run dev')");
+  logger.info("  --crawler-cmd <command>    Command to run the crawler (default: 'bun run crawler:start')");
+  logger.info("  --foreground               Run in foreground mode (ideal for Docker)");
+  logger.info("  --no-restart               Disable automatic restarts");
+  logger.info("  --max-restarts <number>    Maximum number of restarts (default: 10)");
+  logger.info("  --restart-delay <ms>       Delay between restarts in ms (default: 5000)");
+  logger.info("");
+  logger.info("Examples:");
+  logger.info("  # Start both website and crawler with default settings");
+  logger.info("  bun run supervisor start");
+  logger.info("");
+  logger.info("  # Start only the website");
+  logger.info("  bun run supervisor start website");
+  logger.info("");
+  logger.info("  # Start with custom settings");
+  logger.info("  bun run supervisor start --website-cmd 'bun run dev --port 3001' --crawler-cmd 'bun run crawler --debug'");
+  logger.info("");
+  logger.info("  # Restart the crawler only");
+  logger.info("  bun run supervisor restart crawler");
 }
 
 // Main function to execute commands
@@ -333,24 +333,24 @@ async function main() {
       
       if (processNames.length === 0) {
         // Show status of all processes
-        console.log("Managed Processes Status:");
-        console.log("-----------------------");
+        logger.info("Managed Processes Status:");
+        logger.info("-----------------------");
         
         for (const [id, process] of supervisor["processes"].entries()) {
           const state = process.getState();
           const stateStr = getColoredState(state);
           
-          console.log(`${id}: ${stateStr}`);
-          console.log(`  Command: ${process.config.script} ${process.config.args?.join(" ") || ""}`);
-          console.log(`  Auto-restart: ${process.config.autoRestart}`);
-          console.log(`  Restart delay: ${process.config.restartDelay}ms`);
-          console.log(`  Max restarts: ${process.config.maxRestarts}`);
+          logger.info(`${id}: ${stateStr}`);
+          logger.info(`  Command: ${process.config.script} ${process.config.args?.join(" ") || ""}`);
+          logger.info(`  Auto-restart: ${process.config.autoRestart}`);
+          logger.info(`  Restart delay: ${process.config.restartDelay}ms`);
+          logger.info(`  Max restarts: ${process.config.maxRestarts}`);
           
           if (process.config.dependencies?.length) {
-            console.log(`  Dependencies: ${process.config.dependencies.join(", ")}`);
+            logger.info(`  Dependencies: ${process.config.dependencies.join(", ")}`);
           }
           
-          console.log("-----------------------");
+          logger.info("-----------------------");
         }
       } else {
         // Show status of specific processes
@@ -360,20 +360,20 @@ async function main() {
             const state = proc.getState();
             const stateStr = getColoredState(state);
             
-            console.log(`Process: ${processName}`);
-            console.log(`State: ${stateStr}`);
-            console.log(`Command: ${proc.config.script} ${proc.config.args?.join(" ") || ""}`);
-            console.log(`Auto-restart: ${proc.config.autoRestart}`);
-            console.log(`Restart delay: ${proc.config.restartDelay}ms`);
-            console.log(`Max restarts: ${proc.config.maxRestarts}`);
+            logger.info(`Process: ${processName}`);
+            logger.info(`State: ${stateStr}`);
+            logger.info(`Command: ${proc.config.script} ${proc.config.args?.join(" ") || ""}`);
+            logger.info(`Auto-restart: ${proc.config.autoRestart}`);
+            logger.info(`Restart delay: ${proc.config.restartDelay}ms`);
+            logger.info(`Max restarts: ${proc.config.maxRestarts}`);
             
             if (proc.config.dependencies?.length) {
-              console.log(`Dependencies: ${proc.config.dependencies.join(", ")}`);
+              logger.info(`Dependencies: ${proc.config.dependencies.join(", ")}`);
             }
             
-            console.log("-----------------------");
+            logger.info("-----------------------");
           } else {
-            console.log(`Process not found: ${processName}`);
+            logger.info(`Process not found: ${processName}`);
           }
         }
       }
@@ -391,14 +391,14 @@ async function main() {
       const supervisor = initializeSupervisor();
       await supervisor.start();
       
-      console.log("Managed Processes:");
-      console.log("-----------------");
+      logger.info("Managed Processes:");
+      logger.info("-----------------");
       
       for (const [id, process] of supervisor["processes"].entries()) {
         const state = process.getState();
         const stateStr = getColoredState(state);
         
-        console.log(`${id}: ${stateStr}`);
+        logger.info(`${id}: ${stateStr}`);
       }
       
       // Shut down the supervisor
@@ -441,6 +441,6 @@ function getColoredState(state: ProcessState): string {
 
 // Execute the main function
 main().catch((err) => {
-  console.error(`Error: ${err}`);
+  logger.error(`Error: ${err}`);
   process.exit(1);
 });

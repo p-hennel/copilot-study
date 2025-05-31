@@ -714,7 +714,8 @@ export async function boot() {
 /*
 // Uncomment to auto-start the connector when imported
 boot().catch(err => {
-  console.error(`Error in connector: ${err}`);
+  const logger = getLogger(["connector", "bootstrap"]);
+  logger.error(`Error in connector:`, { error: err });
   process.exit(1);
 });
 */

@@ -4,6 +4,9 @@ import { db } from "$lib/server/db";
 import { eq, desc, and, inArray, gte, sql } from "drizzle-orm";
 import { job } from "$lib/server/db/base-schema";
 import { JobStatus, TokenProvider } from "$lib/types";
+import { getLogger } from "@logtape/logtape";
+
+const logger = getLogger(["api", "admin", "jobs"]);
 
 export async function GET({ locals, url }: RequestEvent) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
@@ -18,7 +21,7 @@ export async function GET({ locals, url }: RequestEvent) {
     const result = await getJobs(page, limit);
     return json(result);
   } catch (error) {
-    console.error("Error fetching jobs:", error);
+    logger.error("Error fetching jobs:", { error });
     return json({ error: "Failed to fetch jobs" }, { status: 500 });
   }
 }
@@ -40,7 +43,7 @@ export async function DELETE({ locals, request, url }: RequestEvent) {
         return json({ error: "Job not found" }, { status: 404 });
       }
 
-      console.log(`Admin ${locals.user.email} deleted job ${jobId}`);
+      logger.info(`Admin deleted job`, { admin: locals.user.email, jobId });
       return json({
         success: true,
         message: `Job ${jobId} deleted successfully`,
@@ -60,7 +63,7 @@ export async function DELETE({ locals, request, url }: RequestEvent) {
         return json({ error: "Job not found" }, { status: 404 });
       }
 
-      console.log(`Admin ${locals.user.email} deleted job ${body.id}`);
+      logger.info(`Admin deleted job`, { admin: locals.user.email, jobId: body.id });
       return json({
         success: true,
         message: `Job ${body.id} deleted successfully`,
@@ -68,7 +71,7 @@ export async function DELETE({ locals, request, url }: RequestEvent) {
       });
     }
   } catch (error) {
-    console.error("Error deleting job:", error);
+    logger.error("Error deleting job:", { error });
     return json({ error: "Failed to delete job" }, { status: 500 });
   }
 }
@@ -103,7 +106,7 @@ export async function POST({ locals, request }: RequestEvent) {
         return deletedJobs;
       });
 
-      console.log(`Admin ${locals.user.email} performed bulk deletion of ${result.length} jobs`);
+      logger.info(`Admin performed bulk deletion of jobs`, { admin: locals.user.email, count: result.length });
       return json({
         success: true,
         message: `${result.length} jobs deleted successfully`,
@@ -139,7 +142,7 @@ export async function POST({ locals, request }: RequestEvent) {
         return deletedJobs;
       });
 
-      console.log(`Admin ${locals.user.email} performed filtered bulk deletion of ${result.length} jobs with filters:`, filters);
+      logger.info(`Admin performed filtered bulk deletion of jobs`, { admin: locals.user.email, count: result.length, filters });
       return json({
         success: true,
         message: `${result.length} jobs deleted successfully with applied filters`,
@@ -151,7 +154,7 @@ export async function POST({ locals, request }: RequestEvent) {
       return json({ error: "Invalid action. Supported actions: bulk_delete, bulk_delete_filtered" }, { status: 400 });
     }
   } catch (error) {
-    console.error("Error in bulk job operations:", error);
+    logger.error("Error in bulk job operations:", { error });
     return json({ error: "Failed to perform bulk job operation" }, { status: 500 });
   }
 }

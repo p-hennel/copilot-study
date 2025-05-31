@@ -2,6 +2,8 @@ import { existsSync, statSync } from 'node:fs';
 import { Socket } from 'node:net';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","api","admin","health"]);
 
 // Configuration - you can adjust these or load from environment variables
 const SOCKET_PATH = process.env.SOCKET_PATH || '/run/app/app.sock';
@@ -13,20 +15,20 @@ function checkSocketExists(): boolean {
   try {
     // Check if file exists
     if (!existsSync(SOCKET_PATH)) {
-      console.error(`Socket file ${SOCKET_PATH} does not exist`);
+      logger.error(`Socket file ${SOCKET_PATH} does not exist`);
       return false;
     }
     
     // Check if it's a socket
     const stats = statSync(SOCKET_PATH);
     if (!stats.isSocket()) {
-      console.error(`File ${SOCKET_PATH} exists but is not a socket`);
+      logger.error(`File ${SOCKET_PATH} exists but is not a socket`);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error(`Error checking socket: ${error}`);
+    logger.error(`Error checking socket: ${error}`);
     return false;
   }
 }
@@ -49,19 +51,19 @@ async function testSocketConnection(): Promise<boolean> {
       
       socket.on('timeout', () => {
         socket.destroy();
-        console.error('Socket connection timed out');
+        logger.error('Socket connection timed out');
         resolve(false);
       });
       
       socket.on('error', (err) => {
-        console.error(`Socket connection error: ${err.message}`);
+        logger.error(`Socket connection error: ${err.message}`);
         resolve(false);
       });
       
       // Try to connect to the socket
       socket.connect(SOCKET_PATH);
     } catch (error) {
-      console.error(`Error testing socket connection: ${error}`);
+      logger.error(`Error testing socket connection: ${error}`);
       resolve(false);
     }
   });

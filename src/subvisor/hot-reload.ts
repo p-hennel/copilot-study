@@ -1,6 +1,8 @@
 import { EventEmitter } from "events";
 import { watch } from "fs";
 import { Supervisor } from "./supervisor";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["subvisor"]);
 
 export class HotReloader extends EventEmitter {
   private supervisor: Supervisor;
@@ -19,14 +21,14 @@ export class HotReloader extends EventEmitter {
     }
 
     try {
-      const watcher = watch(scriptPath, { persistent: true }, (eventType, filename) => {
+      const watcher = watch(scriptPath, { persistent: true }, (eventType) => {
         this.handleFileChange(processId, scriptPath, eventType);
       });
 
       this.watchers.set(processId, watcher);
-      console.log(`Watching ${scriptPath} for changes (process ${processId})`);
+      logger.info(`Watching ${scriptPath} for changes (process ${processId})`);
     } catch (err: any) {
-      console.error(`Failed to watch ${scriptPath}: ${err.message}`);
+      logger.error(`Failed to watch ${scriptPath}: ${err.message}`);
     }
   }
 
@@ -37,6 +39,7 @@ export class HotReloader extends EventEmitter {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private handleFileChange(processId: string, scriptPath: string, eventType: string): void {
     // Debounce to prevent multiple restarts for a single save
     if (this.debounceTimers.has(processId)) {
@@ -46,7 +49,7 @@ export class HotReloader extends EventEmitter {
     this.debounceTimers.set(
       processId,
       setTimeout(() => {
-        console.log(`Detected change in ${scriptPath}, restarting process ${processId}`);
+        logger.info(`Detected change in ${scriptPath}, restarting process ${processId}`);
 
         this.emit("fileChanged", processId, scriptPath);
 

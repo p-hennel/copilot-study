@@ -4,6 +4,8 @@ import { unauthorizedResponse } from "$lib/server/utils";
 import { TokenProvider, CrawlCommand, JobStatus } from "$lib/types"; // Added CrawlCommand and JobStatus
 import { json } from "@sveltejs/kit";
 import { and, eq } from "drizzle-orm";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","api","scoping","[[provider]]"]);
 
 export async function GET({ params: { provider }, locals }) {
   if (!locals.session || !locals.user || !locals.user.id) return unauthorizedResponse();
@@ -21,7 +23,7 @@ export async function GET({ params: { provider }, locals }) {
   } else if (provider === "jiraCloud") {
     _provider = TokenProvider.jiraCloud;
   } else {
-    console.log("unknown provider", provider);
+    logger.info("unknown provider", {provider});
     return json(undefined, { status: 400 });
   }
 

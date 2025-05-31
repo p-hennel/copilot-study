@@ -46,7 +46,7 @@ for (let i = 0; i < args.length; i++) {
   ) {
     command = arg;
   } else if (arg?.startsWith("--")) {
-    console.error(`Unknown option: ${arg}`);
+    logger.error(`Unknown option: ${arg}`);
     printUsage();
     process.exit(1);
   } else {
@@ -158,25 +158,25 @@ function generateConfigFile(webServerCmd: string, crawlerCmd: string, configPath
 // Check for init command to generate a configuration file
 if (command === "init") {
   if (!webServerCmd || !crawlerCmd) {
-    console.error("Web server command and crawler command are required for initialization");
+    logger.error("Web server command and crawler command are required for initialization");
     printUsage();
     process.exit(1);
   }
   
   if (generateConfigFile(webServerCmd, crawlerCmd, configPath)) {
-    console.log(`Configuration file created at ${configPath}`);
-    console.log("You can now start the supervisor with: bun run src/subvisor/cli.ts start");
+    logger.info(`Configuration file created at ${configPath}`);
+    logger.info("You can now start the supervisor with: bun run src/subvisor/cli.ts start");
     process.exit(0);
   } else {
-    console.error("Failed to create configuration file");
+    logger.error("Failed to create configuration file");
     process.exit(1);
   }
 }
 
 // Ensure config file exists for other commands
 if (!existsSync(configPath)) {
-  console.error(`Config file not found: ${configPath}`);
-  console.error("Run 'init' command first to generate a configuration file");
+  logger.error(`Config file not found: ${configPath}`);
+  logger.error("Run 'init' command first to generate a configuration file");
   printUsage();
   process.exit(1);
 }
@@ -318,12 +318,12 @@ async function main() {
         await supervisor.start();
         const proc = supervisor["processes"].get(processId);
         if (!proc) {
-          console.error(`Process not found: ${processId}`);
+          logger.error(`Process not found: ${processId}`);
           await supervisor.initiateShutdown();
           process.exit(1);
         }
         proc.start();
-        console.log(`Started process: ${processId}`);
+        logger.info(`Started process: ${processId}`);
 
         // Wait a moment and then exit
         setTimeout(async () => {
@@ -395,24 +395,24 @@ async function main() {
         await supervisor.start();
         const proc = supervisor["processes"].get(processId);
         if (!proc) {
-          console.error(`Process not found: ${processId}`);
+          logger.error(`Process not found: ${processId}`);
           await supervisor.initiateShutdown();
           process.exit(1);
         }
         await proc.stop();
-        console.log(`Stopped process: ${processId}`);
+        logger.info(`Stopped process: ${processId}`);
         await supervisor.initiateShutdown();
       } else {
         // Stop the supervisor and all processes
         await supervisor.start();
-        console.log("Stopping all processes...");
+        logger.info("Stopping all processes...");
         await supervisor.initiateShutdown();
       }
       break;
 
     case "restart": {
       if (!processId) {
-        console.error("Process ID required for restart command");
+        logger.error("Process ID required for restart command");
         printUsage();
         process.exit(1);
       }
@@ -420,20 +420,20 @@ async function main() {
       await supervisor.start();
 
       if (!processId) {
-        console.error("Process ID required for restart command");
+        logger.error("Process ID required for restart command");
         printUsage();
         process.exit(1);
       }
       const proc = supervisor["processes"].get(processId);
       if (!proc) {
-        console.error(`Process not found: ${processId}`);
+        logger.error(`Process not found: ${processId}`);
         await supervisor.initiateShutdown();
         process.exit(1);
       }
 
       await proc.stop();
       proc.start();
-      console.log(`Restarted process: ${processId}`);
+      logger.info(`Restarted process: ${processId}`);
 
       // Wait a moment and then exit
       setTimeout(async () => {
@@ -444,7 +444,7 @@ async function main() {
 
     case "status": {
       if (!processId) {
-        console.error("Process ID required for status command");
+        logger.error("Process ID required for status command");
         printUsage();
         process.exit(1);
       }
@@ -452,14 +452,14 @@ async function main() {
       await supervisor.start();
       const targetProcess = supervisor["processes"].get(processId);
       if (!targetProcess) {
-        console.error(`Process not found: ${processId}`);
+        logger.error(`Process not found: ${processId}`);
         await supervisor.initiateShutdown();
         process.exit(1);
       }
 
-      console.log(`Process: ${processId}`);
-      console.log(`State: ${targetProcess.getState()}`);
-      console.log(`Config:`, targetProcess.config);
+      logger.info(`Process: ${processId}`);
+      logger.info(`State: ${targetProcess.getState()}`);
+      logger.info(`Config:`, { config: targetProcess.config });
 
       await supervisor.initiateShutdown();
       break;
@@ -467,20 +467,20 @@ async function main() {
 
     case "list":
       await supervisor.start();
-      console.log("Managed Processes:");
-      console.log("-----------------");
+      logger.info("Managed Processes:");
+      logger.info("-----------------");
 
       for (const [id, process] of supervisor["processes"].entries()) {
-        console.log(`ID: ${id}`);
-        console.log(`State: ${process.getState()}`);
-        console.log(`Script: ${process.config.script}`);
-        console.log(`Auto-restart: ${process.config.autoRestart}`);
+        logger.info(`ID: ${id}`);
+        logger.info(`State: ${process.getState()}`);
+        logger.info(`Script: ${process.config.script}`);
+        logger.info(`Auto-restart: ${process.config.autoRestart}`);
 
         if (process.config.dependencies?.length) {
-          console.log(`Dependencies: ${process.config.dependencies.join(", ")}`);
+          logger.info(`Dependencies: ${process.config.dependencies.join(", ")}`);
         }
 
-        console.log("-----------------");
+        logger.info("-----------------");
       }
 
       await supervisor.initiateShutdown();
@@ -489,12 +489,12 @@ async function main() {
     case "reload-config":
       // New command that utilizes settings manager
       await supervisor.start();
-      console.log("Reloading configuration...");
+      logger.info("Reloading configuration...");
 
       // Force reload settings
       supervisorSettings.reload();
 
-      console.log("Configuration reloaded");
+      logger.info("Configuration reloaded");
 
       // For simplicity, we'll just continue running after reload
       // In a real implementation, you might want to handle process restarts here
@@ -503,9 +503,9 @@ async function main() {
         const proc = supervisor["processes"].get(processId);
         if (proc) {
           proc.restart();
-          console.log(`Restarted process ${processId} with new configuration`);
+          logger.info(`Restarted process ${processId} with new configuration`);
         } else {
-          console.error(`Process not found: ${processId}`);
+          logger.error(`Process not found: ${processId}`);
         }
 
         // Wait a moment and then exit
@@ -519,7 +519,7 @@ async function main() {
       break;
 
     default:
-      console.error(`Unknown command: ${command}`);
+      logger.error(`Unknown command: ${command}`);
       printUsage();
       process.exit(1);
   }
@@ -553,36 +553,36 @@ async function isRunningInContainer(): Promise<boolean> {
 }
 
 function printUsage() {
-  console.log("Usage: bun run src/subvisor/cli.ts [options] [command] [process-id]");
-  console.log("");
-  console.log("Options:");
-  console.log("  --config, -c <path>         Path to config file (default: ./supervisor.yaml)");
-  console.log("  --web-server, -w <cmd>      Command to start the web server (required for 'init')");
-  console.log("  --crawler, -cr <cmd>        Command to start the crawler (required for 'init')");
-  console.log("  --log-dir, -l <path>        Directory for log files (default: ./logs)");
-  console.log("  --foreground, -f            Run in foreground/non-daemonized mode (ideal for Docker)");
-  console.log("");
-  console.log("Commands:");
-  console.log("  init                     Generate a config file with web server and crawler commands");
-  console.log("  start [process-id]       Start the supervisor or a specific process");
-  console.log("  stop [process-id]        Stop the supervisor or a specific process");
-  console.log("  restart <process-id>     Restart a specific process");
-  console.log("  status <process-id>      Show status of a specific process");
-  console.log("  list                     List all managed processes");
-  console.log("  reload-config [proc]     Reload configuration and optionally restart a process");
-  console.log("");
-  console.log("Examples:");
-  console.log("  # Initialize with web server and crawler commands");
-  console.log('  bun run src/subvisor/cli.ts init -w "bun run dev" -cr "bun run src/crawler/cli.ts"');
-  console.log("");
-  console.log("  # Start all processes in foreground mode (good for Docker)");
-  console.log("  bun run src/subvisor/cli.ts start -f");
-  console.log("");
-  console.log("  # Start only the web server");
-  console.log("  bun run src/subvisor/cli.ts start web-server");
-  console.log("");
-  console.log("  # Check status of the crawler");
-  console.log("  bun run src/subvisor/cli.ts status crawler");
+  logger.info("Usage: bun run src/subvisor/cli.ts [options] [command] [process-id]");
+  logger.info("");
+  logger.info("Options:");
+  logger.info("  --config, -c <path>         Path to config file (default: ./supervisor.yaml)");
+  logger.info("  --web-server, -w <cmd>      Command to start the web server (required for 'init')");
+  logger.info("  --crawler, -cr <cmd>        Command to start the crawler (required for 'init')");
+  logger.info("  --log-dir, -l <path>        Directory for log files (default: ./logs)");
+  logger.info("  --foreground, -f            Run in foreground/non-daemonized mode (ideal for Docker)");
+  logger.info("");
+  logger.info("Commands:");
+  logger.info("  init                     Generate a config file with web server and crawler commands");
+  logger.info("  start [process-id]       Start the supervisor or a specific process");
+  logger.info("  stop [process-id]        Stop the supervisor or a specific process");
+  logger.info("  restart <process-id>     Restart a specific process");
+  logger.info("  status <process-id>      Show status of a specific process");
+  logger.info("  list                     List all managed processes");
+  logger.info("  reload-config [proc]     Reload configuration and optionally restart a process");
+  logger.info("");
+  logger.info("Examples:");
+  logger.info("  # Initialize with web server and crawler commands");
+  logger.info('  bun run src/subvisor/cli.ts init -w "bun run dev" -cr "bun run src/crawler/cli.ts"');
+  logger.info("");
+  logger.info("  # Start all processes in foreground mode (good for Docker)");
+  logger.info("  bun run src/subvisor/cli.ts start -f");
+  logger.info("");
+  logger.info("  # Start only the web server");
+  logger.info("  bun run src/subvisor/cli.ts start web-server");
+  logger.info("");
+  logger.info("  # Check status of the crawler");
+  logger.info("  bun run src/subvisor/cli.ts status crawler");
 }
 
 // Set up signal handlers for clean shutdown
@@ -607,6 +607,6 @@ process.on("SIGTERM", async () => {
 });
 
 main().catch((err) => {
-  console.error(`Error: ${err}`);
+  logger.error(`Error: ${err}`);
   process.exit(1);
 });

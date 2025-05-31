@@ -69,7 +69,7 @@ function getLogLevelFromEnv(): "info" | "debug" | "warning" | "error" | "fatal" 
     return undefined;
   }
   if (envKeys.includes("DEBUG")) {
-    const val = Bun.env["BUN"];
+    const val = Bun.env["DEBUG"];
     return val &&
       (val.toLowerCase() === "true" || val.toLowerCase() === "yes" || val.toLowerCase() === "1")
       ? "debug"
@@ -103,8 +103,10 @@ export async function configureLogging(
     /* */
   }
 
-  const consoleLogLevel = debug ? "debug" : verbose ? "info" : "warning";
-  const fileLogLevel = debug ? "debug" : "info";
+  // Get log level from environment or use defaults
+  const envLogLevel = getLogLevelFromEnv();
+  const consoleLogLevel = envLogLevel || (debug ? "debug" : verbose ? "info" : "info"); // Changed default from "warning" to "info"
+  const fileLogLevel = envLogLevel || (debug ? "debug" : "info");
 
   const sinks = ["console", "logFile", "errorFile"];
   if (!debug && !verbose) {
@@ -143,6 +145,12 @@ export async function configureLogging(
       {
         category: id,
         sinks
+      },
+      {
+        // Catch-all logger for any category not explicitly configured
+        category: [],
+        sinks,
+        lowestLevel: debug ? "debug" : "info"
       }
     ]
   });

@@ -1,4 +1,6 @@
 import { adminLoading } from '$lib/stores/admin-loading';
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["utils"]);
 
 interface FetchOptions {
   operationId?: string;
@@ -43,7 +45,7 @@ export async function fetchAdminData(
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error(`Failed to fetch ${part}:`, error);
+    logger.error("Failed to fetch {part}: {error}", { part, error });
     throw error;
   } finally {
     if (showLoading) {

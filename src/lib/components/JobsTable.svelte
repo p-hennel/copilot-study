@@ -4,12 +4,13 @@
   import * as Dialog from "$lib/components/ui/dialog/index.js";
   import * as Checkbox from "$lib/components/ui/checkbox/index.js";
   import * as Tooltip from "$lib/components/ui/tooltip/index.js";
+  import * as Select from "$lib/components/ui/select/index.js";
   import { Button } from "$ui/button";
   import { m } from "$paraglide";
   import { JobStatus } from "$lib/types";
   import type { AreaType } from "$lib/types";
   import type { CrawlCommand } from "$lib/types";
-  import { Check, Cross, Logs, Repeat, Trash2, AlertTriangle, Minus, ChevronLeft, ChevronRight, Loader2 } from "lucide-svelte";
+  import { Check, Cross, Logs, Repeat, Trash2, AlertTriangle, Minus, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Loader2 } from "lucide-svelte";
   import LoadingButton from "./LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
@@ -137,7 +138,10 @@
   };
 
   // Handle items per page change
-  const handleItemsPerPageChange = () => {
+  const handleItemsPerPageChange = (val:string|undefined = undefined) => {
+    if (val) {
+      itemsPerPage = parseInt(val, 10);
+    }
     currentPage = 1;
     fetchJobs(1, itemsPerPage);
   };
@@ -325,6 +329,10 @@
       deleteAllConfirmText = "";
     }
   };
+
+  const truncate = (text: string, n: number = 24) => {
+    return (text.length > n) ? text.slice(0, n-1) + '…' : text;
+  }
 </script>
 
 <!-- Bulk Actions Toolbar -->
@@ -412,13 +420,10 @@
       <Table.Head class="text-center"
         >{m["admin.dashboard.jobsTable.header.finished_at"]()}</Table.Head
       >
-      <Table.Head class="text-center"></Table.Head>
-      <Table.Head class="w-[5rem]">Actions</Table.Head>
-      <!--
-      <Table.Head class="text-end">{m["admin.dashboard.jobsTable.header.from_job"]()}</Table.Head>
-      <Table.Head class="text-end">{m["admin.dashboard.jobsTable.header.for_area"]()}</Table.Head>
+      <Table.Head class="text-start">{m["admin.dashboard.jobsTable.header.from_job"]()}</Table.Head>
+      <Table.Head class="text-start">{m["admin.dashboard.jobsTable.header.for_area"]()}</Table.Head>
       <Table.Head class="text-end">{m["admin.dashboard.jobsTable.header.children_count"]()}</Table.Head>
-      -->
+      <Table.Head class="w-[5rem]">Actions</Table.Head>
     </Table.Row>
   </Table.Header>
   <Table.Body>
@@ -479,46 +484,39 @@
             <Time timestamp={job.finished_at} {format} />
           {/if}
         </Table.Cell>
-        <Table.Cell class="w-1/3">
-          <div class="grid w-full grid-cols-3 gap-0.5">
-            <div class="italic">{m["admin.dashboard.jobsTable.header.from_job"]()}</div>
-            <div class="italic">{m["admin.dashboard.jobsTable.header.for_area"]()}</div>
-            <div class="w-1/2 text-end italic">
-              {m["admin.dashboard.jobsTable.header.children_count"]()}
-            </div>
-            <div>
-              {#if !!job.fromJob}
-                <Tooltip.Provider delayDuration={0}>
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      {job.fromJob.command}: {job.fromJob.status}
-                    </Tooltip.Trigger>
-                    <Tooltip.Content class="font-mono">
-                      {job.fromJob.id}
-                    </Tooltip.Content>
-                  </Tooltip.Root>
-                </Tooltip.Provider>
-              {/if}
-            </div>
-            <div>
-              {#if !!job.forArea}
-                <Tooltip.Provider delayDuration={0}>
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      {job.forArea.full_path}
-                      {#if !!job.branch && job.branch.length > 0}
-                        <br /> {job.branch}
-                      {/if}
-                    </Tooltip.Trigger>
-                    <Tooltip.Content>
-                      {job.forArea.name} ({job.forArea.type})
-                    </Tooltip.Content>
-                  </Tooltip.Root>
-                </Tooltip.Provider>
-              {/if}
-            </div>
-            <div class="w-1/2 text-end">{job.childrenCount}</div>
-          </div>
+        <Table.Cell class="text-start">
+          {#if !!job.fromJob}
+            <Tooltip.Provider delayDuration={0}>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  {job.fromJob.command}
+                </Tooltip.Trigger>
+                <Tooltip.Content class="font-mono">
+                  {job.fromJob.id} ({job.fromJob.status})
+                </Tooltip.Content>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+          {/if}
+        </Table.Cell>
+        <Table.Cell class="text-start">
+          {#if !!job.forArea}
+            <Tooltip.Provider delayDuration={0}>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  {truncate(job.forArea.name)}
+                </Tooltip.Trigger>
+                <Tooltip.Content>
+                  {job.forArea.type}: {job.forArea.full_path}
+                  {#if !!job.branch && job.branch.length > 0}
+                    ({job.branch})
+                  {/if}
+                </Tooltip.Content>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+          {/if}
+        </Table.Cell>
+        <Table.Cell class="text-end">
+          {job.childrenCount}
         </Table.Cell>
         <Table.Cell>
           <LoadingButton
@@ -645,32 +643,52 @@
     
     <div class="flex items-center gap-6">
       <div class="flex items-center gap-2">
-        <span class="text-sm text-muted-foreground">Items per page:</span>
-        <select
-          bind:value={itemsPerPage}
-          onchange={() => currentPage = 1}
-          class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm"
-        >
-          {#each itemsPerPageOptions as option}
-            <option value={option}>{option}</option>
-          {/each}
-        </select>
+        <Select.Root
+          type="single"
+          onValueChange={(v) => {currentPage = 1; handleItemsPerPageChange(v)}}
+          value={`${itemsPerPage}`}
+          >
+          <Select.Trigger>
+            <span class="text-sm text-muted-foreground">
+              Items per page: {itemsPerPage}
+            </span>
+          </Select.Trigger>
+          <Select.Content>
+            {#each itemsPerPageOptions as option}
+              <Select.Item value={`${option}`} label={`${option}`} />
+            {/each}
+          </Select.Content>
+        </Select.Root>
       </div>
 
       <div class="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
+          disabled={currentPage === 1 || loading}
+          onclick={() => handlePageChange(1)}
+          class="w-8 h-8 p-0"
+          aria-label="Go to first page"
+        >
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronFirst class="h-4 w-4" />
+          {/if}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
           disabled={!pagination?.hasPreviousPage || loading}
           onclick={() => handlePageChange(Math.max(1, currentPage - 1))}
-          class="gap-1"
+          class="w-8 h-8 p-0"
         >
           {#if loading}
             <Loader2 class="h-4 w-4 animate-spin" />
           {:else}
             <ChevronLeft class="h-4 w-4" />
           {/if}
-          Previous
         </Button>
 
         <div class="flex items-center gap-1">
@@ -697,13 +715,27 @@
           size="sm"
           disabled={!pagination?.hasNextPage || loading}
           onclick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-          class="gap-1"
+          class="w-8 h-8 p-0"
         >
-          Next
           {#if loading}
             <Loader2 class="h-4 w-4 animate-spin" />
           {:else}
             <ChevronRight class="h-4 w-4" />
+          {/if}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === totalPages || loading}
+          onclick={() => handlePageChange(totalPages)}
+          class="w-8 h-8 p-0"
+          aria-label="Go to last page"
+        >
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronLast class="h-4 w-4" />
           {/if}
         </Button>
       </div>

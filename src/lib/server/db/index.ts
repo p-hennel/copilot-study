@@ -3,6 +3,9 @@ import { createClient, type Client } from "@libsql/client";
 import * as schema from "./schema";
 import AppSettings from "../settings"; // Import the class itself
 import path from "node:path";
+import { getLogger } from "@logtape/logtape";
+
+const logger = getLogger(["server", "db"]);
 
 let client: Client | null = null;
 let dbInstance: LibSQLDatabase<typeof schema> | null = null;
@@ -14,10 +17,10 @@ function getDbClient(): Client {
     if (!dbUrl) {
       throw new Error("Database path is not defined in settings.");
     }
-    console.log(`Initializing database client with URL: ${dbUrl}`);
+    logger.info(`Initializing database client`, { dbUrl });
     if (dbUrl.indexOf("://") < 0) {
       dbUrl = `file://${path.resolve(dbUrl)}`;
-      console.log(`Fixed url to ${dbUrl}`);
+      logger.debug(`Fixed database URL`, { dbUrl });
     }
     client = createClient({ url: dbUrl });
   }
@@ -39,13 +42,13 @@ export const db = getDb();
 
 // Handle graceful shutdown
 process.on("SIGINT", function () {
-  console.log("Received SIGINT, closing database client...");
+  logger.info("Received SIGINT, closing database client...");
   // Check if client was initialized before trying to close
   if (client) {
     client.close();
-    console.log("Database client closed.");
+    logger.info("Database client closed.");
   } else {
-    console.log("Database client was not initialized, nothing to close.");
+    logger.debug("Database client was not initialized, nothing to close.");
   }
   process.exit(0);
 });

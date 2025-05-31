@@ -5,7 +5,10 @@ import {
   genericOAuthClient,
   jwtClient
 } from "better-auth/client/plugins";
+import { getLogger } from "@logtape/logtape";
 import { TokenProvider } from "./types";
+
+const logger = getLogger(["auth", "client"]);
 
 export const authClient = createAuthClient({
   plugins: [genericOAuthClient(), jwtClient(), adminClient(), apiKeyClient()]
@@ -40,7 +43,7 @@ export async function signIn(arg: TokenProvider | Credentials, nextUrl?: string)
       });
     }
   } catch (error) {
-    console.error("Error during sign in:", error);
+    logger.error("Error during sign in:", { error });
     throw error;
   }
 }
@@ -52,7 +55,7 @@ export async function linkAccount(provider: TokenProvider, nextUrl: string): Pro
       callbackURL: nextUrl
     });
   } catch (error) {
-    console.error(`Error linking account with provider ${provider}:`, error);
+    logger.error(`Error linking account with provider ${provider}:`, { error, provider });
     throw error;
   }
 }

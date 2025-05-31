@@ -1,9 +1,11 @@
 // processes/data-processor.ts
 import { SupervisorClient } from "../client";
 import { ProcessState } from "../types";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["subvisor","example"]);
 
 async function main() {
-  console.log("Data processor starting up...");
+  logger.info("Data processor starting up...");
 
   // Connect to the supervisor with logging options
   const client = new SupervisorClient({
@@ -13,16 +15,16 @@ async function main() {
 
   // Handle process-specific events
   client.on("connected", () => {
-    console.log("Connected to supervisor");
+    logger.info("Connected to supervisor");
     client.updateState(ProcessState.IDLE);
   });
 
   client.on("disconnected", () => {
-    console.log("Disconnected from supervisor, will attempt to reconnect");
+    logger.info("Disconnected from supervisor, will attempt to reconnect");
   });
 
   client.on("stop", () => {
-    console.log("Received stop command from supervisor");
+    logger.info("Received stop command from supervisor");
     client.updateState(ProcessState.STOPPING);
 
     // Clean up
@@ -33,18 +35,18 @@ async function main() {
   });
 
   client.on("restart", () => {
-    console.log("Received restart command from supervisor");
+    logger.info("Received restart command from supervisor");
     // In a real app, you might want to perform cleanup tasks here
   });
 
   // Listen for heartbeats from dependencies
   client.on("heartbeat", (originId) => {
-    console.log(`Received heartbeat from ${originId}`);
+    logger.info(`Received heartbeat from ${originId}`);
   });
 
   // Listen for state changes from other processes
   client.on("stateChange", (originId, newState, oldState) => {
-    console.log(`Process ${originId} changed state from ${oldState} to ${newState}`);
+    logger.info(`Process ${originId} changed state from ${oldState} to ${newState}`);
   });
 
   // Connect to the supervisor
@@ -54,7 +56,7 @@ async function main() {
   client.subscribeToHeartbeats("api-service");
 
   // Simulate some work
-  console.log("Data processor is now running...");
+  logger.info("Data processor is now running...");
 
   // Simulate busy / idle cycle
   setInterval(() => {
@@ -62,7 +64,7 @@ async function main() {
     client.updateState(isBusy ? ProcessState.BUSY : ProcessState.IDLE);
 
     if (isBusy) {
-      console.log("Processing data...");
+      logger.info("Processing data...");
 
       // Simulate sending a message to another process
       client.sendMessage("api-service", "dataUpdate", {
@@ -77,14 +79,14 @@ async function main() {
 
   // Handle process termination signals
   process.on("SIGINT", async () => {
-    console.log("Received SIGINT, shutting down gracefully");
+    logger.info("Received SIGINT, shutting down gracefully");
     client.updateState(ProcessState.STOPPING);
     client.disconnect();
     process.exit(0);
   });
 
   process.on("SIGTERM", async () => {
-    console.log("Received SIGTERM, shutting down gracefully");
+    logger.info("Received SIGTERM, shutting down gracefully");
     client.updateState(ProcessState.STOPPING);
     client.disconnect();
     process.exit(0);
@@ -92,6 +94,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(`Error in data processor: ${err}`);
+  logger.error(`Error in data processor: ${err}`);
   process.exit(1);
 });

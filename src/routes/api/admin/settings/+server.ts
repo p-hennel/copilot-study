@@ -2,6 +2,8 @@ import { json } from "@sveltejs/kit";
 import { AppSettings, settingsSchema } from "$lib/server/settings"; // Assuming AppSettings and settingsSchema are exported
 import yaml from "js-yaml";
 import { ZodError } from "zod";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["routes","api","admin","settings"]);
 
 // GET handler to fetch current settings as YAML
 export async function GET({ locals }) {
@@ -14,7 +16,7 @@ export async function GET({ locals }) {
     const yamlStr = yaml.dump(settings);
     return json({ yaml: yamlStr });
   } catch (error) {
-    console.error("Error fetching settings:", error);
+    logger.error("Error fetching settings:", {error});
     return json({ error: "Failed to fetch settings" }, { status: 500 });
   }
 }
@@ -26,7 +28,7 @@ export async function POST({ request, locals }) {
   }
 
   try {
-    const body = await request.json();
+    const body: any = await request.json();
     const yamlStr = body.yaml;
 
     if (typeof yamlStr !== "string") {
@@ -45,7 +47,7 @@ export async function POST({ request, locals }) {
 
     return json({ success: true, message: "Settings updated successfully." });
   } catch (error) {
-    console.error("Error updating settings:", error);
+    logger.error("Error updating settings:", {error});
     if (error instanceof ZodError) {
       return json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }

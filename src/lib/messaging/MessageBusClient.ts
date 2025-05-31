@@ -7,6 +7,9 @@ import { z } from "zod";
 // Import types for crawler communication
 import { getLogger, type Logger } from "@logtape/logtape";
 
+// Module-level logger for singleton creation
+const moduleLogger = getLogger(["messaging", "client", "module"]);
+
 // Import database functionality for job management
 import { db } from "$lib/server/db";
 import { job } from "$lib/server/db/base-schema";
@@ -85,6 +88,11 @@ export class MessageBusClient extends EventEmitter {
   private reconnectAttempts = 0;
   private maxReconnectDelay = 30000; // 30 seconds maximum
   private maxQueueLength = 1000;
+  
+  // Heartbeat timeout management
+  private lastHeartbeatTime: number = 0;
+  private heartbeatTimeoutTimer: Timer | null = null;
+  private readonly HEARTBEAT_TIMEOUT = 30000; // 30 seconds - matches cache timeout
 
   constructor() {
     super();
@@ -94,8 +102,9 @@ export class MessageBusClient extends EventEmitter {
     this.socketPath = process.env.SUPERVISOR_SOCKET_PATH ||
                      process.env.SOCKET_PATH ||
                      "/Users/philhennel/Code/copilot-survey/data.private/config/api.sock";
+    this.logger = getLogger(["messageBus", this.id]);
     
-    console.log("MessageBusClient constructor:", {
+    this.logger.info("MessageBusClient constructor:", {
       id: this.id,
       socketPath: this.socketPath,
       supervisorSocketPath: process.env.SUPERVISOR_SOCKET_PATH,
@@ -105,20 +114,17 @@ export class MessageBusClient extends EventEmitter {
     if (!this.socketPath) {
       throw new Error("SUPERVISOR_SOCKET_PATH or SOCKET_PATH environment variable not set");
     }
-    
-    this.logger = getLogger(["messageBus", this.id]);
+  
     this.logger.info("MessageBusClient initializing with Unix socket IPC...");
-    console.log("MessageBusClient initializing with path:", this.socketPath);
+    this.logger.debug("MessageBusClient initializing with path:", { socketPath: this.socketPath });
     
     // Check if socket path exists - don't throw errors, just log warnings
     const socketDir = this.socketPath.substring(0, this.socketPath.lastIndexOf('/'));
     if (!existsSync(socketDir)) {
       this.logger.warn(`Socket directory does not exist: ${socketDir}`);
-      console.warn(`Socket directory does not exist: ${socketDir}`);
       this.logger.info("Web server will start without external crawler connection. Connection will be attempted periodically.");
-      console.log("Web server will start without external crawler connection. Connection will be attempted periodically.");
     } else {
-      console.log("Socket directory exists:", socketDir);
+      this.logger.debug("Socket directory exists:", { socketDir });
     }
     
     // Attempt initial connection but don't block startup
@@ -126,48 +132,87 @@ export class MessageBusClient extends EventEmitter {
   }
   
   /**
+   * Start monitoring for heartbeat timeouts
+   */
+  private startHeartbeatMonitoring(): void {
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer);
+    }
+    
+    this.heartbeatTimeoutTimer = setTimeout(() => {
+      this.logger.warn("Heartbeat timeout - marking connection as lost");
+      updateMessageBusConnection(false);
+      this.emit("heartbeatTimeout");
+      
+      // Don't immediately reconnect on heartbeat timeout - let the existing reconnect logic handle it
+      if (this.connected) {
+        this.logger.warn("Heartbeat timeout detected while socket appears connected - forcing disconnect");
+        this.socket?.end();
+      }
+    }, this.HEARTBEAT_TIMEOUT);
+  }
+  
+  /**
+   * Reset heartbeat timeout timer when heartbeat is received
+   */
+  private resetHeartbeatTimeout(): void {
+    this.lastHeartbeatTime = Date.now();
+    this.startHeartbeatMonitoring();
+  }
+  
+  /**
+   * Stop heartbeat monitoring
+   */
+  private stopHeartbeatMonitoring(): void {
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer);
+      this.heartbeatTimeoutTimer = null;
+    }
+  }
+  
+  /**
    * Connect to the supervisor socket
    */
   private async connect(): Promise<boolean> {
-    console.log("MessageBusClient.connect() called, connected:", this.connected);
+    this.logger.debug("MessageBusClient.connect() called", { connected: this.connected });
     if (this.connected) {
       return true;
     }
 
     try {
       this.logger.info(`Connecting to supervisor via Unix socket: ${this.socketPath}`);
-      console.log(`Attempting to connect to Unix socket: ${this.socketPath}`);
+      this.logger.debug(`Attempting to connect to Unix socket: ${this.socketPath}`);
       
       // Check if socket exists - don't throw error, just warn and return false
       if (!existsSync(this.socketPath)) {
         this.logger.warn(`Socket file does not exist: ${this.socketPath}`);
-        console.warn(`Socket file does not exist: ${this.socketPath}`);
         this.logger.info("External crawler not available. Connection will be retried later.");
-        console.log("External crawler not available. Connection will be retried later.");
         this.scheduleReconnect();
         return false;
       }
       
-      console.log("Socket file exists, creating Bun.connect...");
+      this.logger.debug("Socket file exists, creating Bun.connect...");
       
       this.socket = await Bun.connect({
         unix: this.socketPath,
         socket: {
           data: (_socket, data) => {
-            console.log("MessageBusClient received data:", data.toString());
+            this.logger.debug("MessageBusClient received data:", { data: data.toString() });
             this.handleSocketData(data);
           },
           open: () => {
-          this.connected = true;
-          this.reconnectAttempts = 0;
-          this.logger.info(`Connected to supervisor at ${this.socketPath}`);
-          console.log(`🔌 MessageBusClient successfully connected to ${this.socketPath}`);
-          
-          // Update cache with connection status
-          updateMessageBusConnection(true);
-          
-          this.emit("connected");
+            this.connected = true;
+            this.reconnectAttempts = 0;
+            this.logger.info(`Connected to supervisor at ${this.socketPath}`);
             
+            // Update cache with connection status
+            updateMessageBusConnection(true);
+            
+            // Start monitoring heartbeats
+            this.resetHeartbeatTimeout();
+            
+            this.emit("connected");
+              
             // Process queued messages
             this.processQueue();
             
@@ -188,7 +233,9 @@ export class MessageBusClient extends EventEmitter {
           close: () => {
             this.connected = false;
             this.logger.warn("Disconnected from supervisor");
-            console.log("MessageBusClient disconnected from supervisor");
+            
+            // Stop heartbeat monitoring
+            this.stopHeartbeatMonitoring();
             
             // Update cache with connection status
             updateMessageBusConnection(false);
@@ -202,7 +249,9 @@ export class MessageBusClient extends EventEmitter {
           },
           error: (_socket, error) => {
             this.logger.error(`Socket error: ${error}`);
-            console.error("MessageBusClient socket error:", error);
+            
+            // Stop heartbeat monitoring
+            this.stopHeartbeatMonitoring();
             
             // Update cache with connection status
             updateMessageBusConnection(false);
@@ -215,11 +264,10 @@ export class MessageBusClient extends EventEmitter {
         }
       });
       
-      console.log("Bun.connect created, socket:", !!this.socket);
+      this.logger.debug("Bun.connect created", { hasSocket: !!this.socket });
       return true;
     } catch (err) {
       this.logger.warn(`Failed to connect to supervisor: ${err}`);
-      console.warn("MessageBusClient connection failed:", err);
       this.emit("error", err);
       this.scheduleReconnect();
       return false;
@@ -264,7 +312,7 @@ export class MessageBusClient extends EventEmitter {
    */
   private handleSocketData(data: Buffer): void {
     const dataStr = data.toString();
-    console.log("DEBUG MessageBusClient: Raw data received:", dataStr);
+    this.logger.debug("MessageBusClient: Raw data received:", { dataStr });
     
     // Handle multiple concatenated JSON messages
     const messages = this.parseMultipleJsonMessages(dataStr);
@@ -349,7 +397,7 @@ export class MessageBusClient extends EventEmitter {
         
         if (braceCount === 0 && jsonEnd > jsonStart) {
           const jsonStr = dataStr.substring(jsonStart, jsonEnd);
-          console.log("DEBUG MessageBusClient: Parsing individual JSON:", jsonStr);
+          this.logger.debug("MessageBusClient: Parsing individual JSON:", { jsonStr });
           const message = JSON.parse(jsonStr) as IPCMessage;
           messages.push(message);
           currentPos = jsonEnd;
@@ -358,7 +406,7 @@ export class MessageBusClient extends EventEmitter {
           break;
         }
       } catch (parseErr) {
-        console.error("DEBUG MessageBusClient: Failed to parse JSON at position", currentPos, parseErr);
+        this.logger.error("MessageBusClient: Failed to parse JSON", { position: currentPos, error: parseErr });
         // Try to find the next '{' to continue parsing
         currentPos = dataStr.indexOf('{', currentPos + 1);
         if (currentPos === -1) break;
@@ -372,13 +420,17 @@ export class MessageBusClient extends EventEmitter {
    * Process a validated message
    */
   private processMessage(message: IPCMessage): void {
-    console.log("🔍 DEBUG MessageBusClient: Processing message:", message.type, message.key);
-    console.log("🔍 DEBUG MessageBusClient: Full message:", JSON.stringify(message, null, 2));
+    this.logger.debug("MessageBusClient: Processing message:", { type: message.type, key: message.key });
+    this.logger.debug("MessageBusClient: Full message:", { message });
       
     // Handle different message types
     switch (message.type) {
       case MessageType.HEARTBEAT: {
-        console.log("💓 DEBUG MessageBusClient: Processing HEARTBEAT");
+        this.logger.debug("MessageBusClient: Processing HEARTBEAT");
+        
+        // Reset heartbeat timeout on received heartbeat
+        this.resetHeartbeatTimeout();
+        
         // Update cache with heartbeat
         const heartbeatTimestamp = message.payload?.timestamp || message.timestamp || new Date().toISOString();
         updateHeartbeat(heartbeatTimestamp);
@@ -387,37 +439,37 @@ export class MessageBusClient extends EventEmitter {
       }
         
       case MessageType.MESSAGE:
-        console.log("📨 DEBUG MessageBusClient: Processing MESSAGE with key:", message.key);
+        this.logger.debug("MessageBusClient: Processing MESSAGE", { key: message.key });
         // Handle specific message types
         if (message.key === "statusUpdate") {
-          console.log("📊 DEBUG MessageBusClient: Emitting statusUpdate");
+          this.logger.debug("MessageBusClient: Emitting statusUpdate");
           // Update cache with status
           if (message.payload) {
             updateCrawlerStatus(message.payload);
           }
           this.emit("statusUpdate", message.payload);
         } else if (message.key === "jobUpdate") {
-          console.log("🔄 DEBUG MessageBusClient: Emitting jobUpdate");
+          this.logger.debug("MessageBusClient: Emitting jobUpdate");
           this.emit("jobUpdate", message.payload);
         } else if (message.key === "JOB_FAILURE_LOGS") {
-          console.log("❌ DEBUG MessageBusClient: Received JOB_FAILURE_LOGS, emitting jobFailure event with payload:", message.payload);
+          this.logger.debug("MessageBusClient: Received JOB_FAILURE_LOGS, emitting jobFailure event", { payload: message.payload });
           // Update cache with job failure log
           if (message.payload) {
             addJobFailureLog(message.payload);
           }
           this.emit("jobFailure", message.payload);
-          console.log("❌ DEBUG MessageBusClient: jobFailure event emitted");
+          this.logger.debug("MessageBusClient: jobFailure event emitted");
         } else if (message.key === "TOKEN_REFRESH_REQUEST") {
-          console.log("🔄 DEBUG MessageBusClient: *** TOKEN_REFRESH_REQUEST RECEIVED ***");
-          console.log("🔄 DEBUG MessageBusClient: Payload:", JSON.stringify(message.payload, null, 2));
-          console.log("🔄 DEBUG MessageBusClient: Emitting tokenRefreshRequest event...");
+          this.logger.debug("MessageBusClient: TOKEN_REFRESH_REQUEST RECEIVED");
+          this.logger.debug("MessageBusClient: Payload:", { payload: message.payload });
+          this.logger.debug("MessageBusClient: Emitting tokenRefreshRequest event...");
           this.emit("tokenRefreshRequest", message.payload);
-          console.log("🔄 DEBUG MessageBusClient: tokenRefreshRequest event emitted successfully");
+          this.logger.debug("MessageBusClient: tokenRefreshRequest event emitted successfully");
         } else if (message.key === "shutdown") {
-          console.log("🛑 DEBUG MessageBusClient: Processing shutdown");
+          this.logger.debug("MessageBusClient: Processing shutdown");
           this.emit("shutdown", message.payload?.signal);
         } else {
-          console.log("📝 DEBUG MessageBusClient: Generic message, emitting 'message' event");
+          this.logger.debug("MessageBusClient: Generic message, emitting 'message' event");
           // Generic message
           this.emit("message", message);
         }
@@ -475,12 +527,11 @@ export class MessageBusClient extends EventEmitter {
       }
       
       const messageStr = JSON.stringify(message);
-      console.log("MessageBusClient sending message:", messageStr);
+      this.logger.debug("MessageBusClient sending message:", { messageStr });
       this.socket.write(messageStr);
       this.logger.debug(`Sent ${message.type}:${message.key} to ${message.destination}`);
     } catch (err) {
       this.logger.error(`Failed to send message: ${err instanceof Error ? err.message : String(err)}`);
-      console.error("Failed to send message:", err);
       this.queueMessage(message);
     }
   }
@@ -498,7 +549,14 @@ export class MessageBusClient extends EventEmitter {
   }
   
   // --- Public API methods ---
-  
+
+  /**
+   * Get the current connection status
+   */
+  public isConnected(): boolean {
+    return this.connected;
+  }
+
   /**
    * Sends a command specifically to the crawler process.
    * @param command The command object for the crawler.
@@ -602,7 +660,6 @@ export class MessageBusClient extends EventEmitter {
   private async resetRunningJobsToQueued(): Promise<void> {
     try {
       this.logger.info("Connection to crawler lost - resetting running jobs to queued status");
-      console.log("🔄 Connection to crawler lost - resetting running jobs to queued status");
       
       const result = await db
         .update(job)
@@ -614,14 +671,11 @@ export class MessageBusClient extends EventEmitter {
       
       if (result.rowsAffected > 0) {
         this.logger.info(`Successfully reset ${result.rowsAffected} running jobs to queued status`);
-        console.log(`✅ Successfully reset ${result.rowsAffected} running jobs to queued status`);
       } else {
         this.logger.info("No running jobs found to reset");
-        console.log("ℹ️ No running jobs found to reset");
       }
     } catch (error) {
       this.logger.error("Failed to reset running jobs to queued status:", { error });
-      console.error("❌ Failed to reset running jobs to queued status:", error);
     }
   }
 
@@ -634,12 +688,18 @@ export class MessageBusClient extends EventEmitter {
       this.reconnectTimer = null;
     }
     
+    // Stop heartbeat monitoring
+    this.stopHeartbeatMonitoring();
+    
     if (this.socket) {
       this.socket.end();
       this.socket = null;
     }
     
     this.connected = false;
+    
+    // Update cache with disconnection
+    updateMessageBusConnection(false);
   }
   
   // --- Typed event listeners ---
@@ -683,10 +743,12 @@ export class MessageBusClient extends EventEmitter {
     providerId?: string;
     error?: string;
   }): void {
-    console.log("🔄 DEBUG: sendTokenRefreshResponse called with requestId:", requestId);
-    console.log("🔄 DEBUG: Response data:", JSON.stringify(response, null, 2));
-    console.log("🔄 DEBUG: Connected status:", this.connected);
-    console.log("🔄 DEBUG: Socket available:", !!this.socket);
+    this.logger.debug("sendTokenRefreshResponse called", {
+      requestId,
+      response,
+      connected: this.connected,
+      hasSocket: !!this.socket
+    });
     
     const message = {
       origin: this.id,
@@ -700,18 +762,20 @@ export class MessageBusClient extends EventEmitter {
       timestamp: Date.now()
     };
     
-    console.log("🔄 DEBUG: Sending TOKEN_REFRESH_RESPONSE message:", JSON.stringify(message, null, 2));
+    this.logger.debug("Sending TOKEN_REFRESH_RESPONSE message:", { message });
     this.sendMessage(message);
-    console.log("🔄 DEBUG: TOKEN_REFRESH_RESPONSE message sent successfully");
+    this.logger.debug("TOKEN_REFRESH_RESPONSE message sent successfully");
   }
 }
 
 // Create a singleton instance for use throughout the application
 let messageBusClientInstance: MessageBusClient | null = null;
 
+const logger = getLogger(["messaging", "client", "singleton"]);
+
 // Debug logging for singleton creation
-console.log("MessageBusClient module loading...");
-console.log("Environment check:", {
+logger.info("MessageBusClient module loading...");
+logger.info("Environment check:", {
   hasProcess: typeof process !== "undefined",
   hasEnv: typeof process !== "undefined" && !!process.env,
   supervisorSocketPath: process?.env?.SUPERVISOR_SOCKET_PATH,
@@ -722,24 +786,24 @@ console.log("Environment check:", {
 if (typeof process !== "undefined" && process.env) {
   try {
     if (process.env.SUPERVISOR_SOCKET_PATH) {
-      console.log("Creating MessageBusClient instance with SUPERVISOR_SOCKET_PATH");
+      moduleLogger.debug("Creating MessageBusClient instance with SUPERVISOR_SOCKET_PATH");
     } else {
-      console.log("Creating MessageBusClient instance with fallback path");
+      moduleLogger.debug("Creating MessageBusClient instance with fallback path");
     }
     messageBusClientInstance = new MessageBusClient();
-    console.log("MessageBusClient instance created successfully");
+    moduleLogger.debug("MessageBusClient instance created successfully");
   } catch (err) {
-    console.warn("MessageBusClient initialization had issues, but server can continue:", err);
+    moduleLogger.warn("MessageBusClient initialization had issues, but server can continue:", { error: err });
     // Still create the instance to provide graceful degradation
     try {
       messageBusClientInstance = new MessageBusClient();
     } catch (finalErr) {
-      console.error("Failed to create MessageBusClient instance entirely:", finalErr);
+      moduleLogger.error("Failed to create MessageBusClient instance entirely:", { error: finalErr });
       messageBusClientInstance = null;
     }
   }
 }
 
-console.log("MessageBusClient singleton created:", !!messageBusClientInstance);
+moduleLogger.debug("MessageBusClient singleton created:", { created: !!messageBusClientInstance });
 
 export default messageBusClientInstance; // May be null if initialization failed

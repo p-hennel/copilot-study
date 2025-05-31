@@ -2,11 +2,12 @@
   import Time from "svelte-time";
   import * as Table from "$lib/components/ui/table/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
+  import * as Select from "$lib/components/ui/select/index.js";
   import { m } from "$paraglide";
   import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { JobStatus } from "$lib/types";
   import { AreaType } from "$lib/types";
-  import { Check, Cross, FolderGit2, Logs, Repeat, UsersRound, ChevronLeft, ChevronRight, Loader2 } from "lucide-svelte";
+  import { Check, Cross, FolderGit2, Logs, Repeat, UsersRound, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Loader2 } from "lucide-svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
@@ -92,7 +93,10 @@
   };
 
   // Handle items per page change
-  const handleItemsPerPageChange = () => {
+  const handleItemsPerPageChange = (val:string|undefined = undefined) => {
+    if (val) {
+      itemsPerPage = parseInt(val, 10);
+    }
     currentPage = 1;
     fetchAreas(1, itemsPerPage);
   };
@@ -168,32 +172,52 @@
     
     <div class="flex items-center gap-6">
       <div class="flex items-center gap-2">
-        <span class="text-sm text-muted-foreground">Items per page:</span>
-        <select
-          bind:value={itemsPerPage}
-          onchange={() => currentPage = 1}
-          class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm"
-        >
-          {#each itemsPerPageOptions as option}
-            <option value={option}>{option}</option>
-          {/each}
-        </select>
+        <Select.Root
+          type="single"
+          onValueChange={(v) => {currentPage = 1; handleItemsPerPageChange(v)}}
+          value={`${itemsPerPage}`}
+          >
+          <Select.Trigger>
+            <span class="text-sm text-muted-foreground">
+              Items per page: {itemsPerPage}
+            </span>
+          </Select.Trigger>
+          <Select.Content>
+            {#each itemsPerPageOptions as option}
+              <Select.Item value={`${option}`} label={`${option}`} />
+            {/each}
+          </Select.Content>
+        </Select.Root>
       </div>
 
       <div class="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
+          disabled={currentPage === 1 || loading}
+          onclick={() => handlePageChange(1)}
+          class="w-8 h-8 p-0"
+          aria-label="Go to first page"
+        >
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronFirst class="h-4 w-4" />
+          {/if}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
           disabled={!pagination?.hasPreviousPage || loading}
           onclick={() => handlePageChange(Math.max(1, currentPage - 1))}
-          class="gap-1"
+          class="w-8 h-8 p-0"
         >
           {#if loading}
             <Loader2 class="h-4 w-4 animate-spin" />
           {:else}
             <ChevronLeft class="h-4 w-4" />
           {/if}
-          Previous
         </Button>
 
         <div class="flex items-center gap-1">
@@ -220,13 +244,27 @@
           size="sm"
           disabled={!pagination?.hasNextPage || loading}
           onclick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-          class="gap-1"
+          class="w-8 h-8 p-0"
         >
-          Next
           {#if loading}
             <Loader2 class="h-4 w-4 animate-spin" />
           {:else}
             <ChevronRight class="h-4 w-4" />
+          {/if}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={currentPage === totalPages || loading}
+          onclick={() => handlePageChange(totalPages)}
+          class="w-8 h-8 p-0"
+          aria-label="Go to last page"
+        >
+          {#if loading}
+            <Loader2 class="h-4 w-4 animate-spin" />
+          {:else}
+            <ChevronLast class="h-4 w-4" />
           {/if}
         </Button>
       </div>

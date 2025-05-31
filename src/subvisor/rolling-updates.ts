@@ -1,5 +1,7 @@
 import { Supervisor } from "./supervisor";
 import { ProcessState } from "./types";
+import { getLogger } from "@logtape/logtape";
+const logger = getLogger(["subvisor"]);
 
 export class RollingUpdater {
   private supervisor: Supervisor;
@@ -24,16 +26,16 @@ export class RollingUpdater {
     const waitTime = options.waitTime || 5000; // Default 5 seconds between updates
 
     try {
-      console.log(`Starting rolling update for ${processIds.length} processes`);
+      logger.info(`Starting rolling update for ${processIds.length} processes`);
 
       for (const processId of processIds) {
         const process = this.supervisor["processes"].get(processId);
         if (!process) {
-          console.warn(`Process not found, skipping: ${processId}`);
+          logger.warn(`Process not found, skipping: ${processId}`);
           continue;
         }
 
-        console.log(`Updating ${processId}...`);
+        logger.info(`Updating ${processId}...`);
 
         // Restart the process
         await process.stop();
@@ -43,7 +45,7 @@ export class RollingUpdater {
         const isHealthy = await this.waitForProcessReady(processId, options.healthCheckFn);
 
         if (!isHealthy) {
-          console.error(`Process ${processId} failed to become healthy after restart`);
+          logger.error(`Process ${processId} failed to become healthy after restart`);
           // Optionally implement rollback logic here
           this.updateInProgress = false;
           return false;
@@ -53,11 +55,11 @@ export class RollingUpdater {
         await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
 
-      console.log("Rolling update completed successfully");
+      logger.info("Rolling update completed successfully");
       this.updateInProgress = false;
       return true;
     } catch (err: any) {
-      console.error(`Rolling update failed: ${err.message}`);
+      logger.error(`Rolling update failed: ${err.message}`);
       this.updateInProgress = false;
       return false;
     }
@@ -82,7 +84,7 @@ export class RollingUpdater {
           const isHealthy = await healthCheckFn(processId);
           if (isHealthy) return true;
         } catch (err: any) {
-          console.warn(`Health check failed for ${processId}: ${err.message}`);
+          logger.warn(`Health check failed for ${processId}: ${err.message}`);
         }
       } else {
         // Otherwise use basic state check

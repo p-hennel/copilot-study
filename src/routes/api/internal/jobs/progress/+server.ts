@@ -147,7 +147,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
   try {
     payload = (await request.json()) as ProgressUpdatePayload;
     logger.info('📥 PROGRESS: Received progress update payload:', { payload });
-    console.log(`📥 PROGRESS: Status update for task ${payload.taskId}: ${payload.status}`);
+    logger.info(`📥 PROGRESS: Status update for task ${payload.taskId}: ${payload.status}`);
   } catch (error) {
     logger.error('❌ PROGRESS: Error parsing progress update payload:', { error, requestBody: await request.text().catch(() => 'Could not read request body') });
     return json({ error: 'Invalid request body' }, { status: 400 });
@@ -303,14 +303,14 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
 
     switch (crawlerStatus.toLowerCase()) {
       case 'started':
-        console.log(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (started)`);
+        logger.info(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (started)`);
         newJobStatus = JobStatus.running;
         if (jobRecord.status !== JobStatus.running) {
             updateData.started_at = new Date(timestamp);
         }
         break;
       case 'processing':
-        console.log(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (processing)`);
+        logger.info(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (processing)`);
         newJobStatus = JobStatus.running;
         // No specific action if already running, updated_at will be set.
         // If it wasn't running, set started_at
@@ -319,13 +319,13 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
         }
         break;
       case 'completed':
-        console.log(`🟢 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FINISHED`);
+        logger.info(`🟢 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FINISHED`);
         newJobStatus = JobStatus.finished;
         updateData.finished_at = new Date(timestamp);
         updateData.resumeState = null; // Clear resume state on completion
         break;
       case 'failed':
-        console.log(`🔴 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FAILED`);
+        logger.info(`🔴 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FAILED`);
         newJobStatus = JobStatus.failed;
         updateData.finished_at = new Date(timestamp);
         if (payloadError) {
@@ -340,7 +340,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
         }
         break;
       case 'paused':
-        console.log(`🟠 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to PAUSED`);
+        logger.info(`🟠 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to PAUSED`);
         newJobStatus = JobStatus.paused;
         if (resumePayload) {
           updateData.resumeState = resumePayload;
@@ -348,7 +348,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
         break;
       default:
         logger.warn(`❌ PROGRESS: Unknown status received from crawler: ${crawlerStatus} for taskId: ${taskId}`);
-        console.log(`❌ PROGRESS: Invalid status "${crawlerStatus}" for job ${taskId}`);
+        logger.info(`❌ PROGRESS: Invalid status "${crawlerStatus}" for job ${taskId}`);
         // Potentially return an error or ignore, depending on desired strictness
         return json({ error: `Invalid status: ${crawlerStatus}` }, { status: 400 });
     }
@@ -371,7 +371,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
     logger.debug(`Update data for standard status update for job ${taskId}:`, { updateData, crawlerStatus });
 
     await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
-    console.log(`✅ PROGRESS: Job ${taskId} database updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
+    logger.info(`✅ PROGRESS: Job ${taskId} database updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
     logger.info(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
 
     // If a GROUP_PROJECT_DISCOVERY job finishes, its status is already set to 'finished'.

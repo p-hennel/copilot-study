@@ -77,18 +77,18 @@ function broadcastToCrawlerClients(message: any) {
 }
 
 // Set up MessageBusClient event listeners for crawler events
-console.log("WebSocket server checking MessageBusClient:", {
+logger.info("WebSocket server checking MessageBusClient:", {
   messageBusClientExists: !!messageBusClient,
   messageBusClientType: typeof messageBusClient
 });
 
 if (messageBusClient) {
-  console.log("MessageBusClient is available, setting up event listeners");
+  logger.info("MessageBusClient is available, setting up event listeners");
   
   // Listen for crawler status updates
   messageBusClient.onStatusUpdate((status) => {
     logger.debug("Received crawler status update via MessageBus", { status });
-    console.log("Broadcasting status update to WebSocket clients:", status);
+    logger.info("Broadcasting status update to WebSocket clients:", status);
     broadcastToCrawlerClients({
       type: "statusUpdate",
       payload: status,
@@ -99,7 +99,7 @@ if (messageBusClient) {
   // Listen for job updates
   messageBusClient.onJobUpdate((update) => {
     logger.debug("Received crawler job update via MessageBus", { update });
-    console.log("Broadcasting job update to WebSocket clients:", update);
+    logger.info("Broadcasting job update to WebSocket clients:", update);
     broadcastToCrawlerClients({
       type: "jobUpdate",
       payload: update,
@@ -110,19 +110,19 @@ if (messageBusClient) {
   // Listen for job failure events
   messageBusClient.onJobFailure((failureData) => {
     logger.debug("Received crawler job failure via MessageBus", { failureData });
-    console.log("DEBUG SSE: Broadcasting job failure logs via SSE", failureData);
+    logger.info("DEBUG SSE: Broadcasting job failure logs via SSE", failureData);
     broadcastToCrawlerClients({
       type: "jobFailure",
       payload: failureData,
       timestamp: new Date().toISOString()
     });
-    console.log("DEBUG SSE: Successfully enqueued failure data");
+    logger.info("DEBUG SSE: Successfully enqueued failure data");
   });
 
   // Listen for heartbeat events
   messageBusClient.onHeartbeat((payload) => {
     logger.debug("Received crawler heartbeat via MessageBus", { payload });
-    console.log("Broadcasting heartbeat to WebSocket clients:", payload);
+    logger.info("Broadcasting heartbeat to WebSocket clients:", {payload});
     broadcastToCrawlerClients({
       type: "heartbeat",
       payload,
@@ -131,10 +131,10 @@ if (messageBusClient) {
   });
 
   logger.info("Crawler WebSocket server initialized with MessageBus event listeners");
-  console.log("WebSocket server: MessageBus event listeners configured");
+  logger.info("WebSocket server: MessageBus event listeners configured");
 } else {
   logger.warn("MessageBusClient not available - crawler WebSocket will not receive real-time updates");
-  console.warn("WebSocket server: MessageBusClient is NULL - no real-time updates will be available");
+  logger.warn("WebSocket server: MessageBusClient is NULL - no real-time updates will be available");
 }
 
 /**
