@@ -45,7 +45,8 @@
     updateHeartbeat,
     addJobFailureLog,
     clearJobFailureLogs,
-    getCachedStatus
+    getCachedStatus,
+    type CrawlerStatusCache
   } from "$lib/stores/crawler-cache";
     import { Archive, Binoculars, CirclePause, ClipboardList, Ellipsis, Radio } from "@lucide/svelte";
 
@@ -58,7 +59,7 @@
   let lastUpdate = $state<Date | null>(null);
   
   // Cache state - reactive to store changes
-  let cache = $state(getCachedStatus());
+  let cache: CrawlerStatusCache = $state(getCachedStatus());
   
   // Real-time crawler status (starts with cached data, gets updated via SSE)
   let crawlerStatus = $state<any>(cache.status);
@@ -293,12 +294,7 @@
           console.log("Received crawler heartbeat:", message.payload);
           const timestamp = message.payload.timestamp || message.timestamp || new Date()?.toISOString();
           updateHeartbeat(timestamp);
-          if (crawlerStatus) {
-            crawlerStatus = {
-              ...crawlerStatus,
-              lastHeartbeat: timestamp
-            };
-          }
+          // Don't store heartbeat in crawlerStatus - use cache instead
         }
         break;
         
@@ -591,15 +587,15 @@
             </Card.Title>
             <div class="space-y-1">
               <Card.Description>
-              {#if crawlerStatus?.lastHeartbeat}
-                  Last heartbeat: 
+              {#if cache.lastHeartbeat}
+                  Last heartbeat:
                   <Tooltip.Provider delayDuration={0}>
                     <Tooltip.Root>
                       <Tooltip.Trigger>
-                        <Time timestamp={crawlerStatus?.lastHeartbeat?.toISOString()} relative />
+                        <Time timestamp={cache.lastHeartbeat.toISOString()} relative />
                       </Tooltip.Trigger>
                       <Tooltip.Content>
-                        <Time timestamp={crawlerStatus?.lastHeartbeat?.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
+                        <Time timestamp={cache.lastHeartbeat.toISOString()} format="DD. MMM YYYY, HH:mm:ss" />
                       </Tooltip.Content>
                     </Tooltip.Root>
                   </Tooltip.Provider>
@@ -622,10 +618,10 @@
                         <Tooltip.Provider delayDuration={0}>
                           <Tooltip.Root>
                             <Tooltip.Trigger>
-                              <Time timestamp={cache.lastHeartbeat?.toISOString()} relative />
+                              <Time timestamp={cache.lastHeartbeat.toISOString()} relative />
                             </Tooltip.Trigger>
                             <Tooltip.Content>
-                              <Time timestamp={cache.lastHeartbeat?.toISOString()} format="DD. MMM YYYY, HH:mm:ss" /> (cached)
+                              <Time timestamp={cache.lastHeartbeat.toISOString()} format="DD. MMM YYYY, HH:mm:ss" /> (cached)
                             </Tooltip.Content>
                           </Tooltip.Root>
                         </Tooltip.Provider>
