@@ -3,11 +3,13 @@ import { json } from '@sveltejs/kit';
 import AppSettings from '$lib/server/settings';
 import { db } from '$lib/server/db';
 import { job as jobSchema, area, area_authorization, jobArea } from '$lib/server/db/base-schema'; // Removed tokenScopeJob, tokenScopeJobArea
+import { account } from '$lib/server/db/auth-schema';
 import type { Job } from '$lib/server/db/base-schema';
 import { JobStatus, CrawlCommand, AreaType, type CredentialStatusUpdate } from '$lib/types';
 import { eq } from 'drizzle-orm';
 import { getLogger } from '$lib/logging';
 import { handleNewArea } from '$lib/server/job-manager';
+import { extractProgressData, mergeProgressData, createTimelineEvent, type CrawlerProgressData } from '$lib/types/progress';
 
 const logger = getLogger(['backend', 'api', 'jobs', 'progress']);
 
@@ -31,19 +33,33 @@ interface DiscoveredAreaData {
   discoveredBy: string; // token or account identifier
 }
 
-// Extended payload interface to include areas for the new status type
+// Enhanced progress update payload interface with detailed progress tracking
 interface ProgressUpdatePayload {
   taskId: string;
   status: string; // "started", "processing", "completed", "failed", "paused", "new_areas_discovered", "credential_expiry", "credential_renewal", "credential_resumed"
   processedItems?: number;
   totalItems?: number;
-  currentDataType?: string;
+  currentDataType?: string; // What type of data is currently being processed (groups, projects, issues, etc.)
   timestamp: string; // ISO string
   message?: string;
   error?: string | Record<string, any>;
   progress?: any; // For resume state, e.g., lastProcessedId or customParameters object
   areas?: DiscoveredAreaData[]; // New field for area discoveries
   credentialStatus?: CredentialStatusUpdate; // New field for credential status updates
+  
+  // Enhanced progress fields
+  itemsByType?: {
+    groups?: number;
+    projects?: number;
+    issues?: number;
+    mergeRequests?: number;
+    commits?: number;
+    pipelines?: number;
+    [key: string]: number | undefined;
+  };
+  lastProcessedId?: string; // For resumability
+  stage?: string; // Current stage of processing (discovery, data_collection, etc.)
+  operationType?: 'discovery' | 'branch_crawling' | 'data_collection' | 'finalization';
 }
 
 /**
@@ -62,7 +78,36 @@ async function processDiscoveredAreas(
   const groups = areas.filter(area => area.type === 'group');
   const projects = areas.filter(area => area.type === 'project');
   
-  logger.info(`Processing ${groups.length} groups and ${projects.length} projects for job ${jobRecord.id}. Areas received:`, { areas });
+  logger.debug(`Processing ${groups.length} groups and ${projects.length} projects for job ${jobRecord.id}. Areas received:`, { areas });
+
+  // Validate input data integrity
+  const invalidAreas = areas.filter(area => !area.fullPath || !area.gitlabId || !area.name || !area.type);
+  if (invalidAreas.length > 0) {
+    logger.error(`Invalid area data detected:`, { invalidAreas });
+    throw new Error(`${invalidAreas.length} areas have missing required fields`);
+  }
+
+  // DIAGNOSTIC: Validate account exists before proceeding
+  logger.debug(`[DIAGNOSTIC] Validating account existence for accountId: ${jobRecord.accountId}`);
+  try {
+    const accountExists = await db.query.account.findFirst({
+      where: eq(account.id, jobRecord.accountId)
+    });
+    if (!accountExists) {
+      logger.error(`[DIAGNOSTIC] CRITICAL: Account ${jobRecord.accountId} does not exist in database! This will cause foreign key constraint failures.`);
+      throw new Error(`Account ${jobRecord.accountId} not found`);
+    }
+    logger.debug(`[DIAGNOSTIC] Account validation successful for ${jobRecord.accountId}`);
+  } catch (accountError) {
+    logger.error(`[DIAGNOSTIC] Account validation failed:`, { error: accountError, accountId: jobRecord.accountId });
+    throw accountError;
+  }
+
+  // Validate job exists and is valid for job-area associations
+  if (jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY && !jobRecord.id) {
+    logger.error(`[DIAGNOSTIC] CRITICAL: GROUP_PROJECT_DISCOVERY job has no ID! This will cause foreign key constraint failures.`, { jobRecord });
+    throw new Error(`Job record missing ID for GROUP_PROJECT_DISCOVERY command`);
+  }
 
   // Transform areas for DB insertion
   const areaRecords = areas.map(area => ({
@@ -72,31 +117,74 @@ async function processDiscoveredAreas(
     type: area.type === 'group' ? AreaType.group : AreaType.project
   }));
   
-  // Insert areas into database
+  // Insert areas into database within a transaction to ensure atomicity
   if (areaRecords.length > 0) {
-    await db.insert(area).values(areaRecords).onConflictDoNothing();
+    logger.debug(`[DIAGNOSTIC] Starting transaction for ${areaRecords.length} areas and related operations`);
     
-    // Create area authorizations
-    if (jobRecord.accountId) {
-      const authorizations = areas.map(area => ({
-        area_id: area.fullPath,
-        accountId: jobRecord.accountId
-      }));
-      
-      await db.insert(area_authorization).values(authorizations).onConflictDoNothing();
-    }
-    
-    // Associate areas with the GROUP_PROJECT_DISCOVERY job
-    if (jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY && jobRecord.id) {
-      const jobAreaRecords = areas.map(discoveredArea => ({
-        jobId: jobRecord.id, // Use the ID of the current GROUP_PROJECT_DISCOVERY job
-        full_path: discoveredArea.fullPath
-      }));
-      
-      if (jobAreaRecords.length > 0) {
-        await db.insert(jobArea).values(jobAreaRecords).onConflictDoNothing();
-        logger.info(`Associated ${jobAreaRecords.length} areas with job ${jobRecord.id}`);
-      }
+    try {
+      await db.transaction(async (tx) => {
+        // Step 1: Insert areas with conflict resolution
+        logger.debug(`[DIAGNOSTIC] Step 1 - Attempting to insert ${areaRecords.length} areas:`, { areaRecords: areaRecords.slice(0, 3) }); // Log first 3 only
+        try {
+          await tx.insert(area).values(areaRecords).onConflictDoNothing();
+          logger.debug(`[DIAGNOSTIC] Step 1 - Areas inserted successfully (conflicts ignored)`);
+        } catch (areaError) {
+          logger.error(`[DIAGNOSTIC] Step 1 FAILED - Area insertion error:`, { error: areaError });
+          throw areaError;
+        }
+        
+        // Step 2: Create area authorizations
+        if (jobRecord.accountId) {
+          const authorizations = areas.map(area => ({
+            area_id: area.fullPath,
+            accountId: jobRecord.accountId
+          }));
+          
+          logger.debug(`[DIAGNOSTIC] Step 2 - Attempting to insert ${authorizations.length} area authorizations:`, {
+            accountId: jobRecord.accountId,
+            sampleAuthorizations: authorizations.slice(0, 3) // Log first 3 only
+          });
+          try {
+            await tx.insert(area_authorization).values(authorizations).onConflictDoNothing();
+            logger.debug(`[DIAGNOSTIC] Step 2 - Area authorizations inserted successfully`);
+          } catch (authError) {
+            logger.error(`[DIAGNOSTIC] Step 2 FAILED - Area authorization insertion error:`, { error: authError, accountId: jobRecord.accountId });
+            throw authError;
+          }
+        }
+        
+        // Step 3: Associate areas with the GROUP_PROJECT_DISCOVERY job
+        if (jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY && jobRecord.id) {
+          const jobAreaRecords = areas.map(discoveredArea => ({
+            jobId: jobRecord.id,
+            full_path: discoveredArea.fullPath
+          }));
+          
+          if (jobAreaRecords.length > 0) {
+            logger.debug(`[DIAGNOSTIC] Step 3 - Attempting to insert ${jobAreaRecords.length} job-area associations:`, {
+              jobId: jobRecord.id,
+              sampleJobAreas: jobAreaRecords.slice(0, 3) // Log first 3 only
+            });
+            try {
+              await tx.insert(jobArea).values(jobAreaRecords).onConflictDoNothing();
+              logger.debug(`[DIAGNOSTIC] Step 3 - Job-area associations inserted successfully. Associated ${jobAreaRecords.length} areas with job ${jobRecord.id}`);
+            } catch (jobAreaError) {
+              logger.error(`[DIAGNOSTIC] Step 3 FAILED - Job-area association insertion error:`, { error: jobAreaError, jobId: jobRecord.id });
+              throw jobAreaError;
+            }
+          }
+        }
+        
+        logger.debug(`[DIAGNOSTIC] Transaction completed successfully for ${areaRecords.length} areas`);
+      });
+    } catch (transactionError) {
+      logger.error(`[DIAGNOSTIC] Transaction failed for area operations:`, {
+        error: transactionError,
+        areaRecords,
+        accountId: jobRecord.accountId,
+        jobId: jobRecord.id
+      });
+      throw transactionError;
     }
   }
   
@@ -116,7 +204,7 @@ async function processDiscoveredAreas(
     }
   }
   
-  logger.info(`Finished processing discovered areas for job ${jobRecord.id}. Groups: ${groups.length}, Projects: ${projects.length}`);
+  logger.debug(`Finished processing discovered areas for job ${jobRecord.id}. Groups: ${groups.length}, Projects: ${projects.length}`);
   return { groupsCount: groups.length, projectsCount: projects.length };
 }
 
@@ -146,8 +234,8 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
   let payload: ProgressUpdatePayload;
   try {
     payload = (await request.json()) as ProgressUpdatePayload;
-    logger.info('📥 PROGRESS: Received progress update payload:', { payload });
-    logger.info(`📥 PROGRESS: Status update for task ${payload.taskId}: ${payload.status}`);
+    logger.debug('📥 PROGRESS: Received progress update payload:', { payload });
+    logger.debug(`📥 PROGRESS: Status update for task ${payload.taskId}: ${payload.status}`);
   } catch (error) {
     logger.error('❌ PROGRESS: Error parsing progress update payload:', { error, requestBody: await request.text().catch(() => 'Could not read request body') });
     return json({ error: 'Invalid request body' }, { status: 400 });
@@ -170,11 +258,29 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
       logger.warn(`Job not found for taskId: ${taskId}. Payload was:`, { payload });
       return json({ error: 'Job not found' }, { status: 404 });
     }
-    logger.info(`Found jobRecord for taskId ${taskId}:`, { jobRecord });
+    
+    // DIAGNOSTIC: Validate job record integrity
+    logger.debug(`[DIAGNOSTIC] Found jobRecord for taskId ${taskId}:`, {
+      jobId: jobRecord.id,
+      accountId: jobRecord.accountId,
+      command: jobRecord.command,
+      status: jobRecord.status,
+      full_path: jobRecord.full_path
+    });
+    
+    if (!jobRecord.id) {
+      logger.error(`[DIAGNOSTIC] CRITICAL: Job record has no ID! This will cause foreign key failures.`, { jobRecord });
+      return json({ error: 'Invalid job record - missing ID' }, { status: 500 });
+    }
+    
+    if (!jobRecord.accountId) {
+      logger.error(`[DIAGNOSTIC] CRITICAL: Job record has no accountId! This will cause foreign key failures.`, { jobRecord });
+      return json({ error: 'Invalid job record - missing accountId' }, { status: 500 });
+    }
 
     // Special case for new_areas_discovered
     if (crawlerStatus.toLowerCase() === 'new_areas_discovered') {
-      logger.info(`Processing 'new_areas_discovered' for job ${taskId}. Areas:`, { areas });
+      logger.debug(`Processing 'new_areas_discovered' for job ${taskId}. Areas:`, { areas });
       if (!areas || !Array.isArray(areas) || areas.length === 0) {
         logger.warn(`Received new_areas_discovered status but no areas in payload for job: ${taskId}. Payload:`, { payload });
         return json({ error: 'Missing areas data in payload' }, { status: 400 });
@@ -182,7 +288,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
 
       // Process the discovered areas
       const { groupsCount, projectsCount } = await processDiscoveredAreas(areas, jobRecord);
-      logger.info(`processDiscoveredAreas returned: groupsCount=${groupsCount}, projectsCount=${projectsCount} for job ${taskId}`);
+      logger.debug(`processDiscoveredAreas returned: groupsCount=${groupsCount}, projectsCount=${projectsCount} for job ${taskId}`);
       
       // Update the job record
       const updateData: Partial<Job> & { updated_at?: Date } = { 
@@ -191,44 +297,88 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
         status: JobStatus.running,
       };
 
-      // Update job.progress blob to include the areas discovery
-      const currentProgress = jobRecord.progress as Record<string, any> || {};
-      const jobProgress = {
-        ...currentProgress,
-        processed: processedItems || currentProgress.processed,
-        total: totalItems || currentProgress.total,
-        currentDataType: currentDataType || currentProgress.currentDataType,
+      // Update job.progress blob to include the areas discovery with intelligent accumulation
+      const currentProgress = extractProgressData(jobRecord.progress);
+      
+      const incomingProgress: Partial<CrawlerProgressData> = {
+        processedItems: processedItems,
+        totalItems: totalItems,
+        currentDataType: currentDataType,
+        lastProcessedId: payload.lastProcessedId,
+        stage: payload.stage || 'discovery',
+        operationType: payload.operationType || 'discovery',
+        itemsByType: {
+          groups: groupsCount,
+          projects: projectsCount,
+          ...(payload.itemsByType || {})
+        },
         lastAreasDiscovery: {
           timestamp,
           groupsCount,
           projectsCount,
           totalDiscovered: groupsCount + projectsCount
         },
-        message: message || `Discovered ${groupsCount} groups and ${projectsCount} projects`
+        message: message || `Discovered ${groupsCount} groups and ${projectsCount} projects`,
+        timeline: [
+          createTimelineEvent('areas_discovered', {
+            groupsCount,
+            projectsCount,
+            currentDataType,
+            stage: payload.stage || 'discovery'
+          }, timestamp)
+        ]
       };
+      
+      const jobProgress = mergeProgressData(currentProgress, incomingProgress);
       updateData.progress = jobProgress;
       logger.debug(`Update data for 'new_areas_discovered' (before main update) for job ${taskId}:`, { updateData });
 
       await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
-      logger.info(`Updated job ${taskId} after 'new_areas_discovered' processing.`);
+      logger.debug(`Updated job ${taskId} after 'new_areas_discovered' processing.`);
       
       // If this is a GROUP_PROJECT_DISCOVERY job, update its progress with counts
       if (jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
         logger.debug(`Updating progress specifically for GROUP_PROJECT_DISCOVERY job ${jobRecord.id}. Current progress:`, { currentJobProgress: jobRecord.progress });
         const currentJobProgress = jobRecord.progress as Record<string, any> || {};
+        
+        // Accumulate counts intelligently
+        const existingItemsByType = currentJobProgress.itemsByType || {};
+        const newItemsByType = {
+          ...existingItemsByType,
+          groups: (existingItemsByType.groups || 0) + groupsCount,
+          projects: (existingItemsByType.projects || 0) + projectsCount
+        };
+        
         const newProgress = {
           ...currentJobProgress,
-          groupCount: (currentJobProgress.groupCount || 0) + groupsCount,
-          projectCount: (currentJobProgress.projectCount || 0) + projectsCount,
+          groupCount: (currentJobProgress.groupCount || 0) + groupsCount, // Legacy field for compatibility
+          projectCount: (currentJobProgress.projectCount || 0) + projectsCount, // Legacy field for compatibility
+          itemsByType: newItemsByType,
+          lastUpdate: timestamp,
           // Potentially update groupTotal and projectTotal if known
+          ...(totalItems && { totalItems }),
+          timeline: [
+            ...(currentJobProgress.timeline || []),
+            {
+              timestamp,
+              event: 'discovery_progress',
+              details: {
+                groupsAdded: groupsCount,
+                projectsAdded: projectsCount,
+                totalGroups: newItemsByType.groups,
+                totalProjects: newItemsByType.projects
+              }
+            }
+          ]
         };
+        
         await db.update(jobSchema)
           .set({
             progress: newProgress,
             updated_at: new Date() // Ensure updated_at is also set here
           })
           .where(eq(jobSchema.id, jobRecord.id)); // Update the specific job
-        logger.info(`Updated progress for GROUP_PROJECT_DISCOVERY job ${jobRecord.id} with ${groupsCount} groups, ${projectsCount} projects. New progress:`, { newProgress });
+        logger.debug(`Updated progress for GROUP_PROJECT_DISCOVERY job ${jobRecord.id} with ${groupsCount} groups, ${projectsCount} projects. New progress:`, { newProgress });
       }
       
       return json(
@@ -263,28 +413,49 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
           break;
         case 'credential_resumed':
           updateData.status = JobStatus.credential_renewed;
-          logger.info(`[LOW SEVERITY] Job ${taskId} credentials renewed, ready to resume.`);
+          logger.debug(`[LOW SEVERITY] Job ${taskId} credentials renewed, ready to resume.`);
           break;
       }
 
       // Update job.progress blob with credential status information
       const currentProgress = jobRecord.progress as Record<string, any> || {};
+      
+      // Preserve and accumulate existing progress data
       const jobProgress = {
         ...currentProgress,
-        processed: processedItems || currentProgress.processed,
-        total: totalItems || currentProgress.total,
+        processedItems: processedItems || currentProgress.processedItems,
+        totalItems: totalItems || currentProgress.totalItems,
         currentDataType: currentDataType || currentProgress.currentDataType,
+        lastProcessedId: payload.lastProcessedId || currentProgress.lastProcessedId,
+        stage: payload.stage || currentProgress.stage,
+        operationType: payload.operationType || currentProgress.operationType,
+        itemsByType: {
+          ...currentProgress.itemsByType,
+          ...(payload.itemsByType || {})
+        },
         credentialStatus: {
           ...credentialStatus,
           timestamp,
           lastUpdate: crawlerStatus
         },
-        message: message || `Credential status: ${crawlerStatus}`
+        message: message || `Credential status: ${crawlerStatus}`,
+        timeline: [
+          ...(currentProgress.timeline || []),
+          {
+            timestamp,
+            event: 'credential_status_change',
+            details: {
+              status: crawlerStatus,
+              credentialType: credentialStatus?.errorType,
+              severity: credentialStatus?.severity
+            }
+          }
+        ]
       };
       updateData.progress = jobProgress;
 
       await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
-      logger.info(`Job ${taskId} updated with credential status: ${crawlerStatus}`);
+      logger.debug(`Job ${taskId} updated with credential status: ${crawlerStatus}`);
 
       // Return appropriate response
       return json(
@@ -303,29 +474,39 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
 
     switch (crawlerStatus.toLowerCase()) {
       case 'started':
-        logger.info(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (started)`);
+        logger.debug(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (started)`);
         newJobStatus = JobStatus.running;
         if (jobRecord.status !== JobStatus.running) {
             updateData.started_at = new Date(timestamp);
         }
+        // Save resume state if provided in the payload
+        if (resumePayload) {
+          updateData.resumeState = resumePayload;
+          logger.debug(`💾 PROGRESS: Saving resume state for started job ${taskId}:`, { resumeState: resumePayload });
+        }
         break;
       case 'processing':
-        logger.info(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (processing)`);
+        logger.debug(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (processing)`);
         newJobStatus = JobStatus.running;
         // No specific action if already running, updated_at will be set.
         // If it wasn't running, set started_at
         if (jobRecord.status !== JobStatus.running && !jobRecord.started_at) {
             updateData.started_at = new Date(timestamp);
         }
+        // Save resume state if provided in the payload
+        if (resumePayload) {
+          updateData.resumeState = resumePayload;
+          logger.debug(`💾 PROGRESS: Saving resume state for processing job ${taskId}:`, { resumeState: resumePayload });
+        }
         break;
       case 'completed':
-        logger.info(`🟢 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FINISHED`);
+        logger.debug(`🟢 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FINISHED`);
         newJobStatus = JobStatus.finished;
         updateData.finished_at = new Date(timestamp);
         updateData.resumeState = null; // Clear resume state on completion
         break;
       case 'failed':
-        logger.info(`🔴 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FAILED`);
+        logger.warn(`🔴 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FAILED`);
         newJobStatus = JobStatus.failed;
         updateData.finished_at = new Date(timestamp);
         if (payloadError) {
@@ -340,7 +521,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
         }
         break;
       case 'paused':
-        logger.info(`🟠 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to PAUSED`);
+        logger.debug(`🟠 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to PAUSED`);
         newJobStatus = JobStatus.paused;
         if (resumePayload) {
           updateData.resumeState = resumePayload;
@@ -348,7 +529,7 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
         break;
       default:
         logger.warn(`❌ PROGRESS: Unknown status received from crawler: ${crawlerStatus} for taskId: ${taskId}`);
-        logger.info(`❌ PROGRESS: Invalid status "${crawlerStatus}" for job ${taskId}`);
+        logger.warn(`❌ PROGRESS: Invalid status "${crawlerStatus}" for job ${taskId}`);
         // Potentially return an error or ignore, depending on desired strictness
         return json({ error: `Invalid status: ${crawlerStatus}` }, { status: 400 });
     }
@@ -357,28 +538,63 @@ export const POST: RequestHandler = async ({ request, locals }) => { // Added lo
       updateData.status = newJobStatus;
     }
 
-    // Update job.progress blob
+    // Update job.progress blob with intelligent data accumulation
     const currentProgress = jobRecord.progress as Record<string, any> || {};
+    
+    // Intelligently accumulate progress data instead of overwriting
+    const accumulatedItemsByType = {
+      ...currentProgress.itemsByType,
+      ...(payload.itemsByType || {})
+    };
+    
+    // For processedItems, accumulate if it's higher than current, or if explicitly provided
+    const newProcessedItems = processedItems !== undefined
+      ? Math.max(processedItems, currentProgress.processedItems || 0)
+      : currentProgress.processedItems;
+    
     const jobProgress = {
       ...currentProgress,
-      processed: processedItems,
-      total: totalItems,
-      currentDataType: currentDataType,
-      message: message,
-      ...(crawlerStatus.toLowerCase() === 'failed' && payloadError ? { error: typeof payloadError === 'string' ? payloadError : JSON.stringify(payloadError) } : {})
+      processedItems: newProcessedItems,
+      totalItems: totalItems || currentProgress.totalItems,
+      currentDataType: currentDataType || currentProgress.currentDataType,
+      lastProcessedId: payload.lastProcessedId || currentProgress.lastProcessedId,
+      stage: payload.stage || currentProgress.stage,
+      operationType: payload.operationType || currentProgress.operationType,
+      itemsByType: accumulatedItemsByType,
+      message: message || currentProgress.message,
+      lastUpdate: timestamp,
+      timeline: [
+        ...(currentProgress.timeline || []),
+        {
+          timestamp,
+          event: 'progress_update',
+          details: {
+            status: crawlerStatus,
+            processedItems: newProcessedItems,
+            totalItems: totalItems || currentProgress.totalItems,
+            currentDataType,
+            stage: payload.stage,
+            operationType: payload.operationType
+          }
+        }
+      ],
+      ...(crawlerStatus.toLowerCase() === 'failed' && payloadError ? {
+        error: typeof payloadError === 'string' ? payloadError : JSON.stringify(payloadError),
+        errorTimestamp: timestamp
+      } : {})
     };
     updateData.progress = jobProgress;
     logger.debug(`Update data for standard status update for job ${taskId}:`, { updateData, crawlerStatus });
 
     await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
-    logger.info(`✅ PROGRESS: Job ${taskId} database updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
-    logger.info(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
+    logger.debug(`✅ PROGRESS: Job ${taskId} database updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
+    logger.debug(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
 
     // If a GROUP_PROJECT_DISCOVERY job finishes, its status is already set to 'finished'.
     // No separate 'isComplete' flag to manage on the job itself.
     // The progress and resumeState fields on the job record hold the relevant completion/state info.
     if (newJobStatus === JobStatus.finished && jobRecord.command === CrawlCommand.GROUP_PROJECT_DISCOVERY) {
-      logger.info(`GROUP_PROJECT_DISCOVERY job ${jobRecord.id} for account ${jobRecord.accountId} marked as finished.`);
+      logger.debug(`GROUP_PROJECT_DISCOVERY job ${jobRecord.id} for account ${jobRecord.accountId} marked as finished.`);
       // Any finalization of progress (e.g. setting total counts if now known) should happen here or in the processor.
     }
 

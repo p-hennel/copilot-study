@@ -8,7 +8,7 @@ const logger = getLogger(["api", "admin", "storage"]);
 export async function GET() {
   try {
     // Calculate storage for the project directory
-    const storageData = await getFolderSizeWithAvailableSpace(AppSettings().paths.dataRoot, {
+    const storageData = await getFolderSizeWithAvailableSpace(AppSettings().paths.archive, {
       maxCacheAge: 10 * 60 * 1000, // 10 minutes cache
       includeHidden: false
     });

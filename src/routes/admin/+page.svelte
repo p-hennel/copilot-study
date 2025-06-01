@@ -10,7 +10,7 @@
   import Time from "svelte-time/Time.svelte";
   import Input from "@/input/input.svelte";
   import { m } from "$paraglide";
-  import { Users, Key, MapPin, Briefcase, Settings, CircleAlert, RefreshCw, ClipboardCopy, DatabaseBackup, FileDown, ArchiveRestore, FolderTree, Activity, CheckCircle, Clock, XCircle, Search, Play, Pause, Square, Loader2, Heart, WifiOff, Wifi } from "lucide-svelte";
+  import { Users, Key, MapPin, Briefcase, Settings, CircleAlert, RefreshCw, ClipboardCopy, DatabaseBackup, FileDown, ArchiveRestore, FolderTree, Activity, CheckCircle, Clock, XCircle, Search, Play, Pause, Square, Loader2, Heart, WifiOff, Wifi, TrendingUp, Database, GitBranch, GitCommit, Users2, Tags, GitMerge } from "lucide-svelte";
   import { goto, invalidate } from "$app/navigation";
   import type { PageProps } from "./$types";
   import { clickToCopy, dynamicHandleDownloadAsCSV, formatBytes } from "$lib/utils";
@@ -21,6 +21,7 @@
   import { invalidateWithLoading } from "$lib/utils/admin-fetch";
   import { HardDrive } from "@lucide/svelte";
   import { Chart, Arc, Group, LinearGradient, Svg, Text, RadialGradient } from "layerchart"
+  import { extractProgressData, calculateProgressPercentage, getProgressSummary, type CrawlerProgressData } from "$lib/types/progress";
   
   let { data }: PageProps = $props();
 
@@ -103,13 +104,46 @@
 
   // Summary stats derived from data
   const summaryStats = $derived.by(async () => {
-    const [users, statistics, tokenInfos, crawler, storage] = await Promise.all([
+    const [users, statistics, tokenInfos, crawler, storage, jobs] = await Promise.all([
       data.users,
       data.statistics,
       data.tokenInfos,
       data.crawler,
-      data.storage
+      data.storage,
+      data.jobs
     ]);
+
+    // Extract progress information from active jobs
+    let jobsWithProgress: any[] = [];
+    let totalProgressInfo: CrawlerProgressData = {};
+    
+    if (jobs && typeof jobs === 'object' && 'data' in jobs && Array.isArray(jobs.data)) {
+      jobsWithProgress = jobs.data.filter((job: any) =>
+        job.status === 'running' || job.status === 'active' || job.status === 'paused'
+      ).map((job: any) => ({
+        ...job,
+        progressData: extractProgressData(job.progress)
+      }));
+
+      // Aggregate progress from all active jobs
+      jobsWithProgress.forEach((job: any) => {
+        const progress = job.progressData;
+        if (progress.processedItems) {
+          totalProgressInfo.processedItems = (totalProgressInfo.processedItems || 0) + progress.processedItems;
+        }
+        if (progress.totalItems) {
+          totalProgressInfo.totalItems = (totalProgressInfo.totalItems || 0) + progress.totalItems;
+        }
+        if (progress.itemsByType) {
+          totalProgressInfo.itemsByType = totalProgressInfo.itemsByType || {};
+          Object.entries(progress.itemsByType).forEach(([type, count]) => {
+            if (typeof count === 'number') {
+              totalProgressInfo.itemsByType![type] = (totalProgressInfo.itemsByType![type] || 0) + count;
+            }
+          });
+        }
+      });
+    }
 
     return {
       users: Array.isArray(users) ? users.length : 0,
@@ -124,7 +158,12 @@
           },
       crawler: crawler || null,
       storage: (storage && typeof storage === 'object' && 'used' in storage && 'available' in storage && 'total' in storage)
-        ? storage : { used: 0, available: 0, total: 0 }
+        ? storage : { used: 0, available: 0, total: 0 },
+      // Enhanced progress information
+      activeJobs: jobsWithProgress,
+      totalProgress: totalProgressInfo,
+      progressPercentage: calculateProgressPercentage(totalProgressInfo),
+      progressSummary: getProgressSummary(totalProgressInfo)
     };
   });
 
@@ -200,26 +239,52 @@
             <Card.Title class="font-medium">Jobs Overview</Card.Title>
             <Activity class="h-5 w-5 text-muted-foreground" />
           </Card.Header>
-          <Card.Content class="space-y-2 pt-2 flex flex-row gap-4 justify-between">
-            <div class="flex flex-col items-center">
-              <div class="text-2xl font-bold">{stats.jobs.total}</div>
-              <p class="text-sm text-muted-foreground">Total</p>
+          <Card.Content class="space-y-3 pt-2">
+            <!-- Job Status Counts -->
+            <div class="flex flex-row gap-4 justify-between">
+              <div class="flex flex-col items-center">
+                <div class="text-2xl font-bold">{stats.jobs.total}</div>
+                <p class="text-sm text-muted-foreground">Total</p>
+              </div>
+              <Separator orientation="vertical" class="" />
+              <div class="flex flex-col items-center">
+                <div class="text-lg font-semibold text-blue-600">{stats.jobs.active}</div>
+                <p class="text-sm text-muted-foreground">Active</p>
+              </div>
+              <Separator orientation="vertical" class="" />
+              <div class="flex flex-col items-center">
+                <div class="text-lg font-semibold text-green-600">{stats.jobs.running}</div>
+                <p class="text-sm text-muted-foreground">Running</p>
+              </div>
+              <Separator orientation="vertical" class="" />
+              <div class="flex flex-col items-center">
+                <div class="text-lg font-semibold text-yellow-600">{stats.jobs.paused}</div>
+                <p class="text-sm text-muted-foreground">Paused</p>
+              </div>
             </div>
-            <Separator orientation="vertical" class="" />
-            <div class="flex flex-col items-center">
-              <div class="text-lg font-semibold text-blue-600">{stats.jobs.active}</div>
-              <p class="text-sm text-muted-foreground">Active</p>
-            </div>
-            <Separator orientation="vertical" class="" />
-            <div class="flex flex-col items-center">
-              <div class="text-lg font-semibold text-green-600">{stats.jobs.running}</div>
-              <p class="text-sm text-muted-foreground">Running</p>
-            </div>
-            <Separator orientation="vertical" class="" />
-            <div class="flex flex-col items-center">
-              <div class="text-lg font-semibold text-green-600">{stats.jobs.paused}</div>
-              <p class="text-sm text-muted-foreground">Paused</p>
-            </div>
+            
+            <!-- Active Jobs Progress -->
+            {#if stats.activeJobs.length > 0}
+              <Separator />
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-muted-foreground">Active Progress</span>
+                  {#if stats.progressPercentage !== null}
+                    <span class="text-xs font-semibold">{stats.progressPercentage}%</span>
+                  {/if}
+                </div>
+                {#if stats.progressPercentage !== null}
+                  <Progress value={stats.progressPercentage} class="h-1.5" />
+                  <div class="text-xs text-muted-foreground">
+                    {stats.totalProgress.processedItems || 0}/{stats.totalProgress.totalItems || 0} items
+                  </div>
+                {:else if stats.totalProgress.processedItems}
+                  <div class="text-xs text-muted-foreground">
+                    {stats.totalProgress.processedItems} items processed
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </Card.Content>
         </Card.Root>
 
@@ -258,7 +323,7 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                   <Clock class="h-4 w-4 text-yellow-600" />
-                  <span class="text-sm">Queued</span>
+                  <span class="text-sm">Open</span>
                 </div>
                 <span class="font-semibold text-yellow-600">{stats.jobs.queued}</span>
               </div>
@@ -334,6 +399,24 @@
                 <p class="text-sm text-muted-foreground">Processing</p>
               </div>
             </div>
+            
+            <!-- Enhanced Progress Information -->
+            {#if stats.activeJobs.length > 0 && stats.totalProgress.processedItems}
+              <Separator/>
+              <div class="space-y-2">
+                <div class="text-xs font-medium text-muted-foreground">Current Progress</div>
+                <div class="text-sm">
+                  {#if stats.totalProgress.currentDataType}
+                    <Badge variant="secondary" class="text-xs mb-1">
+                      {stats.totalProgress.currentDataType}
+                    </Badge>
+                  {/if}
+                  <div class="text-xs text-muted-foreground">
+                    {stats.progressSummary}
+                  </div>
+                </div>
+              </div>
+            {/if}
           </Card.Content>
         </Card.Root>
 
@@ -345,7 +428,7 @@
           <Card.Content class="space-y-2 pt-2 flex flex-row gap-4 justify-between">
             <div class="min-w-[150px] flex flex-col gap-4 justify-between">
               <div class="flex flex-col items-center pt-2">
-                <div class="text-2xl font-bold">{formatBytes(stats.storage.used)}</div>
+                <div class="text-2xl font-bold">{formatBytes(stats.storage.used ?? 0)}</div>
                 <p class="text-sm text-muted-foreground">Used</p>
               </div>
               <Separator />
@@ -407,6 +490,141 @@
           </Card.Content>
         </Card.Root>
       </div>
+      
+      <!-- Progress Details Section (when active jobs exist) -->
+      {#if stats.activeJobs.length > 0}
+        <div class="mt-6">
+          <h2 class="text-xl font-semibold mb-4">Active Job Progress Details</h2>
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            
+            <!-- Overall Progress Card -->
+            <Card.Root>
+              <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Card.Title class="font-medium">Overall Progress</Card.Title>
+                <TrendingUp class="h-5 w-5 text-muted-foreground" />
+              </Card.Header>
+              <Card.Content class="space-y-3">
+                {#if stats.progressPercentage !== null}
+                  <div class="space-y-2">
+                    <Progress value={stats.progressPercentage} class="h-2" />
+                    <div class="flex justify-between text-sm">
+                      <span>{stats.totalProgress.processedItems || 0} processed</span>
+                      <span>{stats.progressPercentage}%</span>
+                    </div>
+                  </div>
+                {:else}
+                  <div class="text-sm text-muted-foreground">
+                    {stats.totalProgress.processedItems || 0} items processed
+                  </div>
+                {/if}
+                
+                {#if stats.totalProgress.currentDataType}
+                  <div class="flex items-center gap-2">
+                    <Badge variant="outline" class="text-xs">
+                      {stats.totalProgress.currentDataType}
+                    </Badge>
+                    <span class="text-xs text-muted-foreground">Currently processing</span>
+                  </div>
+                {/if}
+              </Card.Content>
+            </Card.Root>
+
+            <!-- Items by Type Breakdown -->
+            {#if stats.totalProgress.itemsByType && Object.keys(stats.totalProgress.itemsByType).length > 0}
+              <Card.Root>
+                <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <Card.Title class="font-medium">Items by Type</Card.Title>
+                  <Database class="h-5 w-5 text-muted-foreground" />
+                </Card.Header>
+                <Card.Content class="space-y-2">
+                  {#each Object.entries(stats.totalProgress.itemsByType).filter(([_, count]) => typeof count === 'number' && count > 0) as [type, count]}
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        {#if type === 'groups'}
+                          <FolderTree class="h-4 w-4 text-blue-600" />
+                        {:else if type === 'projects'}
+                          <GitBranch class="h-4 w-4 text-green-600" />
+                        {:else if type === 'issues'}
+                          <CircleAlert class="h-4 w-4 text-red-600" />
+                        {:else if type === 'mergeRequests'}
+                          <GitMerge class="h-4 w-4 text-purple-600" />
+                        {:else if type === 'commits'}
+                          <GitCommit class="h-4 w-4 text-orange-600" />
+                        {:else if type === 'users'}
+                          <Users2 class="h-4 w-4 text-indigo-600" />
+                        {:else if type === 'tags'}
+                          <Tags class="h-4 w-4 text-pink-600" />
+                        {:else}
+                          <Database class="h-4 w-4 text-gray-600" />
+                        {/if}
+                        <span class="text-sm capitalize">{type}</span>
+                      </div>
+                      <span class="font-semibold">{count}</span>
+                    </div>
+                  {/each}
+                </Card.Content>
+              </Card.Root>
+            {/if}
+
+            <!-- Active Jobs List -->
+            <Card.Root>
+              <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Card.Title class="font-medium">Active Jobs ({stats.activeJobs.length})</Card.Title>
+                <Activity class="h-5 w-5 text-muted-foreground" />
+              </Card.Header>
+              <Card.Content class="space-y-3">
+                {#each stats.activeJobs.slice(0, 3) as job}
+                  <div class="border rounded-lg p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <Badge variant={job.status === 'running' ? 'default' : job.status === 'paused' ? 'secondary' : 'outline'} class="text-xs">
+                          {job.status}
+                        </Badge>
+                        <span class="text-xs font-mono text-muted-foreground">
+                          {job.id.slice(0, 8)}...
+                        </span>
+                      </div>
+                      {#if job.progressData.stage}
+                        <Badge variant="outline" class="text-xs">
+                          {job.progressData.stage}
+                        </Badge>
+                      {/if}
+                    </div>
+                    
+                    {#if job.progressData.processedItems !== undefined || job.progressData.totalItems !== undefined}
+                      {@const percentage = calculateProgressPercentage(job.progressData)}
+                      <div class="space-y-1">
+                        {#if percentage !== null}
+                          <Progress value={percentage} class="h-1" />
+                          <div class="text-xs text-muted-foreground">
+                            {job.progressData.processedItems || 0}/{job.progressData.totalItems || 0} ({percentage}%)
+                          </div>
+                        {:else if job.progressData.processedItems}
+                          <div class="text-xs text-muted-foreground">
+                            {job.progressData.processedItems} items processed
+                          </div>
+                        {/if}
+                      </div>
+                    {/if}
+                    
+                    {#if job.progressData.currentDataType}
+                      <div class="text-xs text-muted-foreground">
+                        Processing: {job.progressData.currentDataType}
+                      </div>
+                    {/if}
+                  </div>
+                {/each}
+                
+                {#if stats.activeJobs.length > 3}
+                  <div class="text-xs text-muted-foreground text-center">
+                    ...and {stats.activeJobs.length - 3} more active jobs
+                  </div>
+                {/if}
+              </Card.Content>
+            </Card.Root>
+          </div>
+        </div>
+      {/if}
     {/snippet}
   </AdminDataLoader>
 

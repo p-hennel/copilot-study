@@ -404,12 +404,13 @@
           aria-label="Select all visible jobs"
         />
       </Table.Head>
-      <Table.Head class="w-[2.5rem] text-right"
+      <!--<Table.Head class="w-[2.5rem] text-right"
         >{m["admin.dashboard.jobsTable.header.idx"]()}</Table.Head
-      >
-      <Table.Head>{m["admin.dashboard.jobsTable.header.id"]()}</Table.Head>
+      >-->
+      <!--<Table.Head>{m["admin.dashboard.jobsTable.header.id"]()}</Table.Head>-->
+      <Table.Head class="text-start">{m["admin.dashboard.jobsTable.header.for_area"]()}</Table.Head>
       <Table.Head>{m["admin.dashboard.jobsTable.header.command"]()}</Table.Head>
-      <Table.Head>{m["admin.dashboard.jobsTable.header.provider"]()}</Table.Head>
+      <!--<Table.Head>{m["admin.dashboard.jobsTable.header.provider"]()}</Table.Head>-->
       <Table.Head>{m["admin.dashboard.jobsTable.header.status"]()}</Table.Head>
       <Table.Head class="text-center"
         >{m["admin.dashboard.jobsTable.header.updated_at"]()}</Table.Head
@@ -421,8 +422,7 @@
         >{m["admin.dashboard.jobsTable.header.finished_at"]()}</Table.Head
       >
       <Table.Head class="text-start">{m["admin.dashboard.jobsTable.header.from_job"]()}</Table.Head>
-      <Table.Head class="text-start">{m["admin.dashboard.jobsTable.header.for_area"]()}</Table.Head>
-      <Table.Head class="text-end">{m["admin.dashboard.jobsTable.header.children_count"]()}</Table.Head>
+      <!--<Table.Head class="text-end">{m["admin.dashboard.jobsTable.header.children_count"]()}</Table.Head>-->
       <Table.Head class="w-[5rem]">Actions</Table.Head>
     </Table.Row>
   </Table.Header>
@@ -437,10 +437,27 @@
             aria-label={`Select job ${job.id}`}
           />
         </Table.Cell>
-        <Table.Cell class="text-right">{startIndex + idx + 1}</Table.Cell>
-        <Table.Cell class="font-mono">{job.id}</Table.Cell>
+        <!--<Table.Cell class="text-right">{startIndex + idx + 1}</Table.Cell>-->
+        <!--<Table.Cell class="font-mono">{job.id}</Table.Cell>-->
+        <Table.Cell class="text-start">
+          {#if !!job.forArea}
+            <Tooltip.Provider delayDuration={0}>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  {truncate(job.forArea.name)}
+                </Tooltip.Trigger>
+                <Tooltip.Content>
+                  {job.forArea.type}: {job.forArea.full_path}
+                  {#if !!job.branch && job.branch.length > 0}
+                    ({job.branch})
+                  {/if}
+                </Tooltip.Content>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+          {/if}
+        </Table.Cell>
         <Table.Cell>{job.command}</Table.Cell>
-        <Table.Cell>{job.provider}</Table.Cell>
+        <!--<Table.Cell>{job.provider}</Table.Cell>-->
         <Table.Cell>
           <Tooltip.Provider delayDuration={0}>
             <Tooltip.Root>
@@ -498,26 +515,7 @@
             </Tooltip.Provider>
           {/if}
         </Table.Cell>
-        <Table.Cell class="text-start">
-          {#if !!job.forArea}
-            <Tooltip.Provider delayDuration={0}>
-              <Tooltip.Root>
-                <Tooltip.Trigger>
-                  {truncate(job.forArea.name)}
-                </Tooltip.Trigger>
-                <Tooltip.Content>
-                  {job.forArea.type}: {job.forArea.full_path}
-                  {#if !!job.branch && job.branch.length > 0}
-                    ({job.branch})
-                  {/if}
-                </Tooltip.Content>
-              </Tooltip.Root>
-            </Tooltip.Provider>
-          {/if}
-        </Table.Cell>
-        <Table.Cell class="text-end">
-          {job.childrenCount}
-        </Table.Cell>
+        <!--<Table.Cell class="text-end">{job.childrenCount}</Table.Cell>-->
         <Table.Cell>
           <LoadingButton
             variant="ghost"

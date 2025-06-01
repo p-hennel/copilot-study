@@ -71,6 +71,24 @@ export async function POST({ locals, request }: RequestEvent) {
     // Use transaction for bulk deletion with filters
     const result = await db.transaction(async (tx) => {
       const deletedJobs = await tx.delete(job).where(and(...conditions)).returning();
+      
+      // Log progress information for audit purposes
+      deletedJobs.forEach(deletedJob => {
+        if (deletedJob.progress) {
+          const progress = typeof deletedJob.progress === 'string'
+            ? JSON.parse(deletedJob.progress)
+            : deletedJob.progress;
+          logger.info(`Deleted job ${deletedJob.id} had progress:`, {
+            processedItems: (progress as any)?.processedItems || (progress as any)?.processed,
+            totalItems: (progress as any)?.totalItems || (progress as any)?.total,
+            currentDataType: (progress as any)?.currentDataType,
+            stage: (progress as any)?.stage,
+            operationType: (progress as any)?.operationType,
+            itemsByType: (progress as any)?.itemsByType
+          });
+        }
+      });
+      
       return deletedJobs;
     });
 

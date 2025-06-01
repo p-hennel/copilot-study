@@ -397,7 +397,6 @@ export class MessageBusClient extends EventEmitter {
         
         if (braceCount === 0 && jsonEnd > jsonStart) {
           const jsonStr = dataStr.substring(jsonStart, jsonEnd);
-          this.logger.debug("MessageBusClient: Parsing individual JSON:", { jsonStr });
           const message = JSON.parse(jsonStr) as IPCMessage;
           messages.push(message);
           currentPos = jsonEnd;

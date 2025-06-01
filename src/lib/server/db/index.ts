@@ -31,6 +31,16 @@ function getDbClient(): Client {
 export function getDb(): LibSQLDatabase<typeof schema> {
   if (!dbInstance) {
     const dbClient = getDbClient(); // Ensure client is initialized
+    
+    // Enable foreign key constraints synchronously during initialization
+    try {
+      dbClient.execute("PRAGMA foreign_keys = ON");
+      logger.debug("Foreign key constraints enabled successfully");
+    } catch (error) {
+      logger.error("Failed to enable foreign key constraints:", { error });
+      throw new Error("Database initialization failed: Could not enable foreign key constraints");
+    }
+    
     dbInstance = drizzle(dbClient, { schema });
   }
   return dbInstance;

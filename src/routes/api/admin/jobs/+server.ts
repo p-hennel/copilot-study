@@ -43,6 +43,21 @@ export async function DELETE({ locals, request, url }: RequestEvent) {
         return json({ error: "Job not found" }, { status: 404 });
       }
 
+      // Log progress information for audit purposes
+      if (deletedJob[0]?.progress) {
+        const progress = typeof deletedJob[0].progress === 'string'
+          ? JSON.parse(deletedJob[0].progress)
+          : deletedJob[0].progress;
+        logger.info(`Deleted job ${deletedJob[0].id} had progress:`, {
+          processedItems: (progress as any)?.processedItems || (progress as any)?.processed,
+          totalItems: (progress as any)?.totalItems || (progress as any)?.total,
+          currentDataType: (progress as any)?.currentDataType,
+          stage: (progress as any)?.stage,
+          operationType: (progress as any)?.operationType,
+          itemsByType: (progress as any)?.itemsByType
+        });
+      }
+
       logger.info(`Admin deleted job`, { admin: locals.user.email, jobId });
       return json({
         success: true,
@@ -103,6 +118,24 @@ export async function POST({ locals, request }: RequestEvent) {
       // Use transaction for bulk deletion
       const result = await db.transaction(async (tx) => {
         const deletedJobs = await tx.delete(job).where(inArray(job.id, jobIds as string[])).returning();
+        
+        // Log progress information for audit purposes
+        deletedJobs.forEach(deletedJob => {
+          if (deletedJob.progress) {
+            const progress = typeof deletedJob.progress === 'string'
+              ? JSON.parse(deletedJob.progress)
+              : deletedJob.progress;
+            logger.info(`Bulk deleted job ${deletedJob.id} had progress:`, {
+              processedItems: (progress as any)?.processedItems || (progress as any)?.processed,
+              totalItems: (progress as any)?.totalItems || (progress as any)?.total,
+              currentDataType: (progress as any)?.currentDataType,
+              stage: (progress as any)?.stage,
+              operationType: (progress as any)?.operationType,
+              itemsByType: (progress as any)?.itemsByType
+            });
+          }
+        });
+        
         return deletedJobs;
       });
 
