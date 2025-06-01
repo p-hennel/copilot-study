@@ -12,6 +12,7 @@ export async function load(event) {
     tokenInfos: fetchAdminData(event.fetch, "tokenInfos", token, { description: "Loading tokens..." }),
     statistics: fetchAdminData(event.fetch, "statistics", token, { description: "Loading statistics..." }),
     crawler: fetchAdminData(event.fetch, "crawler", token, { description: "Loading crawler status..." }),
+    storage: fetchAdminData(event.fetch, "storage", token, { description: "Loading storage info..." }),
     sessiontoken: token
   };
 }

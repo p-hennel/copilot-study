@@ -10,13 +10,13 @@
   import Input from "@/input/input.svelte";
   import { m } from "$paraglide";
   import { Users, Key, MapPin, Briefcase, Settings, CircleAlert, RefreshCw, ClipboardCopy, DatabaseBackup, FileDown, ArchiveRestore, FolderTree, Activity, CheckCircle, Clock, XCircle, Search, Play, Pause, Square, Loader2, Heart, WifiOff, Wifi } from "lucide-svelte";
-  import { invalidate } from "$app/navigation";
+  import { goto, invalidate } from "$app/navigation";
   import type { PageProps } from "./$types";
   import { clickToCopy, dynamicHandleDownloadAsCSV } from "$lib/utils";
+  import { formatBytes } from '$lib/utils'
   import { toast } from "svelte-sonner";
   import LoadingButton from "$lib/components/LoadingButton.svelte";
-  import { authClient } from "$lib/auth-client";
-  import { goto } from "$app/navigation";
+  import { authClient } from "$lib/auth-client"
   import AdminDataLoader from "$lib/components/admin/AdminDataLoader.svelte";
   import { invalidateWithLoading } from "$lib/utils/admin-fetch";
   import { HardDrive } from "@lucide/svelte";
@@ -111,11 +111,12 @@
 
   // Summary stats derived from data
   const summaryStats = $derived.by(async () => {
-    const [users, statistics, tokenInfos, crawler] = await Promise.all([
+    const [users, statistics, tokenInfos, crawler, storage] = await Promise.all([
       data.users,
       data.statistics,
       data.tokenInfos,
-      data.crawler
+      data.crawler,
+      data.storage
     ]);
 
     return {
@@ -129,7 +130,9 @@
             total: 0, completed: 0, active: 0, running: 0, paused: 0,
             queued: 0, failed: 0, groupProjectDiscovery: 0
           },
-      crawler: crawler || null
+      crawler: crawler || null,
+      storage: (storage && typeof storage === 'object' && 'used' in storage && 'available' in storage && 'total' in storage)
+        ? storage : { used: 0, available: 0, total: 0 }
     };
   });
 
@@ -339,12 +342,12 @@
           <Card.Content class="space-y-2 pt-2 flex flex-row gap-4 justify-between">
             <div class="min-w-[120px] flex flex-col gap-4 justify-between">
               <div class="flex flex-col items-center">
-                <div class="text-2xl font-bold">--MB</div>
+                <div class="text-2xl font-bold">{formatBytes(stats.storage.used)}</div>
                 <p class="text-sm text-muted-foreground">Used</p>
               </div>
               <Separator orientation="horizontal" class="" />
               <div class="flex flex-col items-center">
-                <div class="text-2xl font-semibold">--MB</div>
+                <div class="text-2xl font-semibold">{formatBytes(stats.storage.available)}</div>
                 <p class="text-sm text-muted-foreground">Available</p>
               </div>
             </div>
@@ -355,7 +358,7 @@
                     <Group y={16}>
                       <LinearGradient class="from-secondary to-primary" let:gradient>
                         <Arc
-                          value={60}
+                          value={stats.storage.total > 0 ? Math.round((stats.storage.used / stats.storage.total) * 100) : 0}
                           range={[-120, 120]}
                           outerRadius={60}
                           innerRadius={50}

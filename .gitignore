@@ -43,3 +43,5 @@ src/hooks.server.ts
 *.log
 *.log.*
 .DS_Store
+
+.folder.bytes
