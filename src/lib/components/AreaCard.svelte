@@ -32,7 +32,7 @@
 
 </script>
 
-<Card.Root class={cn("flex w-md flex-col", className)}>
+<Card.Root class={cn("flex flex-col", className)}>
   <Card.Header>
     <Card.Title class="text-xl">
       {area.name ?? area.full_path}

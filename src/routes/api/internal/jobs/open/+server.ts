@@ -14,6 +14,63 @@ import { isAdmin } from "$lib/server/utils";
 
 const logger = getLogger(["backend", "api", "jobs", "open"]);
 
+// Create a mapping from DataType to CrawlCommandName
+// This handles the case where the database stores lowercase/camelCase DataTypes
+// but the crawlCommandConfig expects proper case DataTypes
+const dataTypeToCrawlCommandNameMapping: Record<string, CrawlCommandName> = {};
+
+// Populate the mapping by iterating through crawlCommandConfig
+for (const [crawlCommandName, dataTypes] of Object.entries(crawlCommandConfig)) {
+  if (crawlCommandName === 'GROUP_PROJECT_DISCOVERY') continue;
+  
+  for (const dataType of dataTypes) {
+    // Create case-insensitive mappings
+    const lowerCaseDataType = dataType.toLowerCase();
+    dataTypeToCrawlCommandNameMapping[lowerCaseDataType] = crawlCommandName as CrawlCommandName;
+    dataTypeToCrawlCommandNameMapping[dataType] = crawlCommandName as CrawlCommandName;
+  }
+}
+
+// Add specific mappings for common variations
+dataTypeToCrawlCommandNameMapping['issues'] = 'workItems';
+dataTypeToCrawlCommandNameMapping['mergerequests'] = 'workItems';
+dataTypeToCrawlCommandNameMapping['branches'] = 'repository';
+dataTypeToCrawlCommandNameMapping['pipelines'] = 'cicd';
+dataTypeToCrawlCommandNameMapping['project'] = 'project';
+
+/**
+ * Helper function to determine CrawlCommandName from a DataType
+ */
+function getCrawlCommandNameFromDataType(dataType: string): CrawlCommandName | undefined {
+  // First try exact match
+  if (dataTypeToCrawlCommandNameMapping[dataType]) {
+    return dataTypeToCrawlCommandNameMapping[dataType];
+  }
+  
+  // Try case-insensitive match
+  const lowerDataType = dataType.toLowerCase();
+  if (dataTypeToCrawlCommandNameMapping[lowerDataType]) {
+    return dataTypeToCrawlCommandNameMapping[lowerDataType];
+  }
+  
+  // Try to find in crawlCommandConfig directly (legacy fallback)
+  for (const cmdNameKey in crawlCommandConfig) {
+    const cmdName = cmdNameKey as CrawlCommandName;
+    if (cmdName === 'GROUP_PROJECT_DISCOVERY') continue;
+    
+    // Check if any DataType in this command matches (case-insensitive)
+    const found = crawlCommandConfig[cmdName].find(dt => 
+      dt.toLowerCase() === lowerDataType || dt === dataType
+    );
+    
+    if (found) {
+      return cmdName;
+    }
+  }
+  
+  return undefined;
+}
+
 export const GET: RequestHandler = async ({ request, url, locals }) => {
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
   if (!currentCrawlerApiToken && !locals.isSocketRequest && !isAdmin(locals)) {
@@ -218,24 +275,20 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           const currentDataType = currentJob.command as unknown as DataType;
           taskCommand = currentDataType;
 
-          for (const cmdNameKey in crawlCommandConfig) {
-            const cmdName = cmdNameKey as CrawlCommandName;
-            if (cmdName === CrawlCommand.GROUP_PROJECT_DISCOVERY) continue;
-
-            if (crawlCommandConfig[cmdName].includes(currentDataType)) {
-              determinedResourceType = cmdName;
-              break;
-            }
-          }
+          // Use the new mapping function instead of the old loop
+          determinedResourceType = getCrawlCommandNameFromDataType(currentDataType);
 
           if (!determinedResourceType) {
             logger.error(`Could not determine CrawlCommandName (resourceType) for DataType: '${currentDataType}'. Job ID: ${currentJob.id}. Marking as failed.`);
+            logger.debug(`Available DataType mappings: ${JSON.stringify(dataTypeToCrawlCommandNameMapping, null, 2)}`);
             await db
               .update(job)
               .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: `Unknown DataType mapping for ${currentDataType}` } })
               .where(eq(job.id, currentJob.id));
             continue;
           }
+          
+          logger.debug(`Successfully mapped DataType '${currentDataType}' to CrawlCommandName '${determinedResourceType}' for job ${currentJob.id}`);
           taskDataTypes = [currentDataType];
 
           if (determinedResourceType === 'instance') {
