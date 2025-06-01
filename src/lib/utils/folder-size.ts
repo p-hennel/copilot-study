@@ -1,5 +1,6 @@
 import { stat, readdir } from 'fs/promises';
 import { join, resolve } from 'path';
+import { getBasicDiskSpace } from './disk-space';
 
 /**
  * Configuration options for folder size calculation
@@ -298,7 +299,7 @@ export async function getFolderSizeWithAvailableSpace(
 	try {
 		const [used, diskSpace] = await Promise.all([
 			calculateFolderSize(path, maxCacheAge, includeHidden),
-			getDiskSpaceInfo(path)
+			getBasicDiskSpace(path)
 		]);
 		
 		return {

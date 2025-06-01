@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Card from "$lib/components/ui/card/index.js";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import * as Alert from "$lib/components/ui/alert/index.js";
   import { Separator } from "$lib/components/ui/separator/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
@@ -12,23 +13,14 @@
   import { Users, Key, MapPin, Briefcase, Settings, CircleAlert, RefreshCw, ClipboardCopy, DatabaseBackup, FileDown, ArchiveRestore, FolderTree, Activity, CheckCircle, Clock, XCircle, Search, Play, Pause, Square, Loader2, Heart, WifiOff, Wifi } from "lucide-svelte";
   import { goto, invalidate } from "$app/navigation";
   import type { PageProps } from "./$types";
-  import { clickToCopy, dynamicHandleDownloadAsCSV } from "$lib/utils";
-  import { formatBytes } from '$lib/utils'
+  import { clickToCopy, dynamicHandleDownloadAsCSV, formatBytes } from "$lib/utils";
   import { toast } from "svelte-sonner";
   import LoadingButton from "$lib/components/LoadingButton.svelte";
   import { authClient } from "$lib/auth-client"
   import AdminDataLoader from "$lib/components/admin/AdminDataLoader.svelte";
   import { invalidateWithLoading } from "$lib/utils/admin-fetch";
   import { HardDrive } from "@lucide/svelte";
-
-  import {
-    Arc,
-    Chart,
-    Group,
-    LinearGradient,
-    Svg,
-    Text,
-  } from 'layerchart';
+  import { Chart, Arc, Group, LinearGradient, Svg, Text, RadialGradient } from "layerchart"
   
   let { data }: PageProps = $props();
 
@@ -249,13 +241,13 @@
           </Card.Content>
         </Card.Root>
 
-        <Card.Root class="min-w-xs max-w-md flex-1">
+        <Card.Root class="min-w-xs max-w-sm flex-1">
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-0">
             <Card.Title class="font-medium">Job Status</Card.Title>
             <Briefcase class="h-5 w-5 text-muted-foreground" />
           </Card.Header>
-          <Card.Content class="space-y-2">
-            <div class="space-y-2">
+          <Card.Content class="flex flex-col gap-1">
+            <div class="flex flex-col gap-1">
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                   <CheckCircle class="h-4 w-4 text-green-600" />
@@ -279,18 +271,19 @@
               </div>
             </div>
             {#if stats.jobs.total > 0}
-              <div class="pt-2 border-t">
-                <div class="text-xs text-muted-foreground mb-1">Completion Rate</div>
+              <Separator class="my-2" />
+              <div>
                 <Progress value={(stats.jobs.completed / stats.jobs.total) * 100} class="h-2" />
-                <div class="text-xs text-muted-foreground mt-1">
-                  {Math.round((stats.jobs.completed / stats.jobs.total) * 100)}%
+                <div class="text-xs text-muted-foreground mt-1 flex flex-row flex-wrap justify-between">
+                  <span>Completion Rate</span>
+                  <span>{Math.round((stats.jobs.completed / stats.jobs.total) * 100)}%</span>
                 </div>
               </div>
             {/if}
           </Card.Content>
         </Card.Root>
 
-        <Card.Root class="min-w-3xs max-w-md flex-1">
+        <Card.Root class="min-w-3xs max-w-lg flex-1">
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-0">
             <Card.Title class="font-medium">Crawler Status</Card.Title>
             {#if stats.crawler?.state === 'running'}
@@ -303,83 +296,113 @@
               <WifiOff class="h-5 w-5 text-muted-foreground" />
             {/if}
           </Card.Header>
-          <Card.Content class="space-y-2">
-            <div>
-              {#if stats.crawler?.state}
-                <Badge variant={stats.crawler.state === 'running' ? 'default' : stats.crawler.state === 'paused' ? 'secondary' : 'destructive'} class="text-sm">
-                  {stats.crawler.state}
-                </Badge>
-              {:else}
-                <Badge variant="destructive" class="text-sm">Unavailable</Badge>
-              {/if}
-              <p class="text-xs text-muted-foreground mt-1">System status</p>
-            </div>
-            <div class="border-t pt-4 space-y-2">
-              <div class="flex justify-between">
-                <span class="text-xs text-muted-foreground">Queue:</span>
-                <span class="text-sm font-semibold">{stats.crawler?.queued || 0}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-xs text-muted-foreground">Processing:</span>
-                <span class="text-sm font-semibold">{stats.crawler?.processing || 0}</span>
-              </div>
-              {#if stats.crawler?.lastHeartbeat}
-                <div class="text-xs text-muted-foreground">
-                  <Time timestamp={stats.crawler.lastHeartbeat} relative />
+          <Card.Content class="flex flex-col gap-4">
+            <div class="flex flex-row gap-4 justify-between">
+              <div class="flex flex-1 flex-col items-center">
+                <div class="text-2xl font-bold">
+                  {#if stats.crawler?.state}
+                    <Badge variant={stats.crawler.state === 'running' ? 'default' : stats.crawler.state === 'paused' ? 'secondary' : 'destructive'} class="text-sm">
+                      {stats.crawler.state}
+                    </Badge>
+                  {:else}
+                    <Badge variant="destructive" class="text-sm">Unavailable</Badge>
+                  {/if}
                 </div>
-              {:else}
-                <div class="text-sm text-red-600">No heartbeat</div>
-              {/if}
+                <p class="text-sm text-muted-foreground">Status</p>
+              </div>
+              <div class="flex flex-1 flex-col items-center">
+                <div class="text-lg font-semibold text-blue-600">
+                  {#if stats.crawler?.lastHeartbeat}
+                    <div class="text-xs text-muted-foreground">
+                      <Time timestamp={stats.crawler.lastHeartbeat} relative />
+                    </div>
+                  {:else}
+                    <div class="text-sm text-red-600">No heartbeat</div>
+                  {/if}
+                </div>
+                <p class="text-sm text-muted-foreground">Heartbeat</p>
+              </div>
+            </div>
+            <Separator/>
+            <div class="flex flex-row gap-4 justify-between">
+              <div class="flex flex-1 flex-col items-center">
+                <div class="text-lg font-semibold text-green-600">{stats.crawler?.queued || 0}</div>
+                <p class="text-sm text-muted-foreground">Queue</p>
+              </div>
+              <div class="flex flex-1 flex-col items-center">
+                <div class="text-lg font-semibold text-green-600">{stats.crawler?.processing || 0}</div>
+                <p class="text-sm text-muted-foreground">Processing</p>
+              </div>
             </div>
           </Card.Content>
         </Card.Root>
 
-        <Card.Root class="min-w-sm max-w-md flex-1">
+        <Card.Root class="min-w-sm max-w-lg flex-1">
           <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-0">
             <Card.Title class="font-medium">Storage</Card.Title>
             <HardDrive class="h-5 w-5 text-muted-foreground" />
           </Card.Header>
           <Card.Content class="space-y-2 pt-2 flex flex-row gap-4 justify-between">
-            <div class="min-w-[120px] flex flex-col gap-4 justify-between">
-              <div class="flex flex-col items-center">
+            <div class="min-w-[150px] flex flex-col gap-4 justify-between">
+              <div class="flex flex-col items-center pt-2">
                 <div class="text-2xl font-bold">{formatBytes(stats.storage.used)}</div>
                 <p class="text-sm text-muted-foreground">Used</p>
               </div>
-              <Separator orientation="horizontal" class="" />
-              <div class="flex flex-col items-center">
-                <div class="text-2xl font-semibold">{formatBytes(stats.storage.available)}</div>
-                <p class="text-sm text-muted-foreground">Available</p>
-              </div>
+              <Separator />
+              <Tooltip.Provider delayDuration={0}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <div class="flex flex-col items-center pb-2">
+                      <div class="text-2xl font-semibold">{formatBytes(stats.storage.available)}</div>
+                      <p class="text-sm text-muted-foreground">Available</p>
+                    </div>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content>
+                    Total: {formatBytes(stats.storage.total)}
+                  </Tooltip.Content>
+                </Tooltip.Root>
+              </Tooltip.Provider>
             </div>
-            <div class="grow flex-1">
-              <div class="h-[120px] overflow-auto">
+            <Separator orientation="vertical" />
+            <div class="grow flex-1 h-[120px] overflow-auto">
                 <Chart>
                   <Svg center>
                     <Group y={16}>
-                      <LinearGradient class="from-secondary to-primary" let:gradient>
-                        <Arc
-                          value={stats.storage.total > 0 ? Math.round((stats.storage.used / stats.storage.total) * 100) : 0}
-                          range={[-120, 120]}
-                          outerRadius={60}
-                          innerRadius={50}
-                          cornerRadius={5}
-                          spring
-                          let:value
-                          fill={gradient}
-                          track={{ class: "fill-none stroke-surface-content/10" }}
-                        >
-                          <Text
-                            value={Math.round(value) + "%"}
-                            textAnchor="middle"
-                            verticalAnchor="middle"
-                            class="text-3xl tabular-nums"
-                          />
-                        </Arc>
-                      </LinearGradient>
+                      <RadialGradient units="userSpaceOnUse" rotate={270} class="from-rose-600 to-lime-600" cx={"85px"} cy={"50px"} fx={"50px"} fy={"40px"} r={"100px"}>
+                        {#snippet children({ gradient })}
+                          <Arc
+                            value={stats.storage.total > 0 ? Math.round((stats.storage.used / stats.storage.total) * 100) : 0}
+                            range={[-120, 120]}
+                            outerRadius={70}
+                            innerRadius={50}
+                            cornerRadius={10}
+                            motion="spring"
+                            fill={gradient}
+                            track={{ class: 'fill-none stroke-surface-content/10' }}
+                          >
+                            {#snippet children({ value })}
+                              <Text
+                                value={Math.round(value) + "%"}
+                                textAnchor="middle"
+                                verticalAnchor="end"
+                                dy={-4}
+                                class="text-3xl tabular-nums"
+                              />
+                              <Text
+                                value="Used"
+                                textAnchor="middle"
+                                verticalAnchor="start"
+                                dy={4}
+                                fill="#6b7280"
+                                class="text-sm text-muted-foreground"
+                              />
+                            {/snippet}
+                          </Arc>
+                        {/snippet}
+                      </RadialGradient>
                     </Group>
                   </Svg>
                 </Chart>
-              </div>
             </div>
           </Card.Content>
         </Card.Root>

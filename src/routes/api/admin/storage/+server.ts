@@ -1,13 +1,14 @@
 import { json } from '@sveltejs/kit';
 import { getFolderSizeWithAvailableSpace } from '$lib/utils/folder-size';
 import { getLogger } from "@logtape/logtape";
+import AppSettings from '$lib/server/settings';
 
 const logger = getLogger(["api", "admin", "storage"]);
 
 export async function GET() {
   try {
     // Calculate storage for the project directory
-    const storageData = await getFolderSizeWithAvailableSpace('/Users/philhennel/Code/copilot-survey', {
+    const storageData = await getFolderSizeWithAvailableSpace(AppSettings().paths.dataRoot, {
       maxCacheAge: 10 * 60 * 1000, // 10 minutes cache
       includeHidden: false
     });

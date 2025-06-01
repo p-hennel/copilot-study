@@ -45,3 +45,4 @@ src/hooks.server.ts
 .DS_Store
 
 .folder.bytes
+.DS_Store
