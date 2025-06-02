@@ -21,13 +21,12 @@
   import { Ellipsis } from "$ui/breadcrumb";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import * as Card from "$lib/components/ui/card/index.js"; // Added for crawler status display
-  import type { CrawlerStatus } from "../../crawler/types"; // Added for crawler status type
 
   type ProcessTableProps = {
     // Updated prop structure
     processes: {
       pm2: pm2types.ProcessDescription[];
-      crawler: CrawlerStatus | null;
+      crawler: any | null;
     };
     sessionToken: string;
   };

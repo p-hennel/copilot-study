@@ -748,7 +748,7 @@
 
         <!-- Boolean Filters -->
         <div class="space-y-2">
-          <label class="text-sm font-medium">Execution State</label>
+          <span class="text-sm font-medium">Execution State</span>
           <div class="space-y-2">
             <Select.Root
               type="single"

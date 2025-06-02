@@ -175,7 +175,6 @@ import { auth } from "$lib/auth";
 import { JobStatus } from "$lib/types";
 import * as Bun from "bun";
 import { and, count, eq } from "drizzle-orm";
-import type { AuthCredentials } from "../../subvisor/simple-supervisor";
 import { db } from "./db";
 import { account, apikey, area_authorization, job } from "./db/schema";
 import AppSettings from "./settings";
@@ -257,14 +256,6 @@ function getEnvVar(key: string, fallback = "") {
     return fallback;
   }
 }
-export function buildAuthCredentials(provider: string, authCredentials?: AuthCredentials) {
-  return {
-    provider,
-    token: authCredentials?.token || getEnvVar(`${provider}_TOKEN`),
-    clientId: authCredentials?.clientId || getEnvVar(`${provider}_CLIENT_ID`),
-    clientSecret: authCredentials?.clientSecret || getEnvVar(`${provider}_CLIENT_SECRET`)
-  } as AuthCredentials;
-}
 type Valuable<T> = {
   [K in keyof T as T[K] extends null | undefined ? never : K]: T[K];
 };
@@ -281,14 +272,6 @@ function getValuable<
       )
     )
   ) as V;
-}
-export function authCredentialsToEnvVars(authCredentials: AuthCredentials[]) {
-  const _envs = authCredentials.flatMap((x) => [
-    { [`${x.provider}_TOKEN`]: x.token },
-    { [`${x.provider}_CLIENT_ID`]: x.clientId },
-    { [`${x.provider}_CLIENT_SECRET`]: x.clientSecret },
-  ]).reduce((a, b) => ({ ...a, ...b }), {} as Record<string, string | null | undefined>);
-  return getValuable(_envs) as Record<string, string>;
 }
 
 export const syncAdminRoles = async () => {

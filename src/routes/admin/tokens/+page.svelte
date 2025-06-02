@@ -21,7 +21,7 @@
       operationId="token-infos"
       errorMessage="Failed to load token information"
     >
-      {#snippet children({ data: tokenInfos }: {data: {tokenInfos: any}})}
+      {#snippet children({ data: { tokenInfos } }: {data: {tokenInfos: any}})}
         <TokensInfo infos={tokenInfos.result} />
       {/snippet}
     </AdminDataLoader>
