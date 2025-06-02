@@ -292,4 +292,4 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 };
 
 // Export the broadcast function for use by other modules
-export { broadcastToTask };
+//export { broadcastToTask };
