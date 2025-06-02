@@ -141,27 +141,65 @@ function mapJobToTaskResponse(jobRecord: Job): TaskResponse {
 }
 
 /**
- * Authenticate request
+ * Enhanced authentication with proper precedence and logging
  */
-async function authenticateRequest(request: Request, locals: any): Promise<boolean> {
+async function authenticateRequest(request: Request, locals: any, operation: string): Promise<{ success: boolean; method: string }> {
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
   const adminCheck = await isAdmin(locals);
   
-  if (locals.isSocketRequest || adminCheck) {
-    return true;
+  let authMethod = 'none';
+  let authSuccess = false;
+
+  // 1. Check socket bypass (highest precedence)
+  if (locals.isSocketRequest) {
+    authMethod = 'socket_bypass';
+    authSuccess = true;
+    logger.info(`Task ${operation}: Authenticated via socket bypass`, {
+      requestSource: locals.requestSource
+    });
+  }
+  // 2. Check admin session (medium precedence)
+  else if (adminCheck) {
+    authMethod = 'admin_session';
+    authSuccess = true;
+    logger.info(`Task ${operation}: Authenticated via admin session`, {
+      userId: locals.user?.id,
+      userEmail: locals.user?.email
+    });
+  }
+  // 3. Check API token (lowest precedence)
+  else if (currentCrawlerApiToken) {
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring("Bearer ".length);
+      if (token === currentCrawlerApiToken) {
+        authMethod = 'api_token';
+        authSuccess = true;
+        // Different warning levels based on operation sensitivity
+        const logLevel = ['PUT', 'DELETE'].includes(operation) ? 'warn' : 'info';
+        const message = `Task ${operation}: Authenticated via API token` +
+                       (['PUT', 'DELETE'].includes(operation) ? ' - SECURITY NOTICE: Admin session recommended for task modification/deletion' : '');
+        logger[logLevel](message, {
+          tokenPreview: token.substring(0, 8) + '...',
+          securityRecommendation: ['PUT', 'DELETE'].includes(operation) ? 'admin_session' : null
+        });
+      } else {
+        logger.warn(`Task ${operation}: Invalid API token provided`, {
+          tokenPreview: token.substring(0, 8) + '...'
+        });
+      }
+    } else {
+      logger.warn(`Task ${operation}: Missing or malformed Authorization header for API token auth`);
+    }
   }
 
-  if (!currentCrawlerApiToken) {
-    return false;
+  if (!authSuccess && !currentCrawlerApiToken) {
+    logger.error(`Task ${operation}: Authentication failed - CRAWLER_API_TOKEN not configured and no admin session`);
+  } else if (!authSuccess) {
+    logger.error(`Task ${operation}: Authentication failed - no valid credentials provided`);
   }
 
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.substring("Bearer ".length);
-  return token === currentCrawlerApiToken;
+  return { success: authSuccess, method: authMethod };
 }
 
 /**
@@ -174,10 +212,19 @@ export const GET: RequestHandler = async ({ params, request, locals }) => {
     return json({ error: "Task ID is required" }, { status: 400 });
   }
 
-  if (!await authenticateRequest(request, locals)) {
+  const authResult = await authenticateRequest(request, locals, 'GET');
+  if (!authResult.success) {
     logger.warn(`Task GET: Authentication failed for task ${taskId}`);
     return json({ error: "Authentication failed" }, { status: 401 });
   }
+
+  // Log security metrics
+  logger.info('Task GET: Authentication successful', {
+    method: authResult.method,
+    taskId,
+    endpoint: 'tasks/[taskId]',
+    timestamp: new Date().toISOString()
+  });
 
   logger.info(`Retrieving task details for ${taskId}`);
 
@@ -218,10 +265,21 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
     return json({ error: "Task ID is required" }, { status: 400 });
   }
 
-  if (!await authenticateRequest(request, locals)) {
+  const authResult = await authenticateRequest(request, locals, 'PUT');
+  if (!authResult.success) {
     logger.warn(`Task PUT: Authentication failed for task ${taskId}`);
     return json({ error: "Authentication failed" }, { status: 401 });
   }
+
+  // Log security metrics for task modification
+  logger.info('Task PUT: Authentication successful for task modification', {
+    method: authResult.method,
+    taskId,
+    endpoint: 'tasks/[taskId]',
+    operation: 'update',
+    securityLevel: authResult.method === 'admin_session' ? 'HIGH' : authResult.method === 'socket_bypass' ? 'MEDIUM' : 'LOW',
+    timestamp: new Date().toISOString()
+  });
 
   let updateRequest: TaskUpdateRequest;
   try {
@@ -327,10 +385,21 @@ export const DELETE: RequestHandler = async ({ params, request, locals }) => {
     return json({ error: "Task ID is required" }, { status: 400 });
   }
 
-  if (!await authenticateRequest(request, locals)) {
+  const authResult = await authenticateRequest(request, locals, 'DELETE');
+  if (!authResult.success) {
     logger.warn(`Task DELETE: Authentication failed for task ${taskId}`);
     return json({ error: "Authentication failed" }, { status: 401 });
   }
+
+  // Log security metrics for task deletion
+  logger.info('Task DELETE: Authentication successful for task deletion', {
+    method: authResult.method,
+    taskId,
+    endpoint: 'tasks/[taskId]',
+    operation: 'delete',
+    securityLevel: authResult.method === 'admin_session' ? 'HIGH' : authResult.method === 'socket_bypass' ? 'MEDIUM' : 'LOW',
+    timestamp: new Date().toISOString()
+  });
 
   logger.info(`Deleting/canceling task ${taskId}`);
 

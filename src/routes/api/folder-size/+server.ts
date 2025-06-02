@@ -4,6 +4,7 @@ import {
 	calculateFolderSize,
 	getFolderSizeWithAvailableSpace} from '$lib/utils/folder-size';
 import { formatBytes } from '$lib/utils';
+import { isAdmin } from '$lib/server/utils';
 
 /**
  * API endpoint for calculating folder sizes
@@ -19,7 +20,12 @@ import { formatBytes } from '$lib/utils';
  * GET /api/folder-size?path=./data&cache=60000&format=true
  * GET /api/folder-size?path=./logs&includeSpace=true
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
+	// Check admin authentication
+	if (!await isAdmin(locals)) {
+		return json({ error: "Unauthorized!" }, { status: 401 });
+	}
+
 	try {
 		const path = url.searchParams.get('path');
 		const cacheAge = parseInt(url.searchParams.get('cache') || '600000'); // 10 minutes default
@@ -100,7 +106,12 @@ export const GET: RequestHandler = async ({ url }) => {
  * - path: The folder path to clear cache for (required)
  * - recursive: Whether to clear cache recursively (optional, default: true)
  */
-export const DELETE: RequestHandler = async ({ request }) => {
+export const DELETE: RequestHandler = async ({ request, locals }) => {
+	// Check admin authentication
+	if (!await isAdmin(locals)) {
+		return json({ error: "Unauthorized!" }, { status: 401 });
+	}
+
 	try {
 		const body = await request.json() as { path?: string; recursive?: boolean };
 		const { path, recursive = true } = body;

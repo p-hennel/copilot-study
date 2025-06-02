@@ -6,9 +6,11 @@ import { error, json, text } from "@sveltejs/kit";
 import { count, eq } from "drizzle-orm";
 import { user } from "../../../lib/server/db/auth-schema";
 import { getLogger } from "@logtape/logtape";
+import { isAdmin } from "$lib/server/utils";
+
 const logger = getLogger(["routes","api","init"]);
 
-export async function GET({ url }) {
+export async function GET({ url, locals }) {
   try {
     const email = url.searchParams.get("user") || "";
     const password = url.searchParams.get("pw") || "";
@@ -18,6 +20,17 @@ export async function GET({ url }) {
     if (code !== AppSettings().auth.initCode) {
       return error(401, "Not Authorized");
     }
+
+    // Check if any admin users exist in the system
+    const adminUserCount = (
+      await db.select({ count: count() }).from(user).where(eq(user.role, "admin"))
+    ).reduce((prev, now) => prev + now.count, 0);
+
+    // If admin users exist, require admin authentication for subsequent calls
+    if (adminUserCount > 0 && !await isAdmin(locals)) {
+      return json({ error: "Unauthorized!" }, { status: 401 });
+    }
+
     const userCount = (
       await db.select({ count: count() }).from(user).where(eq(user.email, email))
     ).reduce((prev, now) => prev + now.count, 0);

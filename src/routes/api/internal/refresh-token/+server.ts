@@ -5,10 +5,16 @@ import { db } from '$lib/server/db/index';
 import { eq } from 'drizzle-orm';
 import * as schema from '$lib/server/db/schema';
 import { getLogger } from "@logtape/logtape";
+import { isAdmin } from '$lib/server/utils';
 
 const logger = getLogger(["api", "internal", "refresh-token"]);
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+  // Check admin authentication
+  if (!await isAdmin(locals)) {
+    return json({ error: "Unauthorized!" }, { status: 401 });
+  }
+
   logger.debug('Token refresh API endpoint called');
   
   try {

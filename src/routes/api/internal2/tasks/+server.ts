@@ -175,28 +175,67 @@ function mapGitLabTaskTypeToCommand(taskType: GitLabTaskType): CrawlCommand {
  * GET /api/internal2/tasks - Retrieve tasks/jobs
  */
 export const GET: RequestHandler = async ({ request, url, locals }) => {
+  // Enhanced Authentication with proper precedence and logging
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
-  
-  // Authentication
   const adminCheck = await isAdmin(locals);
-  if (!currentCrawlerApiToken && !locals.isSocketRequest && !adminCheck) {
-    logger.error("Tasks endpoint: CRAWLER_API_TOKEN setting not set");
-    return json({ error: "Endpoint disabled due to missing configuration" }, { status: 503 });
-  }
+  
+  let authMethod = 'none';
+  let authSuccess = false;
 
-  if (!locals.isSocketRequest && !adminCheck) {
+  // 1. Check socket bypass (highest precedence)
+  if (locals.isSocketRequest) {
+    authMethod = 'socket_bypass';
+    authSuccess = true;
+    logger.info('Tasks GET: Authenticated via socket bypass', {
+      requestSource: locals.requestSource
+    });
+  }
+  // 2. Check admin session (medium precedence)
+  else if (adminCheck) {
+    authMethod = 'admin_session';
+    authSuccess = true;
+    logger.info('Tasks GET: Authenticated via admin session', {
+      userId: locals.user?.id,
+      userEmail: locals.user?.email
+    });
+  }
+  // 3. Check API token (lowest precedence)
+  else if (currentCrawlerApiToken) {
     const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      logger.warn("Tasks GET: Missing or malformed Authorization header");
-      return json({ error: "Invalid or missing authentication" }, { status: 401 });
-    }
-
-    const token = authHeader.substring("Bearer ".length);
-    if (token !== currentCrawlerApiToken) {
-      logger.warn("Tasks GET: Invalid token provided");
-      return json({ error: "Invalid authentication token" }, { status: 401 });
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring("Bearer ".length);
+      if (token === currentCrawlerApiToken) {
+        authMethod = 'api_token';
+        authSuccess = true;
+        logger.warn('Tasks GET: Authenticated via API token - consider using admin session for better security', {
+          tokenPreview: token.substring(0, 8) + '...'
+        });
+      } else {
+        logger.warn('Tasks GET: Invalid API token provided', {
+          tokenPreview: token.substring(0, 8) + '...'
+        });
+      }
+    } else {
+      logger.warn('Tasks GET: Missing or malformed Authorization header for API token auth');
     }
   }
+
+  // Final authentication check
+  if (!authSuccess) {
+    if (!currentCrawlerApiToken) {
+      logger.error('Tasks GET: Authentication failed - CRAWLER_API_TOKEN not configured and no admin session');
+      return json({ error: "Endpoint disabled due to missing configuration" }, { status: 503 });
+    }
+    logger.error('Tasks GET: Authentication failed - no valid credentials provided');
+    return json({ error: "Invalid or missing authentication" }, { status: 401 });
+  }
+
+  // Log security metrics
+  logger.info('Tasks GET: Authentication successful', {
+    method: authMethod,
+    endpoint: 'tasks',
+    timestamp: new Date().toISOString()
+  });
 
   // Parse query parameters
   const status = url.searchParams.get("status");
@@ -272,28 +311,70 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
  * POST /api/internal2/tasks - Create new task
  */
 export const POST: RequestHandler = async ({ request, locals }) => {
+  // Enhanced Authentication with proper precedence and logging
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
-  
-  // Authentication
   const adminCheck = await isAdmin(locals);
-  if (!currentCrawlerApiToken && !locals.isSocketRequest && !adminCheck) {
-    logger.error("Tasks endpoint: CRAWLER_API_TOKEN setting not set");
-    return json({ error: "Endpoint disabled due to missing configuration" }, { status: 503 });
-  }
+  
+  let authMethod = 'none';
+  let authSuccess = false;
 
-  if (!locals.isSocketRequest && !adminCheck) {
+  // 1. Check socket bypass (highest precedence)
+  if (locals.isSocketRequest) {
+    authMethod = 'socket_bypass';
+    authSuccess = true;
+    logger.info('Tasks POST: Authenticated via socket bypass', {
+      requestSource: locals.requestSource
+    });
+  }
+  // 2. Check admin session (medium precedence) - RECOMMENDED for task creation
+  else if (adminCheck) {
+    authMethod = 'admin_session';
+    authSuccess = true;
+    logger.info('Tasks POST: Authenticated via admin session', {
+      userId: locals.user?.id,
+      userEmail: locals.user?.email
+    });
+  }
+  // 3. Check API token (lowest precedence) - WARN for task creation
+  else if (currentCrawlerApiToken) {
     const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      logger.warn("Tasks POST: Missing or malformed Authorization header");
-      return json({ error: "Invalid or missing authentication" }, { status: 401 });
-    }
-
-    const token = authHeader.substring("Bearer ".length);
-    if (token !== currentCrawlerApiToken) {
-      logger.warn("Tasks POST: Invalid token provided");
-      return json({ error: "Invalid authentication token" }, { status: 401 });
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring("Bearer ".length);
+      if (token === currentCrawlerApiToken) {
+        authMethod = 'api_token';
+        authSuccess = true;
+        logger.warn('Tasks POST: Task creation via API token - SECURITY NOTICE: Admin session recommended for task management', {
+          tokenPreview: token.substring(0, 8) + '...',
+          recommendedAuth: 'admin_session'
+        });
+      } else {
+        logger.warn('Tasks POST: Invalid API token provided', {
+          tokenPreview: token.substring(0, 8) + '...'
+        });
+      }
+    } else {
+      logger.warn('Tasks POST: Missing or malformed Authorization header for API token auth');
     }
   }
+
+  // Final authentication check
+  if (!authSuccess) {
+    if (!currentCrawlerApiToken) {
+      logger.error('Tasks POST: Authentication failed - CRAWLER_API_TOKEN not configured and no admin session');
+      return json({ error: "Endpoint disabled due to missing configuration" }, { status: 503 });
+    }
+    logger.error('Tasks POST: Authentication failed - no valid credentials provided');
+    return json({ error: "Invalid or missing authentication" }, { status: 401 });
+  }
+
+  // Log security metrics for task creation
+  logger.info('Tasks POST: Authentication successful for task creation', {
+    method: authMethod,
+    endpoint: 'tasks',
+    operation: 'create',
+    securityLevel: authMethod === 'admin_session' ? 'HIGH' : authMethod === 'socket_bypass' ? 'MEDIUM' : 'LOW',
+    timestamp: new Date().toISOString()
+  });
 
   let payload: CrawlerTaskRequest;
   try {

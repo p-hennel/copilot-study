@@ -24,27 +24,64 @@ interface ProgressUpdateRequest {
 }
 
 /**
- * Authenticate request
+ * Enhanced authentication with proper precedence and logging
  */
-async function authenticateRequest(request: Request, locals: any): Promise<boolean> {
+async function authenticateRequest(request: Request, locals: any, operation: string): Promise<{ success: boolean; method: string }> {
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
   const adminCheck = await isAdmin(locals);
   
-  if (locals.isSocketRequest || adminCheck) {
-    return true;
+  let authMethod = 'none';
+  let authSuccess = false;
+
+  // 1. Check socket bypass (highest precedence)
+  if (locals.isSocketRequest) {
+    authMethod = 'socket_bypass';
+    authSuccess = true;
+    logger.info(`Progress ${operation}: Authenticated via socket bypass`, {
+      requestSource: locals.requestSource
+    });
+  }
+  // 2. Check admin session (medium precedence)
+  else if (adminCheck) {
+    authMethod = 'admin_session';
+    authSuccess = true;
+    logger.info(`Progress ${operation}: Authenticated via admin session`, {
+      userId: locals.user?.id,
+      userEmail: locals.user?.email
+    });
+  }
+  // 3. Check API token (lowest precedence)
+  else if (currentCrawlerApiToken) {
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring("Bearer ".length);
+      if (token === currentCrawlerApiToken) {
+        authMethod = 'api_token';
+        authSuccess = true;
+        // Progress updates are frequent crawler operations, so info level for POST, warn for manual updates
+        const logLevel = operation === 'POST' ? 'info' : 'warn';
+        const message = `Progress ${operation}: Authenticated via API token` +
+                       (operation === 'POST' ? ' - automated crawler progress update' : ' - consider admin session for manual operations');
+        logger[logLevel](message, {
+          tokenPreview: token.substring(0, 8) + '...'
+        });
+      } else {
+        logger.warn(`Progress ${operation}: Invalid API token provided`, {
+          tokenPreview: token.substring(0, 8) + '...'
+        });
+      }
+    } else {
+      logger.warn(`Progress ${operation}: Missing or malformed Authorization header for API token auth`);
+    }
   }
 
-  if (!currentCrawlerApiToken) {
-    return false;
+  if (!authSuccess && !currentCrawlerApiToken) {
+    logger.error(`Progress ${operation}: Authentication failed - CRAWLER_API_TOKEN not configured and no admin session`);
+  } else if (!authSuccess) {
+    logger.error(`Progress ${operation}: Authentication failed - no valid credentials provided`);
   }
 
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.substring("Bearer ".length);
-  return token === currentCrawlerApiToken;
+  return { success: authSuccess, method: authMethod };
 }
 
 /**
@@ -76,10 +113,20 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     return json({ error: "Task ID is required" }, { status: 400 });
   }
 
-  if (!await authenticateRequest(request, locals)) {
+  const authResult = await authenticateRequest(request, locals, 'POST');
+  if (!authResult.success) {
     logger.warn(`Progress update: Authentication failed for task ${taskId}`);
     return json({ error: "Authentication failed" }, { status: 401 });
   }
+
+  // Log security metrics for progress updates
+  logger.info('Progress POST: Authentication successful for progress update', {
+    method: authResult.method,
+    taskId,
+    endpoint: 'tasks/[taskId]/progress',
+    operation: 'update',
+    timestamp: new Date().toISOString()
+  });
 
   let progressUpdate: ProgressUpdateRequest;
   try {
@@ -215,10 +262,19 @@ export const GET: RequestHandler = async ({ params, request, locals }) => {
     return json({ error: "Task ID is required" }, { status: 400 });
   }
 
-  if (!await authenticateRequest(request, locals)) {
+  const authResult = await authenticateRequest(request, locals, 'GET');
+  if (!authResult.success) {
     logger.warn(`Progress GET: Authentication failed for task ${taskId}`);
     return json({ error: "Authentication failed" }, { status: 401 });
   }
+
+  // Log security metrics
+  logger.info('Progress GET: Authentication successful', {
+    method: authResult.method,
+    taskId,
+    endpoint: 'tasks/[taskId]/progress',
+    timestamp: new Date().toISOString()
+  });
 
   logger.info(`Retrieving progress for task ${taskId}`);
 

@@ -10,6 +10,7 @@ import { eq } from 'drizzle-orm';
 import { getLogger } from '$lib/logging';
 import { handleNewArea } from '$lib/server/job-manager';
 import { extractProgressData, mergeProgressData, createTimelineEvent, type CrawlerProgressData } from '$lib/types/progress';
+import { isAdmin } from '$lib/server/utils';
 
 const logger = getLogger(['backend', 'api', 'jobs', 'progress']);
 
@@ -208,28 +209,68 @@ async function processDiscoveredAreas(
   return { groupsCount: groups.length, projectsCount: projects.length };
 }
 
-export const POST: RequestHandler = async ({ request, locals }) => { // Added locals
-  // 1. Authentication
+export const POST: RequestHandler = async ({ request, locals }) => {
+  // Enhanced Authentication with proper precedence and logging
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
+  const adminCheck = await isAdmin(locals);
+  
+  let authMethod = 'none';
+  let authSuccess = false;
 
-  if (!locals.isSocketRequest) { // Check token only if not a socket request
+  // 1. Check socket bypass (highest precedence)
+  if (locals.isSocketRequest) {
+    authMethod = 'socket_bypass';
+    authSuccess = true;
+    logger.info('Progress update: Authenticated via socket bypass', {
+      requestSource: locals.requestSource
+    });
+  }
+  // 2. Check admin session (medium precedence)
+  else if (adminCheck) {
+    authMethod = 'admin_session';
+    authSuccess = true;
+    logger.info('Progress update: Authenticated via admin session', {
+      userId: locals.user?.id,
+      userEmail: locals.user?.email
+    });
+  }
+  // 3. Check API token (lowest precedence)
+  else if (currentCrawlerApiToken) {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring('Bearer '.length);
+      if (token === currentCrawlerApiToken) {
+        authMethod = 'api_token';
+        authSuccess = true;
+        logger.warn('Progress update: Authenticated via API token - consider using admin session for better security', {
+          tokenPreview: token.substring(0, 8) + '...'
+        });
+      } else {
+        logger.warn('Progress update: Invalid API token provided', {
+          tokenPreview: token.substring(0, 8) + '...'
+        });
+      }
+    } else {
+      logger.warn('Progress update: Missing or malformed Authorization header for API token auth');
+    }
+  }
+
+  // Final authentication check
+  if (!authSuccess) {
     if (!currentCrawlerApiToken) {
-      logger.error('Attempted to access progress update endpoint: CRAWLER_API_TOKEN setting not set for non-socket request.');
+      logger.error('Progress update: Authentication failed - CRAWLER_API_TOKEN not configured and no admin session');
       return json({ error: 'Endpoint disabled due to missing configuration' }, { status: 503 });
     }
+    logger.error('Progress update: Authentication failed - no valid credentials provided');
+    return json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      logger.warn('Progress update: Missing or malformed Authorization header');
-      return json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring('Bearer '.length);
-    if (token !== currentCrawlerApiToken) {
-      logger.warn('Progress update: Invalid CRAWLER_API_TOKEN provided');
-      return json({ error: 'Unauthorized' }, { status: 401 });
-    }
-  } // End of if (!locals.isSocketRequest)
+  // Log security metrics
+  logger.info('Progress update: Authentication successful', {
+    method: authMethod,
+    endpoint: 'jobs/progress',
+    timestamp: new Date().toISOString()
+  });
 
   let payload: ProgressUpdatePayload;
   try {
