@@ -19,7 +19,7 @@
     operationId="users-table"
     errorMessage="Failed to load user accounts"
   >
-    {#snippet children({ data: users })}
+    {#snippet children({ data: users }: {data:{users:any}})}
       {#if users && Array.isArray(users)}
         <UserTable users={users as any[]} />
       {:else}

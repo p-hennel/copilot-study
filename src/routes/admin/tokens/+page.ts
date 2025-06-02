@@ -1,7 +1,7 @@
 import { authClient } from "$lib/auth-client";
 import { fetchAdminData } from "$lib/utils/admin-fetch";
 
-export async function load(event) {
+export async function load(event: any) {
   const response = await authClient.getSession()
   const session = response.data?.session;
   const token = session?.token

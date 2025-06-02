@@ -1,6 +1,6 @@
 <script lang="ts">
   import { cn } from "$lib/utils.js";
-  import { Switch as SwitchPrimitive, type WithoutChildrenOrChild } from "bits-ui";
+  import { Switch as SwitchPrimitive } from "bits-ui";
 
   let {
     ref = $bindable(null),
@@ -8,7 +8,7 @@
     class: className,
     children,
     ...restProps
-  }: WithoutChildrenOrChild<SwitchPrimitive.RootProps> = $props();
+  }: SwitchPrimitive.RootProps = $props();
 </script>
 
 <SwitchPrimitive.Root
@@ -27,6 +27,6 @@
     )}
   ></SwitchPrimitive.Thumb>
   {#if !checked}
-    {@render children?.()}
+    {@render children?.({...restProps, checked })}
   {/if}
 </SwitchPrimitive.Root>

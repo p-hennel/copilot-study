@@ -23,33 +23,11 @@ export default async function doMigration(filePath: string) {
       filePath = `file:${path.resolve(filePath)}`;
     }
     const client = createClient({ url: filePath });
-    
-    // Execute migration statements one by one with error handling
-    for (let i = 0; i < statements.length; i++) {
-      const statement = statements[i];
-      if (!statement) {
-        logger.warn(`Skipping empty migration statement at index ${i}`);
-        continue;
-      }
-      
-      try {
-        logger.debug(`Executing migration statement ${i + 1}/${statements.length}: ${statement.substring(0, 100)}...`);
-        await client.execute(statement);
-        logger.debug(`Successfully executed statement ${i + 1}`);
-      } catch (statementError: any) {
-        // Handle "table already exists" errors gracefully
-        if (statementError.code === "SQLITE_ERROR" &&
-            statementError.message?.includes("already exists")) {
-          logger.info(`Table already exists, skipping: ${statement.substring(0, 100)}...`);
-          continue;
-        }
-        // Re-throw other errors
-        throw statementError;
-      }
+    for (const migrationStatement of statements) {
+      await client.execute(migrationStatement);
     }
     logger.info("finished migration");
   } catch (err: any) {
     logger.error("Error during migration: {error}", { error: err });
-    // Don't throw to prevent application startup failure on migration issues
   }
 }

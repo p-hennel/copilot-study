@@ -700,11 +700,11 @@
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <!-- Command Filter -->
         <div class="space-y-2">
-          <label class="text-sm font-medium">Commands ({selectedCommands.length} selected)</label>
+          <span class="text-sm font-medium">Commands ({selectedCommands.length} selected)</span>
           <div class="max-h-32 overflow-y-auto rounded-md border bg-background p-2">
             <div class="space-y-1">
               {#each commandOptions as option}
-                <label class="flex items-center space-x-2">
+                <span class="flex items-center space-x-2">
                   <Checkbox.Root
                     checked={selectedCommands.includes(option.value)}
                     onCheckedChange={(checked) => {
@@ -717,7 +717,7 @@
                     }}
                   />
                   <span class="text-sm">{option.label}</span>
-                </label>
+                </span>
               {/each}
             </div>
           </div>
@@ -725,7 +725,7 @@
 
         <!-- Status Filter -->
         <div class="space-y-2">
-          <label class="text-sm font-medium">Status ({selectedStatuses.length} selected)</label>
+          <span class="text-sm font-medium">Status ({selectedStatuses.length} selected)</span>
           <div class="space-y-1">
             {#each statusOptions as option}
               <label class="flex items-center space-x-2">
@@ -748,7 +748,7 @@
 
         <!-- Boolean Filters -->
         <div class="space-y-2">
-          <label class="text-sm font-medium">Execution State</label>
+          <span class="text-sm font-medium">Execution State</span>
           <div class="space-y-2">
             <Select.Root
               type="single"
@@ -777,7 +777,7 @@
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Completion State</label>
+          <span class="text-sm font-medium">Completion State</span>
           <Select.Root
             type="single"
             value={hasFinishedFilter === undefined ? 'any' : hasFinishedFilter ? 'true' : 'false'}
@@ -804,7 +804,7 @@
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Parent Relationship</label>
+          <span class="text-sm font-medium">Parent Relationship</span>
           <Select.Root
             type="single"
             value={hasParentFilter === undefined ? 'any' : hasParentFilter ? 'true' : 'false'}
@@ -832,7 +832,7 @@
 
         <!-- Clear Filters Button -->
         <div class="space-y-2">
-          <label class="text-sm font-medium opacity-0">Actions</label>
+          <span class="text-sm font-medium opacity-0">Actions</span>
           <Button
             variant="outline"
             onclick={clearAllFilters}

@@ -5,7 +5,7 @@ import { json } from "@sveltejs/kit";
 //import { and, eq } from "drizzle-orm";
 import { triggerDiscoveryForAccount } from "$lib/server/job-manager";
 
-export async function POST({ locals, request }) {
+export async function POST({ locals, request }: { request: Request, locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }

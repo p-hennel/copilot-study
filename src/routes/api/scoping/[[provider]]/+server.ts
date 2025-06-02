@@ -7,7 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { getLogger } from "@logtape/logtape";
 const logger = getLogger(["routes","api","scoping","[[provider]]"]);
 
-export async function GET({ params: { provider }, locals }) {
+export async function GET({ params: { provider }, locals }: { params: { provider: string }, locals: any }) {
   if (!locals.session || !locals.user || !locals.user.id) return unauthorizedResponse();
 
   if (!provider || provider.length <= 0) return json(undefined, { status: 400 });

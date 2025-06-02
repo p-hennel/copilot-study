@@ -50,7 +50,10 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
             .from(job)
             .innerJoin(account, eq(job.accountId, account.id))
             .where(eq(account.userId, locals.user!.id!))
-            .limit(100))
+            .limit(100)).map(x => ({
+              ...x,
+              provider: x.provider as TokenProvider
+            }))
         );
         areas.push(
           ...(await db

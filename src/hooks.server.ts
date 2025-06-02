@@ -42,13 +42,7 @@ if (logger === null) {
 logger.debug("bunHomeData", { bunHomeData })
 
 try {
-  if (settings) {
-    logger.info("Starting database migration...", { databasePath: settings.paths.database });
-    await doMigration(settings.paths.database);
-    logger.info("Database migration completed successfully");
-  } else {
-    logger.warn("No settings available, skipping migration");
-  }
+  if (settings) doMigration(settings.paths.database)
 } catch (error) {
   logger.error("Error during migration:", { error })
 }

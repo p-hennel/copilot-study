@@ -45,8 +45,20 @@
 
   function getProviderText(provider: TokenProvider, detail: "name" | "description") {
     try {
-      const providerId: keyof typeof m = `auth.providers.${provider}.${detail}`;
-      return m[providerId]();
+      const keyStr = `auth.providers.${provider}.${detail}`
+      if (Object.hasOwn(m, keyStr)) {
+        const providerId = keyStr as keyof typeof m;
+        const fn = m[providerId]
+        if (typeof fn === "function") {
+          try {
+            return fn({ maxAccounts: Number.MAX_SAFE_INTEGER, user_count: Number.MAX_SAFE_INTEGER })
+          } catch {
+            return fn()
+          }
+        }
+      }
+
+      return provider as string
     } catch {
       return provider as string;
     }

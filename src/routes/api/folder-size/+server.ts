@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';;
+import type { RequestHandler } from './$types';
+import {
+	calculateFolderSize,
+	getFolderSizeWithAvailableSpace} from '$lib/utils/folder-size';
 import { formatBytes } from '$lib/utils';
 import { isAdmin } from '$lib/server/utils';
 import { getLogger } from '@logtape/logtape';
-import { calculateFolderSize } from '$lib/utils/folder-size';
-import { getFolderSizeWithAvailableSpace } from '$lib/utils/folder-size';
-import { clearFolderSizeCache } from '$lib/utils/folder-size';
 
 const logger = getLogger(["backend", "api", "folder-sizes"])
 
@@ -134,6 +134,7 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 			);
 		}
 
+		const { clearFolderSizeCache } = await import('$lib/utils/folder-size');
 		await clearFolderSizeCache(path, recursive);
 
 		return json({

@@ -2,7 +2,7 @@ import { authClient } from "$lib/auth-client";
 import { getLogger } from "@logtape/logtape";
 const logger = getLogger(["routes","admin","jobs"]);
 
-export async function load(event) {
+export async function load(event: any) {
   const token = authClient.getSession().then((response) => response.data?.session.token);
 
   return {

@@ -11,8 +11,6 @@ import messageBusClientInstance from "$lib/messaging/MessageBusClient"
 import { db } from "$lib/server/db"
 import { job as jobSchema } from "$lib/server/db/schema"
 import { JobStatus } from "$lib/types"
-// eq is already imported above
-import { boot } from "$lib/server/connector"
 import { getLogger } from "@logtape/logtape";
 
 const logger = getLogger(["backend", "supervisor"])
@@ -24,16 +22,12 @@ async function resetRunningJobsOnDisconnect(): Promise<void> {
   try {
     logger.info("Supervisor detected connection loss - resetting running jobs to queued status");
     
-    // Log the values being set to diagnose the TypeError
-    const updateValues = {
-      status: JobStatus.queued,
-      started_at: undefined // Use undefined instead of null for Drizzle timestamp fields
-    };
-    logger.debug("Setting job update values:", { updateValues });
-    
     const result = await db
       .update(jobSchema)
-      .set(updateValues)
+      .set({
+        status: JobStatus.queued,
+        started_at: null // Reset start time since job will need to restart
+      })
       .where(eq(jobSchema.status, JobStatus.running));
     
     if (result.rowsAffected > 0) {
@@ -488,16 +482,4 @@ if (SUPERVISED) {
       }
     }
   }, 10000) // Check every 10 seconds for more responsive timeout detection
-
-  // Boot the connector immediately to ensure credentials are sent to the supervisor
-  // This is crucial for the crawler to start properly
-  boot().then(() => {
-    logger.info("Connector booted successfully - credentials will be sent to supervisor");
-    
-    // Force log output for debugging
-    logger.info("Website started and connector booted - credentials should be sent to supervisor");
-  }).catch(err => {
-    logger.error(`Error in data processor:`, { error: err });
-    //process.exit(1);
-  });
 }

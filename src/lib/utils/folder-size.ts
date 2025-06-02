@@ -124,7 +124,7 @@ async function saveCacheEntry(folderPath: string, size: number): Promise<void> {
 		await Bun.write(cacheFilePath, `${size}`);
 	} catch (error) {
 		// Silently fail cache write - don't let it break the main functionality
-		logger.warn(`Failed to write cache for ${folderPath}:`, error);
+		logger.warn(`Failed to write cache for ${folderPath}:`, {error});
 	}
 }
 
@@ -140,11 +140,10 @@ async function calculateImmediateFolderSize(folderPath: string, includeHidden: b
 			folderPath,
 			(await
 				readdir(folderPath, { withFileTypes: true })
-			).filter(checkIfFileSizeRelevant(includeHidden)),
-			includeHidden
+			).filter(checkIfFileSizeRelevant(includeHidden))
 		)
 	} catch (error) {
-		logger.warn(`Failed to calculate immediate folder size for ${folderPath}:`, error);
+		logger.warn(`Failed to calculate immediate folder size for ${folderPath}:`, {error});
 		return 0;
 	}
 }
@@ -153,7 +152,7 @@ function checkIfFileSizeRelevant(includeHidden: boolean) {
 	return (entry: Dirent<string>) => includeHidden ? DirEnt.allFiles(entry) : DirEnt.noHiddenFiles(entry)
 }
 
-async function _calculateImmediateFolderSize(folderPath: string, entries: Dirent[], includeHidden: boolean): Promise<number> {
+async function _calculateImmediateFolderSize(folderPath: string, entries: Dirent[]): Promise<number> {
 	try {
 		let totalSize = 0;
 		const filePromises = entries
@@ -163,7 +162,7 @@ async function _calculateImmediateFolderSize(folderPath: string, entries: Dirent
 					const file = Bun.file(filePath);
 					return file.size;
 				} catch (error) {
-					logger.warn(`Failed to get size for ${entry.name}:`, error);
+					logger.warn(`Failed to get size for ${entry.name}:`, {error});
 					return 0;
 				}
 			});
@@ -173,7 +172,7 @@ async function _calculateImmediateFolderSize(folderPath: string, entries: Dirent
 		
 		return totalSize;
 	} catch (error) {
-		logger.warn(`Failed to calculate immediate folder size for ${folderPath}:`, error);
+		logger.warn(`Failed to calculate immediate folder size for ${folderPath}:`, {error});
 		return 0;
 	}
 }
@@ -190,24 +189,23 @@ async function getSubdirectories(folderPath: string, includeHidden: boolean = fa
 			folderPath,
 			(await
 				readdir(folderPath, { withFileTypes: true })
-			).filter(checkIfSubdirectory(includeHidden)),
-			includeHidden
+			).filter(checkIfSubdirectory(includeHidden))
 		);
 	} catch (error) {
-		logger.warn(`Failed to get subdirectories for ${folderPath}:`, error);
+		logger.warn(`Failed to get subdirectories for ${folderPath}:`, {error});
 		return [];
 	}
 }
 
 function checkIfSubdirectory(includeHidden: boolean) {
-	return (entry: Dirent<string>) => includeHidden ? DirEnt.allFolders(entry) : DirEnt.noHidd(entry)
+	return (entry: Dirent<string>) => includeHidden ? DirEnt.allFolders(entry) : DirEnt.noHiddenFolders(entry)
 }
 
-async function _getSubdirectories(folderPath: string, entries: Dirent[], includeHidden: boolean): Promise<string[]> {
+async function _getSubdirectories(folderPath: string, entries: Dirent[]): Promise<string[]> {
 	try {
 		return entries.map(entry => join(folderPath, entry.name));
 	} catch (error) {
-		logger.warn(`Failed to get subdirectories for ${folderPath}:`, error);
+		logger.warn(`Failed to get subdirectories for ${folderPath}:`, {error});
 		return [];
 	}
 }
@@ -275,10 +273,10 @@ async function _calculateFolderSize(
 		}
 		
 		// Calculate immediate folder size (files only)
-		const immediateSize = await _calculateImmediateFolderSize(resolvedPath, dirContent.files, includeHidden);
+		const immediateSize = await _calculateImmediateFolderSize(resolvedPath, dirContent.files);
 		
 		// Get subdirectories for recursive calculation
-		const subdirectories = await _getSubdirectories(resolvedPath, dirContent.folders, includeHidden);
+		const subdirectories = await _getSubdirectories(resolvedPath, dirContent.folders);
 		
 		// Calculate subdirectory sizes using map-reduce pattern
 		const subdirSizePromises = subdirectories.map(subdir =>
@@ -296,7 +294,7 @@ async function _calculateFolderSize(
 		
 		return totalSize;
 	} catch (error) {
-		logger.error(`Failed to calculate folder size for ${resolvedPath}:`, error);
+		logger.error(`Failed to calculate folder size for ${resolvedPath}:`, {error});
 		throw error;
 	}
 }
@@ -319,7 +317,7 @@ async function getDiskSpaceInfo(path: string): Promise<{ available: number; tota
 			total: 2000000000000 // 2TB placeholder
 		};
 	} catch (error) {
-		logger.warn(`Failed to get disk space info for ${path}:`, error);
+		logger.warn(`Failed to get disk space info for ${path}:`, {error});
 		return {
 			available: 0,
 			total: 0
@@ -351,7 +349,7 @@ export async function getFolderSizeWithAvailableSpace(
 			total: diskSpace.total
 		};
 	} catch (error) {
-		logger.error(`Failed to get folder size with available space for ${path}:`, error);
+		logger.error(`Failed to get folder size with available space for ${path}:`, {error});
 		throw error;
 	}
 }
@@ -374,7 +372,7 @@ export async function clearFolderSizeCache(path: string, recursive: boolean = tr
 				await Bun.write(cacheFilePath, ''); // Clear the file
 				logger.debug(`Cleared cache file: ${cacheFilePath}`);
 			} catch (error) {
-				logger.warn(`Failed to clear cache file ${cacheFilePath}:`, error);
+				logger.warn(`Failed to clear cache file ${cacheFilePath}:`, {error});
 			}
 		}
 		
@@ -386,6 +384,6 @@ export async function clearFolderSizeCache(path: string, recursive: boolean = tr
 			);
 		}
 	} catch (error) {
-		logger.warn(`Failed to clear folder size cache for ${resolvedPath}:`, error);
+		logger.warn(`Failed to clear folder size cache for ${resolvedPath}:`, {error});
 	}
 }
