@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import {
-	calculateFolderSize,
-	getFolderSizeWithAvailableSpace} from '$lib/utils/folder-size';
+import type { RequestHandler } from './$types';;
 import { formatBytes } from '$lib/utils';
 import { isAdmin } from '$lib/server/utils';
 import { getLogger } from '@logtape/logtape';
+import { calculateFolderSize } from '$lib/utils/folder-size';
+import { getFolderSizeWithAvailableSpace } from '$lib/utils/folder-size';
+import { clearFolderSizeCache } from '$lib/utils/folder-size';
 
 const logger = getLogger(["backend", "api", "folder-sizes"])
 
@@ -76,7 +76,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			});
 		}
 	} catch (error) {
-		logger.error('Error calculating folder size:', error);
+		logger.error('Error calculating folder size:', {error});
 		
 		// Return appropriate error based on error type
 		if (error instanceof Error) {
@@ -134,7 +134,6 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 			);
 		}
 
-		const { clearFolderSizeCache } = await import('$lib/utils/folder-size');
 		await clearFolderSizeCache(path, recursive);
 
 		return json({
@@ -143,7 +142,7 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (error) {
-		logger.error('Error clearing folder size cache:', error);
+		logger.error('Error clearing folder size cache:', {error});
 		
 		return json(
 			{ error: 'Failed to clear cache' },

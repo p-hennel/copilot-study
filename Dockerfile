@@ -56,11 +56,7 @@ COPY --from=prerelease \
   /usr/src/app/drizzle \
   /usr/src/app/build \
   /usr/src/app/package.json \
-  /usr/src/app/ecosystem.config.cjs \
-  /usr/src/app/pm2-server.sh \
   /usr/src/app/startup.sh \
-  /usr/src/app/.autorestic.yml \
-  /usr/src/app/backup.cron \
   /usr/src/app/db-test.ts \
   ./
 #  /usr/src/app/dual-server.js \

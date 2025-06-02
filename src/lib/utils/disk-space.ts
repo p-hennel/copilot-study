@@ -28,7 +28,7 @@ export async function getDiskSpace(path: string): Promise<DiskSpaceInfo> {
     let dataLine: string;
     if (lines.length === 2) {
       // Normal case: filesystem and data on same line
-      dataLine = lines[1];
+      dataLine = lines[1] || "";
     } else {
       // Edge case: filesystem name on separate line
       dataLine = lines.slice(1).join(' ');

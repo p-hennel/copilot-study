@@ -24,12 +24,16 @@ async function resetRunningJobsOnDisconnect(): Promise<void> {
   try {
     logger.info("Supervisor detected connection loss - resetting running jobs to queued status");
     
+    // Log the values being set to diagnose the TypeError
+    const updateValues = {
+      status: JobStatus.queued,
+      started_at: undefined // Use undefined instead of null for Drizzle timestamp fields
+    };
+    logger.debug("Setting job update values:", { updateValues });
+    
     const result = await db
       .update(jobSchema)
-      .set({
-        status: JobStatus.queued,
-        started_at: null // Reset start time since job will need to restart
-      })
+      .set(updateValues)
       .where(eq(jobSchema.status, JobStatus.running));
     
     if (result.rowsAffected > 0) {
