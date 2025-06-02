@@ -3,7 +3,9 @@ import { join, resolve } from 'path';
 import { getBasicDiskSpace } from './disk-space';
 import type { Dirent } from 'fs';
 import DirEnt, { FilterDirEntResult } from "./DirEnt"
-import { timestamp } from 'drizzle-orm/gel-core';
+import { getLogger } from '@logtape/logtape';
+
+const logger = getLogger(["backend", "folder-size"])
 
 /**
  * Configuration options for folder size calculation
@@ -122,7 +124,7 @@ async function saveCacheEntry(folderPath: string, size: number): Promise<void> {
 		await Bun.write(cacheFilePath, `${size}`);
 	} catch (error) {
 		// Silently fail cache write - don't let it break the main functionality
-		console.warn(`Failed to write cache for ${folderPath}:`, error);
+		logger.warn(`Failed to write cache for ${folderPath}:`, error);
 	}
 }
 
@@ -142,7 +144,7 @@ async function calculateImmediateFolderSize(folderPath: string, includeHidden: b
 			includeHidden
 		)
 	} catch (error) {
-		console.warn(`Failed to calculate immediate folder size for ${folderPath}:`, error);
+		logger.warn(`Failed to calculate immediate folder size for ${folderPath}:`, error);
 		return 0;
 	}
 }
@@ -161,7 +163,7 @@ async function _calculateImmediateFolderSize(folderPath: string, entries: Dirent
 					const file = Bun.file(filePath);
 					return file.size;
 				} catch (error) {
-					console.warn(`Failed to get size for ${entry.name}:`, error);
+					logger.warn(`Failed to get size for ${entry.name}:`, error);
 					return 0;
 				}
 			});
@@ -171,7 +173,7 @@ async function _calculateImmediateFolderSize(folderPath: string, entries: Dirent
 		
 		return totalSize;
 	} catch (error) {
-		console.warn(`Failed to calculate immediate folder size for ${folderPath}:`, error);
+		logger.warn(`Failed to calculate immediate folder size for ${folderPath}:`, error);
 		return 0;
 	}
 }
@@ -192,7 +194,7 @@ async function getSubdirectories(folderPath: string, includeHidden: boolean = fa
 			includeHidden
 		);
 	} catch (error) {
-		console.warn(`Failed to get subdirectories for ${folderPath}:`, error);
+		logger.warn(`Failed to get subdirectories for ${folderPath}:`, error);
 		return [];
 	}
 }
@@ -205,7 +207,7 @@ async function _getSubdirectories(folderPath: string, entries: Dirent[], include
 	try {
 		return entries.map(entry => join(folderPath, entry.name));
 	} catch (error) {
-		console.warn(`Failed to get subdirectories for ${folderPath}:`, error);
+		logger.warn(`Failed to get subdirectories for ${folderPath}:`, error);
 		return [];
 	}
 }
@@ -266,8 +268,6 @@ async function _calculateFolderSize(
 
 		const dirContent = await getDirectoryEntries(resolvedPath, includeHidden)
 
-		console.error(dirContent)
-		
 		// Check cache first
 		const cacheEntry = await getCacheEntry(resolvedPath, maxCacheAge);
 		if (cacheEntry) {
@@ -296,7 +296,7 @@ async function _calculateFolderSize(
 		
 		return totalSize;
 	} catch (error) {
-		console.error(`Failed to calculate folder size for ${resolvedPath}:`, error);
+		logger.error(`Failed to calculate folder size for ${resolvedPath}:`, error);
 		throw error;
 	}
 }
@@ -319,7 +319,7 @@ async function getDiskSpaceInfo(path: string): Promise<{ available: number; tota
 			total: 2000000000000 // 2TB placeholder
 		};
 	} catch (error) {
-		console.warn(`Failed to get disk space info for ${path}:`, error);
+		logger.warn(`Failed to get disk space info for ${path}:`, error);
 		return {
 			available: 0,
 			total: 0
@@ -351,7 +351,7 @@ export async function getFolderSizeWithAvailableSpace(
 			total: diskSpace.total
 		};
 	} catch (error) {
-		console.error(`Failed to get folder size with available space for ${path}:`, error);
+		logger.error(`Failed to get folder size with available space for ${path}:`, error);
 		throw error;
 	}
 }
@@ -372,9 +372,9 @@ export async function clearFolderSizeCache(path: string, recursive: boolean = tr
 		if (await cacheFile.exists()) {
 			try {
 				await Bun.write(cacheFilePath, ''); // Clear the file
-				console.log(`Cleared cache file: ${cacheFilePath}`);
+				logger.debug(`Cleared cache file: ${cacheFilePath}`);
 			} catch (error) {
-				console.warn(`Failed to clear cache file ${cacheFilePath}:`, error);
+				logger.warn(`Failed to clear cache file ${cacheFilePath}:`, error);
 			}
 		}
 		
@@ -386,6 +386,6 @@ export async function clearFolderSizeCache(path: string, recursive: boolean = tr
 			);
 		}
 	} catch (error) {
-		console.warn(`Failed to clear folder size cache for ${resolvedPath}:`, error);
+		logger.warn(`Failed to clear folder size cache for ${resolvedPath}:`, error);
 	}
 }

@@ -1,3 +1,4 @@
+import { getLogger } from '@logtape/logtape';
 import { writable } from 'svelte/store';
 
 // Timeout constants - aligned with crawler heartbeat expectations
@@ -37,6 +38,8 @@ const initialCache: CrawlerStatusCache = {
   isHealthy: false
 };
 
+const logger = getLogger(["backend", "crawler", "cache"])
+
 // Create the writable store
 export const crawlerCache = writable<CrawlerStatusCache>(initialCache);
 
@@ -56,7 +59,7 @@ const startHealthMonitoring = () => {
       // If heartbeat is stale but cache shows connected, mark as disconnected
       let updatedCache = cache;
       if (isHeartbeatStale && cache.messageBusConnected) {
-        console.warn(`[Cache] Heartbeat timeout detected - marking crawler as disconnected`);
+        logger.warn(`[Cache] Heartbeat timeout detected - marking crawler as disconnected`);
         updatedCache = {
           ...cache,
           messageBusConnected: false
@@ -118,7 +121,7 @@ export const updateSseConnection = (connected: boolean) => {
 
 export const updateMessageBusConnection = (connected: boolean) => {
   crawlerCache.update(cache => {
-    console.log(`[Cache] MessageBus connection updated: ${connected}`);
+    logger.debug(`[Cache] MessageBus connection updated: ${connected}`);
     return {
       ...cache,
       messageBusConnected: connected,
@@ -130,7 +133,7 @@ export const updateMessageBusConnection = (connected: boolean) => {
 export const updateHeartbeat = (timestamp?: string | Date) => {
   const heartbeatTime = timestamp ? new Date(timestamp) : new Date();
   crawlerCache.update(cache => {
-    console.log(`[Cache] Heartbeat updated: ${heartbeatTime.toISOString()}`);
+    logger.debug(`[Cache] Heartbeat updated: ${heartbeatTime.toISOString()}`);
     return {
       ...cache,
       lastHeartbeat: heartbeatTime,

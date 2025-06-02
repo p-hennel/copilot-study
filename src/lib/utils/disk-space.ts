@@ -83,15 +83,3 @@ export async function getBasicDiskSpace(path: string): Promise<{total: number, a
     available: info.availableBytes
   };
 }
-
-// Example usage:
-/*
-try {
-  const diskInfo = await getDiskSpace('/');
-  console.log(`Total: ${(diskInfo.totalBytes / 1024 / 1024 / 1024).toFixed(2)} GB`);
-  console.log(`Available: ${(diskInfo.availableBytes / 1024 / 1024 / 1024).toFixed(2)} GB`);
-  console.log(`Used: ${diskInfo.usagePercentage}%`);
-} catch (error) {
-  console.error('Error:', error.message);
-}
-*/

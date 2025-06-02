@@ -27,7 +27,6 @@ export async function GET({ url, locals }) {
   const perPage = parseInt(url.searchParams.get("perPage") ?? "10");
 
   const result = await getAvailableJobs(status, cursor, perPage);
-  // This console.error seems like debug code, replacing with logger.debug
   logger.debug("Available jobs result", { result });
   return json(result);
 }
