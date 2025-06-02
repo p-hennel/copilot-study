@@ -6,15 +6,19 @@
   import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import * as Select from "$lib/components/ui/select/index.js";
   import { Button } from "$ui/button";
+  import { Input } from "$ui/input";
   import { m } from "$paraglide";
-  import { JobStatus } from "$lib/types";
+  import { JobStatus, CrawlCommand } from "$lib/types";
   import type { AreaType } from "$lib/types";
-  import type { CrawlCommand } from "$lib/types";
-  import { Check, Cross, Logs, Repeat, Trash2, AlertTriangle, Minus, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Loader2 } from "lucide-svelte";
+  import type { JobsQueryParams, JobsApiResponse, JobInformation as ApiJobInformation } from "$lib/types/jobs-api";
+  import { Check, Cross, Logs, Repeat, Trash2, AlertTriangle, Minus, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Loader2, Search, Filter, SortAsc, SortDesc, X } from "lucide-svelte";
   import LoadingButton from "./LoadingButton.svelte";
   import { authClient } from "$lib/auth-client";
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
+  import Highlight, { LineNumbers } from "svelte-highlight";
+  import json from "svelte-highlight/languages/json";
+  import horizonDark from "svelte-highlight/styles/horizon-dark";
 
   type JobInformation = {
     id: string;
@@ -48,17 +52,8 @@
     > | null; // Added resumeState
   };
 
-  type PaginatedJobsResponse = {
-    data: JobInformation[];
-    pagination: {
-      page: number;
-      limit: number;
-      totalCount: number;
-      totalPages: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
-  };
+  // Use the enhanced API types
+  type PaginatedJobsResponse = JobsApiResponse;
 
   type JobsTableProps = {
     format?: string;
@@ -70,15 +65,37 @@
   const format = $derived(props.format ?? "DD. MMM, HH:mm");
   const formatTooltip = $derived(props.format ?? "DD. MMM YYYY, HH:mm:ss");
 
-  // Pagination state
-  let currentPage = $state(1);
-  let itemsPerPage = $state(25);
-  let itemsPerPageOptions = [10, 25, 50, 100];
+  // Enhanced state management for Phase 2
   let loading = $state(false);
   let jobsData = $state<PaginatedJobsResponse | null>(null);
-
+  
   // Selection state - works across all pages
   let selectedJobIds = $state<Set<string>>(new Set());
+
+  // Query parameters state
+  let queryParams = $state<JobsQueryParams>({
+    page: 1,
+    limit: 25,
+    sortBy: 'created',
+    sortOrder: 'desc'
+  });
+
+  // Search and filter state
+  let searchText = $state('');
+  let dateSearchText = $state('');
+  let selectedCommands = $state<CrawlCommand[]>([]);
+  let selectedStatuses = $state<JobStatus[]>([]);
+  let hasStartedFilter = $state<boolean | undefined>(undefined);
+  let hasFinishedFilter = $state<boolean | undefined>(undefined);
+  let hasParentFilter = $state<boolean | undefined>(undefined);
+
+  // Debounced search
+  let searchTimeout: number | undefined;
+  let dateSearchTimeout: number | undefined;
+
+  // UI state
+  let showFilters = $state(false);
+  let itemsPerPageOptions = [10, 25, 50, 100];
   
   // Derived values for current page
   const jobs = $derived(jobsData?.data || []);
@@ -87,6 +104,41 @@
   const totalPages = $derived(pagination?.totalPages || 0);
   const startIndex = $derived(pagination ? (pagination.page - 1) * pagination.limit : 0);
   const endIndex = $derived(pagination ? Math.min(startIndex + pagination.limit, pagination.totalCount) : 0);
+  const currentPage = $derived(queryParams.page ?? 1);
+  const itemsPerPage = $derived(queryParams.limit ?? 25);
+
+  // Filter summary
+  const activeFiltersCount = $derived(() => {
+    let count = 0;
+    if (searchText.trim()) count++;
+    if (dateSearchText.trim()) count++;
+    if (selectedCommands.length > 0) count++;
+    if (selectedStatuses.length > 0) count++;
+    if (hasStartedFilter !== undefined) count++;
+    if (hasFinishedFilter !== undefined) count++;
+    if (hasParentFilter !== undefined) count++;
+    return count;
+  });
+
+  // Available options for filters
+  const commandOptions = Object.values(CrawlCommand).map(cmd => ({ value: cmd, label: cmd }));
+  const statusOptions = Object.values(JobStatus).map(status => ({ value: status, label: status }));
+  const dateFieldOptions = [
+    { value: 'created', label: 'Created' },
+    { value: 'updated', label: 'Updated' },
+    { value: 'started', label: 'Started' },
+    { value: 'finished', label: 'Finished' }
+  ];
+  const sortableFields = [
+    { value: 'created', label: 'Created' },
+    { value: 'updated', label: 'Updated' },
+    { value: 'started', label: 'Started' },
+    { value: 'finished', label: 'Finished' },
+    { value: 'id', label: 'ID' },
+    { value: 'parent', label: 'Parent' },
+    { value: 'status', label: 'Status' },
+    { value: 'command', label: 'Command' }
+  ];
 
   const allVisibleSelected = $derived(
     jobs.length > 0 && jobs.every(job => selectedJobIds.has(job.id))
@@ -95,8 +147,8 @@
     jobs.some(job => selectedJobIds.has(job.id)) && !allVisibleSelected
   );
 
-  // Fetch jobs data from API
-  const fetchJobs = async (page: number = currentPage, limit: number = itemsPerPage) => {
+  // Enhanced fetch jobs function with query parameters
+  const fetchJobs = async (params: JobsQueryParams = queryParams) => {
     try {
       loading = true;
       const token = (await authClient.getSession())?.data?.session.token;
@@ -105,7 +157,56 @@
         throw new Error("No authentication token");
       }
 
-      const response = await fetch(`/api/admin/jobs?page=${page}&limit=${limit}`, {
+      // Build the API URL with parameters
+      const url = new URL('/api/admin/jobs', window.location.origin);
+      
+      // Add pagination
+      if (params.page && params.page > 1) {
+        url.searchParams.set('page', params.page.toString());
+      }
+      if (params.limit && params.limit !== 25) {
+        url.searchParams.set('limit', params.limit.toString());
+      }
+      
+      // Add sorting
+      if (params.sortBy && params.sortBy !== 'created') {
+        url.searchParams.set('sortBy', params.sortBy);
+      }
+      if (params.sortOrder && params.sortOrder !== 'desc') {
+        url.searchParams.set('sortOrder', params.sortOrder);
+      }
+      
+      // Add filters
+      if (params.command) {
+        const commands = Array.isArray(params.command) ? params.command : [params.command];
+        url.searchParams.set('command', commands.join(','));
+      }
+      if (params.status) {
+        const statuses = Array.isArray(params.status) ? params.status : [params.status];
+        url.searchParams.set('status', statuses.join(','));
+      }
+      if (params.hasStarted !== undefined) {
+        url.searchParams.set('hasStarted', params.hasStarted.toString());
+      }
+      if (params.hasFinished !== undefined) {
+        url.searchParams.set('hasFinished', params.hasFinished.toString());
+      }
+      if (params.hasParent !== undefined) {
+        url.searchParams.set('hasParent', params.hasParent.toString());
+      }
+      
+      // Add search
+      if (params.search) {
+        url.searchParams.set('search', params.search);
+      }
+      if (params.dateSearch) {
+        url.searchParams.set('dateSearch', params.dateSearch);
+      }
+      if (params.dateField && params.dateField !== 'created') {
+        url.searchParams.set('dateField', params.dateField);
+      }
+      
+      const response = await fetch(url.toString(), {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -127,28 +228,151 @@
     }
   };
 
-  // Initial load and reactive updates
+  // Build query parameters from current state
+  const buildQueryParams = (): JobsQueryParams => {
+    const params: JobsQueryParams = {
+      page: queryParams.page,
+      limit: queryParams.limit,
+      sortBy: queryParams.sortBy,
+      sortOrder: queryParams.sortOrder
+    };
+
+    // Add search parameters
+    if (searchText.trim()) {
+      params.search = searchText.trim();
+    }
+    
+    if (dateSearchText.trim()) {
+      params.dateSearch = dateSearchText.trim();
+      params.dateField = queryParams.dateField || 'created';
+    }
+
+    // Add filter parameters
+    if (selectedCommands.length > 0) {
+      params.command = selectedCommands;
+    }
+    
+    if (selectedStatuses.length > 0) {
+      params.status = selectedStatuses;
+    }
+
+    if (hasStartedFilter !== undefined) {
+      params.hasStarted = hasStartedFilter;
+    }
+    
+    if (hasFinishedFilter !== undefined) {
+      params.hasFinished = hasFinishedFilter;
+    }
+    
+    if (hasParentFilter !== undefined) {
+      params.hasParent = hasParentFilter;
+    }
+    return params;
+  };
+
+  // Debounced search functions
+  const debouncedSearch = () => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      queryParams.page = 1; // Reset to page 1 on search
+      const params = buildQueryParams();
+      queryParams = { ...params };
+      fetchJobs(params);
+    }, 300) as any;
+  };
+
+  const debouncedDateSearch = () => {
+    if (dateSearchTimeout) clearTimeout(dateSearchTimeout);
+    dateSearchTimeout = setTimeout(() => {
+      queryParams.page = 1; // Reset to page 1 on search
+      const params = buildQueryParams();
+      queryParams = { ...params };
+      fetchJobs(params);
+    }, 300) as any;
+  };
+
+  // Filter change handlers
+  const handleFilterChange = () => {
+    queryParams.page = 1; // Reset to page 1 on filter change
+    const params = buildQueryParams();
+    queryParams = { ...params };
+    fetchJobs(params);
+  };
+
+  // Sort change handler
+  const handleSort = (field: string) => {
+    if (queryParams.sortBy === field) {
+      queryParams.sortOrder = queryParams.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      queryParams.sortBy = field as any;
+      queryParams.sortOrder = 'desc';
+    }
+    queryParams.page = 1; // Reset to page 1 on sort change
+    const params = buildQueryParams();
+    queryParams = { ...params };
+    fetchJobs(params);
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    searchText = '';
+    dateSearchText = '';
+    selectedCommands = [];
+    selectedStatuses = [];
+    hasStartedFilter = undefined;
+    hasFinishedFilter = undefined;
+    hasParentFilter = undefined;
+    queryParams = {
+      page: 1,
+      limit: queryParams.limit,
+      sortBy: 'created',
+      sortOrder: 'desc'
+    };
+    fetchJobs(queryParams);
+  };
+
+  // Initial load
   $effect(() => {
-    fetchJobs(currentPage, itemsPerPage);
+    fetchJobs(queryParams);
+  });
+
+  // Watch for search text changes
+  $effect(() => {
+    if (searchText !== undefined) {
+      debouncedSearch();
+    }
+  });
+
+  // Watch for date search text changes
+  $effect(() => {
+    if (dateSearchText !== undefined) {
+      debouncedDateSearch();
+    }
   });
 
   // Handle page changes
   const handlePageChange = (newPage: number) => {
-    currentPage = newPage;
+    queryParams.page = newPage;
+    const params = buildQueryParams();
+    queryParams = { ...params };
+    fetchJobs(params);
   };
 
   // Handle items per page change
-  const handleItemsPerPageChange = (val:string|undefined = undefined) => {
+  const handleItemsPerPageChange = (val: string | undefined = undefined) => {
     if (val) {
-      itemsPerPage = parseInt(val, 10);
+      queryParams.limit = parseInt(val, 10);
+      queryParams.page = 1;
+      const params = buildQueryParams();
+      queryParams = { ...params };
+      fetchJobs(params);
     }
-    currentPage = 1;
-    fetchJobs(1, itemsPerPage);
   };
 
   // Refresh function for external calls
   const refreshJobs = async () => {
-    await fetchJobs(currentPage, itemsPerPage);
+    const params = buildQueryParams();
+    await fetchJobs(params);
     if (props.onRefresh) {
       await props.onRefresh();
     }
@@ -335,6 +559,323 @@
   }
 </script>
 
+<svelte:head>
+  {@html horizonDark}
+</svelte:head>
+
+<!-- Bulk Actions Button -->
+{#if totalItems > 0}
+  <div class="mb-4 flex justify-end">
+    <Button
+      variant="destructive"
+      onclick={() => {
+        deleteAllDialogOpen = true;
+      }}
+    >
+      <Trash2 class="h-4 w-4" />
+      Delete All Jobs
+    </Button>
+  </div>
+{/if}
+
+<!-- Search and Filter Controls -->
+<div class="mb-6 space-y-4">
+  <!-- Search Section -->
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+    <!-- Global Search -->
+    <div class="flex-1">
+      <div class="relative">
+        <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          bind:value={searchText}
+          placeholder="Search jobs, paths, branches..."
+          class="pl-10"
+        />
+      </div>
+    </div>
+
+    <!-- Date Search -->
+    <div class="flex items-center gap-2">
+      <Select.Root
+        type="single"
+        value={queryParams.dateField || 'created'}
+        onValueChange={(value) => {
+          if (value) {
+            queryParams.dateField = value as any;
+            if (dateSearchText.trim()) {
+              handleFilterChange();
+            }
+          }
+        }}
+      >
+        <Select.Trigger class="w-24">
+          {queryParams.dateField || 'created'}
+        </Select.Trigger>
+        <Select.Content>
+          {#each dateFieldOptions as option}
+            <Select.Item value={option.value} label={option.label} />
+          {/each}
+        </Select.Content>
+      </Select.Root>
+      <Input
+        bind:value={dateSearchText}
+        placeholder="Fuzzy date search (e.g., 'yesterday', '2 hours ago')"
+        class="w-64"
+      />
+    </div>
+
+    <!-- Sort Controls -->
+    <div class="flex items-center gap-2">
+      <Select.Root
+        type="single"
+        value={queryParams.sortBy || 'created'}
+        onValueChange={(value) => {
+          console.log('Sort field changed to:', value);
+          if (value) {
+            queryParams.sortBy = value as any;
+            queryParams.page = 1;
+            const params = buildQueryParams();
+            queryParams = { ...params };
+            fetchJobs(params);
+          }
+        }}
+      >
+        <Select.Trigger class="w-32">
+          Sort: {queryParams.sortBy || 'created'}
+        </Select.Trigger>
+        <Select.Content>
+          {#each sortableFields as field}
+            <Select.Item value={field.value} label={field.label} />
+          {/each}
+        </Select.Content>
+      </Select.Root>
+      
+      <Select.Root
+        type="single"
+        value={queryParams.sortOrder || 'desc'}
+        onValueChange={(value) => {
+          console.log('Sort order changed to:', value);
+          if (value) {
+            queryParams.sortOrder = value as any;
+            queryParams.page = 1;
+            const params = buildQueryParams();
+            queryParams = { ...params };
+            fetchJobs(params);
+          }
+        }}
+      >
+        <Select.Trigger class="w-20">
+          {#if queryParams.sortOrder === 'asc'}
+            <SortAsc class="h-4 w-4" />
+          {:else}
+            <SortDesc class="h-4 w-4" />
+          {/if}
+        </Select.Trigger>
+        <Select.Content>
+          <Select.Item value="asc" label="Ascending" />
+          <Select.Item value="desc" label="Descending" />
+        </Select.Content>
+      </Select.Root>
+    </div>
+
+    <!-- Filter Toggle -->
+    <Button
+      variant={showFilters ? "default" : "outline"}
+      onclick={() => showFilters = !showFilters}
+      class="shrink-0"
+    >
+      <Filter class="h-4 w-4" />
+      Filters
+      {#if activeFiltersCount() > 0}
+        <span class="ml-1 rounded-full bg-primary-foreground px-1.5 py-0.5 text-xs text-primary">
+          {activeFiltersCount()}
+        </span>
+      {/if}
+    </Button>
+  </div>
+
+  <!-- Advanced Filters (Collapsible) -->
+  {#if showFilters}
+    <div class="rounded-lg border bg-muted/30 p-4">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Command Filter -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Commands ({selectedCommands.length} selected)</label>
+          <div class="max-h-32 overflow-y-auto rounded-md border bg-background p-2">
+            <div class="space-y-1">
+              {#each commandOptions as option}
+                <label class="flex items-center space-x-2">
+                  <Checkbox.Root
+                    checked={selectedCommands.includes(option.value)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        selectedCommands = [...selectedCommands, option.value];
+                      } else {
+                        selectedCommands = selectedCommands.filter(cmd => cmd !== option.value);
+                      }
+                      handleFilterChange();
+                    }}
+                  />
+                  <span class="text-sm">{option.label}</span>
+                </label>
+              {/each}
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Status ({selectedStatuses.length} selected)</label>
+          <div class="space-y-1">
+            {#each statusOptions as option}
+              <label class="flex items-center space-x-2">
+                <Checkbox.Root
+                  checked={selectedStatuses.includes(option.value)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      selectedStatuses = [...selectedStatuses, option.value];
+                    } else {
+                      selectedStatuses = selectedStatuses.filter(status => status !== option.value);
+                    }
+                    handleFilterChange();
+                  }}
+                />
+                <span class="text-sm">{option.label}</span>
+              </label>
+            {/each}
+          </div>
+        </div>
+
+        <!-- Boolean Filters -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Execution State</label>
+          <div class="space-y-2">
+            <Select.Root
+              type="single"
+              value={hasStartedFilter === undefined ? 'any' : hasStartedFilter ? 'true' : 'false'}
+              onValueChange={(value) => {
+                if (value === 'any') {
+                  hasStartedFilter = undefined;
+                } else if (value === 'true') {
+                  hasStartedFilter = true;
+                } else if (value === 'false') {
+                  hasStartedFilter = false;
+                }
+                handleFilterChange();
+              }}
+            >
+              <Select.Trigger>
+                Has started: {hasStartedFilter === undefined ? 'Any' : hasStartedFilter ? 'Yes' : 'No'}
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Item value="any" label="Any" />
+                <Select.Item value="true" label="Yes" />
+                <Select.Item value="false" label="No" />
+              </Select.Content>
+            </Select.Root>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Completion State</label>
+          <Select.Root
+            type="single"
+            value={hasFinishedFilter === undefined ? 'any' : hasFinishedFilter ? 'true' : 'false'}
+            onValueChange={(value) => {
+              if (value === 'any') {
+                hasFinishedFilter = undefined;
+              } else if (value === 'true') {
+                hasFinishedFilter = true;
+              } else if (value === 'false') {
+                hasFinishedFilter = false;
+              }
+              handleFilterChange();
+            }}
+          >
+            <Select.Trigger>
+              Has finished: {hasFinishedFilter === undefined ? 'Any' : hasFinishedFilter ? 'Yes' : 'No'}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Item value="any" label="Any" />
+              <Select.Item value="true" label="Yes" />
+              <Select.Item value="false" label="No" />
+            </Select.Content>
+          </Select.Root>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Parent Relationship</label>
+          <Select.Root
+            type="single"
+            value={hasParentFilter === undefined ? 'any' : hasParentFilter ? 'true' : 'false'}
+            onValueChange={(value) => {
+              if (value === 'any') {
+                hasParentFilter = undefined;
+              } else if (value === 'true') {
+                hasParentFilter = true;
+              } else if (value === 'false') {
+                hasParentFilter = false;
+              }
+              handleFilterChange();
+            }}
+          >
+            <Select.Trigger>
+              Has parent: {hasParentFilter === undefined ? 'Any' : hasParentFilter ? 'Yes' : 'No'}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Item value="any" label="Any" />
+              <Select.Item value="true" label="Yes" />
+              <Select.Item value="false" label="No" />
+            </Select.Content>
+          </Select.Root>
+        </div>
+
+        <!-- Clear Filters Button -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium opacity-0">Actions</label>
+          <Button
+            variant="outline"
+            onclick={clearAllFilters}
+            disabled={activeFiltersCount() === 0}
+            class="w-full"
+          >
+            <X class="h-4 w-4" />
+            Clear All Filters
+          </Button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Active Filters Summary -->
+  {#if activeFiltersCount() > 0}
+    <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+      <span>Active filters:</span>
+      {#if searchText.trim()}
+        <span class="rounded bg-primary/10 px-2 py-1">Search: "{searchText.trim()}"</span>
+      {/if}
+      {#if dateSearchText.trim()}
+        <span class="rounded bg-primary/10 px-2 py-1">Date: "{dateSearchText.trim()}" in {queryParams.dateField || 'created'}</span>
+      {/if}
+      {#if selectedCommands.length > 0}
+        <span class="rounded bg-primary/10 px-2 py-1">Commands: {selectedCommands.length}</span>
+      {/if}
+      {#if selectedStatuses.length > 0}
+        <span class="rounded bg-primary/10 px-2 py-1">Statuses: {selectedStatuses.length}</span>
+      {/if}
+      {#if hasStartedFilter !== undefined}
+        <span class="rounded bg-primary/10 px-2 py-1">Started: {hasStartedFilter ? 'Yes' : 'No'}</span>
+      {/if}
+      {#if hasFinishedFilter !== undefined}
+        <span class="rounded bg-primary/10 px-2 py-1">Finished: {hasFinishedFilter ? 'Yes' : 'No'}</span>
+      {/if}
+      {#if hasParentFilter !== undefined}
+        <span class="rounded bg-primary/10 px-2 py-1">Parent: {hasParentFilter ? 'Yes' : 'No'}</span>
+      {/if}
+    </div>
+  {/if}
+</div>
+
 <!-- Bulk Actions Toolbar -->
 {#if selectedJobIds.size > 0}
   <div class="mb-4 flex items-center gap-4 rounded-lg border bg-muted/50 p-4">
@@ -378,21 +919,6 @@
   </div>
 {/if}
 
-<!-- Bulk Actions Button -->
-{#if totalItems > 0}
-  <div class="mb-4 flex justify-end">
-    <Button
-      variant="destructive"
-      onclick={() => {
-        deleteAllDialogOpen = true;
-      }}
-    >
-      <Trash2 class="h-4 w-4" />
-      Delete All Jobs
-    </Button>
-  </div>
-{/if}
-
 <Table.Root class="w-full gap-0.5">
   <Table.Header>
     <Table.Row>
@@ -404,25 +930,116 @@
           aria-label="Select all visible jobs"
         />
       </Table.Head>
-      <!--<Table.Head class="w-[2.5rem] text-right"
-        >{m["admin.dashboard.jobsTable.header.idx"]()}</Table.Head
-      >-->
-      <!--<Table.Head>{m["admin.dashboard.jobsTable.header.id"]()}</Table.Head>-->
       <Table.Head class="text-start">{m["admin.dashboard.jobsTable.header.for_area"]()}</Table.Head>
-      <Table.Head>{m["admin.dashboard.jobsTable.header.command"]()}</Table.Head>
-      <!--<Table.Head>{m["admin.dashboard.jobsTable.header.provider"]()}</Table.Head>-->
-      <Table.Head>{m["admin.dashboard.jobsTable.header.status"]()}</Table.Head>
-      <Table.Head class="text-center"
-        >{m["admin.dashboard.jobsTable.header.updated_at"]()}</Table.Head
-      >
-      <Table.Head class="text-center"
-        >{m["admin.dashboard.jobsTable.header.started_at"]()}</Table.Head
-      >
-      <Table.Head class="text-center"
-        >{m["admin.dashboard.jobsTable.header.finished_at"]()}</Table.Head
-      >
-      <Table.Head class="text-start">{m["admin.dashboard.jobsTable.header.from_job"]()}</Table.Head>
-      <!--<Table.Head class="text-end">{m["admin.dashboard.jobsTable.header.children_count"]()}</Table.Head>-->
+      
+      <!-- Sortable Command Header -->
+      <Table.Head>
+        <Button
+          variant="ghost"
+          onclick={() => handleSort('command')}
+          class="h-auto p-0 font-medium hover:bg-transparent"
+        >
+          {m["admin.dashboard.jobsTable.header.command"]()}
+          {#if queryParams.sortBy === 'command'}
+            {#if queryParams.sortOrder === 'asc'}
+              <SortAsc class="ml-1 h-3 w-3" />
+            {:else}
+              <SortDesc class="ml-1 h-3 w-3" />
+            {/if}
+          {/if}
+        </Button>
+      </Table.Head>
+      
+      <!-- Sortable Status Header -->
+      <Table.Head>
+        <Button
+          variant="ghost"
+          onclick={() => handleSort('status')}
+          class="h-auto p-0 font-medium hover:bg-transparent"
+        >
+          {m["admin.dashboard.jobsTable.header.status"]()}
+          {#if queryParams.sortBy === 'status'}
+            {#if queryParams.sortOrder === 'asc'}
+              <SortAsc class="ml-1 h-3 w-3" />
+            {:else}
+              <SortDesc class="ml-1 h-3 w-3" />
+            {/if}
+          {/if}
+        </Button>
+      </Table.Head>
+      
+      <!-- Sortable Updated Header -->
+      <Table.Head class="text-center">
+        <Button
+          variant="ghost"
+          onclick={() => handleSort('updated')}
+          class="h-auto p-0 font-medium hover:bg-transparent"
+        >
+          {m["admin.dashboard.jobsTable.header.updated_at"]()}
+          {#if queryParams.sortBy === 'updated'}
+            {#if queryParams.sortOrder === 'asc'}
+              <SortAsc class="ml-1 h-3 w-3" />
+            {:else}
+              <SortDesc class="ml-1 h-3 w-3" />
+            {/if}
+          {/if}
+        </Button>
+      </Table.Head>
+      
+      <!-- Sortable Started Header -->
+      <Table.Head class="text-center">
+        <Button
+          variant="ghost"
+          onclick={() => handleSort('started')}
+          class="h-auto p-0 font-medium hover:bg-transparent"
+        >
+          {m["admin.dashboard.jobsTable.header.started_at"]()}
+          {#if queryParams.sortBy === 'started'}
+            {#if queryParams.sortOrder === 'asc'}
+              <SortAsc class="ml-1 h-3 w-3" />
+            {:else}
+              <SortDesc class="ml-1 h-3 w-3" />
+            {/if}
+          {/if}
+        </Button>
+      </Table.Head>
+      
+      <!-- Sortable Finished Header -->
+      <Table.Head class="text-center">
+        <Button
+          variant="ghost"
+          onclick={() => handleSort('finished')}
+          class="h-auto p-0 font-medium hover:bg-transparent"
+        >
+          {m["admin.dashboard.jobsTable.header.finished_at"]()}
+          {#if queryParams.sortBy === 'finished'}
+            {#if queryParams.sortOrder === 'asc'}
+              <SortAsc class="ml-1 h-3 w-3" />
+            {:else}
+              <SortDesc class="ml-1 h-3 w-3" />
+            {/if}
+          {/if}
+        </Button>
+      </Table.Head>
+      
+      <!-- Sortable Parent Header -->
+      <Table.Head class="text-start">
+        <Button
+          variant="ghost"
+          onclick={() => handleSort('parent')}
+          class="h-auto p-0 font-medium hover:bg-transparent"
+        >
+          {m["admin.dashboard.jobsTable.header.from_job"]()}
+          {#if queryParams.sortBy === 'parent'}
+            {#if queryParams.sortOrder === 'asc'}
+              <SortAsc class="ml-1 h-3 w-3" />
+            {:else}
+              <SortDesc class="ml-1 h-3 w-3" />
+            {/if}
+          {/if}
+        </Button>
+      </Table.Head>
+      
       <Table.Head class="w-[5rem]">Actions</Table.Head>
     </Table.Row>
   </Table.Header>
@@ -444,7 +1061,7 @@
             <Tooltip.Provider delayDuration={0}>
               <Tooltip.Root>
                 <Tooltip.Trigger>
-                  {truncate(job.forArea.name)}
+                  {truncate(job.forArea.name || job.forArea.full_path)}
                 </Tooltip.Trigger>
                 <Tooltip.Content>
                   {job.forArea.type}: {job.forArea.full_path}
@@ -465,12 +1082,14 @@
                 {@const Icon = statusToIcon(job.status)}
                 <Icon />
               </Tooltip.Trigger>
-              <Tooltip.Content>
-                {job.status}
+              <Tooltip.Content class="flex flex-col gap-2">
                 {#if (job.status === JobStatus.paused || job.status === JobStatus.failed) && job.resumeState}
-                  <pre class="bg-muted mt-2 max-w-xs overflow-auto rounded p-1 text-xs">
-                    {JSON.stringify(job.resumeState, null, 2)}
-                  </pre>
+                  <span class="text-lg font-semibold">{job.status}</span>
+                  <Highlight class="p-0 m-0" language={json} code={JSON.stringify(job.resumeState, null, 2)} let:highlighted>
+                    <LineNumbers {highlighted} hideBorder />
+                  </Highlight>
+                {:else}
+                  {job.status}
                 {/if}
               </Tooltip.Content>
             </Tooltip.Root>
@@ -643,7 +1262,7 @@
       <div class="flex items-center gap-2">
         <Select.Root
           type="single"
-          onValueChange={(v) => {currentPage = 1; handleItemsPerPageChange(v)}}
+          onValueChange={(v) => handleItemsPerPageChange(v)}
           value={`${itemsPerPage}`}
           >
           <Select.Trigger>
@@ -663,7 +1282,7 @@
         <Button
           variant="outline"
           size="sm"
-          disabled={currentPage === 1 || loading}
+          disabled={(queryParams.page ?? 1) === 1 || loading}
           onclick={() => handlePageChange(1)}
           class="w-8 h-8 p-0"
           aria-label="Go to first page"
@@ -679,7 +1298,7 @@
           variant="outline"
           size="sm"
           disabled={!pagination?.hasPreviousPage || loading}
-          onclick={() => handlePageChange(Math.max(1, currentPage - 1))}
+          onclick={() => handlePageChange(Math.max(1, (queryParams.page ?? 1) - 1))}
           class="w-8 h-8 p-0"
         >
           {#if loading}
@@ -691,13 +1310,13 @@
 
         <div class="flex items-center gap-1">
           {#each Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const start = Math.max(1, currentPage - 2);
+            const start = Math.max(1, (queryParams.page ?? 1) - 2);
             const end = Math.min(totalPages, start + 4);
             const adjustedStart = Math.max(1, end - 4);
             return adjustedStart + i;
           }) as pageNum}
             <Button
-              variant={currentPage === pageNum ? "default" : "outline"}
+              variant={(queryParams.page ?? 1) === pageNum ? "default" : "outline"}
               size="sm"
               onclick={() => handlePageChange(pageNum)}
               disabled={loading}
@@ -712,7 +1331,7 @@
           variant="outline"
           size="sm"
           disabled={!pagination?.hasNextPage || loading}
-          onclick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+          onclick={() => handlePageChange(Math.min(totalPages, (queryParams.page ?? 1) + 1))}
           class="w-8 h-8 p-0"
         >
           {#if loading}
@@ -725,7 +1344,7 @@
         <Button
           variant="outline"
           size="sm"
-          disabled={currentPage === totalPages || loading}
+          disabled={(queryParams.page ?? 1) === totalPages || loading}
           onclick={() => handlePageChange(totalPages)}
           class="w-8 h-8 p-0"
           aria-label="Go to last page"

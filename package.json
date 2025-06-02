@@ -139,6 +139,7 @@
     "socket.io-client": "^4.8.1",
     "stream-transform": "^3.3.3",
     "svelte-exmarkdown": "^5.0.1",
+    "svelte-highlight": "^7.8.3",
     "svelte-sonner": "^0.3.28",
     "svelte-time": "^2.0.1",
     "sveltekit-superforms": "^2.25.0",
