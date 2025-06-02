@@ -6,7 +6,7 @@ import { getLogger } from "@logtape/logtape";
 const logger = getLogger(["routes","api","admin","settings"]);
 
 // GET handler to fetch current settings as YAML
-export async function GET({ locals }) {
+export async function GET({ locals }: { locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }
@@ -22,7 +22,7 @@ export async function GET({ locals }) {
 }
 
 // POST handler to update settings from YAML
-export async function POST({ request, locals }) {
+export async function POST({ request, locals }: { request: Request, locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }

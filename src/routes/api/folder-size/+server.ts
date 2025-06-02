@@ -76,7 +76,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			});
 		}
 	} catch (error) {
-		logger.error('Error calculating folder size:', error);
+		logger.error('Error calculating folder size:', {error});
 		
 		// Return appropriate error based on error type
 		if (error instanceof Error) {
@@ -143,7 +143,7 @@ export const DELETE: RequestHandler = async ({ request, locals }) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (error) {
-		logger.error('Error clearing folder size cache:', error);
+		logger.error('Error clearing folder size cache:', {error});
 		
 		return json(
 			{ error: 'Failed to clear cache' },

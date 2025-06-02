@@ -5,7 +5,7 @@ import AppSettings from "$lib/server/settings";
 const defaultMethod: string = "api";
 const methods = [defaultMethod, "smtp"]
 
-export async function GET({ locals, params }) {
+export async function GET({ locals, params }: { params: any, locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     // No need to log unauthorized attempts unless debugging specific issues
     return json({ error: "Unauthorized!" }, { status: 401 });

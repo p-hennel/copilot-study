@@ -19,7 +19,7 @@ interface JobUpdateRequest {
 
 const logger = getLogger(["backend", "api", "jobs"]); // Logger for this module
 
-export async function GET({ url, locals }) {
+export async function GET({ url, locals }: { url: URL, locals: any }) {
   if (!isAdmin(locals)) return unauthorizedResponse();
 
   const status: JobStatus = (url.searchParams.get("status") as JobStatus) ?? JobStatus.queued;
@@ -31,7 +31,7 @@ export async function GET({ url, locals }) {
   return json(result);
 }
 
-export async function POST({ request, locals }) {
+export async function POST({ request, locals }: { request: Request, locals: any }) {
   if (!isAdmin(locals)) return unauthorizedResponse();
 
   const data = (await request.json()) as JobUpdateRequest; // Assert type

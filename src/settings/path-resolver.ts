@@ -68,7 +68,7 @@ export class PathResolver {
     }
 
     logger.debug(`Using default data path ${candidates[0]} (directory does not exist yet)`);
-    return candidates[0]; // Default to first option
+    return candidates[0] ?? ""; // Default to first option
   }
 
   /**

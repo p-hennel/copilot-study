@@ -12,7 +12,7 @@ const toBeCheckedHashes = [
   "02140ab95dc7f0b790cd10d93f3a80b04f9e784947248e70134c7a0c4bdf9af3"
 ]
 
-export async function GET({ locals }) {
+export async function GET({ locals }: { locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }

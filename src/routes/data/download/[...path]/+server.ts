@@ -6,8 +6,9 @@ import { account, area, area_authorization, job } from "$lib/server/db/schema"
 import { count, eq, and } from "drizzle-orm"
 import { JobStatus } from "$lib/types"
 import { areAreaJobsFinished, canAccessAreaFiles, fileForAreaPart } from "$lib/server/utils"
+import type { RequestEvent } from '@sveltejs/kit';
 
-export async function GET({ locals, params }) {
+export async function GET({ locals, params }: { locals: any, params: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return text("Unauthorized!", { status: 401 })
   }

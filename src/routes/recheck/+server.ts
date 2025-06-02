@@ -103,7 +103,7 @@ export const GET: RequestHandler = async ({ locals }) => {
       const apiUrl = `${opts.baseUrl}/api/graphql`;
       logger.info(`Initiating recheck for account ${acct.id} (${acct.provider})`);
       
-      await handleNewAuthorization(userId, acct.id, opts.provider, token, apiUrl);
+      await handleNewAuthorization(userId, acct.id, opts.provider, apiUrl);
       recheckCount++;
     }
 

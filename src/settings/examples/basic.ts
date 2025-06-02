@@ -2,13 +2,13 @@
  * Example usage of the Bun Settings Manager
  */
 import { z } from "zod";
-import { SettingsManager, createSettingsManager, getSettings } from "./bun-settings-lib";
+import getSettings, { SettingsManager, createSettingsManager } from "../settings-manager";
 import { getLogger } from "@logtape/logtape";
 const logger = getLogger(["settings","examples"]);
 
 // 1. Basic usage - get default settings
 const defaultSettings = getSettings();
-logger.info("Data root:", defaultSettings.paths.dataRoot);
+logger.info("Data root:", {dataRoot: defaultSettings.paths.dataRoot});
 
 // 2. Custom schema with application-specific settings
 const appSettingsSchema = z.object({

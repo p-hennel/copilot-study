@@ -10,7 +10,7 @@ import fs from "node:fs/promises" // For reading directory
 import { getLogger } from "@logtape/logtape";
 const logger = getLogger(["routes","data","[...path]"]);
 
-export async function load({ locals, params }) {
+export async function load({ locals, params }: { locals: any, params: any }) {
   // 1. Authentication Check (already done implicitly by hooks, but double-check)
   if (!locals.session || !locals.user?.id) {
     throw error(401, "Unauthorized")

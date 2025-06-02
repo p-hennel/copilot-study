@@ -60,12 +60,12 @@ async function checkAndCreateTables() {
         // Alternative pattern for .name property assignments
         const namePropertyRegex = /\.name\s*=\s*['"]([^'"]+)['"]/g;
         while ((match = namePropertyRegex.exec(schemaContent)) !== null) {
-          const tableName = match[1];
+          const tableName = match[1] as any;
           if (!schemaTables.includes(tableName)) {
             schemaTables.push(tableName);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.warn(`Error reading schema file ${filePath}: ${error.message}`);
         // Continue with other files, don't abort the whole process
       }
@@ -103,7 +103,7 @@ async function checkAndCreateTables() {
     const existingTables = sqlite
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
       .all()
-      .map(row => row.name);
+      .map((row: any) => row.name);
     
     console.log(`Found ${existingTables.length} tables in database: ${existingTables.join(', ')}`);
     

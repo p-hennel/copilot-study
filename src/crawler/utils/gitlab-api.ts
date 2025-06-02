@@ -94,7 +94,7 @@ export async function gitlabApiRequest<T = any>(
 
     let errorMessage: string;
     try {
-      const errorData = await response.json();
+      const errorData: any = await response.json();
       errorMessage = errorData.message || errorData.error || response.statusText;
     } catch {
       errorMessage = response.statusText;
@@ -104,7 +104,7 @@ export async function gitlabApiRequest<T = any>(
   }
 
   // Parse and return the response
-  return response.json();
+  return (await response.json()) as T;
 }
 
 /**

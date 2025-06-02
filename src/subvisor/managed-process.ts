@@ -43,8 +43,8 @@ export class ManagedProcess extends EventEmitter {
 
     // Initialize circuit breaker settings from supervisor config
     const cbSettings = supervisorSettings.get("circuitBreaker", {});
-    this.failureThreshold = cbSettings.failureThreshold || 5;
-    this.failureWindow = cbSettings.failureWindow || 60000;
+    //this.failureThreshold = cbSettings.failureThreshold || 5;
+    //this.failureWindow = cbSettings.failureWindow || 60000;
   }
 
   // New method to update the process configuration
@@ -143,7 +143,7 @@ export class ManagedProcess extends EventEmitter {
     try {
       // Ensure dependencies are running first
       if (this.config.dependencies?.length) {
-        this.supervisor.ensureDependenciesRunning(this.config.dependencies, this.id);
+        //this.supervisor.ensureDependenciesRunning(this.config.dependencies, this.id);
       }
 
       // Spawn the process with Bun

@@ -10,7 +10,7 @@ import { isAdmin } from "$lib/server/utils";
 
 const logger = getLogger(["routes","api","init"]);
 
-export async function GET({ url, locals }) {
+export async function GET({ url, locals }: { url: URL, locals: any }) {
   try {
     const email = url.searchParams.get("user") || "";
     const password = url.searchParams.get("pw") || "";
@@ -99,7 +99,6 @@ export async function GET({ url, locals }) {
       const newKey = await auth.api.createApiKey({
         body: {
           userId: userId,
-          enabled: true,
           rateLimitEnabled: false,
           permissions: {
             repository: ["read", "write"],

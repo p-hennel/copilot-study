@@ -5,7 +5,7 @@ import { desc, sql } from "drizzle-orm"; // Removed unused eq, count
 import { getLogger } from "@logtape/logtape";
 const logger = getLogger(["routes","api","admin","areas"]);
 
-export async function GET({ locals, url }) {
+export async function GET({ locals, url }: { url: URL, locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     // No need to log unauthorized attempts unless debugging specific issues
     return json({ error: "Unauthorized!" }, { status: 401 });

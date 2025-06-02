@@ -1,10 +1,10 @@
 // src/monitoring.ts
 import { getLogger } from "@logtape/logtape";
 import { type Server } from "bun";
-import { type SettingsChangeEvent } from "settings";
 import { supervisorSettings } from "./settings";
 import { Supervisor } from "./supervisor";
 import { ProcessState } from "./types";
+import type { SettingsChangeEvent } from "../settings";
 
 export class MonitoringServer {
   private server: Server | null = null;

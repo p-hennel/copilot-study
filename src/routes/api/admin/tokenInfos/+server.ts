@@ -5,7 +5,7 @@ import { count, isNotNull, isNull, max, min } from "drizzle-orm";
 import { getLogger } from "@logtape/logtape";
 const logger = getLogger(["routes","api","admin","tokenInfos"]);
 
-export async function GET({ locals }) {
+export async function GET({ locals }: { locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
   }

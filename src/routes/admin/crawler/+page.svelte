@@ -626,10 +626,10 @@
                         <Tooltip.Provider delayDuration={0}>
                           <Tooltip.Root>
                             <Tooltip.Trigger>
-                              <Time timestamp={cache.lastHeartbeat.toISOString()} relative />
+                              <Time timestamp={cache.lastHeartbeat} relative />
                             </Tooltip.Trigger>
                             <Tooltip.Content>
-                              <Time timestamp={cache.lastHeartbeat.toISOString()} format="DD. MMM YYYY, HH:mm:ss" /> (cached)
+                              <Time timestamp={cache.lastHeartbeat} format="DD. MMM YYYY, HH:mm:ss" /> (cached)
                             </Tooltip.Content>
                           </Tooltip.Root>
                         </Tooltip.Provider>

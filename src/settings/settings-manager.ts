@@ -61,7 +61,7 @@ export class PathResolver {
       }
     }
 
-    return candidates[0]; // Default to first option
+    return candidates[0] ?? ""; // Default to first option
   }
 
   /**

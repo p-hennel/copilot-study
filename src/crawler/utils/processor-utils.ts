@@ -341,7 +341,8 @@ export function processGitLabError(
 
   // Extract HTTP status code if present
   const statusCodeMatch = errorMessage.match(/(\d{3})/);
-  const statusCode = statusCodeMatch ? parseInt(statusCodeMatch[1], 10) : undefined;
+  const candidate = statusCodeMatch?.[1]
+  const statusCode = candidate ? parseInt(candidate, 10) : undefined;
 
   return {
     message: errorMessage,
