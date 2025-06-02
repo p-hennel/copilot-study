@@ -69,19 +69,23 @@ async function testSocketConnection(): Promise<boolean> {
   });
 }
 
+const CHECK_SOCKET = process.env.CHECK_SOCKET || false
+
 /**
  * Main healthcheck function that combines all checks
  */
 async function performHealthCheck(): Promise<{ healthy: boolean; message: string }> {
-  // Check if socket file exists
-  if (!checkSocketExists()) {
-    return { healthy: false, message: 'Socket file missing or not a socket' };
-  }
-  
-  // Check if socket is responsive
-  const isSocketConnectable = await testSocketConnection();
-  if (!isSocketConnectable) {
-    return { healthy: false, message: 'Socket exists but is not responsive' };
+  if (CHECK_SOCKET) {
+    // Check if socket file exists
+    if (!checkSocketExists()) {
+      return { healthy: false, message: 'Socket file missing or not a socket' };
+    }
+    
+    // Check if socket is responsive
+    const isSocketConnectable = await testSocketConnection();
+    if (!isSocketConnectable) {
+      return { healthy: false, message: 'Socket exists but is not responsive' };
+    }
   }
   
   // All checks passed

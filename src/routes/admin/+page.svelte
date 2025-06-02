@@ -300,7 +300,7 @@
             </div>
             <Separator orientation="vertical" class="" />
             <div class="flex flex-col items-center">
-              <div class="text-2xl font-semibold text-blue-600">{Math.round((stats.jobs.groupProjectDiscovery / stats.jobs.total) * 100)}%</div>
+              <div class="text-2xl font-semibold text-blue-600">{ stats.jobs.total > 0 ? Math.round((stats.jobs.groupProjectDiscovery / stats.jobs.total) * 100) : "--" }%</div>
               <p class="text-sm text-muted-foreground">of all</p>
             </div>
           </Card.Content>

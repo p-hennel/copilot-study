@@ -1,6 +1,9 @@
 import { stat, readdir } from 'fs/promises';
 import { join, resolve } from 'path';
 import { getBasicDiskSpace } from './disk-space';
+import type { Dirent } from 'fs';
+import DirEnt, { FilterDirEntResult } from "./DirEnt"
+import { timestamp } from 'drizzle-orm/gel-core';
 
 /**
  * Configuration options for folder size calculation
@@ -52,24 +55,23 @@ async function getCacheEntry(folderPath: string, maxCacheAge: number): Promise<C
 			return null;
 		}
 
-		const cacheStats = await stat(cacheFilePath);
-		const now = Date.now();
-		
 		// Check if cache is too old
-		if (now - cacheStats.mtime.getTime() > maxCacheAge) {
+		if (Date.now() - cacheFile.lastModified > maxCacheAge) {
 			return null;
 		}
 
 		// Read and parse cache content
 		const cacheContent = await cacheFile.text();
-		const cacheData = JSON.parse(cacheContent) as CacheEntry;
 		
 		// Validate cache against file modifications
-		if (await isCacheStale(folderPath, cacheStats.mtime.getTime())) {
+		if (await isCacheStale(folderPath, cacheFile.lastModified)) {
 			return null;
 		}
 
-		return cacheData;
+		return {
+			size: parseInt(cacheContent),
+			timestamp: cacheFile.lastModified
+		};
 	} catch {
 		// If any error occurs, treat as invalid cache
 		return null;
@@ -93,10 +95,10 @@ async function isCacheStale(folderPath: string, cacheTimestamp: number): Promise
 			}
 
 			const entryPath = join(folderPath, entry.name);
-			const entryStats = await stat(entryPath);
+			const entryFile = Bun.file(entryPath)
 			
 			// If any file is newer than cache, cache is stale
-			if (entryStats.mtime.getTime() > cacheTimestamp) {
+			if (entryFile.lastModified > cacheTimestamp) {
 				return true;
 			}
 		}
@@ -115,13 +117,9 @@ async function isCacheStale(folderPath: string, cacheTimestamp: number): Promise
  */
 async function saveCacheEntry(folderPath: string, size: number): Promise<void> {
 	const cacheFilePath = join(folderPath, CACHE_FILE_NAME);
-	const cacheEntry: CacheEntry = {
-		size,
-		timestamp: Date.now()
-	};
 	
 	try {
-		await Bun.write(cacheFilePath, JSON.stringify(cacheEntry, null, 2));
+		await Bun.write(cacheFilePath, `${size}`);
 	} catch (error) {
 		// Silently fail cache write - don't let it break the main functionality
 		console.warn(`Failed to write cache for ${folderPath}:`, error);
@@ -136,23 +134,27 @@ async function saveCacheEntry(folderPath: string, size: number): Promise<void> {
  */
 async function calculateImmediateFolderSize(folderPath: string, includeHidden: boolean = false): Promise<number> {
 	try {
-		const entries = await readdir(folderPath, { withFileTypes: true });
+		return await _calculateImmediateFolderSize(
+			folderPath,
+			(await
+				readdir(folderPath, { withFileTypes: true })
+			).filter(checkIfFileSizeRelevant(includeHidden)),
+			includeHidden
+		)
+	} catch (error) {
+		console.warn(`Failed to calculate immediate folder size for ${folderPath}:`, error);
+		return 0;
+	}
+}
+
+function checkIfFileSizeRelevant(includeHidden: boolean) {
+	return (entry: Dirent<string>) => includeHidden ? DirEnt.allFiles(entry) : DirEnt.noHiddenFiles(entry)
+}
+
+async function _calculateImmediateFolderSize(folderPath: string, entries: Dirent[], includeHidden: boolean): Promise<number> {
+	try {
 		let totalSize = 0;
-		
 		const filePromises = entries
-			.filter(entry => {
-				// Skip directories
-				if (entry.isDirectory()) {
-					return false;
-				}
-				
-				// Skip hidden files unless explicitly included
-				if (!includeHidden && entry.name.startsWith('.')) {
-					return false;
-				}
-				
-				return true;
-			})
 			.map(async (entry) => {
 				try {
 					const filePath = join(folderPath, entry.name);
@@ -182,25 +184,56 @@ async function calculateImmediateFolderSize(folderPath: string, includeHidden: b
  */
 async function getSubdirectories(folderPath: string, includeHidden: boolean = false): Promise<string[]> {
 	try {
-		const entries = await readdir(folderPath, { withFileTypes: true });
-		
-		return entries
-			.filter(entry => {
-				if (!entry.isDirectory()) {
-					return false;
-				}
-				
-				// Skip hidden directories unless explicitly included
-				if (!includeHidden && entry.name.startsWith('.')) {
-					return false;
-				}
-				
-				return true;
-			})
-			.map(entry => join(folderPath, entry.name));
+		return _getSubdirectories(
+			folderPath,
+			(await
+				readdir(folderPath, { withFileTypes: true })
+			).filter(checkIfSubdirectory(includeHidden)),
+			includeHidden
+		);
 	} catch (error) {
 		console.warn(`Failed to get subdirectories for ${folderPath}:`, error);
 		return [];
+	}
+}
+
+function checkIfSubdirectory(includeHidden: boolean) {
+	return (entry: Dirent<string>) => includeHidden ? DirEnt.allFolders(entry) : DirEnt.noHidd(entry)
+}
+
+async function _getSubdirectories(folderPath: string, entries: Dirent[], includeHidden: boolean): Promise<string[]> {
+	try {
+		return entries.map(entry => join(folderPath, entry.name));
+	} catch (error) {
+		console.warn(`Failed to get subdirectories for ${folderPath}:`, error);
+		return [];
+	}
+}
+
+async function getDirectoryEntries(path: string, includeHidden: boolean = false) {
+	const entries = await readdir(path, { withFileTypes: true })
+	let result = { folders: [] as Dirent<string>[], files: [] as Dirent<string>[] }
+	result = entries.reduce<typeof result>((result, _item) => {
+		const item = DirEnt.create(_item)
+		const filterResult = DirEnt.filter(item, includeHidden)
+		if (!item.dirent || filterResult === FilterDirEntResult.discard)
+			return result
+		else if (filterResult === FilterDirEntResult.file) {
+			result.files.push(item.dirent)
+		} else if (filterResult === FilterDirEntResult.folder) {
+			result.folders.push(item.dirent)
+		}
+		return result
+	}, result)
+	return result
+}
+
+async function dirExists(path: string) {
+	try {
+		readdir(path)
+		return true
+	} catch {
+		return false
 	}
 }
 
@@ -217,13 +250,23 @@ export async function calculateFolderSize(
 	includeHidden: boolean = false
 ): Promise<number> {
 	const resolvedPath = resolve(path);
-	
+	return _calculateFolderSize(resolvedPath, maxCacheAge, includeHidden)
+}
+
+async function _calculateFolderSize(
+	resolvedPath: string,
+	maxCacheAge: number,
+	includeHidden: boolean
+): Promise<number> {
 	try {
 		// Check if path exists and is a directory
-		const pathStats = await stat(resolvedPath);
-		if (!pathStats.isDirectory()) {
+		if (!(await dirExists(resolvedPath))) {
 			throw new Error(`Path ${resolvedPath} is not a directory`);
 		}
+
+		const dirContent = await getDirectoryEntries(resolvedPath, includeHidden)
+
+		console.error(dirContent)
 		
 		// Check cache first
 		const cacheEntry = await getCacheEntry(resolvedPath, maxCacheAge);
@@ -232,14 +275,14 @@ export async function calculateFolderSize(
 		}
 		
 		// Calculate immediate folder size (files only)
-		const immediateSize = await calculateImmediateFolderSize(resolvedPath, includeHidden);
+		const immediateSize = await _calculateImmediateFolderSize(resolvedPath, dirContent.files, includeHidden);
 		
 		// Get subdirectories for recursive calculation
-		const subdirectories = await getSubdirectories(resolvedPath, includeHidden);
+		const subdirectories = await _getSubdirectories(resolvedPath, dirContent.folders, includeHidden);
 		
 		// Calculate subdirectory sizes using map-reduce pattern
 		const subdirSizePromises = subdirectories.map(subdir =>
-			calculateFolderSize(subdir, maxCacheAge, includeHidden)
+			_calculateFolderSize(subdir, maxCacheAge, includeHidden)
 		);
 		
 		const subdirSizes = await Promise.all(subdirSizePromises);

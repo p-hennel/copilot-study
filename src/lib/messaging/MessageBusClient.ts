@@ -100,7 +100,6 @@ export class MessageBusClient extends EventEmitter {
     // Configure process ID and socket path
     this.id = process.env.SUPERVISOR_PROCESS_ID || "web-server";
     this.socketPath = process.env.SOCKET_PATH ||
-                      process.env.SUPERVISOR_SOCKET_PATH ||
                       "/home/bun/data/config/api.sock";
     this.logger = getLogger(["messageBus", this.id]);
     
