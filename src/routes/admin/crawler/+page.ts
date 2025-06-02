@@ -1,8 +1,9 @@
 import { authClient } from "$lib/auth-client";
 import { fetchAdminData } from "$lib/utils/admin-fetch";
 import { getCachedStatus } from "$lib/stores/crawler-cache";
+import type { PageLoadEvent } from "../$types";
 
-export async function load(event) {
+export async function load(event: PageLoadEvent) {
   const token = authClient.getSession().then((response) => response.data?.session.token);
   
   // Get cached data for immediate display
