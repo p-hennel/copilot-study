@@ -61,9 +61,9 @@ COPY --from=prerelease \
   /usr/src/app/startup.sh \
   /usr/src/app/.autorestic.yml \
   /usr/src/app/backup.cron \
-  /usr/src/app/dual-server.js \
   /usr/src/app/db-test.ts \
   ./
+#  /usr/src/app/dual-server.js \
 
 COPY --from=prerelease \
   /usr/src/app/src/lib/server/db/*schema.ts \

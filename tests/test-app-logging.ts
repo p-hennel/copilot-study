@@ -19,8 +19,8 @@ if (existsSync(bunHomeData) && !existsSync(logsDir)) {
 }
 
 // Import app settings and logging
-import AppSettings from "./src/lib/server/settings";
-import { configureLogging, getLogger } from "./src/lib/logging";
+import AppSettings from "../src/lib/server/settings";
+import { configureLogging, getLogger } from "../src/lib/logging";
 
 async function testAppLogging() {
   try {

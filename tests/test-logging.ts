@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { getLogger, configureLogging } from "./src/lib/logging";
+import { getLogger, configureLogging } from "../src/lib/logging";
 import { existsSync, mkdirSync } from "fs";
 
 async function testLogging() {

@@ -99,9 +99,9 @@ export class MessageBusClient extends EventEmitter {
     
     // Configure process ID and socket path
     this.id = process.env.SUPERVISOR_PROCESS_ID || "web-server";
-    this.socketPath = process.env.SUPERVISOR_SOCKET_PATH ||
-                     process.env.SOCKET_PATH ||
-                     "/Users/philhennel/Code/copilot-survey/data.private/config/api.sock";
+    this.socketPath = process.env.SOCKET_PATH ||
+                      process.env.SUPERVISOR_SOCKET_PATH ||
+                      "/home/bun/data/config/api.sock";
     this.logger = getLogger(["messageBus", this.id]);
     
     this.logger.debug("MessageBusClient constructor:", {
@@ -784,7 +784,9 @@ logger.info("Environment check:", {
 // Only create the instance if we're in a Node.js environment
 if (typeof process !== "undefined" && process.env) {
   try {
-    if (process.env.SUPERVISOR_SOCKET_PATH) {
+    if (process.env.SOCKET_PATH) {
+      moduleLogger.debug("Creating MessageBusClient instance with SOCKET_PATH");
+    } else if (process.env.SUPERVISOR_SOCKET_PATH) {
       moduleLogger.debug("Creating MessageBusClient instance with SUPERVISOR_SOCKET_PATH");
     } else {
       moduleLogger.debug("Creating MessageBusClient instance with fallback path");

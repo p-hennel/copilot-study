@@ -1,3 +1,0 @@
-PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
-
-*/5 * * * * autorestic -c /usr/src/app/.autorestic.yml --ci cron
