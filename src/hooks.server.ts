@@ -12,9 +12,10 @@ import { existsSync } from "node:fs"
 import path from "node:path"
 import { mkdirSync } from "fs";
 import { performStartupRecovery, setupPeriodicRecovery } from "$lib/server/startup-recovery";
+import { isAuthorizedSocketRequest } from "$lib/server/direct-auth";
 
-// Import initialization to ensure socket connection starts immediately
-import "$lib/startup/initialize";
+// Import direct communication manager instead of supervisor
+import "$lib/server/direct-communication-manager";
 
 // Set up socket path for external crawler connection
 if (!process.env.SOCKET_PATH) {
@@ -71,18 +72,19 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
   })
 
 const authHandle: Handle = ({ event, resolve }) => {
-  // CRITICAL DEBUG - Skip auth for unix socket requests to /api/internal/refresh-token
-  if (event.url.pathname.includes('/api/internal/refresh-token') &&
-      event.request.headers.get('x-request-source') === 'unix') {
+  // Enhanced auth bypass for direct socket requests
+  if (event.url.pathname.includes('/api/internal/') &&
+      isAuthorizedSocketRequest(event.request)) {
     return resolve(event);
   }
   
   return svelteKitHandler({ event, resolve, auth });
 }
+
 const authHandle2: Handle = async ({ event, resolve }) => {
-  // CRITICAL DEBUG - Skip session check for unix socket requests to /api/internal/refresh-token
-  if (event.url.pathname.includes('/api/internal/refresh-token') &&
-      event.request.headers.get('x-request-source') === 'unix') {
+  // Enhanced session bypass for direct socket requests
+  if (event.url.pathname.includes('/api/internal/') &&
+      isAuthorizedSocketRequest(event.request)) {
     return await resolve(event);
   }
   
@@ -120,21 +122,27 @@ export const corsHandle: Handle = async ({ event, resolve }) => {
 };
 
 export async function reqSourceHandle({ event, resolve }: {event: any, resolve: any}) {
-  // Get the request source from the header we added
+  // Get the request source from the header
   const requestSource = event.request.headers.get('x-request-source') || 'unknown';
   
   // Add to locals for use in routes
   event.locals.requestSource = requestSource;
-  event.locals.isSocketRequest = requestSource === 'unix';
-
-  /*
-  if (event.url.pathname.startsWith('/api/internal') && !event.locals.isSocketRequest && !isAdmin(event.locals)) {
-    return new Response('Forbidden', { status: 403 });
+  
+  // Enhanced socket request detection using DirectSocketAuth
+  event.locals.isSocketRequest = isAuthorizedSocketRequest(event.request);
+  
+  // Log socket requests for debugging
+  if (event.locals.isSocketRequest) {
+    logger.debug("Authorized socket request detected", {
+      path: event.url.pathname,
+      method: event.request.method,
+      requestSource,
+      clientId: event.request.headers.get('x-client-id')
+    });
   }
-  */
   
   return await resolve(event);
 }
 
-//export const handle: Handle = sequence(corsHandle, paraglideHandle, authHandle, authHandle2, reqSourceHandle)
+// Updated handle sequence using the new authentication system
 export const handle: Handle = sequence(corsHandle, paraglideHandle, authHandle, reqSourceHandle, authHandle2)

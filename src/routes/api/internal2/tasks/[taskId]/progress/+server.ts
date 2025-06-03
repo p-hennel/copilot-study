@@ -4,12 +4,12 @@ import AppSettings from "$lib/server/settings";
 import { db } from "$lib/server/db";
 import { job, type Job } from "$lib/server/db/base-schema";
 import { JobStatus } from "$lib/types";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { isAdmin } from "$lib/server/utils";
 import { error } from "@sveltejs/kit";
+import { isAuthorizedSocketRequest } from "$lib/server/direct-auth";
 
 const logger = getLogger(["backend", "api", "internal2", "tasks", "progress"]);
-
 
 interface ProgressUpdateRequest {
   type: "progress" | "status" | "error" | "completed" | "failed";
@@ -24,21 +24,23 @@ interface ProgressUpdateRequest {
 }
 
 /**
- * Enhanced authentication with proper precedence and logging
+ * Enhanced authentication with proper precedence and logging using DirectSocketAuth
  */
 async function authenticateRequest(request: Request, locals: any, operation: string): Promise<{ success: boolean; method: string }> {
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
+  const isAuthorizedSocket = isAuthorizedSocketRequest(request);
   const adminCheck = await isAdmin(locals);
   
   let authMethod = 'none';
   let authSuccess = false;
 
   // 1. Check socket bypass (highest precedence)
-  if (locals.isSocketRequest) {
+  if (isAuthorizedSocket) {
     authMethod = 'socket_bypass';
     authSuccess = true;
-    logger.info(`Progress ${operation}: Authenticated via socket bypass`, {
-      requestSource: locals.requestSource
+    logger.info(`Progress ${operation}: Authenticated via authorized socket connection`, {
+      requestSource: request.headers.get('x-request-source'),
+      clientId: request.headers.get('x-client-id')
     });
   }
   // 2. Check admin session (medium precedence)
@@ -162,7 +164,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
     // Prepare update data
     const updateData: Partial<Job> = {
-      updated_at: new Date()
+      // updated_at will be handled with SQL
     };
 
     // Map update type to job status
@@ -170,12 +172,8 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
     if (newStatus !== existingJob.status) {
       updateData.status = newStatus;
 
-      // Set timestamps based on status change
-      if (newStatus === JobStatus.running && !existingJob.started_at) {
-        updateData.started_at = new Date();
-      } else if (newStatus === JobStatus.finished || newStatus === JobStatus.failed) {
-        updateData.finished_at = new Date();
-      }
+      // Set timestamps based on status change - removed direct assignments
+      // These will be handled in the database update with SQL functions
     }
 
     // Update progress data
@@ -215,8 +213,25 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
     updateData.progress = newProgress;
 
-    // Perform the update
-    await db.update(job).set(updateData).where(eq(job.id, taskId));
+    // Perform the update with proper timestamp handling
+    if (newStatus === JobStatus.running && !existingJob.started_at) {
+      await db.update(job).set({
+        ...updateData,
+        started_at: sql`(unixepoch())`,
+        updated_at: sql`(unixepoch())`
+      }).where(eq(job.id, taskId));
+    } else if (newStatus === JobStatus.finished || newStatus === JobStatus.failed) {
+      await db.update(job).set({
+        ...updateData,
+        finished_at: sql`(unixepoch())`,
+        updated_at: sql`(unixepoch())`
+      }).where(eq(job.id, taskId));
+    } else {
+      await db.update(job).set({
+        ...updateData,
+        updated_at: sql`(unixepoch())`
+      }).where(eq(job.id, taskId));
+    }
 
     logger.info(`Progress updated for task ${taskId}`, {
       type: progressUpdate.type,

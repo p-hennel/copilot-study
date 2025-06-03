@@ -11,6 +11,7 @@ import { getLogger } from '$lib/logging';
 import { handleNewArea } from '$lib/server/job-manager';
 import { extractProgressData, mergeProgressData, createTimelineEvent, type CrawlerProgressData } from '$lib/types/progress';
 import { isAdmin } from '$lib/server/utils';
+import { isAuthorizedSocketRequest } from '$lib/server/direct-auth';
 
 const logger = getLogger(['backend', 'api', 'jobs', 'progress']);
 
@@ -214,17 +215,19 @@ async function processDiscoveredAreas(
 export const POST: RequestHandler = async ({ request, locals }) => {
   // Enhanced Authentication with proper precedence and logging
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
+  const isAuthorizedSocket = isAuthorizedSocketRequest(request);
   const adminCheck = await isAdmin(locals);
   
   let authMethod = 'none';
   let authSuccess = false;
 
   // 1. Check socket bypass (highest precedence)
-  if (locals.isSocketRequest) {
+  if (isAuthorizedSocket) {
     authMethod = 'socket_bypass';
     authSuccess = true;
-    logger.info('Progress update: Authenticated via socket bypass', {
-      requestSource: locals.requestSource
+    logger.info('Progress update: Authenticated via authorized socket connection', {
+      requestSource: request.headers.get('x-request-source'),
+      clientId: request.headers.get('x-client-id')
     });
   }
   // 2. Check admin session (medium precedence)
@@ -244,7 +247,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       if (token === currentCrawlerApiToken) {
         authMethod = 'api_token';
         authSuccess = true;
-        logger.warn('Progress update: Authenticated via API token - consider using admin session for better security', {
+        logger.warn('Progress update: Authenticated via API token - consider using authorized socket connection for better security', {
           tokenPreview: token.substring(0, 8) + '...'
         });
       } else {
@@ -260,7 +263,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   // Final authentication check
   if (!authSuccess) {
     if (!currentCrawlerApiToken) {
-      logger.error('Progress update: Authentication failed - CRAWLER_API_TOKEN not configured and no admin session');
+      logger.error('Progress update: Authentication failed - CRAWLER_API_TOKEN not configured and no admin session or authorized socket');
       return json({ error: 'Endpoint disabled due to missing configuration' }, { status: 503 });
     }
     logger.error('Progress update: Authentication failed - no valid credentials provided');

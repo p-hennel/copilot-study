@@ -9,7 +9,7 @@ import {
 import { forProvider } from "$lib/utils";
 import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
 import type { JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
-import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
+import { and, desc, eq, or, sql } from "drizzle-orm"; // Added sql for timestamp operations
 import { monotonicFactory } from "ulid";
 import { startJob } from "$lib/server/supervisor";
 
@@ -96,7 +96,7 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
         id: currentDiscoveryJobId,
         command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
         userId,
-        created_at: new Date(),
+        // created_at will use schema default: sql`(unixepoch())`
         provider: providerId as TokenProvider,
         accountId: authorizationDbId, // Account for PAT
         gitlabGraphQLUrl,
@@ -114,7 +114,7 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
         branch: null,
         to: null,
         spawned_from: null,
-        updated_at: new Date(),
+        // updated_at will use schema default: sql`(unixepoch())`
       };
       logger.warn("NEW JOB", { newDiscoveryJobData })
       await db.insert(jobSchema).values(newDiscoveryJobData);
@@ -153,7 +153,7 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
               timestamp: new Date().toISOString(),
               retryable: true // Mark as retryable for potential recovery
             },
-            finished_at: new Date()
+            finished_at: sql`(unixepoch())`
           })
           .where(eq(jobSchema.id, currentDiscoveryJobId));
         logger.info(`✅ JOB-MANAGER: Marked GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} as failed with detailed error info.`);

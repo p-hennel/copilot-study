@@ -9,8 +9,8 @@ import type { DataType, CrawlCommandName } from "$lib/server/types/area-discover
 import { CrawlCommand } from "$lib/types";
 import { crawlCommandConfig } from "$lib/server/types/area-discovery";
 import { and, asc, eq, or, sql, inArray } from "drizzle-orm";
-// import { TokenProvider } from '$lib/types'; // TokenProvider might not be needed if URL fallbacks are removed
 import { isAdmin } from "$lib/server/utils";
+import { isAuthorizedSocketRequest } from "$lib/server/direct-auth";
 
 const logger = getLogger(["backend", "api", "jobs", "open"]);
 
@@ -38,6 +38,9 @@ dataTypeToCrawlCommandNameMapping['branches'] = 'repository';
 dataTypeToCrawlCommandNameMapping['pipelines'] = 'cicd';
 dataTypeToCrawlCommandNameMapping['project'] = 'project';
 dataTypeToCrawlCommandNameMapping['group'] = 'group';
+// Add missing mapping for groupProjects
+dataTypeToCrawlCommandNameMapping['groupprojects'] = 'group';
+dataTypeToCrawlCommandNameMapping['groupProjects'] = 'group';
 
 // Log the initialization for debugging
 logger.debug('DataType to CrawlCommandName mapping initialized:', {
@@ -49,14 +52,21 @@ logger.debug('DataType to CrawlCommandName mapping initialized:', {
  * Helper function to determine CrawlCommandName from a DataType
  */
 function getCrawlCommandNameFromDataType(dataType: string): CrawlCommandName | undefined {
+  // Add diagnostic logging for groupProjects specifically
+  if (dataType === 'groupProjects' || dataType.toLowerCase() === 'groupprojects') {
+    logger.debug(`🔍 DEBUG: Looking up mapping for '${dataType}' - this should now be found!`);
+  }
+  
   // First try exact match
   if (dataTypeToCrawlCommandNameMapping[dataType]) {
+    logger.debug(`✅ DEBUG: Found exact match for '${dataType}' -> '${dataTypeToCrawlCommandNameMapping[dataType]}'`);
     return dataTypeToCrawlCommandNameMapping[dataType];
   }
   
   // Try case-insensitive match
   const lowerDataType = dataType.toLowerCase();
   if (dataTypeToCrawlCommandNameMapping[lowerDataType]) {
+    logger.debug(`✅ DEBUG: Found lowercase match for '${dataType}' (as '${lowerDataType}') -> '${dataTypeToCrawlCommandNameMapping[lowerDataType]}'`);
     return dataTypeToCrawlCommandNameMapping[lowerDataType];
   }
   
@@ -80,12 +90,17 @@ function getCrawlCommandNameFromDataType(dataType: string): CrawlCommandName | u
 
 export const GET: RequestHandler = async ({ request, url, locals }) => {
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
-  if (!currentCrawlerApiToken && !locals.isSocketRequest && !isAdmin(locals)) {
+  
+  // Enhanced authentication check using DirectSocketAuth
+  const isAuthorizedSocket = isAuthorizedSocketRequest(request);
+  const isAdminUser = await isAdmin(locals);
+  
+  if (!currentCrawlerApiToken && !isAuthorizedSocket && !isAdminUser) {
     logger.error("Attempted to access disabled task endpoint: CRAWLER_API_TOKEN setting not set at request time.");
     return json({ error: "Endpoint disabled due to missing configuration" }, { status: 503 });
   }
 
-  if (!locals.isSocketRequest && !isAdmin(locals)) {
+  if (!isAuthorizedSocket && !isAdminUser) {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       logger.warn("Missing or malformed Authorization header");
@@ -99,6 +114,20 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
       });
       return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
     }
+  }
+
+  // Log authentication method used
+  if (isAuthorizedSocket) {
+    logger.info("Job request authenticated via authorized socket connection", {
+      clientId: request.headers.get('x-client-id'),
+      requestSource: request.headers.get('x-request-source')
+    });
+  } else if (isAdminUser) {
+    logger.info("Job request authenticated via admin session", {
+      userId: locals.user?.id
+    });
+  } else {
+    logger.info("Job request authenticated via API token");
   }
 
   const resourceParam = url.searchParams.get("resource");
@@ -192,7 +221,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing account data" } })
+            .set({ status: JobStatus.failed, finished_at: sql`(unixepoch())`, progress: { error: "Missing account data" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }
@@ -204,7 +233,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing access token" } })
+            .set({ status: JobStatus.failed, finished_at: sql`(unixepoch())`, progress: { error: "Missing access token" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }
@@ -262,7 +291,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing or invalid GitLab URL configuration" } })
+            .set({ status: JobStatus.failed, finished_at: sql`(unixepoch())`, progress: { error: "Missing or invalid GitLab URL configuration" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }
@@ -290,10 +319,26 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
             logger.error(`Available DataType mappings (${Object.keys(dataTypeToCrawlCommandNameMapping).length} entries):`, dataTypeToCrawlCommandNameMapping);
             logger.error(`Available crawlCommandConfig:`, crawlCommandConfig);
             logger.error(`Lookup attempts - exact: ${dataTypeToCrawlCommandNameMapping[currentDataType]}, lowercase: ${dataTypeToCrawlCommandNameMapping[currentDataType.toLowerCase()]}`);
-            await db
-              .update(job)
-              .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: `Unknown DataType mapping for ${currentDataType}` } })
-              .where(eq(job.id, currentJob.id));
+            
+            // Add diagnostic logging before database update
+            logger.debug(`🔍 DEBUG: Attempting to mark job ${currentJob.id} as failed with timestamp validation`);
+            const updateTimestamp = new Date();
+            logger.debug(`🔍 DEBUG: Update timestamp type: ${typeof updateTimestamp}, value: ${updateTimestamp.toISOString()}`);
+            
+            try {
+              await db
+                .update(job)
+                .set({ status: JobStatus.failed, finished_at: updateTimestamp, progress: { error: `Unknown DataType mapping for ${currentDataType}` } })
+                .where(eq(job.id, currentJob.id));
+              logger.debug(`✅ DEBUG: Successfully updated job ${currentJob.id} status to failed`);
+            } catch (dbError: any) {
+              logger.error(`❌ DEBUG: Database update failed for job ${currentJob.id}:`, {
+                error: dbError.message,
+                stack: dbError.stack,
+                updateData: { status: JobStatus.failed, finished_at: updateTimestamp }
+              });
+              throw dbError; // Re-throw to maintain original error handling
+            }
             continue;
           }
           
@@ -389,7 +434,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing OAuth client credentials in settings" } })
+            .set({ status: JobStatus.failed, finished_at: sql`(unixepoch())`, progress: { error: "Missing OAuth client credentials in settings" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }
@@ -422,7 +467,8 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           resourceType: taskObject.resourceType,
           resourceId: taskObject.resourceId,
           command: taskObject.command,
-          gitlabApiUrl: taskObject.gitlabApiUrl
+          gitlabApiUrl: taskObject.gitlabApiUrl,
+          authMethod: isAuthorizedSocket ? 'socket' : isAdminUser ? 'admin' : 'token'
         });
         logger.debug(`📤 JOB-OPEN: Full task object for ${taskObject.taskId}: ${JSON.stringify(taskObject)}`);
         logger.debug(`🚀 JOB-OPEN: Returning job ${taskObject.taskId} with command ${taskObject.command} to external crawler`);

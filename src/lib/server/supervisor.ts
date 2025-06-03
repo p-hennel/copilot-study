@@ -2,7 +2,7 @@ export const SUPERVISED = Bun.env.SUPERVISED === undefined || Bun.env.SUPERVISED
   typeof Bun.env.SUPERVISED === "string" ? Bun.env.SUPERVISED.toLowerCase() === "true" : (Bun.env.SUPERVISED === 1 || Bun.env.SUPERVISED === true)
 )
 
-import { eq } from "drizzle-orm"; // Import needed operators
+import { eq, sql } from "drizzle-orm"; // Import needed operators and sql for timestamps
 
 // Import the MessageBusClient for Unix socket IPC
 import messageBusClientInstance from "$lib/messaging/MessageBusClient"
@@ -190,8 +190,8 @@ export async function startJob(params: Omit<StartJobCommand, "type" | "progress"
       await db.update(jobSchema)
         .set({
           status: JobStatus.running,
-          started_at: new Date(),
-          updated_at: new Date()
+          started_at: sql`(unixepoch())`,
+          updated_at: sql`(unixepoch())`
         })
         .where(eq(jobSchema.id, params.jobId));
       logger?.info(`🚀 SUPERVISOR: Updated job ${params.jobId} status to running`);

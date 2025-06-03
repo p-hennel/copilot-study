@@ -134,7 +134,7 @@ export const job = sqliteTable(
       .default(CrawlCommand.authorizationScope),
     full_path: text(), //.references(() => area.full_path),
     branch: text(),
-    from: integer({ mode: "timestamp" }).default(new Date(2022, 1, 1)),
+    from: integer({ mode: "timestamp" }).default(sql`(unixepoch('2022-02-01'))`),
     to: integer({ mode: "timestamp" }),
     accountId: text().notNull().references(() => account.id),
     spawned_from: text(), //.references((): AnySQLiteColumn => job.id),

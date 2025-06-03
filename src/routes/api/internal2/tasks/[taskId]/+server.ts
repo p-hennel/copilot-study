@@ -4,9 +4,10 @@ import AppSettings from "$lib/server/settings";
 import { db } from "$lib/server/db";
 import { job, type Job } from "$lib/server/db/base-schema";
 import { JobStatus, CrawlCommand } from "$lib/types";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { isAdmin } from "$lib/server/utils";
 import { error } from "@sveltejs/kit";
+import { isAuthorizedSocketRequest } from "$lib/server/direct-auth";
 
 const logger = getLogger(["backend", "api", "internal2", "tasks", "individual"]);
 
@@ -141,21 +142,23 @@ function mapJobToTaskResponse(jobRecord: Job): TaskResponse {
 }
 
 /**
- * Enhanced authentication with proper precedence and logging
+ * Enhanced authentication with proper precedence and logging using DirectSocketAuth
  */
 async function authenticateRequest(request: Request, locals: any, operation: string): Promise<{ success: boolean; method: string }> {
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
+  const isAuthorizedSocket = isAuthorizedSocketRequest(request);
   const adminCheck = await isAdmin(locals);
   
   let authMethod = 'none';
   let authSuccess = false;
 
   // 1. Check socket bypass (highest precedence)
-  if (locals.isSocketRequest) {
+  if (isAuthorizedSocket) {
     authMethod = 'socket_bypass';
     authSuccess = true;
-    logger.info(`Task ${operation}: Authenticated via socket bypass`, {
-      requestSource: locals.requestSource
+    logger.info(`Task ${operation}: Authenticated via authorized socket connection`, {
+      requestSource: request.headers.get('x-request-source'),
+      clientId: request.headers.get('x-client-id')
     });
   }
   // 2. Check admin session (medium precedence)
@@ -304,7 +307,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 
     // Prepare update data
     const updateData: Partial<Job> = {
-      updated_at: new Date()
+      // updated_at will be handled by schema default or explicit SQL
     };
 
     // Map external status to internal status
@@ -316,16 +319,16 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
         case "running":
           updateData.status = JobStatus.running;
           if (!existingJob.started_at) {
-            updateData.started_at = new Date();
+            // Remove this assignment - let the database handle it in the update
           }
           break;
         case "completed":
           updateData.status = JobStatus.finished;
-          updateData.finished_at = new Date();
+          // Remove direct assignment - handle in update
           break;
         case "failed":
           updateData.status = JobStatus.failed;
-          updateData.finished_at = new Date();
+          // Remove direct assignment - handle in update
           break;
         case "paused":
           updateData.status = JobStatus.paused;
@@ -343,8 +346,20 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
       };
     }
 
-    // Perform update
-    await db.update(job).set(updateData).where(eq(job.id, taskId));
+    // Perform update with proper timestamp handling
+    if (updateData.status === JobStatus.running && !existingJob.started_at) {
+      await db.update(job).set({
+        ...updateData,
+        started_at: sql`(unixepoch())`
+      }).where(eq(job.id, taskId));
+    } else if (updateData.status === JobStatus.finished || updateData.status === JobStatus.failed) {
+      await db.update(job).set({
+        ...updateData,
+        finished_at: sql`(unixepoch())`
+      }).where(eq(job.id, taskId));
+    } else {
+      await db.update(job).set(updateData).where(eq(job.id, taskId));
+    }
 
     // Fetch updated job
     const updatedJob = await db.query.job.findFirst({
@@ -418,8 +433,8 @@ export const DELETE: RequestHandler = async ({ params, request, locals }) => {
     if (existingJob.status === JobStatus.running) {
       await db.update(job).set({
         status: JobStatus.failed,
-        finished_at: new Date(),
-        updated_at: new Date(),
+        finished_at: sql`(unixepoch())`,
+        updated_at: sql`(unixepoch())`,
         progress: {
           ...(existingJob.progress as any || {}),
           error: "Task canceled by user request"

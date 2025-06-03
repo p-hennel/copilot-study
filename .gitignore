@@ -47,3 +47,4 @@ src/hooks.server.ts
 .folder.bytes
 .DS_Store
 /unused/
+src/.DS_Store

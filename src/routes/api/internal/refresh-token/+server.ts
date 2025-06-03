@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import * as schema from '$lib/server/db/schema';
 import { getLogger } from "@logtape/logtape";
 import { isAdmin } from '$lib/server/utils';
+import { isAuthorizedSocketRequest } from '$lib/server/direct-auth';
 
 const logger = getLogger(["api", "internal", "refresh-token"]);
 
@@ -13,41 +14,59 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   // 🔍 VALIDATION: Log request details
   const requestId = request.headers.get('x-request-id');
   const requestSource = request.headers.get('x-request-source');
+  const clientId = request.headers.get('x-client-id');
+  
   logger.debug('🔍 VALIDATION: Token refresh API endpoint called', {
     requestId,
     requestSource,
+    clientId,
     hasLocals: !!locals,
     localsUser: locals?.user?.id,
     timestamp: Date.now()
   });
 
-  // Allow internal requests from supervisor without admin authentication
-  const isInternalRequest = requestSource?.includes('supervisor') || requestSource === 'unix';
+  // Enhanced authentication using DirectSocketAuth
+  const isAuthorizedSocket = isAuthorizedSocketRequest(request);
+  const isAdminUser = await isAdmin(locals);
   
-  if (isInternalRequest) {
-    logger.debug('🔍 VALIDATION: Internal request detected, bypassing admin check:', {
+  if (isAuthorizedSocket) {
+    logger.debug('🔍 VALIDATION: Authorized socket request detected, bypassing other auth checks:', {
       requestId,
-      requestSource
+      requestSource,
+      clientId
     });
-  } else {
-    // Check admin authentication for external requests
-    const isAdminUser = await isAdmin(locals);
-    logger.debug('🔍 VALIDATION: Admin check result for external request:', {
+  } else if (isAdminUser) {
+    logger.debug('🔍 VALIDATION: Admin user authenticated for external request:', {
       requestId,
       isAdmin: isAdminUser,
       hasUser: !!locals?.user,
       userId: locals?.user?.id
     });
-    
-    if (!isAdminUser) {
-      logger.error('🔍 VALIDATION: Unauthorized token refresh request', {
-        requestId,
-        requestSource,
-        hasLocals: !!locals,
-        hasUser: !!locals?.user
-      });
-      return json({ error: "Unauthorized!" }, { status: 401 });
-    }
+  } else {
+    logger.error('🔍 VALIDATION: Unauthorized token refresh request', {
+      requestId,
+      requestSource,
+      clientId,
+      hasLocals: !!locals,
+      hasUser: !!locals?.user,
+      isAuthorizedSocket,
+      isAdminUser
+    });
+    return json({ error: "Unauthorized!" }, { status: 401 });
+  }
+
+  // Log authentication method used
+  if (isAuthorizedSocket) {
+    logger.info('Token refresh authenticated via authorized socket connection', {
+      requestId,
+      clientId,
+      requestSource
+    });
+  } else if (isAdminUser) {
+    logger.info('Token refresh authenticated via admin session', {
+      requestId,
+      userId: locals.user?.id
+    });
   }
 
   logger.debug('Token refresh API endpoint authenticated successfully');
