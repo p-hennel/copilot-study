@@ -102,6 +102,13 @@ export class MessageBusClient extends EventEmitter {
   private readonly maxProcessedMessages = 1000; // Prevent memory leak
   private messageCooldown = new Map<string, number>();
   private readonly cooldownPeriod = 5000; // 5 seconds
+  
+  // Enhanced circuit breaker for connection stability
+  private connectionFailures = 0;
+  private readonly maxConnectionFailures = 5;
+  private circuitBreakerOpen = false;
+  private circuitBreakerResetTime = 0;
+  private readonly circuitBreakerTimeout = 30000; // 30 seconds
 
   constructor() {
     super();
@@ -182,9 +189,26 @@ export class MessageBusClient extends EventEmitter {
    * Connect to the supervisor socket
    */
   private async connect(): Promise<boolean> {
-    this.logger.debug("MessageBusClient.connect() called", { connected: this.connected });
+    this.logger.debug("MessageBusClient.connect() called", {
+      connected: this.connected,
+      circuitBreakerOpen: this.circuitBreakerOpen,
+      connectionFailures: this.connectionFailures
+    });
+    
     if (this.connected) {
       return true;
+    }
+
+    // Check circuit breaker
+    if (this.circuitBreakerOpen) {
+      if (Date.now() < this.circuitBreakerResetTime) {
+        this.logger.debug("Circuit breaker is open, skipping connection attempt");
+        return false;
+      } else {
+        this.logger.info("Circuit breaker timeout expired, attempting to reset");
+        this.circuitBreakerOpen = false;
+        this.connectionFailures = 0;
+      }
     }
 
     try {
@@ -211,7 +235,12 @@ export class MessageBusClient extends EventEmitter {
           open: () => {
             this.connected = true;
             this.reconnectAttempts = 0;
-            this.logger.debug(`Connected to supervisor at ${this.socketPath}`);
+            
+            // Reset circuit breaker on successful connection
+            this.connectionFailures = 0;
+            this.circuitBreakerOpen = false;
+            
+            this.logger.info(`✅ MESSAGEBUS: Connected to supervisor at ${this.socketPath}`);
             
             // Update cache with connection status
             updateMessageBusConnection(true);
@@ -275,7 +304,16 @@ export class MessageBusClient extends EventEmitter {
       this.logger.debug("Bun.connect created", { hasSocket: !!this.socket });
       return true;
     } catch (err) {
-      this.logger.warn(`Failed to connect to supervisor: ${err}`);
+      this.connectionFailures++;
+      this.logger.warn(`❌ MESSAGEBUS: Failed to connect to supervisor (attempt ${this.connectionFailures}): ${err}`);
+      
+      // Check if we should open the circuit breaker
+      if (this.connectionFailures >= this.maxConnectionFailures) {
+        this.circuitBreakerOpen = true;
+        this.circuitBreakerResetTime = Date.now() + this.circuitBreakerTimeout;
+        this.logger.error(`🚨 MESSAGEBUS: Circuit breaker opened after ${this.connectionFailures} failures. Will retry after ${this.circuitBreakerTimeout / 1000}s`);
+      }
+      
       this.emit("error", err);
       this.scheduleReconnect();
       return false;

@@ -171,20 +171,35 @@ export function sendCommandToCrawler(command: CrawlerCommand): boolean {
 
 export async function startJob(params: Omit<StartJobCommand, "type" | "progress">) {
   let existingProgress: Record<string, JobDataTypeProgress> | undefined = undefined
+  
   try {
     const jobRecord = await db.query.job.findFirst({
       where: eq(jobSchema.id, params.jobId),
-      columns: { resumeState: true }
+      columns: { resumeState: true, status: true }
     })
 
     if (jobRecord?.resumeState && typeof jobRecord.resumeState === "object") {
       existingProgress = jobRecord.resumeState as Record<string, JobDataTypeProgress>
-      logger?.info(`Found existing progress for job ${params.jobId}. Resuming.`)
+      logger?.info(`✅ SUPERVISOR: Found existing progress for job ${params.jobId}. Resuming.`)
     } else {
-      logger?.info(`No existing progress found for job ${params.jobId}. Starting fresh.`)
+      logger?.info(`🔄 SUPERVISOR: No existing progress found for job ${params.jobId}. Starting fresh.`)
+    }
+
+    // Update job status to running if it's not already
+    if (jobRecord && jobRecord.status !== JobStatus.running) {
+      await db.update(jobSchema)
+        .set({
+          status: JobStatus.running,
+          started_at: new Date(),
+          updated_at: new Date()
+        })
+        .where(eq(jobSchema.id, params.jobId));
+      logger?.info(`🚀 SUPERVISOR: Updated job ${params.jobId} status to running`);
     }
   } catch (dbError) {
-    logger?.error(`Error fetching progress for job ${params.jobId} from DB:`, { error: dbError })
+    logger?.error(`❌ SUPERVISOR: Error fetching/updating progress for job ${params.jobId}:`, {
+      error: dbError instanceof Error ? dbError.message : String(dbError)
+    })
   }
 
   // Create command with all required properties
@@ -193,7 +208,27 @@ export async function startJob(params: Omit<StartJobCommand, "type" | "progress"
     ...params,
     progress: existingProgress
   }
-  sendCommandToCrawler(command)
+  
+  const success = sendCommandToCrawler(command)
+  if (!success) {
+    logger?.warn(`⚠️ SUPERVISOR: Failed to send START_JOB command for job ${params.jobId} - job queued for retry when crawler reconnects`);
+    
+    // Mark job as queued for retry when connection is restored
+    try {
+      await db.update(jobSchema)
+        .set({
+          status: JobStatus.queued,
+          progress: {
+            ...existingProgress,
+            pendingStart: true,
+            lastStartAttempt: new Date().toISOString()
+          }
+        })
+        .where(eq(jobSchema.id, params.jobId));
+    } catch (updateError) {
+      logger?.error(`❌ SUPERVISOR: Failed to mark job ${params.jobId} as queued for retry:`, { error: updateError });
+    }
+  }
 }
 
 export function pauseCrawler() {
