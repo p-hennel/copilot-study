@@ -47,7 +47,7 @@
     "@sveltejs/adapter-node": "^5.2.12",
     "@sveltejs/enhanced-img": "^0.4.4",
     "@sveltejs/kit": "^2.21.1",
-    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@sveltejs/vite-plugin-svelte": "^5.1.0",
     "@tailwindcss/vite": "^4.1.8",
     "@testing-library/svelte": "^5.2.8",
     "@total-typescript/ts-reset": "^0.6.1",
@@ -83,7 +83,7 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.33.1",
     "vite": "^6.3.5",
-    "zod": "^3.25.48"
+    "zod": "^3.25.49"
   },
   "dependencies": {
     "@gitbeaker/node": "^35.8.1",
@@ -100,8 +100,8 @@
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.8",
     "@tailwindcss/typography": "^0.5.16",
-    "@tanstack/svelte-query": "^5.79.2",
-    "@tanstack/svelte-query-devtools": "^5.79.2",
+    "@tanstack/svelte-query": "^5.80.2",
+    "@tanstack/svelte-query-devtools": "^5.80.2",
     "@tanstack/table-core": "^8.21.3",
     "@types/csv-parse": "^1.2.5",
     "@types/csv-stringify": "^3.1.3",
