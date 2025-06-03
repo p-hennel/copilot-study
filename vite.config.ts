@@ -28,8 +28,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       external: [
-        "src/crawler/**/*",
-        "src/subvisor/**/*"
+        "src/crawler/**/*"
       ],
     },
   },

@@ -372,6 +372,62 @@ export function getLastHeartbeat(): number {
   return Date.now();
 }
 
+/**
+ * Start a job - sends command via direct communication
+ * Replaces supervisor.ts startJob function
+ */
+export async function startJob(params: any): Promise<boolean> {
+  logger.info("Starting job via DirectCommunicationClient", { params });
+  
+  try {
+    // Send job start command via direct communication
+    directCommunicationClient.sendCommandToCrawler({
+      type: "START_JOB",
+      ...params
+    });
+    return true;
+  } catch (error) {
+    logger.error("Failed to start job via DirectCommunicationClient:", { error });
+    return false;
+  }
+}
+
+/**
+ * Pause crawler - sends command via direct communication
+ * Replaces supervisor.ts pauseCrawler function
+ */
+export function pauseCrawler(): boolean {
+  logger.info("Pausing crawler via DirectCommunicationClient");
+  
+  try {
+    directCommunicationClient.sendCommandToCrawler({
+      type: "PAUSE_CRAWLER"
+    });
+    return true;
+  } catch (error) {
+    logger.error("Failed to pause crawler via DirectCommunicationClient:", { error });
+    return false;
+  }
+}
+
+/**
+ * Resume crawler - sends command via direct communication
+ * Replaces supervisor.ts resumeCrawler function
+ */
+export function resumeCrawler(): boolean {
+  logger.info("Resuming crawler via DirectCommunicationClient");
+  
+  try {
+    directCommunicationClient.sendCommandToCrawler({
+      type: "RESUME_CRAWLER"
+    });
+    return true;
+  } catch (error) {
+    logger.error("Failed to resume crawler via DirectCommunicationClient:", { error });
+    return false;
+  }
+}
+
 // Initialize the manager when this module is imported
 directCommunicationManager.initialize().catch((error) => {
   logger.error("❌ Failed to initialize DirectCommunicationManager:", { error });

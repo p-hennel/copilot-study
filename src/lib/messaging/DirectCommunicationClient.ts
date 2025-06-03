@@ -96,7 +96,7 @@ export class DirectCommunicationClient extends EventEmitter {
   constructor(socketPath?: string) {
     super();
     
-    this.id = process.env.COPILOT_PROCESS_ID || "copilot-study";
+    this.id = process.env.COPILOT_PROCESS_ID || "web-server";
     this.socketPath = socketPath || process.env.SOCKET_PATH || "/home/bun/data/config/api.sock";
     this.logger = getLogger(["messaging", "direct-client", this.id]);
     

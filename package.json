@@ -27,12 +27,9 @@
     "db:migrate": "DATABASE_URL=\"$PWD/data.private/config/main.db\" bun --bun x drizzle-kit migrate",
     "db:studio": "DATABASE_URL=\"$PWD/data.private/config/main.db\" bun --bun x drizzle-kit studio",
     "crawler:start": "bun --bun run src/crawler/cli.ts",
-    "supervisor": "bun --bun run src/subvisor/simple-supervisor.ts",
-    "start": "bun run supervisor start",
-    "start:all": "bun run supervisor start website,crawler",
-    "start:website": "bun run supervisor start website",
-    "start:crawler": "bun run supervisor start crawler",
-    "start:sequence": "bun run supervisor start website && bun run supervisor start crawler"
+    "start": "bun --bun ./build/index.js",
+    "start:dev": "bun run dev",
+    "start:direct": "DATABASE_URL=\"$PWD/data.private/config/main.db\" DATA_ROOT=$PWD/data.private SETTINGS_FILE=$PWD/data.private/config/settings.yaml bun --bun ./build/index.js"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.9",

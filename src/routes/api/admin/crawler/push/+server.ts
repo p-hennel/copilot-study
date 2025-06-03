@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { startJob } from "$lib/server/supervisor";
+import { startJob } from "$lib/server/direct-communication-manager";
 import { db } from "$lib/server/db";
 import { normalizeURL } from "$lib/utils";
 import { JobStatus } from "$lib/types";

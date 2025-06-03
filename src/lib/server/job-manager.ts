@@ -11,7 +11,7 @@ import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
 import type { JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
 import { and, desc, eq, or, sql } from "drizzle-orm"; // Added sql for timestamp operations
 import { monotonicFactory } from "ulid";
-import { startJob } from "$lib/server/supervisor";
+import { startJob } from "$lib/server/direct-communication-manager";
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();

@@ -4,7 +4,7 @@ import { job as jobSchema } from "$lib/server/db/schema";
 import { account } from "$lib/server/db/auth-schema";
 import { JobStatus } from "$lib/types";
 import { eq, and, or, sql } from "drizzle-orm";
-import { startJob } from "$lib/server/supervisor";
+import { startJob } from "$lib/server/direct-communication-manager";
 
 const logger = getLogger(["backend", "job-recovery"]);
 
