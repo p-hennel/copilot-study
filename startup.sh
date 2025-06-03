@@ -1,5 +1,17 @@
 #!/bin/sh
 
+if [[ -n "$SOCKET_PATH" ]]; then
+  if [ ! -e "$SOCKET_PATH" ]; then
+    touch "$SOCKET_PATH"
+  fi
+fi
+
+if [[ -n "$SUPERVISOR_SOCKET_PATH" ]]; then
+  if [ ! -e "$SUPERVISOR_SOCKET_PATH" ]; then
+    touch "$SUPERVISOR_SOCKET_PATH"
+  fi
+fi
+
 export PATH=$HOME/.bun/bin:$PATH
 
 # to generate: echo "$(openssl enc -base64 -in storagebox.private | tr -d '\n')"
@@ -11,7 +23,7 @@ export PATH=$HOME/.bun/bin:$PATH
 
 bun --bun run db-test.ts
 
-if [ "$SUPERVUSOR" -eq "pm2" ]; then
+if [ "$SUPERVISOR" == "pm2" ]; then
   bun pm2-runtime start ecosystem.config.cjs
 elif [ -f "$1" ]; then
   bun --bun "$1"
