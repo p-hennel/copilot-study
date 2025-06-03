@@ -8,7 +8,7 @@ import { getLogger } from "@logtape/logtape";
 import { redirect, type RequestHandler } from "@sveltejs/kit";
 import AppSettings from "$lib/server/settings";
 import { job } from "$lib/server/db/base-schema";
-import { and, eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const logger = getLogger(["recheck", "server"]);
 

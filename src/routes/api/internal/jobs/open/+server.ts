@@ -91,44 +91,47 @@ function getCrawlCommandNameFromDataType(dataType: string): CrawlCommandName | u
 export const GET: RequestHandler = async ({ request, url, locals }) => {
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
   
-  // Enhanced authentication check using DirectSocketAuth
+  // CRITICAL FIX: Socket bypass authentication has highest precedence
   const isAuthorizedSocket = isAuthorizedSocketRequest(request);
   const isAdminUser = await isAdmin(locals);
   
-  if (!currentCrawlerApiToken && !isAuthorizedSocket && !isAdminUser) {
-    logger.error("Attempted to access disabled task endpoint: CRAWLER_API_TOKEN setting not set at request time.");
-    return json({ error: "Endpoint disabled due to missing configuration" }, { status: 503 });
-  }
-
-  if (!isAuthorizedSocket && !isAdminUser) {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      logger.warn("Missing or malformed Authorization header");
-      return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
-    }
-
-    const token = authHeader.substring("Bearer ".length);
-    if (token !== currentCrawlerApiToken) {
-      logger.warn("Invalid taskApiToken provided", {
-        tokenProvided: token ? "****" + token.slice(-4) : "null"
-      });
-      return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
-    }
-  }
-
-  // Log authentication method used
+  // 1. Check socket bypass first (highest precedence)
   if (isAuthorizedSocket) {
     logger.info("Job request authenticated via authorized socket connection", {
       clientId: request.headers.get('x-client-id'),
       requestSource: request.headers.get('x-request-source')
     });
-  } else if (isAdminUser) {
+  }
+  // 2. Check admin session (medium precedence)
+  else if (isAdminUser) {
     logger.info("Job request authenticated via admin session", {
       userId: locals.user?.id
     });
-  } else {
+  }
+  // 3. Check API token only if no socket or admin auth (lowest precedence)
+  else {
+    if (!currentCrawlerApiToken) {
+      logger.error("Authentication failed: CRAWLER_API_TOKEN not configured and no socket/admin auth");
+      return json({ error: "Endpoint disabled due to missing configuration" }, { status: 503 });
+    }
+
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      logger.warn("Authentication failed: Missing or malformed Authorization header for API token");
+      return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
+    }
+
+    const token = authHeader.substring("Bearer ".length);
+    if (token !== currentCrawlerApiToken) {
+      logger.warn("Authentication failed: Invalid API token provided", {
+        tokenProvided: token ? "****" + token.slice(-4) : "null"
+      });
+      return json({ error: "Invalid or missing taskApiToken" }, { status: 401 });
+    }
+    
     logger.info("Job request authenticated via API token");
   }
+
 
   const resourceParam = url.searchParams.get("resource");
   // const limitParam = parseInt(url.searchParams.get("limit") || "1", 10); // Limit param is now handled by iterative fetching
@@ -221,7 +224,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: sql`(unixepoch())`, progress: { error: "Missing account data" } })
+            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing account data" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }
@@ -233,7 +236,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: sql`(unixepoch())`, progress: { error: "Missing access token" } })
+            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing access token" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }
@@ -291,7 +294,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: sql`(unixepoch())`, progress: { error: "Missing or invalid GitLab URL configuration" } })
+            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing or invalid GitLab URL configuration" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }
@@ -322,20 +325,18 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
             
             // Add diagnostic logging before database update
             logger.debug(`🔍 DEBUG: Attempting to mark job ${currentJob.id} as failed with timestamp validation`);
-            const updateTimestamp = new Date();
-            logger.debug(`🔍 DEBUG: Update timestamp type: ${typeof updateTimestamp}, value: ${updateTimestamp.toISOString()}`);
             
             try {
               await db
                 .update(job)
-                .set({ status: JobStatus.failed, finished_at: updateTimestamp, progress: { error: `Unknown DataType mapping for ${currentDataType}` } })
+                .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: `Unknown DataType mapping for ${currentDataType}` } })
                 .where(eq(job.id, currentJob.id));
               logger.debug(`✅ DEBUG: Successfully updated job ${currentJob.id} status to failed`);
             } catch (dbError: any) {
               logger.error(`❌ DEBUG: Database update failed for job ${currentJob.id}:`, {
                 error: dbError.message,
                 stack: dbError.stack,
-                updateData: { status: JobStatus.failed, finished_at: updateTimestamp }
+                updateData: { status: JobStatus.failed, finished_at: "sql`(unixepoch())`" }
               });
               throw dbError; // Re-throw to maintain original error handling
             }
@@ -434,7 +435,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
           );
           await db
             .update(job)
-            .set({ status: JobStatus.failed, finished_at: sql`(unixepoch())`, progress: { error: "Missing OAuth client credentials in settings" } })
+            .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: "Missing OAuth client credentials in settings" } })
             .where(eq(job.id, currentJob.id));
           continue; // Try next candidate in this batch
         }

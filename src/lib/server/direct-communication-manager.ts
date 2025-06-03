@@ -22,7 +22,8 @@ async function resetRunningJobsOnDisconnect(): Promise<void> {
       .update(jobSchema)
       .set({
         status: JobStatus.queued,
-        started_at: null // Reset start time since job will need to restart
+        started_at: null, // Reset start time since job will need to restart
+        updated_at: new Date() // Ensure updated_at is properly set
       })
       .where(eq(jobSchema.status, JobStatus.running));
     

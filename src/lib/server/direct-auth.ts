@@ -74,40 +74,24 @@ export class DirectSocketAuth {
     const requestSource = request.headers.get('x-request-source');
     const clientId = request.headers.get('x-client-id');
     
-    // Direct socket requests should have 'unix' source
-    if (requestSource !== 'unix') {
-      return false;
-    }
-
-    // If no client ID is provided, check if we have any active authorized clients
-    // This provides compatibility during the transition period
-    if (!clientId) {
-      const hasActiveClients = this.authorizedClients.size > 0;
-      if (hasActiveClients) {
-        this.logger.debug("Socket request without client ID, but have active clients - allowing", {
-          activeClients: this.authorizedClients.size
-        });
-        return true;
-      }
-      return false;
-    }
-
-    // Check if the client ID is authorized
-    const isAuthorized = this.authorizedClients.has(clientId);
-    
-    if (isAuthorized) {
-      // Update activity for the client
-      this.updateClientActivity(clientId);
-      this.logger.debug("Authorized socket request", { clientId });
-    } else {
-      this.logger.warn("Unauthorized socket request", { 
-        clientId, 
+    // CRITICAL FIX: Any request coming via Unix socket should bypass authentication
+    // The socket connection itself is the authentication mechanism
+    if (requestSource === 'unix') {
+      this.logger.debug("Unix socket request detected - bypassing authentication", {
+        clientId: clientId || 'unknown',
         requestSource,
-        authorizedClients: Array.from(this.authorizedClients)
+        authorizedClients: this.authorizedClients.size
       });
+      
+      // Update activity for registered clients if clientId is provided
+      if (clientId && this.authorizedClients.has(clientId)) {
+        this.updateClientActivity(clientId);
+      }
+      
+      return true; // Always authorize Unix socket requests
     }
 
-    return isAuthorized;
+    return false; // Non-socket requests are not authorized through this method
   }
 
   /**

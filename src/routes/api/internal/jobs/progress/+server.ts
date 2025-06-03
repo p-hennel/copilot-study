@@ -213,18 +213,13 @@ async function processDiscoveredAreas(
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  // Enhanced Authentication with proper precedence and logging
+  // CRITICAL FIX: Socket bypass authentication has highest precedence
   const currentCrawlerApiToken = AppSettings().app?.CRAWLER_API_TOKEN;
   const isAuthorizedSocket = isAuthorizedSocketRequest(request);
   const adminCheck = await isAdmin(locals);
   
-  let authMethod = 'none';
-  let authSuccess = false;
-
-  // 1. Check socket bypass (highest precedence)
+  // 1. Check socket bypass first (highest precedence)
   if (isAuthorizedSocket) {
-    authMethod = 'socket_bypass';
-    authSuccess = true;
     logger.info('Progress update: Authenticated via authorized socket connection', {
       requestSource: request.headers.get('x-request-source'),
       clientId: request.headers.get('x-client-id')
@@ -232,50 +227,34 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   }
   // 2. Check admin session (medium precedence)
   else if (adminCheck) {
-    authMethod = 'admin_session';
-    authSuccess = true;
     logger.info('Progress update: Authenticated via admin session', {
       userId: locals.user?.id,
       userEmail: locals.user?.email
     });
   }
-  // 3. Check API token (lowest precedence)
-  else if (currentCrawlerApiToken) {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring('Bearer '.length);
-      if (token === currentCrawlerApiToken) {
-        authMethod = 'api_token';
-        authSuccess = true;
-        logger.warn('Progress update: Authenticated via API token - consider using authorized socket connection for better security', {
-          tokenPreview: token.substring(0, 8) + '...'
-        });
-      } else {
-        logger.warn('Progress update: Invalid API token provided', {
-          tokenPreview: token.substring(0, 8) + '...'
-        });
-      }
-    } else {
-      logger.warn('Progress update: Missing or malformed Authorization header for API token auth');
-    }
-  }
-
-  // Final authentication check
-  if (!authSuccess) {
+  // 3. Check API token only if no socket or admin auth (lowest precedence)
+  else {
     if (!currentCrawlerApiToken) {
-      logger.error('Progress update: Authentication failed - CRAWLER_API_TOKEN not configured and no admin session or authorized socket');
+      logger.error('Progress update: Authentication failed - CRAWLER_API_TOKEN not configured and no socket/admin auth');
       return json({ error: 'Endpoint disabled due to missing configuration' }, { status: 503 });
     }
-    logger.error('Progress update: Authentication failed - no valid credentials provided');
-    return json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
-  // Log security metrics
-  logger.info('Progress update: Authentication successful', {
-    method: authMethod,
-    endpoint: 'jobs/progress',
-    timestamp: new Date().toISOString()
-  });
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn('Progress update: Authentication failed - Missing or malformed Authorization header for API token');
+      return json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring('Bearer '.length);
+    if (token !== currentCrawlerApiToken) {
+      logger.warn('Progress update: Authentication failed - Invalid API token provided', {
+        tokenPreview: token.substring(0, 8) + '...'
+      });
+      return json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    logger.info('Progress update: Authenticated via API token');
+  }
 
   let payload: ProgressUpdatePayload;
   try {
@@ -377,8 +356,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       logger.debug(`processDiscoveredAreas returned: groupsCount=${groupsCount}, projectsCount=${projectsCount} for job ${taskId}`);
       
       // Update the job record
-      const updateData: Partial<Job> & { updated_at?: Date } = { 
-        updated_at: new Date(),
+      const updateData: Partial<Job> = {
         // Keep the job in running state
         status: JobStatus.running,
       };
@@ -419,7 +397,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       updateData.progress = jobProgress;
       logger.debug(`Update data for 'new_areas_discovered' (before main update) for job ${taskId}:`, { updateData });
 
-      await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
+      await db.update(jobSchema).set({
+        ...updateData,
+        updated_at: new Date()
+      }).where(eq(jobSchema.id, taskId));
       logger.debug(`Updated job ${taskId} after 'new_areas_discovered' processing.`);
       
       // If this is a GROUP_PROJECT_DISCOVERY job, update its progress with counts
@@ -483,8 +464,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       
       logger.warn(`[CREDENTIAL STATUS] Received ${crawlerStatus} for job ${taskId}`, { credentialStatus, message });
       
-      const updateData: Partial<Job> & { updated_at?: Date } = { 
-        updated_at: new Date(),
+      const updateData: Partial<Job> = {
       };
 
       // Set appropriate job status based on credential status
@@ -540,7 +520,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       };
       updateData.progress = jobProgress;
 
-      await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
+      await db.update(jobSchema).set({
+        ...updateData,
+        updated_at: new Date()
+      }).where(eq(jobSchema.id, taskId));
       logger.debug(`Job ${taskId} updated with credential status: ${crawlerStatus}`);
 
       // Return appropriate response
@@ -555,7 +538,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
 
     // Handle other standard statuses as before
-    const updateData: Partial<Job> & { updated_at?: Date } = { updated_at: new Date() };
+    const updateData: Partial<Job> = {};
     let newJobStatus: JobStatus | null = null;
 
     switch (crawlerStatus.toLowerCase()) {
@@ -676,7 +659,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     updateData.progress = jobProgress;
     logger.debug(`Update data for standard status update for job ${taskId}:`, { updateData, crawlerStatus });
 
-    await db.update(jobSchema).set(updateData).where(eq(jobSchema.id, taskId));
+    await db.update(jobSchema).set({
+      ...updateData,
+      updated_at: new Date()
+    }).where(eq(jobSchema.id, taskId));
     logger.debug(`✅ PROGRESS: Job ${taskId} database updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
     logger.debug(`Job ${taskId} updated to status: ${updateData.status || jobRecord.status}. Crawler status was: ${crawlerStatus}`);
 
