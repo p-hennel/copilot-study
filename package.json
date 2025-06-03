@@ -1,7 +1,7 @@
 {
   "name": "sst-copilot-study",
   "private": true,
-  "version": "1.2.7",
+  "version": "1.2.8",
   "type": "module",
   "scripts": {
     "dev": "DATABASE_URL=\"$PWD/data.private/config/main.db\" DATA_ROOT=$PWD/data.private SETTINGS_FILE=$PWD/data.private/config/settings.yaml bun --bun x vite dev",
