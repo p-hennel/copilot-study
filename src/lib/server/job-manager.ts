@@ -96,7 +96,7 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
         id: currentDiscoveryJobId,
         command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
         userId,
-        created_at: new Date(), // Set to now
+        created_at: new Date(),
         provider: providerId as TokenProvider,
         accountId: authorizationDbId, // Account for PAT
         gitlabGraphQLUrl,
@@ -133,17 +133,40 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
       `GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} started for Authorization: ${authorizationDbId}`
     );
   } catch (error) {
-    logger.error(`Error initiating GitLab discovery or creating/starting job for authorization ${authorizationDbId}:`, { error });
+    logger.error(`❌ JOB-MANAGER: Error initiating GitLab discovery or creating/starting job for authorization ${authorizationDbId}:`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      authorizationDbId,
+      currentDiscoveryJobId
+    });
+    
     if (currentDiscoveryJobId) {
       try {
+        // Set more detailed failure information for better diagnostics
+        const errorMessage = error instanceof Error ? error.message : String(error);
         await db.update(jobSchema)
-          .set({ status: JobStatus.failed }) // Removed error field
+          .set({
+            status: JobStatus.failed,
+            progress: {
+              error: errorMessage,
+              errorType: 'job_manager_initialization_failure',
+              timestamp: new Date().toISOString(),
+              retryable: true // Mark as retryable for potential recovery
+            },
+            finished_at: new Date()
+          })
           .where(eq(jobSchema.id, currentDiscoveryJobId));
-        logger.info(`Marked GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} as failed.`);
+        logger.info(`✅ JOB-MANAGER: Marked GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} as failed with detailed error info.`);
       } catch (dbError) {
-        logger.error(`Failed to update job ${currentDiscoveryJobId} to failed status:`, { dbError });
+        logger.error(`❌ JOB-MANAGER: Failed to update job ${currentDiscoveryJobId} to failed status:`, {
+          dbError: dbError instanceof Error ? dbError.message : String(dbError),
+          originalError: error instanceof Error ? error.message : String(error)
+        });
       }
     }
+    
+    // Don't throw the error to prevent cascading failures
+    logger.warn(`🔄 JOB-MANAGER: Job initialization failed but will not cause system failure for authorization ${authorizationDbId}`);
   }
 }
 

@@ -703,12 +703,12 @@
               </div>
             </div>
 
-            {#if 'currentJobId' in crawlerStatus}
+            {#if crawlerStatus.processing > 0}
               <Separator />
               <div>
-                <div class="text-sm font-medium text-muted-foreground">Current Job ID</div>
+                <div class="text-sm font-medium text-muted-foreground">Active Jobs</div>
                 <div class="text-sm font-mono bg-muted rounded p-2">
-                  {crawlerStatus.currentJobId || "[none]"}
+                  {crawlerStatus.processing} job{crawlerStatus.processing !== 1 ? 's' : ''} currently processing
                 </div>
               </div>
             {/if}
@@ -945,16 +945,42 @@
                     </Badge>
                   </div>
                   
-                  <!-- Mock progress data - in real implementation this would come from job progress -->
+                  <!-- Real progress data calculated from job status -->
                   <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                      <span>Overall Progress</span>
-                      <span class="text-muted-foreground">Collecting data...</span>
-                    </div>
-                    <Progress value={65} class="h-2" />
-                    <div class="text-xs text-muted-foreground">
-                      Processing groups and projects from discovered areas
-                    </div>
+                    {#if crawlerStatus.processing > 0}
+                      {@const total = (crawlerStatus.completed || 0) + (crawlerStatus.failed || 0) + (crawlerStatus.processing || 0) + (crawlerStatus.queued || 0)}
+                      {@const completedPercent = total > 0 ? ((crawlerStatus.completed || 0) / total) * 100 : 0}
+                      
+                      <div class="flex justify-between text-sm">
+                        <span>Overall Progress</span>
+                        <span class="text-muted-foreground">
+                          {crawlerStatus.processing} job{crawlerStatus.processing !== 1 ? 's' : ''} processing
+                        </span>
+                      </div>
+                      
+                      <Progress value={completedPercent} class="h-2" />
+                      <div class="text-xs text-muted-foreground">
+                        {crawlerStatus.completed || 0} of {total} jobs completed ({Math.round(completedPercent)}%)
+                      </div>
+                    {:else if crawlerStatus.queued > 0}
+                      <div class="flex justify-between text-sm">
+                        <span>Overall Progress</span>
+                        <span class="text-muted-foreground">Jobs queued</span>
+                      </div>
+                      <Progress value={0} class="h-2" />
+                      <div class="text-xs text-muted-foreground">
+                        {crawlerStatus.queued} job{crawlerStatus.queued !== 1 ? 's' : ''} waiting to start
+                      </div>
+                    {:else}
+                      <div class="flex justify-between text-sm">
+                        <span>Overall Progress</span>
+                        <span class="text-muted-foreground">No active jobs</span>
+                      </div>
+                      <Progress value={0} class="h-2" />
+                      <div class="text-xs text-muted-foreground">
+                        No jobs currently running or queued
+                      </div>
+                    {/if}
                   </div>
                 </div>
               {/if}
@@ -975,179 +1001,123 @@
                 </div>
               {/if}
 
-              <!-- Processing Stages -->
-              <Separator />
-              <div class="space-y-3">
-                <span class="text-sm font-medium">Current Stages</span>
-                <div class="grid grid-cols-2 gap-2">
+              <!-- Current System Status -->
+              {#if crawlerStatus.processing > 0}
+                <Separator />
+                <div class="space-y-2">
+                  <span class="text-sm font-medium">System Status</span>
                   <div class="flex items-center gap-2 p-2 rounded border">
-                    <GitBranch class="h-4 w-4 text-blue-600" />
+                    <Activity class="h-4 w-4 text-blue-600" />
                     <div class="text-xs">
-                      <div class="font-medium">Discovery</div>
-                      <div class="text-muted-foreground">Groups & Projects</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2 p-2 rounded border">
-                    <Database class="h-4 w-4 text-green-600" />
-                    <div class="text-xs">
-                      <div class="font-medium">Collection</div>
-                      <div class="text-muted-foreground">Issues & MRs</div>
+                      <div class="font-medium">Active Processing</div>
+                      <div class="text-muted-foreground">
+                        {crawlerStatus.processing} job{crawlerStatus.processing !== 1 ? 's' : ''} running
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              {:else if crawlerStatus.paused}
+                <Separator />
+                <div class="space-y-2">
+                  <span class="text-sm font-medium">System Status</span>
+                  <div class="flex items-center gap-2 p-2 rounded border">
+                    <Pause class="h-4 w-4 text-yellow-600" />
+                    <div class="text-xs">
+                      <div class="font-medium">System Paused</div>
+                      <div class="text-muted-foreground">Crawler is currently paused</div>
+                    </div>
+                  </div>
+                </div>
+              {/if}
             </Card.Content>
           </Card.Root>
 
-          <!-- Data Type Breakdown -->
+          <!-- System Statistics -->
           <Card.Root>
             <Card.Header>
               <Card.Title class="flex items-center gap-2">
-                <Database class="h-5 w-5" />
-                Data Collection Progress
+                <TrendingUp class="h-5 w-5" />
+                System Statistics
               </Card.Title>
               <Card.Description>
-                Breakdown of collected data types and volumes
+                Current job distribution and system performance
               </Card.Description>
             </Card.Header>
             <Card.Content class="space-y-4">
-              <!-- Data Types with Progress -->
+              <!-- Job Status Distribution -->
               <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <FolderTree class="h-4 w-4 text-blue-600" />
-                    <span class="text-sm">Groups</span>
-                  </div>
-                  <div class="text-right">
-                    <div class="text-sm font-semibold">245</div>
-                    <div class="text-xs text-muted-foreground">discovered</div>
-                  </div>
-                </div>
+                <div class="text-sm font-medium">Job Status Distribution</div>
                 
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <GitBranch class="h-4 w-4 text-green-600" />
-                    <span class="text-sm">Projects</span>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="flex items-center justify-between p-2 bg-green-50 rounded">
+                    <div class="flex items-center gap-2">
+                      <CheckCircle class="h-4 w-4 text-green-600" />
+                      <span class="text-sm">Completed</span>
+                    </div>
+                    <div class="text-sm font-semibold">{(crawlerStatus.completed || 0).toLocaleString()}</div>
                   </div>
-                  <div class="text-right">
-                    <div class="text-sm font-semibold">1,423</div>
-                    <div class="text-xs text-muted-foreground">processing</div>
+                  
+                  <div class="flex items-center justify-between p-2 bg-blue-50 rounded">
+                    <div class="flex items-center gap-2">
+                      <Loader2 class="h-4 w-4 text-blue-600" />
+                      <span class="text-sm">Processing</span>
+                    </div>
+                    <div class="text-sm font-semibold">{(crawlerStatus.processing || 0).toLocaleString()}</div>
                   </div>
-                </div>
-                
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <CircleAlert class="h-4 w-4 text-orange-600" />
-                    <span class="text-sm">Issues</span>
+                  
+                  <div class="flex items-center justify-between p-2 bg-yellow-50 rounded">
+                    <div class="flex items-center gap-2">
+                      <Clock class="h-4 w-4 text-yellow-600" />
+                      <span class="text-sm">Queued</span>
+                    </div>
+                    <div class="text-sm font-semibold">{(crawlerStatus.queued || 0).toLocaleString()}</div>
                   </div>
-                  <div class="text-right">
-                    <div class="text-sm font-semibold">8,765</div>
-                    <div class="text-xs text-muted-foreground">collected</div>
-                  </div>
-                </div>
-                
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <GitCommit class="h-4 w-4 text-purple-600" />
-                    <span class="text-sm">Commits</span>
-                  </div>
-                  <div class="text-right">
-                    <div class="text-sm font-semibold">45,231</div>
-                    <div class="text-xs text-muted-foreground">in progress</div>
+                  
+                  <div class="flex items-center justify-between p-2 bg-red-50 rounded">
+                    <div class="flex items-center gap-2">
+                      <XCircle class="h-4 w-4 text-red-600" />
+                      <span class="text-sm">Failed</span>
+                    </div>
+                    <div class="text-sm font-semibold">{(crawlerStatus.failed || 0).toLocaleString()}</div>
                   </div>
                 </div>
               </div>
 
-              <!-- Processing Rate -->
-              <Separator />
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium">Processing Rate</span>
-                  <div class="text-right">
-                    <div class="text-sm font-semibold">~125/min</div>
-                    <div class="text-xs text-muted-foreground">items</div>
+              <!-- System Performance Metrics -->
+              {#if crawlerStatus.processing > 0}
+                <Separator />
+                <div class="space-y-2">
+                  <div class="text-sm font-medium">System Performance</div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm">Active Jobs</span>
+                    <div class="text-right">
+                      <div class="text-sm font-semibold">{crawlerStatus.processing}</div>
+                      <div class="text-xs text-muted-foreground">currently running</div>
+                    </div>
                   </div>
+                  
+                  {#if crawlerStatus.lastHeartbeat}
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm">Last Heartbeat</span>
+                      <div class="text-right">
+                        <div class="text-xs text-muted-foreground">
+                          <Time timestamp={new Date(crawlerStatus.lastHeartbeat).toISOString()} relative />
+                        </div>
+                      </div>
+                    </div>
+                  {/if}
                 </div>
-                <div class="text-xs text-muted-foreground">
-                  Estimated completion: 2-3 hours remaining
+              {:else}
+                <div class="text-center py-4 text-muted-foreground">
+                  <TrendingUp class="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p class="text-sm">No active processing to display metrics</p>
                 </div>
-              </div>
+              {/if}
             </Card.Content>
           </Card.Root>
         </div>
       {/if}
 
-      <!-- Real-time Progress Timeline (when SSE is connected) -->
-      {#if sseConnected && crawlerStatus && (crawlerStatus.processing > 0)}
-        <Card.Root>
-          <Card.Header>
-            <Card.Title class="flex items-center gap-2">
-              <Activity class="h-5 w-5" />
-              Real-time Progress Updates
-              <Badge variant="default" class="text-xs ml-2">
-                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></div>
-                Live
-              </Badge>
-            </Card.Title>
-            <Card.Description>
-              Live progress updates from active crawler jobs
-            </Card.Description>
-          </Card.Header>
-          <Card.Content class="space-y-3">
-            <!-- Current Processing Status -->
-            <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2">
-                  <Loader2 class="h-4 w-4 animate-spin text-blue-600" />
-                  <span class="text-sm font-medium">Currently Processing</span>
-                </div>
-                <Badge variant="outline" class="text-xs">
-                  Data Collection
-                </Badge>
-              </div>
-              <div class="text-right">
-                <div class="text-sm font-semibold">1,245 / 3,500</div>
-                <div class="text-xs text-muted-foreground">items processed</div>
-              </div>
-            </div>
-
-            <!-- Recent Progress Events -->
-            <div class="space-y-2">
-              <div class="text-xs font-medium text-muted-foreground">Recent Activity</div>
-              <div class="space-y-1 max-h-32 overflow-y-auto">
-                <div class="flex items-center gap-2 text-xs p-2 bg-green-50 rounded">
-                  <CheckCircle class="h-3 w-3 text-green-600" />
-                  <span class="flex-1">Completed processing project "frontend-app"</span>
-                  <span class="text-muted-foreground">2s ago</span>
-                </div>
-                <div class="flex items-center gap-2 text-xs p-2 bg-blue-50 rounded">
-                  <Database class="h-3 w-3 text-blue-600" />
-                  <span class="flex-1">Collecting issues from "backend-api"</span>
-                  <span class="text-muted-foreground">5s ago</span>
-                </div>
-                <div class="flex items-center gap-2 text-xs p-2 bg-green-50 rounded">
-                  <GitBranch class="h-3 w-3 text-green-600" />
-                  <span class="flex-1">Discovered 45 new projects in group "development"</span>
-                  <span class="text-muted-foreground">12s ago</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Processing Rate Indicator -->
-            <Separator />
-            <div class="flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                <Zap class="h-3 w-3 text-yellow-600" />
-                <span>Processing Rate</span>
-              </div>
-              <div class="text-right">
-                <span class="font-semibold">~85 items/min</span>
-                <div class="text-muted-foreground">Average over last 5 minutes</div>
-              </div>
-            </div>
-          </Card.Content>
-        </Card.Root>
-      {/if}
 
       <!-- Job Failure Logs Section -->
       <Card.Root>

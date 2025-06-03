@@ -37,6 +37,13 @@ dataTypeToCrawlCommandNameMapping['mergerequests'] = 'workItems';
 dataTypeToCrawlCommandNameMapping['branches'] = 'repository';
 dataTypeToCrawlCommandNameMapping['pipelines'] = 'cicd';
 dataTypeToCrawlCommandNameMapping['project'] = 'project';
+dataTypeToCrawlCommandNameMapping['group'] = 'group';
+
+// Log the initialization for debugging
+logger.debug('DataType to CrawlCommandName mapping initialized:', {
+  mappingCount: Object.keys(dataTypeToCrawlCommandNameMapping).length,
+  mappings: dataTypeToCrawlCommandNameMapping
+});
 
 /**
  * Helper function to determine CrawlCommandName from a DataType
@@ -280,7 +287,9 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 
           if (!determinedResourceType) {
             logger.error(`Could not determine CrawlCommandName (resourceType) for DataType: '${currentDataType}'. Job ID: ${currentJob.id}. Marking as failed.`);
-            logger.debug(`Available DataType mappings: ${JSON.stringify(dataTypeToCrawlCommandNameMapping, null, 2)}`);
+            logger.error(`Available DataType mappings (${Object.keys(dataTypeToCrawlCommandNameMapping).length} entries):`, dataTypeToCrawlCommandNameMapping);
+            logger.error(`Available crawlCommandConfig:`, crawlCommandConfig);
+            logger.error(`Lookup attempts - exact: ${dataTypeToCrawlCommandNameMapping[currentDataType]}, lowercase: ${dataTypeToCrawlCommandNameMapping[currentDataType.toLowerCase()]}`);
             await db
               .update(job)
               .set({ status: JobStatus.failed, finished_at: new Date(), progress: { error: `Unknown DataType mapping for ${currentDataType}` } })
@@ -435,7 +444,14 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
     } else if (typeof e === 'string') {
       errorDetails.errorMessage = e;
     }
-    logger.error('Error during task provisioning:', errorDetails);
-    return json([], { status: 500 }); // Return empty array on error
+    logger.error('❌ JOB-OPEN: Critical error during task provisioning:', errorDetails);
+    
+    // Return proper error response instead of 500 to prevent communication breakdown
+    return json({
+      error: "Job provisioning failed",
+      message: errorDetails.errorMessage || "An unexpected error occurred",
+      timestamp: new Date().toISOString(),
+      requestId: Math.random().toString(36).substring(7)
+    }, { status: 200 }); // Return 200 with error payload instead of 500
   }
 };

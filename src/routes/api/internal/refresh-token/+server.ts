@@ -10,12 +10,47 @@ import { isAdmin } from '$lib/server/utils';
 const logger = getLogger(["api", "internal", "refresh-token"]);
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  // Check admin authentication
-  if (!await isAdmin(locals)) {
-    return json({ error: "Unauthorized!" }, { status: 401 });
+  // 🔍 VALIDATION: Log request details
+  const requestId = request.headers.get('x-request-id');
+  const requestSource = request.headers.get('x-request-source');
+  logger.debug('🔍 VALIDATION: Token refresh API endpoint called', {
+    requestId,
+    requestSource,
+    hasLocals: !!locals,
+    localsUser: locals?.user?.id,
+    timestamp: Date.now()
+  });
+
+  // Allow internal requests from supervisor without admin authentication
+  const isInternalRequest = requestSource?.includes('supervisor') || requestSource === 'unix';
+  
+  if (isInternalRequest) {
+    logger.debug('🔍 VALIDATION: Internal request detected, bypassing admin check:', {
+      requestId,
+      requestSource
+    });
+  } else {
+    // Check admin authentication for external requests
+    const isAdminUser = await isAdmin(locals);
+    logger.debug('🔍 VALIDATION: Admin check result for external request:', {
+      requestId,
+      isAdmin: isAdminUser,
+      hasUser: !!locals?.user,
+      userId: locals?.user?.id
+    });
+    
+    if (!isAdminUser) {
+      logger.error('🔍 VALIDATION: Unauthorized token refresh request', {
+        requestId,
+        requestSource,
+        hasLocals: !!locals,
+        hasUser: !!locals?.user
+      });
+      return json({ error: "Unauthorized!" }, { status: 401 });
+    }
   }
 
-  logger.debug('Token refresh API endpoint called');
+  logger.debug('Token refresh API endpoint authenticated successfully');
   
   try {
     const body = await request.json();

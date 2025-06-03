@@ -60,9 +60,29 @@ export async function refreshGitLabTokens(
       return null;
     }
     
+    // 🚨 EMERGENCY FIX: Enhanced refresh token validation
     const refreshToken = accountResult.refreshToken;
+    logger.debug(`🚨 DATABASE CHECK: User ${userId}, Provider ${providerId}`, {
+      hasAccount: !!accountResult,
+      hasRefreshToken: !!refreshToken,
+      hasAccessToken: !!accountResult.accessToken,
+      accessTokenExpiry: accountResult.accessTokenExpiresAt,
+      accountCreated: accountResult.createdAt,
+      tokenLength: refreshToken ? refreshToken.length : 0
+    });
+    
     if (!refreshToken) {
-      logger.error(`No refresh token available for user ${userId} with provider ${providerId}`);
+      logger.error(`🚨 CRITICAL: No refresh token available for user ${userId} with provider ${providerId}`, {
+        accountId: accountResult.id,
+        accountIdField: accountResult.accountId,
+        hasAccessToken: !!accountResult.accessToken,
+        accountCreated: accountResult.createdAt
+      });
+      return null;
+    }
+    
+    if (refreshToken.length < 10) {
+      logger.error(`🚨 CRITICAL: Refresh token too short (${refreshToken.length} chars) for user ${userId} with provider ${providerId}`);
       return null;
     }
     

@@ -11,6 +11,7 @@ import doMigration from '$lib/server/db/migration'
 import { existsSync } from "node:fs"
 import path from "node:path"
 import { mkdirSync } from "fs";
+import { performStartupRecovery, setupPeriodicRecovery } from "$lib/server/startup-recovery";
 
 // Import initialization to ensure socket connection starts immediately
 import "$lib/startup/initialize";
@@ -45,6 +46,16 @@ try {
   if (settings) doMigration(settings.paths.database)
 } catch (error) {
   logger.error("Error during migration:", { error })
+}
+
+// Perform startup job recovery after migration
+try {
+  setTimeout(async () => {
+    await performStartupRecovery();
+    setupPeriodicRecovery();
+  }, 2000); // Run after admin roles sync
+} catch (error) {
+  logger.error("Error setting up job recovery:", { error })
 }
 
 try {

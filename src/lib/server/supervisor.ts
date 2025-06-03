@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm"; // Import needed operators
 import messageBusClientInstance from "$lib/messaging/MessageBusClient"
 
 // Crawler specific imports (keep as needed)
-import { db } from "$lib/server/db"
+import { db, safeTimestamp } from "$lib/server/db"
 import { job as jobSchema } from "$lib/server/db/schema"
 import { JobStatus } from "$lib/types"
 import { getLogger } from "@logtape/logtape";
@@ -124,7 +124,8 @@ async function handleJobUpdate(update: JobCompletionUpdate) {
     }
 
     if (update.status === "completed" || update.status === "failed") {
-      updateData.finished_at = new Date(update.timestamp)
+      // Use safe timestamp conversion
+      updateData.finished_at = safeTimestamp(update.timestamp);
       if (update.status === "completed") {
         updateData.resumeState = null
       }
@@ -170,20 +171,35 @@ export function sendCommandToCrawler(command: CrawlerCommand): boolean {
 
 export async function startJob(params: Omit<StartJobCommand, "type" | "progress">) {
   let existingProgress: Record<string, JobDataTypeProgress> | undefined = undefined
+  
   try {
     const jobRecord = await db.query.job.findFirst({
       where: eq(jobSchema.id, params.jobId),
-      columns: { resumeState: true }
+      columns: { resumeState: true, status: true }
     })
 
     if (jobRecord?.resumeState && typeof jobRecord.resumeState === "object") {
       existingProgress = jobRecord.resumeState as Record<string, JobDataTypeProgress>
-      logger?.info(`Found existing progress for job ${params.jobId}. Resuming.`)
+      logger?.info(`✅ SUPERVISOR: Found existing progress for job ${params.jobId}. Resuming.`)
     } else {
-      logger?.info(`No existing progress found for job ${params.jobId}. Starting fresh.`)
+      logger?.info(`🔄 SUPERVISOR: No existing progress found for job ${params.jobId}. Starting fresh.`)
+    }
+
+    // Update job status to running if it's not already
+    if (jobRecord && jobRecord.status !== JobStatus.running) {
+      await db.update(jobSchema)
+        .set({
+          status: JobStatus.running,
+          started_at: new Date(),
+          updated_at: new Date()
+        })
+        .where(eq(jobSchema.id, params.jobId));
+      logger?.info(`🚀 SUPERVISOR: Updated job ${params.jobId} status to running`);
     }
   } catch (dbError) {
-    logger?.error(`Error fetching progress for job ${params.jobId} from DB:`, { error: dbError })
+    logger?.error(`❌ SUPERVISOR: Error fetching/updating progress for job ${params.jobId}:`, {
+      error: dbError instanceof Error ? dbError.message : String(dbError)
+    })
   }
 
   // Create command with all required properties
@@ -192,7 +208,27 @@ export async function startJob(params: Omit<StartJobCommand, "type" | "progress"
     ...params,
     progress: existingProgress
   }
-  sendCommandToCrawler(command)
+  
+  const success = sendCommandToCrawler(command)
+  if (!success) {
+    logger?.warn(`⚠️ SUPERVISOR: Failed to send START_JOB command for job ${params.jobId} - job queued for retry when crawler reconnects`);
+    
+    // Mark job as queued for retry when connection is restored
+    try {
+      await db.update(jobSchema)
+        .set({
+          status: JobStatus.queued,
+          progress: {
+            ...existingProgress,
+            pendingStart: true,
+            lastStartAttempt: new Date().toISOString()
+          }
+        })
+        .where(eq(jobSchema.id, params.jobId));
+    } catch (updateError) {
+      logger?.error(`❌ SUPERVISOR: Failed to mark job ${params.jobId} as queued for retry:`, { error: updateError });
+    }
+  }
 }
 
 export function pauseCrawler() {
@@ -219,12 +255,20 @@ export function getLastHeartbeat(): number {
 logger.debug("SUPERVISED value:", { supervised: SUPERVISED });
 logger.debug("messageBusClientInstance available:", { available: !!messageBusClientInstance });
 
+// Global flag to prevent duplicate handler registration
+let handlersRegistered = false;
+
 if (SUPERVISED) {
   logger.debug("SUPERVISED is true, setting up event listeners...");
   // --- Setup Event Listeners for MessageBusClient ---
-  if (messageBusClientInstance) {
+  if (messageBusClientInstance && !handlersRegistered) {
     logger.debug("MessageBusClient instance available, initializing event listeners...");
     logger.info("Initializing MessageBusClient event listeners...") // Logger is guaranteed here
+
+    // 🚨 EMERGENCY FIX: Remove ALL existing listeners before registering new ones
+    logger.debug("🚨 EMERGENCY: Removing all existing listeners to prevent duplicates");
+    messageBusClientInstance.removeAllListeners();
+    logger.debug("🚨 EMERGENCY: All listeners removed, proceeding with fresh registration");
 
     messageBusClientInstance.onStatusUpdate((status) => {
       currentCrawlerStatus = status
@@ -271,12 +315,16 @@ if (SUPERVISED) {
     logger.info("Setting up token refresh request handler...");
     logger.debug("MessageBusClient instance available:", { available: !!messageBusClientInstance });
     
-    // Test if event listener is working
-    messageBusClientInstance.on('tokenRefreshRequest', (data) => {
-      logger.debug("tokenRefreshRequest event fired in supervisor", { data });
-    });
+    // 🔍 VALIDATION: Check for duplicate handler registration
+    const existingListeners = messageBusClientInstance.listenerCount('tokenRefreshRequest');
+    logger.debug("🔍 VALIDATION: Existing tokenRefreshRequest listeners before setup:", { count: existingListeners });
     
-    messageBusClientInstance.onTokenRefreshRequest(async (requestData) => {
+    // Only register if no handlers exist yet
+    if (existingListeners === 0) {
+      logger.debug("🔍 VALIDATION: Registering new token refresh handler (supervised mode)");
+      
+      messageBusClientInstance.onTokenRefreshRequest(async (requestData) => {
+        logger.debug("🔍 VALIDATION: TOKEN REFRESH HANDLER TRIGGERED (supervised mode)");
       logger.debug("TOKEN REFRESH HANDLER TRIGGERED");
       logger.debug("Handler received data:", { requestData });
       logger.info("Received token refresh request via MessageBus", { requestData });
@@ -293,10 +341,20 @@ if (SUPERVISED) {
         
         // Call our internal token refresh API
         logger.debug("Making fetch request to localhost:3000/api/internal/refresh-token");
+        logger.debug("🔍 VALIDATION: Token refresh request details:", {
+          requestId,
+          providerId,
+          accountId,
+          userId,
+          timestamp: Date.now()
+        });
+        
         const response = await fetch('http://localhost:3000/api/internal/refresh-token', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-request-source': 'supervisor',
+            'x-request-id': requestId
           },
           body: JSON.stringify({
             providerId,
@@ -305,7 +363,12 @@ if (SUPERVISED) {
           })
         });
         
-        logger.debug("Fetch response status:", { status: response.status, statusText: response.statusText });
+        logger.debug("🔍 VALIDATION: Fetch response details:", {
+          requestId,
+          status: response.status,
+          statusText: response.statusText,
+          hasAuthHeader: response.headers.has('www-authenticate')
+        });
         
         if (response.ok) {
           const tokenData = await response.json() as {
@@ -361,10 +424,149 @@ if (SUPERVISED) {
           logger.debug('Exception error response sent to crawler');
         }
       }
+      });
+    } else {
+      logger.debug("🔍 VALIDATION: Skipping handler registration - handlers already exist");
+    }
+    
+    // Mark handlers as registered to prevent duplicates
+    handlersRegistered = true;
+    logger.debug("Token refresh handler setup completed");
+
+    // Listen for job requests from crawler
+    messageBusClientInstance.onJobRequest(async (requestData) => {
+      logger.debug("JOB REQUEST HANDLER TRIGGERED");
+      logger.debug("Job request data:", { requestData });
+      
+      if (!messageBusClientInstance) {
+        logger.error('MessageBusClient became null during job request processing');
+        return;
+      }
+
+      try {
+        // Use the existing job fetching logic from the /api/internal/jobs/open endpoint
+        logger.debug('Fetching jobs via internal endpoint...');
+        
+        const response = await fetch('http://localhost:3000/api/internal/jobs/open', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-request-source': 'unix'
+          }
+        });
+
+        if (response.ok) {
+          const jobs = await response.json();
+          
+          // Check if response is an error object (new error handling format)
+          if (jobs && typeof jobs === 'object' && 'error' in jobs) {
+            logger.warn('Job fetching returned error response:', { errorResponse: jobs });
+            
+            // Send error response back to crawler
+            if (messageBusClientInstance) {
+              const errorJobs = jobs as { error: string; message?: string };
+              messageBusClientInstance.sendJobErrorToCrawler(
+                errorJobs.message || errorJobs.error || 'Job provisioning failed',
+                requestData.requestId
+              );
+            }
+            return;
+          }
+          
+          logger.debug('Jobs fetched successfully via socket request:', {
+            jobCount: Array.isArray(jobs) ? jobs.length : 0
+          });
+          
+          // Send job response back to crawler
+          if (messageBusClientInstance) {
+            const jobsArray = Array.isArray(jobs) ? jobs : [];
+            messageBusClientInstance.sendJobResponseToCrawler(jobsArray);
+            logger.debug('Job response sent to crawler successfully');
+          } else {
+            logger.error('MessageBusClient became null when sending job response');
+          }
+        } else {
+          const responseText = await response.text().catch(() => 'Unable to read response');
+          logger.warn(`Job fetching failed with status ${response.status}: ${response.statusText}`, {
+            responseBody: responseText
+          });
+          
+          // Send error response back to crawler
+          if (messageBusClientInstance) {
+            messageBusClientInstance.sendJobErrorToCrawler(
+              `Job fetching failed: ${response.status} ${response.statusText}`,
+              requestData.requestId
+            );
+          }
+        }
+      } catch (error) {
+        logger.error('Exception in job request processing:', { error });
+        
+        // Send error response back to crawler
+        if (messageBusClientInstance) {
+          messageBusClientInstance.sendJobErrorToCrawler(
+            error instanceof Error ? error.message : 'Unknown error during job request',
+            requestData.requestId
+          );
+        }
+      }
     });
     
-    logger.debug("Token refresh handler setup completed");
-  } else {
+    logger.debug("Job request handler setup completed");
+
+    // Listen for progress updates from crawler
+    messageBusClientInstance.onProgressUpdate(async (progressData) => {
+      logger.debug("PROGRESS UPDATE HANDLER TRIGGERED");
+      logger.debug("Progress update data:", { progressData });
+      
+      if (!messageBusClientInstance) {
+        logger.error('MessageBusClient became null during progress update processing');
+        return;
+      }
+
+      try {
+        // FIXED: Handle the crawler's actual payload structure
+        // The crawler sends: { taskId, status, timestamp, [payload data] }
+        const payload = {
+          taskId: progressData.taskId,
+          status: progressData.status || 'processing',
+          timestamp: progressData.timestamp || new Date().toISOString(),
+          ...progressData // Include all other fields from progressData
+        };
+        
+        logger.debug('Processing progress update via internal endpoint...', { 
+          taskId: payload.taskId, 
+          status: payload.status,
+          hasAreas: !!progressData.areas,
+          areasCount: progressData.areas?.length
+        });
+        
+        // Forward to internal progress API with correct payload structure
+        const response = await fetch('http://localhost:3000/api/internal/jobs/progress', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-request-source': 'unix'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          logger.debug('Progress update processed successfully via socket');
+        } else {
+          const errorText = await response.text();
+          logger.warn(`Progress update failed with status ${response.status}: ${response.statusText}`, {
+            error: errorText,
+            payload: payload
+          });
+        }
+      } catch (error) {
+        logger.error('Exception in progress update processing:', { error });
+      }
+    });
+    
+    logger.debug("Progress update handler setup completed");
+   } else {
     logger.debug("MessageBusClient not available in SUPERVISED=true branch");
     logger.warn("MessageBusClient not initialized (not running under supervisor?). Crawler communication disabled.")
   }
@@ -373,12 +575,24 @@ if (SUPERVISED) {
   logger.debug("Setting up event listeners anyway for token refresh support...");
   
   // Even if not supervised, we still need token refresh handlers for the crawler
-  if (messageBusClientInstance) {
+  if (messageBusClientInstance && !handlersRegistered) {
     logger.debug("MessageBusClient available in non-supervised mode, setting up token refresh handler...");
     
-    // Set up minimal event listeners including token refresh
-    messageBusClientInstance.onTokenRefreshRequest(async (requestData) => {
-      logger.debug("TOKEN REFRESH HANDLER TRIGGERED (non-supervised mode)");
+    // 🚨 EMERGENCY FIX: Remove ALL existing listeners before registering new ones
+    logger.debug("🚨 EMERGENCY: Removing all existing listeners (non-supervised mode)");
+    messageBusClientInstance.removeAllListeners();
+    logger.debug("🚨 EMERGENCY: All listeners removed, proceeding with fresh registration (non-supervised mode)");
+    
+    // � VALIDATION: Check for duplicate handler registration in non-supervised mode
+    const existingListenersNonSup = messageBusClientInstance.listenerCount('tokenRefreshRequest');
+    logger.debug("🔍 VALIDATION: Existing tokenRefreshRequest listeners after cleanup:", { count: existingListenersNonSup });
+    
+    // Register handlers after cleanup
+    logger.debug("🔍 VALIDATION: Registering new token refresh handler (non-supervised mode)");
+      
+      // Set up minimal event listeners including token refresh
+      messageBusClientInstance.onTokenRefreshRequest(async (requestData) => {
+      logger.debug("🔍 VALIDATION: TOKEN REFRESH HANDLER TRIGGERED (non-supervised mode)");
       logger.debug("Handler received data:", { requestData });
       
       if (!messageBusClientInstance) {
@@ -392,10 +606,20 @@ if (SUPERVISED) {
         
         // Call our internal token refresh API
         logger.debug("Making fetch request to localhost:3000/api/internal/refresh-token");
+        logger.debug("🔍 VALIDATION (non-supervised): Token refresh request details:", {
+          requestId,
+          providerId,
+          accountId,
+          userId,
+          timestamp: Date.now()
+        });
+        
         const response = await fetch('http://localhost:3000/api/internal/refresh-token', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-request-source': 'supervisor-non-supervised',
+            'x-request-id': requestId
           },
           body: JSON.stringify({
             providerId,
@@ -404,7 +628,12 @@ if (SUPERVISED) {
           })
         });
         
-        logger.debug("Fetch response status:", { status: response.status, statusText: response.statusText });
+        logger.debug("🔍 VALIDATION (non-supervised): Fetch response details:", {
+          requestId,
+          status: response.status,
+          statusText: response.statusText,
+          hasAuthHeader: response.headers.has('www-authenticate')
+        });
         
         if (response.ok) {
           const tokenData = await response.json() as {
@@ -460,9 +689,128 @@ if (SUPERVISED) {
           logger.debug('Exception error response sent to crawler');
         }
       }
+      });
+    
+    // Mark handlers as registered
+    handlersRegistered = true;
+    logger.debug("Token refresh handler setup completed (non-supervised mode)");
+
+    // Listen for job requests from crawler (non-supervised mode)
+    if (messageBusClientInstance) {
+      messageBusClientInstance.onJobRequest(async (requestData) => {
+      logger.debug("JOB REQUEST HANDLER TRIGGERED (non-supervised mode)");
+      logger.debug("Job request data:", { requestData });
+      
+      if (!messageBusClientInstance) {
+        logger.error('MessageBusClient became null during job request processing');
+        return;
+      }
+
+      try {
+        // Use the existing job fetching logic from the /api/internal/jobs/open endpoint
+        logger.debug('Fetching jobs via internal endpoint...');
+        
+        const response = await fetch('http://localhost:3000/api/internal/jobs/open', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-request-source': 'unix'
+          }
+        });
+
+        if (response.ok) {
+          const jobs = await response.json();
+          logger.debug('Jobs fetched successfully via socket request:', {
+            jobCount: Array.isArray(jobs) ? jobs.length : 0
+          });
+          
+          // Send job response back to crawler
+          if (messageBusClientInstance) {
+            const jobsArray = Array.isArray(jobs) ? jobs : [];
+            messageBusClientInstance.sendJobResponseToCrawler(jobsArray);
+            logger.debug('Job response sent to crawler successfully');
+          } else {
+            logger.error('MessageBusClient became null when sending job response');
+          }
+        } else {
+          logger.warn(`Job fetching failed with status ${response.status}: ${response.statusText}`);
+          
+          // Send error response back to crawler
+          if (messageBusClientInstance) {
+            messageBusClientInstance.sendJobErrorToCrawler(
+              `Job fetching failed: ${response.status} ${response.statusText}`,
+              requestData.requestId
+            );
+          }
+        }
+      } catch (error) {
+        logger.error('Exception in job request processing:', { error });
+        
+        // Send error response back to crawler
+        if (messageBusClientInstance) {
+          messageBusClientInstance.sendJobErrorToCrawler(
+            error instanceof Error ? error.message : 'Unknown error during job request',
+            requestData.requestId
+          );
+        }
+      }
     });
     
-    logger.debug("Token refresh handler setup completed (non-supervised mode)");
+    logger.debug("Job request handler setup completed (non-supervised mode)");
+
+    // Listen for progress updates from crawler (non-supervised mode)
+    messageBusClientInstance.onProgressUpdate(async (progressData) => {
+      logger.debug("PROGRESS UPDATE HANDLER TRIGGERED (non-supervised mode)");
+      logger.debug("Progress update data:", { progressData });
+      
+      if (!messageBusClientInstance) {
+        logger.error('MessageBusClient became null during progress update processing');
+        return;
+      }
+
+      try {
+        // FIXED: Handle the crawler's actual payload structure
+        // The crawler sends: { taskId, status, timestamp, [payload data] }
+        const payload = {
+          taskId: progressData.taskId,
+          status: progressData.status || 'processing',
+          timestamp: progressData.timestamp || new Date().toISOString(),
+          ...progressData // Include all other fields from progressData
+        };
+        
+        logger.debug('Processing progress update via internal endpoint...', { 
+          taskId: payload.taskId, 
+          status: payload.status,
+          hasAreas: !!progressData.areas,
+          areasCount: progressData.areas?.length
+        });
+        
+        // Forward to internal progress API with correct payload structure
+        const response = await fetch('http://localhost:3000/api/internal/jobs/progress', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-request-source': 'unix'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          logger.debug('Progress update processed successfully via socket');
+        } else {
+          const errorText = await response.text();
+          logger.warn(`Progress update failed with status ${response.status}: ${response.statusText}`, {
+            error: errorText,
+            payload: payload
+          });
+        }
+      } catch (error) {
+        logger.error('Exception in progress update processing:', { error });
+      }
+    });
+    
+    logger.debug("Progress update handler setup completed (non-supervised mode)");
+    }
   } else {
     logger.debug("MessageBusClient not available in non-supervised mode either");
   }
