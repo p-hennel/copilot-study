@@ -189,29 +189,29 @@ export class MessageBusClient extends EventEmitter {
    * Connect to the supervisor socket
    */
   private async connect(): Promise<boolean> {
-    this.logger.debug("MessageBusClient.connect() called", {
-      connected: this.connected,
-      circuitBreakerOpen: this.circuitBreakerOpen,
-      connectionFailures: this.connectionFailures
-    });
-    
-    if (this.connected) {
-      return true;
-    }
-
-    // Check circuit breaker
-    if (this.circuitBreakerOpen) {
-      if (Date.now() < this.circuitBreakerResetTime) {
-        this.logger.debug("Circuit breaker is open, skipping connection attempt");
-        return false;
-      } else {
-        this.logger.info("Circuit breaker timeout expired, attempting to reset");
-        this.circuitBreakerOpen = false;
-        this.connectionFailures = 0;
-      }
-    }
-
     try {
+      this.logger.debug("MessageBusClient.connect() called", {
+        connected: this.connected,
+        circuitBreakerOpen: this.circuitBreakerOpen,
+        connectionFailures: this.connectionFailures
+      });
+      
+      if (this.connected) {
+        return true;
+      }
+
+      // Check circuit breaker
+      if (this.circuitBreakerOpen) {
+        if (Date.now() < this.circuitBreakerResetTime) {
+          this.logger.debug("Circuit breaker is open, skipping connection attempt");
+          return false;
+        } else {
+          this.logger.info("Circuit breaker timeout expired, attempting to reset");
+          this.circuitBreakerOpen = false;
+          this.connectionFailures = 0;
+        }
+      }
+
       this.logger.debug(`Connecting to supervisor via Unix socket: ${this.socketPath}`);
       this.logger.debug(`Attempting to connect to Unix socket: ${this.socketPath}`);
       
@@ -229,74 +229,82 @@ export class MessageBusClient extends EventEmitter {
         unix: this.socketPath,
         socket: {
           data: (_socket, data) => {
-            this.logger.debug("MessageBusClient received data:", { data: data.toString() });
-            this.handleSocketData(data);
+            try {
+              this.logger.debug("MessageBusClient received data:", { data: data.toString() });
+              this.handleSocketData(data);
+            } catch (error: any) { this.logger.error(error) }
           },
           open: () => {
-            this.connected = true;
-            this.reconnectAttempts = 0;
-            
-            // Reset circuit breaker on successful connection
-            this.connectionFailures = 0;
-            this.circuitBreakerOpen = false;
-            
-            this.logger.info(`✅ MESSAGEBUS: Connected to supervisor at ${this.socketPath}`);
-            
-            // Update cache with connection status
-            updateMessageBusConnection(true);
-            
-            // Start monitoring heartbeats
-            this.resetHeartbeatTimeout();
-            
-            this.emit("connected");
+            try {
+              this.connected = true;
+              this.reconnectAttempts = 0;
               
-            // Process queued messages
-            this.processQueue();
-            
-            // Register with the external crawler
-            this.sendMessage({
-              origin: this.id,
-              destination: "external-crawler",
-              type: MessageType.COMMAND,
-              key: "register",
-              payload: {
-                id: this.id,
-                pid: process.pid,
-                type: "web-server"
-              },
-              timestamp: Date.now()
-            });
+              // Reset circuit breaker on successful connection
+              this.connectionFailures = 0;
+              this.circuitBreakerOpen = false;
+              
+              this.logger.info(`✅ MESSAGEBUS: Connected to supervisor at ${this.socketPath}`);
+              
+              // Update cache with connection status
+              updateMessageBusConnection(true);
+              
+              // Start monitoring heartbeats
+              this.resetHeartbeatTimeout();
+              
+              this.emit("connected");
+                
+              // Process queued messages
+              this.processQueue();
+              
+              // Register with the external crawler
+              this.sendMessage({
+                origin: this.id,
+                destination: "external-crawler",
+                type: MessageType.COMMAND,
+                key: "register",
+                payload: {
+                  id: this.id,
+                  pid: process.pid,
+                  type: "web-server"
+                },
+                timestamp: Date.now()
+              });
+            } catch (error: any) { this.logger.error(error) }
           },
           close: () => {
-            this.connected = false;
-            this.logger.warn("Disconnected from supervisor");
-            
-            // Stop heartbeat monitoring
-            this.stopHeartbeatMonitoring();
-            
-            // Update cache with connection status
-            updateMessageBusConnection(false);
-            
-            this.emit("disconnected");
-            
-            // Reset running jobs to queued when connection is lost
-            this.resetRunningJobsToQueued();
-            
-            this.scheduleReconnect();
+            try {
+              this.connected = false;
+              this.logger.warn("Disconnected from supervisor");
+              
+              // Stop heartbeat monitoring
+              this.stopHeartbeatMonitoring();
+              
+              // Update cache with connection status
+              updateMessageBusConnection(false);
+              
+              this.emit("disconnected");
+              
+              // Reset running jobs to queued when connection is lost
+              this.resetRunningJobsToQueued();
+              
+              this.scheduleReconnect();
+            } catch (error: any) { this.logger.error(error) }
           },
           error: (_socket, error) => {
-            this.logger.error(`Socket error: ${error}`);
-            
-            // Stop heartbeat monitoring
-            this.stopHeartbeatMonitoring();
-            
-            // Update cache with connection status
-            updateMessageBusConnection(false);
-            
-            this.emit("error", error);
-            
-            // Reset running jobs on socket error as this indicates connection loss
-            this.resetRunningJobsToQueued();
+            try {
+              this.logger.error(`Socket error: ${error}`);
+              
+              // Stop heartbeat monitoring
+              this.stopHeartbeatMonitoring();
+              
+              // Update cache with connection status
+              updateMessageBusConnection(false);
+              
+              this.emit("error", error);
+              
+              // Reset running jobs on socket error as this indicates connection loss
+              this.resetRunningJobsToQueued();
+            } catch (error: any) { this.logger.error(error) }
           }
         }
       });
@@ -637,12 +645,16 @@ export class MessageBusClient extends EventEmitter {
    * Queue a message for sending, pruning if necessary
    */
   private queueMessage(message: IPCMessage): void {
-    this.messageQueue.push(message);
-    
-    // Prune if too many messages
-    if (this.messageQueue.length > this.maxQueueLength) {
-      this.logger.warn(`Message queue exceeded limit (${this.maxQueueLength}), pruning oldest messages`);
-      this.messageQueue = this.messageQueue.slice(-Math.floor(this.maxQueueLength * 0.8)); // Keep 80% newest
+    try {
+      this.messageQueue.push(message);
+      
+      // Prune if too many messages
+      if (this.messageQueue.length > this.maxQueueLength) {
+        this.logger.warn(`Message queue exceeded limit (${this.maxQueueLength}), pruning oldest messages`);
+        this.messageQueue = this.messageQueue.slice(-Math.floor(this.maxQueueLength * 0.8)); // Keep 80% newest
+      }
+    } catch (error: any) {
+      this.logger.error(error)
     }
   }
   

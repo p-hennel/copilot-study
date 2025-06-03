@@ -19,6 +19,8 @@ elif [ -f "index.js" ]; then
   bun --bun index.js
 elif [ -f "build/index.js" ]; then
   bun --bun build/index.js
+elif [ -f "web/index.js" ]; then
+  bun --bun web/index.js
 else
   echo "No index.js or build/index.js or file at first parameter ($1) found. Please provide a valid entry point."
   exit 1

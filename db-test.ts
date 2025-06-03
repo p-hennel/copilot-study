@@ -93,8 +93,8 @@ async function checkAndCreateTables() {
       }
       
       sqlite = new Database(DB_PATH);
-    } catch (error) {
-      console.log('Database cannot be opened, creating it...');
+    } catch (error: any) {
+      console.error('Database cannot be opened, creating it...', error);
       await runMigration();
       return;
     }
