@@ -80,7 +80,7 @@ COPY drizzle /usr/src/app/
 #  /usr/src/app/config/settings.example.yaml \
 #  /home/bun/data/config/settings.yaml
 
-RUN crontab -u bun /usr/src/app/backup.cron
+#RUN crontab -u bun /usr/src/app/backup.cron
 #RUN rm -f /home/bun/data/config/main.db;
 RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
 RUN chown -R bun:bun /home/bun/data
