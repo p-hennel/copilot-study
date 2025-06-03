@@ -70,7 +70,10 @@ enum MessageType {
   COMMAND = "command",
   STATE_CHANGE = "stateChange",
   HEARTBEAT = "heartbeat",
-  SUBSCRIPTION = "subscription"
+  SUBSCRIPTION = "subscription",
+  JOB_REQUEST = "jobRequest",
+  JOB_RESPONSE = "jobResponse",
+  PROGRESS_UPDATE = "progressUpdate"
 }
 
 /**
@@ -93,6 +96,12 @@ export class MessageBusClient extends EventEmitter {
   private lastHeartbeatTime: number = 0;
   private heartbeatTimeoutTimer: Timer | null = null;
   private readonly HEARTBEAT_TIMEOUT = 30000; // 30 seconds - matches cache timeout
+  
+  // 🚨 EMERGENCY FIX: Message Circuit Breaker
+  private processedMessages = new Set<string>();
+  private readonly maxProcessedMessages = 1000; // Prevent memory leak
+  private messageCooldown = new Map<string, number>();
+  private readonly cooldownPeriod = 5000; // 5 seconds
 
   constructor() {
     super();
@@ -449,6 +458,39 @@ export class MessageBusClient extends EventEmitter {
         } else if (message.key === "jobUpdate") {
           this.logger.debug("MessageBusClient: Emitting jobUpdate");
           this.emit("jobUpdate", message.payload);
+        } else if (message.key === "PROGRESS_UPDATE") {
+          this.logger.debug("MessageBusClient: Received PROGRESS_UPDATE", { payload: message.payload });
+          
+          // 🚨 EMERGENCY FIX: Progress update deduplication
+          const taskId = message.payload?.taskId;
+          const timestamp = message.payload?.timestamp;
+          if (taskId && timestamp) {
+            const progressKey = `PROGRESS_${taskId}_${timestamp}`;
+            const now = Date.now();
+            
+            // Check if already processed
+            if (this.processedMessages.has(progressKey)) {
+              this.logger.warn("🚨 CIRCUIT BREAKER: Duplicate PROGRESS_UPDATE blocked", { taskId, timestamp });
+              return;
+            }
+            
+            // Check cooldown period (shorter for progress updates)
+            const lastProcessed = this.messageCooldown.get(progressKey);
+            if (lastProcessed && (now - lastProcessed) < 1000) { // 1 second cooldown for progress
+              this.logger.warn("🚨 CIRCUIT BREAKER: PROGRESS_UPDATE in cooldown period", {
+                taskId,
+                timestamp,
+                timeSinceLastProcessed: now - lastProcessed
+              });
+              return;
+            }
+            
+            // Mark as processed
+            this.processedMessages.add(progressKey);
+            this.messageCooldown.set(progressKey, now);
+          }
+          
+          this.emit("progressUpdate", message.payload);
         } else if (message.key === "JOB_FAILURE_LOGS") {
           this.logger.debug("MessageBusClient: Received JOB_FAILURE_LOGS, emitting jobFailure event", { payload: message.payload });
           // Update cache with job failure log
@@ -460,6 +502,53 @@ export class MessageBusClient extends EventEmitter {
         } else if (message.key === "TOKEN_REFRESH_REQUEST") {
           this.logger.debug("MessageBusClient: TOKEN_REFRESH_REQUEST RECEIVED");
           this.logger.debug("MessageBusClient: Payload:", { payload: message.payload });
+          
+          // 🚨 EMERGENCY FIX: Circuit breaker to prevent duplicate processing
+          const requestId = message.payload?.requestId;
+          if (requestId) {
+            const messageKey = `TOKEN_REFRESH_${requestId}`;
+            const now = Date.now();
+            
+            // Check if already processed
+            if (this.processedMessages.has(messageKey)) {
+              this.logger.warn("🚨 CIRCUIT BREAKER: Duplicate TOKEN_REFRESH_REQUEST blocked", { requestId });
+              return;
+            }
+            
+            // Check cooldown period
+            const lastProcessed = this.messageCooldown.get(messageKey);
+            if (lastProcessed && (now - lastProcessed) < this.cooldownPeriod) {
+              this.logger.warn("🚨 CIRCUIT BREAKER: TOKEN_REFRESH_REQUEST in cooldown period", {
+                requestId,
+                timeSinceLastProcessed: now - lastProcessed
+              });
+              return;
+            }
+            
+            // Mark as processed
+            this.processedMessages.add(messageKey);
+            this.messageCooldown.set(messageKey, now);
+            
+            // Cleanup old entries to prevent memory leak
+            if (this.processedMessages.size > this.maxProcessedMessages) {
+              const oldestEntries = Array.from(this.processedMessages).slice(0, 100);
+              oldestEntries.forEach(entry => {
+                this.processedMessages.delete(entry);
+                this.messageCooldown.delete(entry);
+              });
+              this.logger.debug("🚨 CIRCUIT BREAKER: Cleaned up old processed messages");
+            }
+          }
+          
+          // 🔍 VALIDATION: Check for duplicate message processing
+          const currentListeners = this.listenerCount('tokenRefreshRequest');
+          this.logger.debug("🔍 VALIDATION: TOKEN_REFRESH_REQUEST processing details:", {
+            requestId,
+            currentListeners,
+            messageTimestamp: message.timestamp,
+            processingTime: Date.now()
+          });
+          
           this.logger.debug("MessageBusClient: Emitting tokenRefreshRequest event...");
           this.emit("tokenRefreshRequest", message.payload);
           this.logger.debug("MessageBusClient: tokenRefreshRequest event emitted successfully");
@@ -476,6 +565,15 @@ export class MessageBusClient extends EventEmitter {
       case MessageType.COMMAND:
         // Handle commands
         this.emit("command", message.key, message.payload);
+        break;
+
+      case MessageType.JOB_REQUEST:
+        this.logger.debug("MessageBusClient: Processing JOB_REQUEST", { key: message.key });
+        // Handle job requests from crawler
+        if (message.key === "request_jobs") {
+          this.logger.debug("MessageBusClient: Emitting jobRequest event");
+          this.emit("jobRequest", message.payload);
+        }
         break;
         
       default:
@@ -581,6 +679,37 @@ export class MessageBusClient extends EventEmitter {
       type: MessageType.COMMAND,
       key: "START_JOB",
       payload: jobData,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Sends a job response to the external crawler
+   * @param jobs Array of jobs available for processing
+   */
+  public sendJobResponseToCrawler(jobs: any[]): void {
+    this.sendMessage({
+      origin: this.id,
+      destination: "external-crawler",
+      type: MessageType.JOB_RESPONSE,
+      key: "jobs_available",
+      payload: jobs,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Sends a job error response to the external crawler
+   * @param error The error message
+   * @param requestId Optional request ID for tracking
+   */
+  public sendJobErrorToCrawler(error: string, requestId?: string): void {
+    this.sendMessage({
+      origin: this.id,
+      destination: "external-crawler",
+      type: MessageType.JOB_RESPONSE,
+      key: "jobs_error",
+      payload: { error, requestId },
       timestamp: Date.now()
     });
   }
@@ -730,6 +859,14 @@ export class MessageBusClient extends EventEmitter {
     return this.on("tokenRefreshRequest", listener);
   }
 
+  public onJobRequest(listener: (requestData: any) => void): this {
+    return this.on("jobRequest", listener);
+  }
+
+  public onProgressUpdate(listener: (progressData: any) => void): this {
+    return this.on("progressUpdate", listener);
+  }
+
   /**
    * Send a token refresh response back to the crawler
    */
@@ -763,6 +900,32 @@ export class MessageBusClient extends EventEmitter {
     this.logger.debug("Sending TOKEN_REFRESH_RESPONSE message:", { message });
     this.sendMessage(message);
     this.logger.debug("TOKEN_REFRESH_RESPONSE message sent successfully");
+  }
+
+  /**
+   * 🚨 EMERGENCY FIX: Remove all event listeners to prevent duplicates
+   */
+  public removeAllListeners(event?: string): this {
+    this.logger.debug("🚨 EMERGENCY: Removing all event listeners", {
+      event: event || 'all',
+      currentListenerCounts: {
+        tokenRefreshRequest: this.listenerCount('tokenRefreshRequest'),
+        progressUpdate: this.listenerCount('progressUpdate'),
+        jobUpdate: this.listenerCount('jobUpdate'),
+        statusUpdate: this.listenerCount('statusUpdate'),
+        heartbeat: this.listenerCount('heartbeat'),
+        shutdown: this.listenerCount('shutdown'),
+        disconnected: this.listenerCount('disconnected'),
+        error: this.listenerCount('error')
+      }
+    });
+    
+    // Clear circuit breaker state as well
+    this.processedMessages.clear();
+    this.messageCooldown.clear();
+    this.logger.debug("🚨 EMERGENCY: Circuit breaker state cleared");
+    
+    return super.removeAllListeners(event);
   }
 }
 

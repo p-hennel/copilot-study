@@ -47,6 +47,8 @@ interface ProgressUpdatePayload {
   progress?: any; // For resume state, e.g., lastProcessedId or customParameters object
   areas?: DiscoveredAreaData[]; // New field for area discoveries
   credentialStatus?: CredentialStatusUpdate; // New field for credential status updates
+  // 🚨 EMERGENCY FIX: Support numbered object format from crawler
+  [key: string]: any; // Allow numbered keys like "0", "1", "2", etc.
   
   // Enhanced progress fields
   itemsByType?: {
@@ -288,7 +290,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return json({ error: 'Missing required fields: taskId, status, timestamp' }, { status: 400 });
   }
 
-  const { taskId, status: crawlerStatus, timestamp, processedItems, totalItems, currentDataType, message, error: payloadError, progress: resumePayload, areas, credentialStatus } = payload;
+  const { taskId, status: crawlerStatus, timestamp, processedItems, totalItems, currentDataType, message, error: payloadError, progress: resumePayload, areas: rawAreas, credentialStatus } = payload;
 
   try {
     const jobRecord = await db.query.job.findFirst({
@@ -321,11 +323,51 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     // Special case for new_areas_discovered
     if (crawlerStatus.toLowerCase() === 'new_areas_discovered') {
-      logger.debug(`Processing 'new_areas_discovered' for job ${taskId}. Areas:`, { areas });
-      if (!areas || !Array.isArray(areas) || areas.length === 0) {
-        logger.warn(`Received new_areas_discovered status but no areas in payload for job: ${taskId}. Payload:`, { payload });
+      logger.debug(`Processing 'new_areas_discovered' for job ${taskId}. Raw payload areas:`, { rawAreas, payloadKeys: Object.keys(payload) });
+      
+      // 🚨 EMERGENCY FIX: Handle both array and numbered object formats from crawler
+      let processedAreas: DiscoveredAreaData[] = [];
+      
+      if (rawAreas && Array.isArray(rawAreas) && rawAreas.length > 0) {
+        // Standard format: areas is already an array
+        processedAreas = rawAreas;
+        logger.debug(`🚨 FIX: Using standard areas array format (${rawAreas.length} areas)`);
+      } else if (payload.progress && Array.isArray(payload.progress) && payload.progress.length > 0) {
+        // Alternative format: areas might be in progress field
+        processedAreas = payload.progress as DiscoveredAreaData[];
+        logger.debug(`🚨 FIX: Using progress field as areas array (${payload.progress.length} areas)`);
+      } else {
+        // 🚨 EMERGENCY FIX: Handle numbered object format (crawler sends "0", "1", "2", etc.)
+        const numberedAreas: DiscoveredAreaData[] = [];
+        let index = 0;
+        const payloadAny = payload as any; // Cast to any to access numbered keys
+        while (payloadAny[index.toString()]) {
+          numberedAreas.push(payloadAny[index.toString()] as DiscoveredAreaData);
+          index++;
+        }
+        
+        if (numberedAreas.length > 0) {
+          processedAreas = numberedAreas;
+          logger.debug(`🚨 FIX: Converted numbered object format to areas array (${numberedAreas.length} areas from keys 0-${index-1})`);
+        }
+      }
+      
+      if (processedAreas.length === 0) {
+        logger.warn(`🚨 FIX: No areas found in any supported format for job: ${taskId}. Payload structure:`, {
+          hasRawAreas: !!rawAreas,
+          rawAreasType: Array.isArray(rawAreas) ? 'array' : typeof rawAreas,
+          rawAreasLength: Array.isArray(rawAreas) ? rawAreas.length : 'N/A',
+          hasProgress: !!payload.progress,
+          progressType: Array.isArray(payload.progress) ? 'array' : typeof payload.progress,
+          payloadKeys: Object.keys(payload),
+          numberedKeys: Object.keys(payload).filter(key => /^\d+$/.test(key))
+        });
         return json({ error: 'Missing areas data in payload' }, { status: 400 });
       }
+      
+      // Use the processed areas
+      const areas = processedAreas;
+      logger.debug(`🚨 FIX: Successfully processed ${areas.length} areas for job ${taskId}`);
 
       // Process the discovered areas
       const { groupsCount, projectsCount } = await processDiscoveredAreas(areas, jobRecord);
