@@ -65,3 +65,36 @@ process.on("SIGINT", function () {
 
 // Optional: Export client getter if direct client access is needed elsewhere
 // export { getDbClient };
+
+/**
+ * Safely converts a timestamp value to a Date object for Drizzle timestamp fields.
+ * Handles null, undefined, invalid dates, and ensures proper Date object creation.
+ *
+ * @param timestamp - The timestamp value (string, number, Date, or null/undefined)
+ * @param fallbackToCurrent - Whether to fallback to current time if invalid (default: true)
+ * @returns Date object or null
+ */
+export function safeTimestamp(timestamp: any, fallbackToCurrent: boolean = true): Date | null {
+  // Handle null/undefined cases
+  if (timestamp === null || timestamp === undefined) {
+    return fallbackToCurrent ? new Date() : null;
+  }
+
+  // If already a Date object, validate it
+  if (timestamp instanceof Date) {
+    return isNaN(timestamp.getTime()) ? (fallbackToCurrent ? new Date() : null) : timestamp;
+  }
+
+  // Try to create a Date from the timestamp
+  try {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      logger.warn("Invalid timestamp value, using fallback", { timestamp, fallbackToCurrent });
+      return fallbackToCurrent ? new Date() : null;
+    }
+    return date;
+  } catch (error) {
+    logger.error("Error creating Date from timestamp", { timestamp, error });
+    return fallbackToCurrent ? new Date() : null;
+  }
+}

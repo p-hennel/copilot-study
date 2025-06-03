@@ -167,7 +167,9 @@ export type DataType =
   | 'MergeRequestDiscussions'
   | 'MergeRequestAwardEmojis'
   | 'ProjectSnippets'
-  | 'Snippets';
+  | 'Snippets'
+  | 'group'
+  | 'project';
 
 export type CrawlCommandName =
   | 'instance'
@@ -214,7 +216,8 @@ export const crawlCommandConfig: Record<CrawlCommandName, DataType[]> = {
 //    'ProjectHooks',
     'ProjectIssueBoards',
     'FreezePeriods',
-    "Groups"
+    "Groups",
+    'project'
   ],
   repository: ['Repositories', 'Commits', 'CommitDiscussions', 'Branches', 'Tags'],
   cicd: [
@@ -245,7 +248,8 @@ export const crawlCommandConfig: Record<CrawlCommandName, DataType[]> = {
     'EpicIssues',
     'EpicNotes',
     'EpicDiscussions',
-    "Projects"
+    "Projects",
+    'group'
   ],
   security: [
     'ProtectedBranches',

@@ -1,7 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import AppSettings from '$lib/server/settings';
-import { db } from '$lib/server/db';
+import { db, safeTimestamp } from '$lib/server/db';
 import { job as jobSchema, area, area_authorization, jobArea } from '$lib/server/db/base-schema'; // Removed tokenScopeJob, tokenScopeJobArea
 import { account } from '$lib/server/db/auth-schema';
 import type { Job } from '$lib/server/db/base-schema';
@@ -560,7 +560,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         logger.debug(`🟡 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to RUNNING (started)`);
         newJobStatus = JobStatus.running;
         if (jobRecord.status !== JobStatus.running) {
-            updateData.started_at = new Date(timestamp);
+            // Use safe timestamp conversion
+            updateData.started_at = safeTimestamp(timestamp);
         }
         // Save resume state if provided in the payload
         if (resumePayload) {
@@ -574,7 +575,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         // No specific action if already running, updated_at will be set.
         // If it wasn't running, set started_at
         if (jobRecord.status !== JobStatus.running && !jobRecord.started_at) {
-            updateData.started_at = new Date(timestamp);
+            // Use safe timestamp conversion
+            updateData.started_at = safeTimestamp(timestamp);
         }
         // Save resume state if provided in the payload
         if (resumePayload) {
@@ -585,13 +587,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       case 'completed':
         logger.debug(`🟢 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FINISHED`);
         newJobStatus = JobStatus.finished;
-        updateData.finished_at = new Date(timestamp);
+        // Use safe timestamp conversion
+        updateData.finished_at = safeTimestamp(timestamp);
         updateData.resumeState = null; // Clear resume state on completion
         break;
       case 'failed':
         logger.warn(`🔴 PROGRESS: Job ${taskId} transitioning from ${jobRecord.status} to FAILED`);
         newJobStatus = JobStatus.failed;
-        updateData.finished_at = new Date(timestamp);
+        // Use safe timestamp conversion
+        updateData.finished_at = safeTimestamp(timestamp);
         if (payloadError) {
           logger.error(`Job ${taskId} reported failure:`, { error: payloadError });
           // Storing complex errors might need a dedicated field or serialization

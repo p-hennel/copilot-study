@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm"; // Import needed operators
 import messageBusClientInstance from "$lib/messaging/MessageBusClient"
 
 // Crawler specific imports (keep as needed)
-import { db } from "$lib/server/db"
+import { db, safeTimestamp } from "$lib/server/db"
 import { job as jobSchema } from "$lib/server/db/schema"
 import { JobStatus } from "$lib/types"
 import { getLogger } from "@logtape/logtape";
@@ -124,7 +124,8 @@ async function handleJobUpdate(update: JobCompletionUpdate) {
     }
 
     if (update.status === "completed" || update.status === "failed") {
-      updateData.finished_at = new Date(update.timestamp)
+      // Use safe timestamp conversion
+      updateData.finished_at = safeTimestamp(update.timestamp);
       if (update.status === "completed") {
         updateData.resumeState = null
       }
@@ -421,6 +422,22 @@ if (SUPERVISED) {
 
         if (response.ok) {
           const jobs = await response.json();
+          
+          // Check if response is an error object (new error handling format)
+          if (jobs && typeof jobs === 'object' && 'error' in jobs) {
+            logger.warn('Job fetching returned error response:', { errorResponse: jobs });
+            
+            // Send error response back to crawler
+            if (messageBusClientInstance) {
+              const errorJobs = jobs as { error: string; message?: string };
+              messageBusClientInstance.sendJobErrorToCrawler(
+                errorJobs.message || errorJobs.error || 'Job provisioning failed',
+                requestData.requestId
+              );
+            }
+            return;
+          }
+          
           logger.debug('Jobs fetched successfully via socket request:', {
             jobCount: Array.isArray(jobs) ? jobs.length : 0
           });
@@ -434,7 +451,10 @@ if (SUPERVISED) {
             logger.error('MessageBusClient became null when sending job response');
           }
         } else {
-          logger.warn(`Job fetching failed with status ${response.status}: ${response.statusText}`);
+          const responseText = await response.text().catch(() => 'Unable to read response');
+          logger.warn(`Job fetching failed with status ${response.status}: ${response.statusText}`, {
+            responseBody: responseText
+          });
           
           // Send error response back to crawler
           if (messageBusClientInstance) {

@@ -11,7 +11,25 @@ const { generateSQLiteDrizzleJson, generateSQLiteMigration } = await import("dri
 const [previous, current]: Awaited<ReturnType<typeof generateSQLiteDrizzleJson>>[] =
   await Promise.all([{}, schema].map((schemaObject) => generateSQLiteDrizzleJson(schemaObject)));
 
-const statements = await generateSQLiteMigration(previous || {} as any, current as any);
+let statements = await generateSQLiteMigration(previous || {} as any, current as any);
+
+// Make statements idempotent by adding IF NOT EXISTS clauses
+statements = statements.map(statement => {
+  // Handle CREATE TABLE statements
+  if (statement.trim().toUpperCase().startsWith('CREATE TABLE')) {
+    return statement.replace(/CREATE TABLE\s+/i, 'CREATE TABLE IF NOT EXISTS ');
+  }
+  // Handle CREATE INDEX statements
+  if (statement.trim().toUpperCase().startsWith('CREATE INDEX')) {
+    return statement.replace(/CREATE INDEX\s+/i, 'CREATE INDEX IF NOT EXISTS ');
+  }
+  // Handle CREATE UNIQUE INDEX statements
+  if (statement.trim().toUpperCase().startsWith('CREATE UNIQUE INDEX')) {
+    return statement.replace(/CREATE UNIQUE INDEX\s+/i, 'CREATE UNIQUE INDEX IF NOT EXISTS ');
+  }
+  return statement;
+});
+
 const migration = statements.join("\n");
 
 export default async function doMigration(filePath: string) {

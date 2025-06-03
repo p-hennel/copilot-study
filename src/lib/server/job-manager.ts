@@ -96,7 +96,7 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
         id: currentDiscoveryJobId,
         command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
         userId,
-        created_at: new Date(), // Set to now
+        created_at: new Date(),
         provider: providerId as TokenProvider,
         accountId: authorizationDbId, // Account for PAT
         gitlabGraphQLUrl,
