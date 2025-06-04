@@ -1,4 +1,4 @@
-import { eq, desc, gte, lte } from 'drizzle-orm';
+import { eq, desc, gte, lte, and } from 'drizzle-orm';
 import type { DatabaseManager } from './database-manager.js';
 import type { SocketJobProgress, ProgressMilestone } from '../types/database.js';
 import type { ProgressSnapshot } from '../types/progress.js';
@@ -36,22 +36,20 @@ export class ProgressRepository {
    * Get current progress for a job
    */
   async getJobProgress(jobId: string): Promise<SocketJobProgress | null> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const [jobRecord] = await db
-        .select({
-          progress: job.progress
-        })
-        .from(job)
-        .where(eq(job.id, jobId))
-        .limit(1);
+    const db = this.dbManager.getDatabase();
+    const [jobRecord] = await db
+      .select({
+        progress: job.progress
+      })
+      .from(job)
+      .where(eq(job.id, jobId))
+      .limit(1);
 
-      if (!jobRecord || !jobRecord.progress) {
-        return null;
-      }
+    if (!jobRecord || !jobRecord.progress) {
+      return null;
+    }
 
-      return jobRecord.progress as SocketJobProgress;
-    });
+    return jobRecord.progress as SocketJobProgress;
   }
 
   /**
@@ -97,29 +95,27 @@ export class ProgressRepository {
    * Get progress snapshots for a job
    */
   async getProgressSnapshots(jobId: string, limit?: number): Promise<ProgressSnapshot[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const [jobRecord] = await db
-        .select({
-          progress: job.progress
-        })
-        .from(job)
-        .where(eq(job.id, jobId))
-        .limit(1);
+    const db = this.dbManager.getDatabase();
+    const [jobRecord] = await db
+      .select({
+        progress: job.progress
+      })
+      .from(job)
+      .where(eq(job.id, jobId))
+      .limit(1);
 
-      if (!jobRecord || !jobRecord.progress) {
-        return [];
-      }
+    if (!jobRecord || !jobRecord.progress) {
+      return [];
+    }
 
-      const progressData = jobRecord.progress as any;
-      const snapshots = progressData.snapshots || [];
+    const progressData = jobRecord.progress as any;
+    const snapshots = progressData.snapshots || [];
 
-      if (limit && limit > 0) {
-        return snapshots.slice(-limit);
-      }
+    if (limit && limit > 0) {
+      return snapshots.slice(-limit);
+    }
 
-      return snapshots;
-    });
+    return snapshots;
   }
 
   /**
@@ -157,23 +153,21 @@ export class ProgressRepository {
    * Get progress milestones for a job
    */
   async getProgressMilestones(jobId: string): Promise<ProgressMilestone[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const [jobRecord] = await db
-        .select({
-          progress: job.progress
-        })
-        .from(job)
-        .where(eq(job.id, jobId))
-        .limit(1);
+    const db = this.dbManager.getDatabase();
+    const [jobRecord] = await db
+      .select({
+        progress: job.progress
+      })
+      .from(job)
+      .where(eq(job.id, jobId))
+      .limit(1);
 
-      if (!jobRecord || !jobRecord.progress) {
-        return [];
-      }
+    if (!jobRecord || !jobRecord.progress) {
+      return [];
+    }
 
-      const progressData = jobRecord.progress as any;
-      return progressData.milestones || [];
-    });
+    const progressData = jobRecord.progress as any;
+    return progressData.milestones || [];
   }
 
   /**
@@ -195,78 +189,74 @@ export class ProgressRepository {
    * Get resume state for a job
    */
   async getResumeState(jobId: string): Promise<Record<string, any> | null> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const [jobRecord] = await db
-        .select({
-          resumeState: job.resumeState
-        })
-        .from(job)
-        .where(eq(job.id, jobId))
-        .limit(1);
+    const db = this.dbManager.getDatabase();
+    const [jobRecord] = await db
+      .select({
+        resumeState: job.resumeState
+      })
+      .from(job)
+      .where(eq(job.id, jobId))
+      .limit(1);
 
-      return jobRecord?.resumeState as Record<string, any> || null;
-    });
+    return jobRecord?.resumeState as Record<string, any> || null;
   }
 
   /**
    * Get progress statistics for multiple jobs
    */
   async getProgressStatistics(jobIds: string[]): Promise<ProgressStatistics> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const jobs = await db
-        .select({
-          id: job.id,
-          progress: job.progress,
-          status: job.status
-        })
-        .from(job)
-        .where(eq(job.id, jobIds[0] ?? "")); // Simplified for now
+    const db = this.dbManager.getDatabase();
+    const jobs = await db
+      .select({
+        id: job.id,
+        progress: job.progress,
+        status: job.status
+      })
+      .from(job)
+      .where(eq(job.id, jobIds[0] ?? "")); // Simplified for now
 
-      const stats: ProgressStatistics = {
-        total_jobs: jobs.length,
-        jobs_with_progress: 0,
-        average_completion: 0,
-        total_items_processed: 0,
-        total_items_discovered: 0,
-        active_jobs: 0
-      };
+    const stats: ProgressStatistics = {
+      total_jobs: jobs.length,
+      jobs_with_progress: 0,
+      average_completion: 0,
+      total_items_processed: 0,
+      total_items_discovered: 0,
+      active_jobs: 0
+    };
 
-      let totalCompletion = 0;
-      let totalProcessed = 0;
-      let totalDiscovered = 0;
+    let totalCompletion = 0;
+    let totalProcessed = 0;
+    let totalDiscovered = 0;
 
-      jobs.forEach(j => {
-        if (j.progress) {
-          stats.jobs_with_progress++;
-          const progressData = j.progress as any;
-          
-          if (progressData.overall_completion) {
-            totalCompletion += progressData.overall_completion;
-          }
-
-          if (progressData.entities) {
-            progressData.entities.forEach((entity: any) => {
-              totalProcessed += entity.total_processed || 0;
-              totalDiscovered += entity.total_discovered || 0;
-            });
-          }
+    jobs.forEach(j => {
+      if (j.progress) {
+        stats.jobs_with_progress++;
+        const progressData = j.progress as any;
+        
+        if (progressData.overall_completion) {
+          totalCompletion += progressData.overall_completion;
         }
 
-        if (j.status === 'running' || j.status === 'queued') {
-          stats.active_jobs++;
+        if (progressData.entities) {
+          progressData.entities.forEach((entity: any) => {
+            totalProcessed += entity.total_processed || 0;
+            totalDiscovered += entity.total_discovered || 0;
+          });
         }
-      });
+      }
 
-      stats.average_completion = stats.jobs_with_progress > 0 
-        ? totalCompletion / stats.jobs_with_progress 
-        : 0;
-      stats.total_items_processed = totalProcessed;
-      stats.total_items_discovered = totalDiscovered;
-
-      return stats;
+      if (j.status === 'running' || j.status === 'queued') {
+        stats.active_jobs++;
+      }
     });
+
+    stats.average_completion = stats.jobs_with_progress > 0
+      ? totalCompletion / stats.jobs_with_progress
+      : 0;
+    stats.total_items_processed = totalProcessed;
+    stats.total_items_discovered = totalDiscovered;
+
+    return stats;
   }
 
   /**
@@ -281,11 +271,13 @@ export class ProgressRepository {
           progress: null
         })
         .where(
-          eq(job.status, JobStatus.finished) &&
-          lte(job.finished_at, olderThan)
+          and(
+            eq(job.status, JobStatus.finished),
+            lte(job.finished_at, olderThan)
+          )
         );
 
-      return result.changes || 0;
+      return result.rowsAffected || 0;
     });
   }
 
@@ -293,22 +285,22 @@ export class ProgressRepository {
    * Get jobs requiring progress updates (stale progress)
    */
   async getStaleProgressJobs(staleDuration: number): Promise<string[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const staleTime = new Date(Date.now() - staleDuration);
-      
-      const jobs = await db
-        .select({
-          id: job.id
-        })
-        .from(job)
-        .where(
-          eq(job.status, JobStatus.running) &&
+    const db = this.dbManager.getDatabase();
+    const staleTime = new Date(Date.now() - staleDuration);
+    
+    const jobs = await db
+      .select({
+        id: job.id
+      })
+      .from(job)
+      .where(
+        and(
+          eq(job.status, JobStatus.running),
           lte(job.updated_at, staleTime)
-        );
+        )
+      );
 
-      return jobs.map(j => j.id);
-    });
+    return jobs.map(j => j.id);
   }
 
   /**
@@ -335,29 +327,27 @@ export class ProgressRepository {
    * Get recent progress updates
    */
   async getRecentProgressUpdates(since: Date, limit: number = 100): Promise<RecentProgressUpdate[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const jobs = await db
-        .select({
-          id: job.id,
-          progress: job.progress,
-          updated_at: job.updated_at,
-          status: job.status
-        })
-        .from(job)
-        .where(gte(job.updated_at, since))
-        .orderBy(desc(job.updated_at))
-        .limit(limit);
+    const db = this.dbManager.getDatabase();
+    const jobs = await db
+      .select({
+        id: job.id,
+        progress: job.progress,
+        updated_at: job.updated_at,
+        status: job.status
+      })
+      .from(job)
+      .where(gte(job.updated_at, since))
+      .orderBy(desc(job.updated_at))
+      .limit(limit);
 
-      return jobs
-        .filter(j => j.progress)
-        .map(j => ({
-          jobId: j.id,
-          progress: j.progress as SocketJobProgress,
-          updatedAt: j.updated_at!,
-          status: j.status
-        }));
-    });
+    return jobs
+      .filter(j => j.progress)
+      .map(j => ({
+        jobId: j.id,
+        progress: j.progress as SocketJobProgress,
+        updatedAt: j.updated_at!,
+        status: j.status
+      }));
   }
 }
 

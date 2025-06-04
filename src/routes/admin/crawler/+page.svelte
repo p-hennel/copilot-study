@@ -70,10 +70,12 @@
   let cache: CrawlerStatusCache = $state(getCachedStatus());
   
   // Real-time crawler status (starts with cached data, gets updated via SSE)
-  let crawlerStatus = $state<any>(cache.status);
+  // svelte-ignore state_referenced_locally
+    let crawlerStatus = $state<any>(cache.status);
   
   // Job failure logs state (from cache)
-  let jobFailureLogs = $state<any[]>(cache.jobFailureLogs);
+  // svelte-ignore state_referenced_locally
+    let jobFailureLogs = $state<any[]>(cache.jobFailureLogs);
   const MAX_LOGS = 50; // Keep only the last 50 log entries
   
   // Real-time connection (WebSocket or EventSource)

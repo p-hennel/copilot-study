@@ -133,166 +133,152 @@ export class JobRepository {
    * Get job by ID
    */
   async getJob(jobId: string): Promise<Job | null> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const [foundJob] = await db
-        .select()
-        .from(job)
-        .where(eq(job.id, jobId))
-        .limit(1);
+    const db = this.dbManager.getDatabase();
+    const [foundJob] = await db
+      .select()
+      .from(job)
+      .where(eq(job.id, jobId))
+      .limit(1);
 
-      return foundJob as Job || null;
-    });
+    return foundJob as Job || null;
   }
 
   /**
    * Get jobs by status
    */
   async getJobsByStatus(status: JobStatus, accountId?: string): Promise<Job[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      if (accountId) {
-        return await db
-          .select()
-          .from(job)
-          .where(and(eq(job.status, status), eq(job.accountId, accountId)))
-          .orderBy(desc(job.created_at)) as Job[];
-      }
-
+    const db = this.dbManager.getDatabase();
+    if (accountId) {
       return await db
         .select()
         .from(job)
-        .where(eq(job.status, status))
+        .where(and(eq(job.status, status), eq(job.accountId, accountId)))
         .orderBy(desc(job.created_at)) as Job[];
-    });
+    }
+
+    return await db
+      .select()
+      .from(job)
+      .where(eq(job.status, status))
+      .orderBy(desc(job.created_at)) as Job[];
   }
 
   /**
    * Get active jobs (queued or running)
    */
   async getActiveJobs(accountId?: string): Promise<Job[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const activeStatuses = [JobStatus.queued, JobStatus.running];
-      
-      if (accountId) {
-        return await db
-          .select()
-          .from(job)
-          .where(and(
-            inArray(job.status, activeStatuses),
-            eq(job.accountId, accountId)
-          ))
-          .orderBy(desc(job.created_at)) as Job[];
-      }
-
+    const db = this.dbManager.getDatabase();
+    const activeStatuses = [JobStatus.queued, JobStatus.running];
+    
+    if (accountId) {
       return await db
         .select()
         .from(job)
-        .where(inArray(job.status, activeStatuses))
+        .where(and(
+          inArray(job.status, activeStatuses),
+          eq(job.accountId, accountId)
+        ))
         .orderBy(desc(job.created_at)) as Job[];
-    });
+    }
+
+    return await db
+      .select()
+      .from(job)
+      .where(inArray(job.status, activeStatuses))
+      .orderBy(desc(job.created_at)) as Job[];
   }
 
   /**
    * Get jobs requiring retry (failed but retryable)
    */
   async getRetryableJobs(maxAge: Date): Promise<Job[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      return await db
-        .select()
-        .from(job)
-        .where(
-          and(
-            eq(job.status, JobStatus.failed),
-            gte(job.updated_at, maxAge)
-          )
+    const db = this.dbManager.getDatabase();
+    return await db
+      .select()
+      .from(job)
+      .where(
+        and(
+          eq(job.status, JobStatus.failed),
+          gte(job.updated_at, maxAge)
         )
-        .orderBy(asc(job.updated_at)) as Job[];
-    });
+      )
+      .orderBy(asc(job.updated_at)) as Job[];
   }
 
   /**
    * Get jobs by account and command
    */
   async getJobsByAccountAndCommand(accountId: string, command: CrawlCommand): Promise<Job[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      return await db
-        .select()
-        .from(job)
-        .where(
-          and(
-            eq(job.accountId, accountId),
-            eq(job.command, command)
-          )
+    const db = this.dbManager.getDatabase();
+    return await db
+      .select()
+      .from(job)
+      .where(
+        and(
+          eq(job.accountId, accountId),
+          eq(job.command, command)
         )
-        .orderBy(desc(job.created_at)) as Job[];
-    });
+      )
+      .orderBy(desc(job.created_at)) as Job[];
   }
 
   /**
    * Get jobs by full path
    */
   async getJobsByPath(fullPath: string, status?: JobStatus): Promise<Job[]> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      
-      if (status) {
-        return await db
-          .select()
-          .from(job)
-          .where(and(eq(job.full_path, fullPath), eq(job.status, status)))
-          .orderBy(desc(job.created_at)) as Job[];
-      }
-
+    const db = this.dbManager.getDatabase();
+    
+    if (status) {
       return await db
         .select()
         .from(job)
-        .where(eq(job.full_path, fullPath))
+        .where(and(eq(job.full_path, fullPath), eq(job.status, status)))
         .orderBy(desc(job.created_at)) as Job[];
-    });
+    }
+
+    return await db
+      .select()
+      .from(job)
+      .where(eq(job.full_path, fullPath))
+      .orderBy(desc(job.created_at)) as Job[];
   }
 
   /**
    * Get job statistics for an account
    */
   async getJobStatistics(accountId: string): Promise<JobStatistics> {
-    return await this.dbManager.withRetry(async () => {
-      const db = this.dbManager.getDatabase();
-      const jobs = await db
-        .select()
-        .from(job)
-        .where(eq(job.accountId, accountId));
+    const db = this.dbManager.getDatabase();
+    const jobs = await db
+      .select()
+      .from(job)
+      .where(eq(job.accountId, accountId));
 
-      const stats: JobStatistics = {
-        total: jobs.length,
-        queued: 0,
-        running: 0,
-        completed: 0,
-        failed: 0,
-        paused: 0,
-        by_command: {}
-      };
+    const stats: JobStatistics = {
+      total: jobs.length,
+      queued: 0,
+      running: 0,
+      completed: 0,
+      failed: 0,
+      paused: 0,
+      by_command: {}
+    };
 
-      jobs.forEach(j => {
-        switch (j.status) {
-          case JobStatus.queued: stats.queued++; break;
-          case JobStatus.running: stats.running++; break;
-          case JobStatus.finished: stats.completed++; break;
-          case JobStatus.failed: stats.failed++; break;
-          case JobStatus.paused: stats.paused++; break;
-        }
+    jobs.forEach(j => {
+      switch (j.status) {
+        case JobStatus.queued: stats.queued++; break;
+        case JobStatus.running: stats.running++; break;
+        case JobStatus.finished: stats.completed++; break;
+        case JobStatus.failed: stats.failed++; break;
+        case JobStatus.paused: stats.paused++; break;
+      }
 
-        if (!stats.by_command[j.command]) {
-          stats.by_command[j.command] = 0;
-        }
-        stats.by_command[j.command]!++;
-      });
-
-      return stats;
+      if (!stats.by_command[j.command]) {
+        stats.by_command[j.command] = 0;
+      }
+      stats.by_command[j.command]!++;
     });
+
+    return stats;
   }
 
   /**
@@ -301,7 +287,7 @@ export class JobRepository {
   async deleteJob(jobId: string): Promise<void> {
     await this.dbManager.withTransaction(async (db) => {
       const result = await db.delete(job).where(eq(job.id, jobId));
-      if (result.changes === 0) {
+      if (result.rowsAffected === 0) {
         throw new Error(`Job not found: ${jobId}`);
       }
     });
@@ -316,13 +302,13 @@ export class JobRepository {
         const result = await db
           .delete(job)
           .where(and(lte(job.updated_at, olderThan), eq(job.status, status)));
-        return result.changes || 0;
+        return result.rowsAffected || 0;
       }
 
       const result = await db
         .delete(job)
         .where(lte(job.updated_at, olderThan));
-      return result.changes || 0;
+      return result.rowsAffected || 0;
     });
   }
 
