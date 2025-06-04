@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { getDb } from '$lib/server/db';
 import { job, area } from '$lib/server/db/base-schema';
 import {
