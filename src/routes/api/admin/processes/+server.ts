@@ -1,6 +1,5 @@
 import { json } from "@sveltejs/kit";
 import { pm2List } from "$lib/server/utils";
-import { getCrawlerStatus } from "$lib/server/supervisor"; // Import crawler status function
 
 export async function GET({ locals }: { locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
@@ -10,7 +9,7 @@ export async function GET({ locals }: { locals: any }) {
   // Fetch both PM2 process list and crawler status concurrently
   const [pm2Processes, crawlerStatus] = await Promise.all([
     pm2List(),
-    getCrawlerStatus() // Call the imported function
+    {} //getCrawlerStatus()
   ]);
 
   // Combine the results into a single response object

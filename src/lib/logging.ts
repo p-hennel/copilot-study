@@ -143,10 +143,6 @@ export async function configureLogging(
         lowestLevel: "warning"
       },
       {
-        category: id,
-        sinks
-      },
-      {
         // Catch-all logger for any category not explicitly configured
         category: [],
         sinks,

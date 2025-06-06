@@ -4,7 +4,6 @@ import { job as jobSchema } from "$lib/server/db/schema";
 import { account } from "$lib/server/db/auth-schema";
 import { JobStatus } from "$lib/types";
 import { eq, and, or, sql } from "drizzle-orm";
-import { startJob } from "$lib/server/supervisor";
 
 const logger = getLogger(["backend", "job-recovery"]);
 
@@ -94,7 +93,7 @@ export async function recoverFailedJobs(): Promise<JobRecoveryResult> {
         logger.info(`✅ JOB-RECOVERY: Recovered job ${failedJob.id} (${failedJob.command})`);
         result.recoveredJobs++;
 
-        // Attempt to start the job immediately if possible
+        /*
         try {
           await startJob({
             jobId: failedJob.id,
@@ -109,6 +108,7 @@ export async function recoverFailedJobs(): Promise<JobRecoveryResult> {
           });
           // Job is still queued, so it will be picked up later
         }
+        */
 
       } catch (error) {
         logger.error(`❌ JOB-RECOVERY: Failed to recover job ${failedJob.id}:`, { 

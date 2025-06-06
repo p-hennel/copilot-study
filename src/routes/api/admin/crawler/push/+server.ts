@@ -1,10 +1,10 @@
 import { json } from "@sveltejs/kit";
-import { startJob } from "$lib/server/supervisor";
+//import { startJob } from "$lib/server/supervisor";
 import { db } from "$lib/server/db";
-import { normalizeURL } from "$lib/utils";
+//import { normalizeURL } from "$lib/utils";
 import { JobStatus } from "$lib/types";
-import { CrawlCommand } from "$lib/types";
-import AppSettings from "$lib/server/settings";
+//import { CrawlCommand } from "$lib/types";
+//import AppSettings from "$lib/server/settings";
 import { job } from "$lib/server/db/base-schema";
 import { account } from "$lib/server/db/auth-schema";
 import { asc, eq, inArray } from "drizzle-orm";
@@ -44,14 +44,15 @@ export async function POST({ locals }: { locals: App.Locals }) {
     return json({ error: "No job found!" }, { status: 404 });
   }
 
+
+  /*
   let apiUrl = normalizeURL(AppSettings().auth.providers.gitlab.baseUrl ?? "");
   if (jobToWorkOn.command === CrawlCommand.commits) {
-    /* just pass, we do not want the actual API endpoint's path for the client */
+    // just pass, we do not want the actual API endpoint's path for the client
     // apiUrl += "/api/v4";
   } else {
     apiUrl += "/api/graphql";
   }
-
   await startJob({
     targetPath: jobToWorkOn.full_path ?? "",
     gitlabApiUrl: apiUrl,
@@ -59,10 +60,11 @@ export async function POST({ locals }: { locals: App.Locals }) {
     dataTypes: commandToDataTypes(jobToWorkOn.command),
     jobId: jobToWorkOn.id
   });
+  */
 
   return json({ success: true });
 }
-
+/*
 const commandToDataTypes = (command: CrawlCommand): string[] => {
   switch (command) {
     case CrawlCommand.commits:
@@ -102,3 +104,4 @@ const commandToDataTypes = (command: CrawlCommand): string[] => {
       return [] as string[];
   }
 };
+*/

@@ -3,64 +3,12 @@ import { paraglideMiddleware } from "$lib/paraglide/server"
 import type { Handle } from "@sveltejs/kit"
 import { sequence } from "@sveltejs/kit/hooks"
 import { svelteKitHandler } from "better-auth/svelte-kit"
-import AppSettings, { type Settings } from "$lib/server/settings"
-import { isAdmin, syncAdminRoles } from "$lib/server/utils" // Import syncAdminRoles function
-import { configureLogging } from "$lib/logging"
-import type { Logger } from "@logtape/logtape"
-import doMigration from '$lib/server/db/migration'
-import { existsSync } from "node:fs"
-import path from "node:path"
-import { mkdirSync } from "fs";
-import { performStartupRecovery, setupPeriodicRecovery } from "$lib/server/startup-recovery";
 
-// Import initialization to ensure socket connection starts immediately
-import "$lib/startup/initialize";
+import { initialLogger, prepareSocketLocation } from "$lib/startup/initialize"
 
-// Set up socket path for external crawler connection
-if (!process.env.SOCKET_PATH) {
-  const socketDir = path.join(process.cwd(), "data.private", "config");
-  process.env.SOCKET_PATH = path.join(socketDir, "api.sock");
-  
-  // Ensure socket directory exists
-  if (!existsSync(socketDir)) {
-    mkdirSync(socketDir, { recursive: true });
-  }
-}
+prepareSocketLocation()
 
-const bunHomeData = path.join("/", "home", "bun", "data")
-const logsDir = path.join(bunHomeData, "logs")
-if (existsSync(bunHomeData) && !existsSync(logsDir)) {
-  mkdirSync(logsDir)
-}
-const settings = AppSettings()
-const logger: Logger = await configureLogging("backend", existsSync(logsDir) ? logsDir : process.cwd())
-
-if (logger === null) {
-  // Can't use logger here since it failed to initialize
-  throw new Error("CRITICAL: Logger initialization failed. Cannot set up event listeners.")
-}
-
-logger.debug("bunHomeData", { bunHomeData })
-
-try {
-  if (settings) doMigration(settings.paths.database)
-} catch (error) {
-  logger.error("Error during migration:", { error })
-}
-
-// Perform startup job recovery after migration
-try {
-  setTimeout(async () => {
-    await performStartupRecovery();
-    setupPeriodicRecovery();
-  }, 2000); // Run after admin roles sync
-} catch (error) {
-  logger.error("Error setting up job recovery:", { error })
-}
-
-try {
-  setTimeout(syncAdminRoles, 1000)
-} catch (error) { logger.error("CRITICAL: Failed to initialize logging or AppSettings"); logger.error(error as any) }
+const logger = await initialLogger()
 
 const paraglideHandle: Handle = ({ event, resolve }) =>
   paraglideMiddleware(event.request, ({ locale }) => {
@@ -71,7 +19,6 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
   })
 
 const authHandle: Handle = ({ event, resolve }) => {
-  // CRITICAL DEBUG - Skip auth for unix socket requests to /api/internal/refresh-token
   if (event.url.pathname.includes('/api/internal/refresh-token') &&
       event.request.headers.get('x-request-source') === 'unix') {
     return resolve(event);
@@ -80,7 +27,6 @@ const authHandle: Handle = ({ event, resolve }) => {
   return svelteKitHandler({ event, resolve, auth });
 }
 const authHandle2: Handle = async ({ event, resolve }) => {
-  // CRITICAL DEBUG - Skip session check for unix socket requests to /api/internal/refresh-token
   if (event.url.pathname.includes('/api/internal/refresh-token') &&
       event.request.headers.get('x-request-source') === 'unix') {
     return await resolve(event);

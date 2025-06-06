@@ -1,13 +1,11 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { getLogger } from "$lib/logging";
 import { isAdmin } from "$lib/server/utils";
-import messageBusClient from "$lib/messaging/MessageBusClient";
 
 const logger = getLogger(["backend", "api", "admin", "crawler", "websocket"]);
 
 // Crawler WebSocket connections
 const crawlerConnections = new Set<WebSocket>();
-const connectionMetadata = new Map<WebSocket, { connectionId: string; userId?: string }>();
 
 /**
  * Authenticate WebSocket connection for admin access
@@ -30,111 +28,6 @@ async function authenticateWebSocketConnection(
     isAuthenticated: false,
     error: "Admin access required for crawler WebSocket connection"
   };
-}
-
-/**
- * Remove connection from crawler tracking
- */
-function removeCrawlerConnection(ws: WebSocket) {
-  const metadata = connectionMetadata.get(ws);
-  if (metadata) {
-    const { connectionId } = metadata;
-    
-    crawlerConnections.delete(ws);
-    connectionMetadata.delete(ws);
-    
-    logger.info(`Removed crawler WebSocket connection ${connectionId}`);
-  }
-}
-
-/**
- * Broadcast message to all crawler WebSocket connections
- */
-function broadcastToCrawlerClients(message: any) {
-  if (crawlerConnections.size === 0) {
-    logger.debug("No crawler WebSocket connections to broadcast to");
-    return;
-  }
-
-  const messageStr = JSON.stringify(message);
-  let broadcastCount = 0;
-
-  crawlerConnections.forEach(ws => {
-    if (ws.readyState === WebSocket.OPEN) {
-      try {
-        ws.send(messageStr);
-        broadcastCount++;
-      } catch (error) {
-        logger.error("Error broadcasting to crawler WebSocket connection:", { error });
-        removeCrawlerConnection(ws);
-      }
-    } else {
-      removeCrawlerConnection(ws);
-    }
-  });
-
-  logger.debug(`Broadcasted message to ${broadcastCount} crawler WebSocket connections`);
-}
-
-// Set up MessageBusClient event listeners for crawler events
-logger.info("WebSocket server checking MessageBusClient:", {
-  messageBusClientExists: !!messageBusClient,
-  messageBusClientType: typeof messageBusClient
-});
-
-if (messageBusClient) {
-  logger.info("MessageBusClient is available, setting up event listeners");
-  
-  // Listen for crawler status updates
-  messageBusClient.onStatusUpdate((status) => {
-    logger.debug("Received crawler status update via MessageBus", { status });
-    logger.info("Broadcasting status update to WebSocket clients:", status);
-    broadcastToCrawlerClients({
-      type: "statusUpdate",
-      payload: status,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  // Listen for job updates
-  messageBusClient.onJobUpdate((update) => {
-    logger.debug("Received crawler job update via MessageBus", { update });
-    logger.info("Broadcasting job update to WebSocket clients:", update);
-    broadcastToCrawlerClients({
-      type: "jobUpdate",
-      payload: update,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  // Listen for job failure events
-  messageBusClient.onJobFailure((failureData) => {
-    logger.debug("Received crawler job failure via MessageBus", { failureData });
-    logger.info("DEBUG SSE: Broadcasting job failure logs via SSE", failureData);
-    broadcastToCrawlerClients({
-      type: "jobFailure",
-      payload: failureData,
-      timestamp: new Date().toISOString()
-    });
-    logger.info("DEBUG SSE: Successfully enqueued failure data");
-  });
-
-  // Listen for heartbeat events
-  messageBusClient.onHeartbeat((payload) => {
-    logger.debug("Received crawler heartbeat via MessageBus", { payload });
-    logger.info("Broadcasting heartbeat to WebSocket clients:", {payload});
-    broadcastToCrawlerClients({
-      type: "heartbeat",
-      payload,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  logger.info("Crawler WebSocket server initialized with MessageBus event listeners");
-  logger.info("WebSocket server: MessageBus event listeners configured");
-} else {
-  logger.warn("MessageBusClient not available - crawler WebSocket will not receive real-time updates");
-  logger.warn("WebSocket server: MessageBusClient is NULL - no real-time updates will be available");
 }
 
 /**
@@ -215,16 +108,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   });
 
   try {
-    // Add metadata to message
-    const messageWithMetadata = {
-      ...messagePayload,
-      timestamp: new Date().toISOString(),
-      serverGenerated: true
-    };
-
-    // Broadcast to all crawler connections
-    broadcastToCrawlerClients(messageWithMetadata);
-
     const connectionCount = crawlerConnections.size;
 
     return json({

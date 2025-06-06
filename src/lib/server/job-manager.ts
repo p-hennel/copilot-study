@@ -11,7 +11,6 @@ import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
 import type { JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
 import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
 import { monotonicFactory } from "ulid";
-import { startJob } from "$lib/server/supervisor";
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();
@@ -121,16 +120,17 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
       logger.info(`Created new GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} for authorization ${authorizationDbId}`);
     }
 
-    // Start the job
+    /*
     await startJob({
       jobId: currentDiscoveryJobId,
       fullPath: null, // GROUP_PROJECT_DISCOVERY is not tied to a specific GitLab path
       command: CrawlCommand.GROUP_PROJECT_DISCOVERY,
       accountId: authorizationDbId // Account ID for PAT fetching by worker
     });
+    */
 
     logger.info(
-      `GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} started for Authorization: ${authorizationDbId}`
+      `GROUP_PROJECT_DISCOVERY job ${currentDiscoveryJobId} for Authorization: ${authorizationDbId}`
     );
   } catch (error) {
     logger.error(`❌ JOB-MANAGER: Error initiating GitLab discovery or creating/starting job for authorization ${authorizationDbId}:`, {
@@ -339,7 +339,7 @@ export async function handleNewArea(
       logger.info(`Creating ${jobsToCreate.length} new jobs for area ${areaPath}`);
       await db.insert(jobSchema).values(jobsToCreate);
 
-      // Start each job
+      /*
       for (const jobData of jobsToCreate) {
         await startJob({
           jobId: jobData.id,
@@ -348,8 +348,8 @@ export async function handleNewArea(
           accountId: jobData.accountId
         });
       }
-
-      logger.info(`Successfully created and started ${jobsToCreate.length} jobs for area ${areaPath}`);
+      */
+      logger.info(`Successfully created ${jobsToCreate.length} jobs for area ${areaPath}`);
     } else {
       logger.info(`No new jobs needed for area ${areaPath} - all necessary jobs already exist`);
     }
