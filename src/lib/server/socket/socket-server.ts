@@ -9,6 +9,8 @@ import type {
   ProgressAggregator
 } from './types/index.js';
 import { SOCKET_CONFIG } from './config.js';
+import { ConnectionPoolImpl } from './connection/connection-pool.js';
+import { MessageRouter, createDefaultRouter } from './message-router.js';
 
 /**
  * Core Socket Server Class
@@ -22,6 +24,7 @@ export class SocketServer {
   private connectionPool: ConnectionPool | null = null;
   private errorManager: ErrorManager | null = null;
   private progressAggregator: ProgressAggregator | null = null;
+  private messageRouter: MessageRouter | null = null;
   private isRunning = false;
   private readonly config: SocketServerConfig;
 
@@ -163,17 +166,19 @@ export class SocketServer {
   private startTime = 0;
 
   private async initializeComponents(): Promise<void> {
-    // Initialize error manager
-    // this.errorManager = new ErrorManager(this.config);
+    // Initialize connection pool
+    this.connectionPool = new ConnectionPoolImpl(this.config);
+    console.log('✅ Connection pool initialized');
+    
+    // Initialize message router
+    this.messageRouter = createDefaultRouter();
+    console.log('✅ Message router initialized');
 
-    // Initialize progress aggregator
+    // TODO: Initialize error manager and progress aggregator when implemented
+    // this.errorManager = new ErrorManager(this.config);
     // this.progressAggregator = new ProgressAggregator();
 
-    // Initialize connection pool
-    // this.connectionPool = new ConnectionPool(this.config);
-
-    // TODO: Implement actual initialization
-    console.log('Components initialized (placeholder)');
+    console.log('✅ All components initialized successfully');
   }
 
   private async createSocketServer(): Promise<void> {
@@ -233,27 +238,19 @@ export class SocketServer {
 
   private async handleCrawlerMessage(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
     try {
-      switch (message.type) {
-        case 'heartbeat':
-          await this.handleHeartbeat(connection, message);
-          break;
-        case 'job_started':
-          await this.handleJobStarted(connection, message);
-          break;
-        case 'job_progress':
-          await this.handleJobProgress(connection, message);
-          break;
-        case 'job_completed':
-          await this.handleJobCompleted(connection, message);
-          break;
-        case 'job_failed':
-          await this.handleJobFailed(connection, message);
-          break;
-        case 'token_refresh_request':
-          await this.handleTokenRefreshRequest(connection, message);
-          break;
-        default:
-          console.warn(`Unknown message type: ${message.type}`);
+      console.log(`📥 Processing ${message.type} message from ${connection.id}`);
+      
+      if (!this.messageRouter) {
+        console.error('Message router not initialized');
+        return;
+      }
+      
+      const result = await this.messageRouter.processMessage(message, connection);
+      
+      if (!result.success) {
+        console.error(`Failed to process ${message.type} message:`, result.error);
+      } else {
+        console.log(`✅ Successfully processed ${message.type} message`);
       }
     } catch (error) {
       console.error(`Error handling message ${message.type}:`, error);
@@ -261,51 +258,26 @@ export class SocketServer {
     }
   }
 
-  private async handleHeartbeat(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
-    // TODO: Update connection heartbeat timestamp
-    // TODO: Update system status metrics
-    console.log(`Heartbeat from ${connection.id}:`, message.data);
-  }
-
-  private async handleJobStarted(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
-    // TODO: Update job status in database
-    // TODO: Notify web clients via WebSocket
-    console.log(`Job started: ${message.job_id}`);
-  }
-
-  private async handleJobProgress(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
-    // TODO: Update progress tracking
-    // TODO: Persist progress to database
-    // TODO: Broadcast progress to web clients
-    console.log(`Job progress: ${message.job_id}`, message.data);
-  }
-
-  private async handleJobCompleted(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
-    // TODO: Update job status to completed
-    // TODO: Process final results
-    // TODO: Notify web clients
-    console.log(`Job completed: ${message.job_id}`);
-  }
-
-  private async handleJobFailed(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
-    // TODO: Update job status to failed
-    // TODO: Log error details
-    // TODO: Determine if retry is needed
-    console.log(`Job failed: ${message.job_id}`, message.data);
-  }
-
-  private async handleTokenRefreshRequest(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
-    // TODO: Handle token refresh logic
-    // TODO: Send token refresh response
-    console.log(`Token refresh requested: ${message.job_id}`);
-  }
+  // Individual message handlers removed - now using MessageRouter
 
   private async cleanup(): Promise<void> {
-    // TODO: Cleanup resources
-    this.server = null;
-    this.connectionPool = null;
-    this.errorManager = null;
-    this.progressAggregator = null;
+    try {
+      // Close connection pool
+      if (this.connectionPool) {
+        await this.connectionPool.closeAll('Server shutdown');
+      }
+      
+      console.log('✅ Cleanup completed successfully');
+    } catch (error) {
+      console.error('❌ Error during cleanup:', error);
+    } finally {
+      // Clear references
+      this.server = null;
+      this.connectionPool = null;
+      this.errorManager = null;
+      this.progressAggregator = null;
+      this.messageRouter = null;
+    }
   }
 }
 

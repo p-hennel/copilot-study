@@ -249,30 +249,6 @@ export const fileToCollectionType = (file: string): CollectionTypes | undefined 
   if (keys.includes(fileName)) return fileName as CollectionTypes;
   else return undefined;
 };
-function getEnvVar(key: string, fallback = "") {
-  if (Object.prototype.hasOwnProperty.call(Bun.env, key)) {
-    return Bun.env[key];
-  } else {
-    return fallback;
-  }
-}
-type Valuable<T> = {
-  [K in keyof T as T[K] extends null | undefined ? never : K]: T[K];
-};
-function getValuable<
-  T extends object,
-  V = Valuable<T>
->(obj: T): V {
-  return Object.fromEntries(
-    Object.entries(obj).filter(
-      ([, v]) => !(
-        (typeof v === 'string' && !v.length) ||
-        v === null ||
-        typeof v === 'undefined'
-      )
-    )
-  ) as V;
-}
 
 export const syncAdminRoles = async () => {
   const logger = getLogger(["AdminSync"])

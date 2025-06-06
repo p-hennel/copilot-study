@@ -30,8 +30,9 @@ import { MessageRouter, createDefaultRouter } from './message-router';
 import { SocketServer } from './socket-server';
 import AppSettings from '../settings';
 import path from 'path';
+import { jobService } from './services/job-service.js';
 
-// Core components
+// Export core components
 export { SocketServer } from './socket-server';
 export { 
   MessageRouter, 
@@ -39,12 +40,20 @@ export {
   type MessageHandler,
   type MessageMiddleware,
   HeartbeatHandler,
+  JobRequestHandler,
+  JobStartedHandler,
   JobProgressHandler,
   JobCompletedHandler,
+  JobFailedHandler,
+  TokenRefreshHandler,
   ValidationMiddleware,
+  CompatibilityMiddleware,
   LoggingMiddleware,
 } from './message-router';
 export { SOCKET_CONFIG, configManager, isDevelopment, isTest, isProduction, validateCurrentConfig } from './config';
+
+// Export services
+export { jobService, JobService } from './services/job-service.js';
 
 // Type exports for external use
 export type {
@@ -87,6 +96,16 @@ export const createSocketServer = (config?: Partial<import('./types').SocketServ
 };
 
 const logger = getLogger(["backend", "socket"])
+
+// Helper function to get job statistics
+const getJobStatsFromService = async () => {
+  try {
+    return await jobService.getJobQueueStats();
+  } catch (error) {
+    logger.error('Error fetching job stats:', { error });
+    return { queued: 0, running: 0, completed: 0, failed: 0 };
+  }
+};
 
 let defaultSocketServer: SocketServer|undefined
 export const getDefaultSocketServer = async () => {
@@ -131,16 +150,33 @@ const createDefaultSocketServer = async () => {
     logger.info(`🔌 Listening on: ${SOCKET_CONFIG.socketPath}`);
     logger.info(`📊 Max connections: ${SOCKET_CONFIG.maxConnections}`);
 
-    // 4. Monitor server status
-    setInterval(() => {
+    // 4. Monitor server status with job statistics
+    setInterval(async () => {
       const status = socketServer.getStatus();
       const stats = socketServer.getConnectionStats();
       
-      logger.info(`📈 Server Status:`, {
-        running: status.isRunning,
-        uptime: Math.round(status.uptime / 1000) + 's',
-        connections: `${stats.active}/${stats.total}`,
-      });
+      // Get job queue statistics
+      try {
+        const jobStats = await getJobStatsFromService();
+        
+        logger.info(`📈 Server Status:`, {
+          running: status.isRunning,
+          uptime: Math.round(status.uptime / 1000) + 's',
+          connections: `${stats.active}/${stats.total}`,
+          jobs: {
+            queued: jobStats.queued || 0,
+            running: jobStats.running || 0,
+            completed: jobStats.completed || 0,
+            failed: jobStats.failed || 0
+          }
+        });
+      } catch (error) {
+        logger.info(`📈 Server Status:`, {
+          running: status.isRunning,
+          uptime: Math.round(status.uptime / 1000) + 's',
+          connections: `${stats.active}/${stats.total}`,
+        });
+      }
     }, 5000); // Every 5 seconds
 
     // 5. Handle graceful shutdown
