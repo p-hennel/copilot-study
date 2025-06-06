@@ -2,15 +2,13 @@ import { getLogger } from "$lib/logging";
 import { db } from "$lib/server/db";
 import { job as jobSchema } from "$lib/server/db/schema";
 import { JobStatus, CrawlCommand } from "$lib/types";
-import type { Job, JobInsert } from "$lib/server/db/base-schema";
-import { and, eq, or, desc, sql } from "drizzle-orm";
+import type { Job } from "$lib/server/db/base-schema";
+import { eq, desc, sql } from "drizzle-orm";
 import type { 
-  SimpleJob, 
   EntityType, 
-  ProgressData, 
-  CompletionData, 
-  FailureData 
+  ProgressData
 } from "../types/index.js";
+import type { CompletionData, FailureData, SimpleJob } from "../types/data";
 
 const logger = getLogger(["backend", "socket", "job-service"]);
 
@@ -64,7 +62,7 @@ export class JobService {
     try {
       logger.info(`🚀 Marking job ${jobId} as started by connection ${connectionId}`);
       
-      const result = await db
+      await db
         .update(jobSchema)
         .set({
           status: JobStatus.running,

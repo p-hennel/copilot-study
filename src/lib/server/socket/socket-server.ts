@@ -11,6 +11,7 @@ import type {
 import { SOCKET_CONFIG } from './config.js';
 import { ConnectionPoolImpl } from './connection/connection-pool.js';
 import { MessageRouter, createDefaultRouter } from './message-router.js';
+import { adminUIBridge } from './services/admin-ui-bridge.js';
 
 /**
  * Core Socket Server Class
@@ -174,6 +175,10 @@ export class SocketServer {
     this.messageRouter = createDefaultRouter();
     console.log('✅ Message router initialized');
 
+    // Initialize admin UI bridge and start status updates
+    adminUIBridge.startStatusUpdates(10000); // Update every 10 seconds
+    console.log('✅ Admin UI bridge initialized with status updates');
+
     // TODO: Initialize error manager and progress aggregator when implemented
     // this.errorManager = new ErrorManager(this.config);
     // this.progressAggregator = new ProgressAggregator();
@@ -229,7 +234,20 @@ export class SocketServer {
           this.handleCrawlerMessage(event.connection, event.message);
       });
 
-      console.log(`New connection established: ${connection.id}`);
+      // Set up connection lifecycle events for admin UI
+      connection.on('connected', (event) => {
+        if (event.type === 'connected') {
+          adminUIBridge.onCrawlerConnected(event.connection);
+        }
+      });
+
+      connection.on('disconnected', (event) => {
+        if (event.type === 'disconnected') {
+          adminUIBridge.onCrawlerDisconnected(event.connection.id, event.reason);
+        }
+      });
+
+      console.log(`🔗 New connection established: ${connection.id}`);
     } catch (error) {
       console.error('Error handling new connection:', error);
       socket.destroy();

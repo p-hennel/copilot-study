@@ -54,6 +54,7 @@ export { SOCKET_CONFIG, configManager, isDevelopment, isTest, isProduction, vali
 
 // Export services
 export { jobService, JobService } from './services/job-service.js';
+export { adminUIBridge, AdminUIBridge } from './services/admin-ui-bridge.js';
 
 // Type exports for external use
 export type {
@@ -170,7 +171,7 @@ const createDefaultSocketServer = async () => {
             failed: jobStats.failed || 0
           }
         });
-      } catch (error) {
+      } catch {
         logger.info(`📈 Server Status:`, {
           running: status.isRunning,
           uptime: Math.round(status.uptime / 1000) + 's',

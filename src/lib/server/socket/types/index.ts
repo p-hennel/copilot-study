@@ -48,3 +48,14 @@ export type {
   JobQueueOperations,
   ConnectionStateOperations
 } from './database';
+
+export type EntityType = 
+  | 'project'
+  | 'group'
+  | 'user'
+  | 'issue'
+  | 'merge_request'
+  | 'commit'
+  | 'branch'
+  | 'pipeline'
+  | 'release';

@@ -55,6 +55,11 @@ export interface JobProgress {
   last_update: Date;
   processing_rate?: number; // items per second
   throughput_metrics?: ThroughputMetrics;
+  resumeState?: {
+    lastEntityId?: string;
+    currentPage?: number;
+    entityType?: string;
+  };
 }
 
 // Entity-specific progress

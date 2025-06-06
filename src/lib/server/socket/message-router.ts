@@ -6,6 +6,7 @@ import type {
   SocketConnection 
 } from './types';
 import { jobService } from './services/job-service.js';
+import { adminUIBridge } from './services/admin-ui-bridge.js';
 
 /**
  * Message Router
@@ -197,6 +198,9 @@ export class HeartbeatHandler implements MessageHandler {
     // Update system status metrics
     console.log(`💓 Heartbeat from ${connection.id}:`, message.data);
     
+    // Notify admin UI of heartbeat
+    adminUIBridge.onCrawlerHeartbeat(connection, message.data);
+    
     return {
       success: true,
       data: { acknowledged: true }
@@ -290,6 +294,10 @@ export class JobStartedHandler implements MessageHandler {
 
       if (success) {
         console.log(`✅ Job ${message.job_id} marked as started in database`);
+        
+        // Notify admin UI of job start
+        adminUIBridge.onJobStarted(connection, message.job_id, message.data);
+        
         return {
           success: true,
           data: { job_started: true }
@@ -338,6 +346,10 @@ export class JobProgressHandler implements MessageHandler {
 
       if (success) {
         console.log(`✅ Progress updated for job ${message.job_id}`);
+        
+        // Notify admin UI of job progress
+        adminUIBridge.onJobProgress(connection, message.job_id, message.data);
+        
         return {
           success: true,
           data: { progress_updated: true }
@@ -386,6 +398,10 @@ export class JobCompletedHandler implements MessageHandler {
 
       if (success) {
         console.log(`✅ Job ${message.job_id} marked as completed in database`);
+        
+        // Notify admin UI of job completion
+        adminUIBridge.onJobCompleted(connection, message.job_id, message.data);
+        
         return {
           success: true,
           data: { job_completed: true }
@@ -434,6 +450,10 @@ export class JobFailedHandler implements MessageHandler {
 
       if (success) {
         console.log(`✅ Job ${message.job_id} marked as failed in database`);
+        
+        // Notify admin UI of job failure
+        adminUIBridge.onJobFailed(connection, message.job_id, message.data);
+        
         return {
           success: true,
           data: { job_failed: true }

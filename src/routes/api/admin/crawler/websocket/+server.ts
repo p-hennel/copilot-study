@@ -1,34 +1,9 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { getLogger } from "$lib/logging";
 import { isAdmin } from "$lib/server/utils";
+import { adminUIBridge } from "$lib/server/socket/services/admin-ui-bridge.js";
 
 const logger = getLogger(["backend", "api", "admin", "crawler", "websocket"]);
-
-// Crawler WebSocket connections
-const crawlerConnections = new Set<WebSocket>();
-
-/**
- * Authenticate WebSocket connection for admin access
- */
-async function authenticateWebSocketConnection(
-  url: URL,
-  headers: Headers,
-  locals: any
-): Promise<{ isAuthenticated: boolean; connectionId?: string; error?: string }> {
-  // Check admin access
-  const adminCheck = await isAdmin(locals);
-  if (adminCheck) {
-    return {
-      isAuthenticated: true,
-      connectionId: url.searchParams.get("connectionId") || `admin-${Date.now()}`
-    };
-  }
-
-  return {
-    isAuthenticated: false,
-    error: "Admin access required for crawler WebSocket connection"
-  };
-}
 
 /**
  * GET /api/admin/crawler/websocket - WebSocket upgrade for crawler monitoring
@@ -45,41 +20,41 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
   }
 
   // Authenticate the connection
-  const authResult = await authenticateWebSocketConnection(url, request.headers, locals);
-  
-  if (!authResult.isAuthenticated) {
-    logger.warn("Crawler WebSocket authentication failed", { error: authResult.error });
-    return json({ error: authResult.error }, { status: 401 });
+  const adminCheck = await isAdmin(locals);
+  if (!adminCheck) {
+    logger.warn("Crawler WebSocket authentication failed - admin access required");
+    return json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const connectionId = authResult.connectionId!;
-
+  const connectionId = url.searchParams.get("connectionId") || `admin-ws-${Date.now()}`;
   logger.info("Crawler WebSocket upgrade request authenticated", { connectionId });
 
   try {
-    // In a real implementation, you would handle the WebSocket upgrade here
+    // In SvelteKit, WebSocket upgrades need to be handled differently
     // This is a placeholder response since SvelteKit doesn't directly support WebSocket upgrades
+    // The actual WebSocket handling would need to be implemented in a separate WebSocket server
+    // or using a different approach like Socket.IO
     
-    logger.info("Crawler WebSocket connection established", { connectionId });
+    logger.info("Crawler WebSocket connection request processed", { connectionId });
     
     return json({
       status: "connection_ready",
       connectionId,
-      message: "Crawler WebSocket connection established",
+      message: "WebSocket connection setup processed - real-time updates available via SSE",
       capabilities: {
         statusUpdates: true,
         jobUpdates: true,
         heartbeat: true,
         realTimeMessages: true
-      }
+      },
+      // Provide SSE endpoint as alternative
+      sseEndpoint: "/api/admin/crawler/status?accept=text/event-stream",
+      bridgeStats: adminUIBridge.getConnectionStats()
     }, { status: 200 });
 
   } catch (err) {
-    logger.error("Error establishing crawler WebSocket connection:", { error: err });
-    if (err && typeof err === 'object' && 'status' in err) {
-      throw err;
-    }
-    return json({ error: "Failed to establish WebSocket connection" }, { status: 500 });
+    logger.error("Error processing crawler WebSocket connection:", { error: err });
+    return json({ error: "Failed to process WebSocket connection" }, { status: 500 });
   }
 };
 
@@ -102,29 +77,28 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  logger.info("Sending WebSocket message to crawler connections", { 
-    messageType: messagePayload.type,
-    connectionCount: crawlerConnections.size
+  logger.info("Broadcasting message to crawler admin connections", { 
+    messageType: messagePayload.type
   });
 
   try {
-    const connectionCount = crawlerConnections.size;
+    // Get current connection stats from admin UI bridge
+    const connectionStats = adminUIBridge.getConnectionStats();
+    const totalConnections = connectionStats.webSockets + connectionStats.sseConnections;
 
+    // Note: Actual broadcasting would be handled by the admin UI bridge
+    // when real WebSocket connections are established
+    
     return json({
-      status: "message_sent",
-      message: `Message broadcasted to ${connectionCount} crawler connections`,
-      connectionCount,
+      status: "message_processed",
+      message: `Message prepared for broadcast to ${totalConnections} admin connections`,
+      connectionCount: totalConnections,
+      connectionBreakdown: connectionStats,
       timestamp: new Date().toISOString()
     }, { status: 200 });
 
   } catch (err) {
-    logger.error("Error sending crawler WebSocket message:", { error: err });
-    if (err && typeof err === 'object' && 'status' in err) {
-      throw err;
-    }
+    logger.error("Error processing crawler WebSocket message:", { error: err });
     return json({ error: "Internal server error" }, { status: 500 });
   }
 };
-
-// Export the broadcast function for use by other modules
-//export { broadcastToCrawlerClients };

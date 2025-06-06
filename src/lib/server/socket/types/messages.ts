@@ -63,6 +63,31 @@ export const DiscoverySummarySchema = z.object({
   hierarchy_depth: z.number(),
 });
 
+// Simple job schema (mirrored from crawler unified-types.ts)
+export const SimpleJobSchema = z.object({
+  id: z.string(),
+  entityType: z.enum(['project', 'group', 'user', 'issue', 'merge_request', 'commit', 'branch', 'pipeline', 'release']),
+  entityId: z.string(),
+  gitlabUrl: z.string(),
+  accessToken: z.string(),
+  resumeState: z.object({
+    lastEntityId: z.string().optional(),
+    currentPage: z.number().optional(),
+    entityType: z.string().optional(),
+  }).optional(),
+});
+
+// Discovery data schema (mirrored from crawler unified-types.ts)
+export const DiscoveryDataSchema = z.object({
+  entityType: z.enum(['project', 'group', 'user', 'issue', 'merge_request', 'commit', 'branch', 'pipeline', 'release']),
+  entities: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    path: z.string(),
+    parentId: z.string().optional(),
+  })),
+});
+
 // Crawler → Web App Messages (mirrored from crawler)
 export const HeartbeatMessageSchema = BaseMessageSchema.extend({
   type: z.literal('heartbeat'),
@@ -137,10 +162,30 @@ export const TokenRefreshRequestMessageSchema = BaseMessageSchema.extend({
   }),
 });
 
+// Job request message schema (crawler sends this to request jobs)
+export const JobRequestMessageSchema = BaseMessageSchema.extend({
+  type: z.literal('job_request'),
+  data: z.object({}), // Empty data as per crawler implementation
+});
+
+// Discovery message schema (crawler sends during entity discovery)
+export const DiscoveryMessageSchema = BaseMessageSchema.extend({
+  type: z.literal('discovery'),
+  data: DiscoveryDataSchema,
+});
+
 // Web App → Crawler Messages (mirrored from crawler)
 export const JobAssignmentMessageSchema = BaseMessageSchema.extend({
   type: z.literal('job_assignment'),
   data: JobAssignmentSchema,
+});
+
+// Job response message schema (backend sends jobs to crawler)
+export const JobResponseMessageSchema = BaseMessageSchema.extend({
+  type: z.literal('job_response'),
+  data: z.object({
+    jobs: z.array(SimpleJobSchema),
+  }),
 });
 
 export const TokenRefreshResponseMessageSchema = BaseMessageSchema.extend({
@@ -170,12 +215,15 @@ export const CrawlerMessageSchema = z.discriminatedUnion('type', [
   JobFailedMessageSchema,
   JobsDiscoveredMessageSchema,
   TokenRefreshRequestMessageSchema,
+  JobRequestMessageSchema,
+  DiscoveryMessageSchema,
 ]);
 
 export const WebAppMessageSchema = z.discriminatedUnion('type', [
   JobAssignmentMessageSchema,
   TokenRefreshResponseMessageSchema,
   ShutdownMessageSchema,
+  JobResponseMessageSchema,
 ]);
 
 // Web application specific extensions
@@ -239,6 +287,9 @@ export type ErrorContext = z.infer<typeof ErrorContextSchema>;
 export type DiscoveredJob = z.infer<typeof DiscoveredJobSchema>;
 export type DiscoverySummary = z.infer<typeof DiscoverySummarySchema>;
 
+export type SimpleJob = z.infer<typeof SimpleJobSchema>;
+export type DiscoveryData = z.infer<typeof DiscoveryDataSchema>;
+
 export type HeartbeatMessage = z.infer<typeof HeartbeatMessageSchema>;
 export type JobStartedMessage = z.infer<typeof JobStartedMessageSchema>;
 export type JobProgressMessage = z.infer<typeof JobProgressMessageSchema>;
@@ -246,10 +297,13 @@ export type JobCompletedMessage = z.infer<typeof JobCompletedMessageSchema>;
 export type JobFailedMessage = z.infer<typeof JobFailedMessageSchema>;
 export type JobsDiscoveredMessage = z.infer<typeof JobsDiscoveredMessageSchema>;
 export type TokenRefreshRequestMessage = z.infer<typeof TokenRefreshRequestMessageSchema>;
+export type JobRequestMessage = z.infer<typeof JobRequestMessageSchema>;
+export type DiscoveryMessage = z.infer<typeof DiscoveryMessageSchema>;
 
 export type JobAssignmentMessage = z.infer<typeof JobAssignmentMessageSchema>;
 export type TokenRefreshResponseMessage = z.infer<typeof TokenRefreshResponseMessageSchema>;
 export type ShutdownMessage = z.infer<typeof ShutdownMessageSchema>;
+export type JobResponseMessage = z.infer<typeof JobResponseMessageSchema>;
 
 export type CrawlerMessage = z.infer<typeof CrawlerMessageSchema>;
 export type WebAppMessage = z.infer<typeof WebAppMessageSchema>;
