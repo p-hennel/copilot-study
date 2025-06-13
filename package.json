@@ -63,7 +63,7 @@
     "eslint-plugin-svelte": "^3.9.1",
     "eslint-plugin-tailwindcss": "^3.18.0",
     "globals": "^16.2.0",
-    "lucide-svelte": "^0.488.0",
+    "lucide-svelte": "^0.515.0",
     "mode-watcher": "^0.5.1",
     "paneforge": "^1.0.0-next.5",
     "postcss": "^8.5.4",
