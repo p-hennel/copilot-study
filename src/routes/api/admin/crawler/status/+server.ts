@@ -1,7 +1,7 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import { getLogger } from "$lib/logging";
 import { isAdmin } from "$lib/server/utils";
-import { adminUIBridge } from "$lib/server/socket/services/admin-ui-bridge.js";
+import { adminUIBridge } from "$lib/server/socket/services/admin-ui-bridge";
 import { jobService } from "$lib/server/socket/services/job-service.js";
 import { getDefaultSocketServer } from "$lib/server/socket/index.js";
 
@@ -10,7 +10,7 @@ const logger = getLogger(["backend", "api", "admin", "crawler", "status"]);
 /**
  * GET /api/admin/crawler/status - Real-time crawler status with socket server integration
  */
-export const GET: RequestHandler = async ({ locals, url }) => {
+export const GET: RequestHandler = async ({ locals, request }) => {
   // Check admin access
   const adminCheck = await isAdmin(locals);
   if (!adminCheck) {
@@ -18,9 +18,16 @@ export const GET: RequestHandler = async ({ locals, url }) => {
     return json({ error: "Admin access required" }, { status: 401 });
   }
 
-  // Check if this is an SSE request
-  const acceptHeader = url.searchParams.get('accept') || '';
+  // Check if this is an SSE request by looking at the Accept header
+  const acceptHeader = request.headers.get('accept') || '';
   const isSSERequest = acceptHeader.includes('text/event-stream');
+  
+  // Log for debugging
+  logger.info("Crawler status request", { 
+    acceptHeader, 
+    isSSERequest,
+    userAgent: request.headers.get('user-agent')
+  });
 
   if (isSSERequest) {
     // Handle Server-Sent Events for real-time updates
@@ -29,18 +36,46 @@ export const GET: RequestHandler = async ({ locals, url }) => {
     const connectionId = `sse-${Date.now()}-${Math.random().toString(36).substring(2)}`;
     
     const stream = new ReadableStream({
-      start(controller) {
-        // Register SSE connection with admin UI bridge
-        adminUIBridge.addSSEConnection(connectionId, new Response(), controller);
-        
-        // Send initial connection confirmation
-        const encoder = new TextEncoder();
-        const initialMessage = {
-          type: 'connection_established',
-          connectionId,
-          timestamp: new Date().toISOString()
-        };
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(initialMessage)}\n\n`));
+      async start(controller) {
+        try {
+          // Register SSE connection with admin UI bridge
+          adminUIBridge.addSSEConnection(connectionId, new Response(), controller);
+          
+          // Get current status data
+          const socketServer = await getDefaultSocketServer();
+          const serverStatus = socketServer.getStatus();
+          const connectionStats = socketServer.getConnectionStats();
+          const jobStats = await jobService.getJobQueueStats();
+          const runningCount = await jobService.getRunningJobsCount();
+          
+          // Send initial connection confirmation with full status
+          const encoder = new TextEncoder();
+          const initialMessage = {
+            type: 'client_status',
+            payload: {
+              messageBusConnected: connectionStats.active > 0,
+              timestamp: new Date().toISOString(),
+              message: connectionStats.active > 0 ? 'Crawler connected' : 'No crawler connections',
+              cachedStatus: {
+                state: runningCount > 0 ? 'running' : jobStats.queued > 0 ? 'queued' : 'idle',
+                queued: jobStats.queued,
+                running: jobStats.running,
+                processing: runningCount,
+                completed: jobStats.completed,
+                failed: jobStats.failed
+              },
+              lastHeartbeat: new Date().toISOString(),
+              lastStatusUpdate: new Date().toISOString(),
+              isHealthy: serverStatus.isRunning && connectionStats.active > 0,
+              jobFailureLogs: []
+            }
+          };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(initialMessage)}\n\n`));
+          
+          logger.info(`SSE connection established: ${connectionId}`);
+        } catch (error) {
+          logger.error(`Error starting SSE connection: ${connectionId}`, { error });
+        }
       },
       cancel() {
         // Clean up SSE connection

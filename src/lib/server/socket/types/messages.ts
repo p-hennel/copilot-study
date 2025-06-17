@@ -23,6 +23,10 @@ export const ProgressDataSchema = z.object({
   items_per_page: z.number().optional(),
   sub_collection: z.string().optional(),
   estimated_remaining: z.number().optional(),
+  // Enhanced progress data
+  item_counts: z.record(z.number()).optional(),
+  processing_rate: z.number().optional(),
+  estimated_time_remaining: z.number().optional(),
 });
 
 // Job assignment data (mirrored from crawler)

@@ -364,6 +364,10 @@ export class JobProgressHandler implements MessageHandler {
         total?: number;
         message?: string;
         resumeState?: any;
+        // Enhanced progress data
+        itemCounts?: Record<string, number>;
+        processingRate?: number;
+        estimatedTimeRemaining?: number;
       };
 
       // Transform to backend expected ProgressData format
@@ -374,7 +378,11 @@ export class JobProgressHandler implements MessageHandler {
         current_page: crawlerProgressData.resumeState?.currentPage,
         items_per_page: undefined,
         sub_collection: undefined,
-        estimated_remaining: undefined
+        estimated_remaining: undefined,
+        // Pass through enhanced progress data
+        item_counts: crawlerProgressData.itemCounts || {},
+        processing_rate: crawlerProgressData.processingRate,
+        estimated_time_remaining: crawlerProgressData.estimatedTimeRemaining
       };
 
       const success = await jobService.updateJobProgress(

@@ -136,7 +136,11 @@ export class JobService {
         sub_collection: progressData.sub_collection,
         estimated_remaining: progressData.estimated_remaining,
         last_update: new Date().toISOString(),
-        updated_by_connection: connectionId
+        updated_by_connection: connectionId,
+        // Enhanced progress data
+        item_counts: progressData.item_counts || progressData.itemCounts || {},
+        processing_rate: progressData.processing_rate || progressData.processingRate,
+        estimated_time_remaining: progressData.estimated_time_remaining || progressData.estimatedTimeRemaining
       };
 
       // Update resume state if provided - handle both formats

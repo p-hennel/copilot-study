@@ -107,6 +107,17 @@ export class AdminUIBridge {
         ...heartbeatData
       }
     });
+    
+    // Also send connection status update
+    this.broadcastToAdmin({
+      type: 'connection',
+      payload: {
+        component: 'messageBus',
+        status: 'connected',
+        connectionId: connection.id,
+        timestamp: new Date().toISOString()
+      }
+    });
   }
 
   /**
@@ -140,7 +151,13 @@ export class AdminUIBridge {
         jobId,
         connectionId: connection.id,
         timestamp: new Date().toISOString(),
-        progress: progressData
+        progress: {
+          ...progressData,
+          // Include enhanced progress data for UI
+          itemCounts: progressData.item_counts || {},
+          processingRate: progressData.processing_rate,
+          estimatedTimeRemaining: progressData.estimated_time_remaining
+        }
       }
     });
   }
@@ -287,7 +304,7 @@ export class AdminUIBridge {
       };
       
       const encoder = new TextEncoder();
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify(initialStatus)}\\n\\n`));
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(initialStatus)}\n\n`));
     } catch (error) {
       logger.error('❌ Error sending initial SSE status:', { error });
     }
@@ -315,7 +332,7 @@ export class AdminUIBridge {
     const encoder = new TextEncoder();
     for (const [connectionId, { controller }] of this.sseConnections) {
       try {
-        controller.enqueue(encoder.encode(`data: ${messageStr}\\n\\n`));
+        controller.enqueue(encoder.encode(`data: ${messageStr}\n\n`));
       } catch (error) {
         logger.error(`❌ Error sending SSE message to ${connectionId}:`, { error });
         this.removeSSEConnection(connectionId);

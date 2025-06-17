@@ -285,6 +285,22 @@
           // Update specific job-related status
           if (crawlerStatus) {
             crawlerStatus = { ...crawlerStatus };
+            
+            // If this is a progress update, include detailed item counts
+            if (message.payload.action === 'progress' && message.payload.progress) {
+              const progress = message.payload.progress;
+              // Update crawler status with enhanced progress data
+              crawlerStatus.currentProgress = {
+                stage: progress.stage,
+                processed: progress.total_processed || progress.processed || 0,
+                total: progress.total_discovered || progress.total,
+                message: progress.message,
+                itemCounts: progress.itemCounts || progress.item_counts || {},
+                processingRate: progress.processingRate || progress.processing_rate,
+                estimatedTimeRemaining: progress.estimatedTimeRemaining || progress.estimated_time_remaining
+              };
+            }
+            
             updateCrawlerStatus(crawlerStatus);
           }
         }
@@ -964,6 +980,51 @@
                       <div class="text-xs text-muted-foreground">
                         {crawlerStatus.completed || 0} of {total} jobs completed ({Math.round(completedPercent)}%)
                       </div>
+
+                      <!-- Enhanced progress data -->
+                      {#if crawlerStatus.currentProgress}
+                        <Separator />
+                        <div class="space-y-2">
+                          <div class="text-sm font-medium">Current Job Details</div>
+                          <div class="text-xs space-y-1">
+                            <div>Stage: <span class="font-mono">{crawlerStatus.currentProgress.stage}</span></div>
+                            <div>Processed: <span class="font-mono">{crawlerStatus.currentProgress.processed.toLocaleString()}</span></div>
+                            {#if crawlerStatus.currentProgress.total}
+                              <div>Total: <span class="font-mono">{crawlerStatus.currentProgress.total.toLocaleString()}</span></div>
+                            {/if}
+                            {#if crawlerStatus.currentProgress.message}
+                              <div>Status: <span class="font-mono text-muted-foreground">{crawlerStatus.currentProgress.message}</span></div>
+                            {/if}
+                            
+                            <!-- Item counts breakdown -->
+                            {#if crawlerStatus.currentProgress.itemCounts && Object.keys(crawlerStatus.currentProgress.itemCounts).length > 0}
+                              <div class="pt-1 border-t">
+                                <div class="text-xs font-medium mb-1">Item Breakdown:</div>
+                                <div class="grid grid-cols-2 gap-1 text-xs">
+                                  {#each Object.entries(crawlerStatus.currentProgress.itemCounts) as [type, count]}
+                                    <div class="flex justify-between">
+                                      <span class="capitalize">{type}:</span>
+                                      <span class="font-mono">{count.toLocaleString()}</span>
+                                    </div>
+                                  {/each}
+                                </div>
+                              </div>
+                            {/if}
+                            
+                            <!-- Performance metrics -->
+                            {#if crawlerStatus.currentProgress.processingRate}
+                              <div class="pt-1 border-t text-xs">
+                                Rate: <span class="font-mono">{crawlerStatus.currentProgress.processingRate.toFixed(1)} items/sec</span>
+                              </div>
+                            {/if}
+                            {#if crawlerStatus.currentProgress.estimatedTimeRemaining}
+                              <div class="text-xs">
+                                ETA: <span class="font-mono">{Math.round(crawlerStatus.currentProgress.estimatedTimeRemaining / 60)} min</span>
+                              </div>
+                            {/if}
+                          </div>
+                        </div>
+                      {/if}
                     {:else if crawlerStatus.queued > 0}
                       <div class="flex justify-between text-sm">
                         <span>Overall Progress</span>
