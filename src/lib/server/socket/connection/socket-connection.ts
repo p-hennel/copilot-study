@@ -68,8 +68,8 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
     // Set up socket event handlers
     this.setupSocketHandlers();
     
-    // Set connection state to connected
-    this.setState(ConnState.CONNECTED);
+    // Set connection state to active (so it can process messages)
+    this.setState(ConnState.ACTIVE);
   }
 
   /**
@@ -383,6 +383,9 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
   private handleIncomingData(data: Buffer): void {
     try {
+      console.log(`📡 CONNECTION: Received ${data.length} bytes on ${this.id}`);
+      console.log(`📄 CONNECTION: Raw data: ${data.toString().substring(0, 200)}${data.length > 200 ? '...' : ''}`);
+      
       // Update statistics
       this.stats.bytesReceived += data.length;
       this.updateActivity();
@@ -390,17 +393,25 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
       // Add data to buffer
       this.messageBuffer.append(data);
 
-      // Extract complete messages
-      const messages = this.messageBuffer.extractMessages('\n');
+      // Try newline-delimited messages first (for backward compatibility)
+      let messages = this.messageBuffer.extractMessages('\n');
+      console.log(`📦 CONNECTION: Extracted ${messages.length} complete messages from buffer using newline delimiter`);
+      
+      // If no newline-delimited messages found, try JSON brace counting
+      if (messages.length === 0) {
+        messages = this.extractJsonMessages();
+        console.log(`📦 CONNECTION: Extracted ${messages.length} complete messages from buffer using JSON parsing`);
+      }
       
       for (const messageString of messages) {
+        console.log(`🔍 CONNECTION: Processing message: ${messageString.substring(0, 100)}${messageString.length > 100 ? '...' : ''}`);
         this.processMessage(messageString);
       }
 
       this.updateStats();
       
     } catch (error) {
-      console.error(`Error handling incoming data for ${this.id}:`, error);
+      console.error(`💥 CONNECTION: Error handling incoming data for ${this.id}:`, error);
       this.stats.errors++;
       this.updateStats();
     }
@@ -408,10 +419,15 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
   private processMessage(messageString: string): void {
     try {
+      console.log(`🔧 CONNECTION: Parsing JSON message on ${this.id}`);
       const message = JSON.parse(messageString) as any;
 
-      if (!("type" in message))
-        throw new Error(`Invalid message structure: ${message}`)
+      if (!("type" in message)) {
+        console.error(`❌ CONNECTION: Invalid message structure - missing 'type' field:`, message);
+        throw new Error(`Invalid message structure: ${JSON.stringify(message)}`);
+      }
+      
+      console.log(`✅ CONNECTION: Successfully parsed ${message.type} message on ${this.id}`);
       
       // Update message statistics
       this.stats.messagesReceived++;
@@ -419,26 +435,80 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
       // Update heartbeat timestamp for heartbeat messages
       if (message.type === 'heartbeat') {
+        console.log(`💓 CONNECTION: Heartbeat received on ${this.id}`);
         this.metadata.lastHeartbeat = new Date();
-        this.emit('heartbeat', { 
-          type: 'heartbeat', 
-          connection: this, 
-          timestamp: new Date() 
+        this.emit('heartbeat', {
+          type: 'heartbeat',
+          connection: this,
+          timestamp: new Date()
         });
       }
 
       // Emit message event
-      this.emit('message', { 
-        type: 'message', 
-        connection: this, 
-        message 
+      console.log(`📤 CONNECTION: Emitting message event for ${message.type} on ${this.id}`);
+      this.emit('message', {
+        type: 'message',
+        connection: this,
+        message
       });
       
+      console.log(`✅ CONNECTION: Message event emitted successfully for ${message.type} on ${this.id}`);
+      
     } catch (error) {
-      console.error(`Error parsing message for ${this.id}:`, error);
+      console.error(`💥 CONNECTION: Error parsing message for ${this.id}:`, error);
+      console.error(`📄 CONNECTION: Failed message string:`, messageString);
       this.stats.errors++;
       this.updateStats();
     }
+  }
+
+  private extractJsonMessages(): string[] {
+    // Get current buffer content
+    const bufferContent = this.messageBuffer.peek();
+    if (!bufferContent || bufferContent.length === 0) {
+      return [];
+    }
+
+    const messages: string[] = [];
+    let startIndex = 0;
+    
+    while (true) {
+      const messageStart = bufferContent.indexOf('{', startIndex);
+      if (messageStart === -1) break;
+      
+      let braceCount = 0;
+      let messageEnd = -1;
+      
+      for (let i = messageStart; i < bufferContent.length; i++) {
+        if (bufferContent[i] === '{') braceCount++;
+        if (bufferContent[i] === '}') braceCount--;
+        
+        if (braceCount === 0) {
+          messageEnd = i + 1;
+          break;
+        }
+      }
+      
+      if (messageEnd === -1) break;
+      
+      const messageStr = bufferContent.substring(messageStart, messageEnd);
+      try {
+        // Validate it's actual JSON by parsing it
+        JSON.parse(messageStr);
+        messages.push(messageStr);
+      } catch {
+        console.log(`🔍 CONNECTION: Invalid JSON found, skipping: ${messageStr.substring(0, 50)}...`);
+      }
+      
+      startIndex = messageEnd;
+    }
+    
+    // Clear the processed data from buffer if we found messages
+    if (messages.length > 0) {
+      this.messageBuffer.clear();
+    }
+    
+    return messages;
   }
 
   private checkHeartbeat(): void {

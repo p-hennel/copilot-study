@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
-// Mirror the crawler's base message schema
+// Mirror the crawler's base message schema - FIXED to match crawler's jobId property
 export const BaseMessageSchema = z.object({
+  type: z.string(),
+  timestamp: z.string(),
+  jobId: z.string().optional(), // Changed from job_id to jobId to match crawler
+});
+
+// Legacy compatibility schema for backend processing (transforms jobId -> job_id internally)
+export const BackendProcessingSchema = z.object({
   type: z.string(),
   timestamp: z.string(),
   job_id: z.string().optional(),
@@ -92,30 +99,35 @@ export const DiscoveryDataSchema = z.object({
 export const HeartbeatMessageSchema = BaseMessageSchema.extend({
   type: z.literal('heartbeat'),
   data: z.object({
-    active_jobs: z.number(),
-    last_activity: z.string(),
-    system_status: z.enum(['idle', 'discovering', 'crawling', 'error']),
+    activeJobs: z.number(), // Match crawler's camelCase
+    totalProcessed: z.number(), // Match crawler's camelCase
+    systemStatus: z.enum(['idle', 'discovering', 'processing', 'error']), // Match crawler's values
+    memoryUsage: z.any().optional(), // Match crawler's optional field
+    uptime: z.number().optional(), // Match crawler's optional field
   }),
 });
 
 export const JobStartedMessageSchema = BaseMessageSchema.extend({
   type: z.literal('job_started'),
   data: z.object({
-    job_type: z.string(),
-    entity_type: z.string().optional(),
-    namespace_path: z.string().optional(),
-    estimated_duration: z.number().optional(),
+    entityType: z.string().optional(), // Match crawler's camelCase
+    entityId: z.string().optional(), // Match crawler's camelCase
   }),
 });
 
 export const JobProgressMessageSchema = BaseMessageSchema.extend({
   type: z.literal('job_progress'),
   data: z.object({
-    job_type: z.string().optional(),
-    progress: z.array(ProgressDataSchema),
-    overall_completion: z.number().min(0).max(1),
-    time_elapsed: z.number(),
-    estimated_time_remaining: z.number().optional(),
+    stage: z.enum(['discovering', 'fetching', 'completed', 'failed']), // Match crawler's ProgressData
+    entityType: z.enum(['project', 'group', 'user', 'issue', 'merge_request', 'commit', 'branch', 'pipeline', 'release']),
+    processed: z.number(),
+    total: z.number().optional(),
+    message: z.string().optional(),
+    resumeState: z.object({
+      lastEntityId: z.string().optional(),
+      currentPage: z.number().optional(),
+      entityType: z.string().optional(),
+    }).optional(),
   }),
 });
 
@@ -124,11 +136,10 @@ export type ProgressDataType = z.infer<typeof ProgressDataSchema>;
 export const JobCompletedMessageSchema = BaseMessageSchema.extend({
   type: z.literal('job_completed'),
   data: z.object({
-    job_type: z.string(),
-    final_counts: z.array(ProgressDataSchema),
-    total_duration: z.number(),
-    output_files: z.array(z.string()),
-    summary: z.string(),
+    success: z.boolean(), // Match crawler's CompletionData
+    finalCounts: z.record(z.number()), // Match crawler's CompletionData
+    message: z.string().optional(), // Match crawler's CompletionData
+    outputFiles: z.array(z.string()).optional(), // Match crawler's CompletionData
   }),
 });
 
@@ -137,10 +148,15 @@ export type ErrorContextType = z.infer<typeof ErrorContextSchema>
 export const JobFailedMessageSchema = BaseMessageSchema.extend({
   type: z.literal('job_failed'),
   data: z.object({
-    job_type: z.string(),
-    error_context: ErrorContextSchema,
-    partial_results: z.array(ProgressDataSchema).optional(),
-    recovery_suggestion: z.string().optional(),
+    error: z.string(), // Match crawler's FailureData
+    errorType: z.string().optional(), // Match crawler's FailureData
+    isRecoverable: z.boolean(), // Match crawler's FailureData
+    resumeState: z.object({
+      lastEntityId: z.string().optional(),
+      currentPage: z.number().optional(),
+      entityType: z.string().optional(),
+    }).optional(), // Match crawler's FailureData
+    partialCounts: z.record(z.number()).optional(), // Match crawler's FailureData
   }),
 });
 
@@ -191,9 +207,9 @@ export const JobResponseMessageSchema = BaseMessageSchema.extend({
 export const TokenRefreshResponseMessageSchema = BaseMessageSchema.extend({
   type: z.literal('token_refresh_response'),
   data: z.object({
-    access_token: z.string(),
-    expires_at: z.string().optional(),
-    refresh_successful: z.boolean(),
+    accessToken: z.string(), // Match crawler expectation for camelCase
+    expiresAt: z.string().optional(), // Match crawler expectation for camelCase
+    refreshSuccessful: z.boolean(), // Match crawler expectation for camelCase
   }),
 });
 

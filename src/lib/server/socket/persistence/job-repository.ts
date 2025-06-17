@@ -10,6 +10,23 @@ import type {
 import type { WebAppJobAssignmentData } from '../types/messages';
 
 /**
+ * Safely converts a value to a Date object for Drizzle timestamp columns
+ */
+function ensureDate(value: any): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      throw new Error(`Invalid date value: ${value}`);
+    }
+    return date;
+  }
+  throw new Error(`Cannot convert to Date: ${typeof value} ${value}`);
+}
+
+/**
  * Database operations for Job table management
  * 
  * Provides:
@@ -65,10 +82,10 @@ export class JobRepository {
       };
 
       if (metadata?.startedAt) {
-        updateData.started_at = metadata.startedAt;
+        updateData.started_at = ensureDate(metadata.startedAt);
       }
       if (metadata?.finishedAt) {
-        updateData.finished_at = metadata.finishedAt;
+        updateData.finished_at = ensureDate(metadata.finishedAt);
       }
 
       const [updatedJob] = await db

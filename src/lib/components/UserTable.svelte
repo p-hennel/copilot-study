@@ -349,6 +349,7 @@
                 const token = (await authClient.getSession())?.data?.session.token;
                 if (!token) return goto("/admin/sign-in");
                 await fetch("/api/admin/recheck", {
+                  method: "POST",
                   headers: {
                     Authorization: `Bearer ${token}`
                   },

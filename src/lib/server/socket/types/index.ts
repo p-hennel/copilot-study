@@ -50,6 +50,7 @@ export type {
 } from './database';
 
 export type EntityType = 
+  | 'areas'      // Special type for GROUP_PROJECT_DISCOVERY (discovers both groups and projects)
   | 'project'
   | 'group'
   | 'user'

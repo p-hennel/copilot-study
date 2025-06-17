@@ -221,57 +221,74 @@ export class SocketServer {
 
   private handleNewConnection(socket: Socket): void {
     try {
+      console.log(`🔌 SOCKET-SERVER: New socket connection from ${socket.remoteAddress}`);
+      
       if (!this.connectionPool) {
+        console.error('❌ SOCKET-SERVER: Connection pool not initialized, destroying socket');
         socket.destroy();
         return;
       }
 
       const connection = this.connectionPool.addConnection(socket);
+      console.log(`✅ SOCKET-SERVER: Connection added to pool: ${connection.id}`);
+      console.log(`📊 SOCKET-SERVER: Connection state: ${connection.getState()}, Active: ${connection.isActive()}`);
       
       // Set up message handling
       connection.on('message', (event) => {
-        if ("message" in event)
+        console.log(`📨 SOCKET-SERVER: Message event received from ${connection.id}`);
+        if ("message" in event) {
+          console.log(`📋 SOCKET-SERVER: Message type: ${event.message?.type || 'unknown'}`);
           this.handleCrawlerMessage(event.connection, event.message);
+        } else {
+          console.warn(`⚠️ SOCKET-SERVER: Message event missing message property`);
+        }
       });
 
       // Set up connection lifecycle events for admin UI
       connection.on('connected', (event) => {
         if (event.type === 'connected') {
+          console.log(`🟢 SOCKET-SERVER: Connection ${event.connection.id} marked as connected`);
           adminUIBridge.onCrawlerConnected(event.connection);
         }
       });
 
       connection.on('disconnected', (event) => {
         if (event.type === 'disconnected') {
+          console.log(`🔴 SOCKET-SERVER: Connection ${event.connection.id} disconnected: ${event.reason}`);
           adminUIBridge.onCrawlerDisconnected(event.connection.id, event.reason);
         }
       });
 
-      console.log(`🔗 New connection established: ${connection.id}`);
+      console.log(`🔗 SOCKET-SERVER: New connection established: ${connection.id}`);
     } catch (error) {
-      console.error('Error handling new connection:', error);
+      console.error('💥 SOCKET-SERVER: Error handling new connection:', error);
       socket.destroy();
     }
   }
 
   private async handleCrawlerMessage(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
     try {
-      console.log(`📥 Processing ${message.type} message from ${connection.id}`);
+      console.log(`📥 SOCKET-SERVER: Received ${message.type} message from ${connection.id}`);
+      console.log(`📄 SOCKET-SERVER: Message data:`, JSON.stringify(message, null, 2));
       
       if (!this.messageRouter) {
-        console.error('Message router not initialized');
+        console.error('❌ SOCKET-SERVER: Message router not initialized');
         return;
       }
       
+      console.log(`🎯 SOCKET-SERVER: Routing ${message.type} to message router...`);
       const result = await this.messageRouter.processMessage(message, connection);
       
       if (!result.success) {
-        console.error(`Failed to process ${message.type} message:`, result.error);
+        console.error(`❌ SOCKET-SERVER: Failed to process ${message.type} message:`, result.error);
       } else {
-        console.log(`✅ Successfully processed ${message.type} message`);
+        console.log(`✅ SOCKET-SERVER: Successfully processed ${message.type} message`);
+        if (result.data) {
+          console.log(`📊 SOCKET-SERVER: Result data:`, result.data);
+        }
       }
     } catch (error) {
-      console.error(`Error handling message ${message.type}:`, error);
+      console.error(`💥 SOCKET-SERVER: Error handling message ${message.type}:`, error);
       this.errorManager?.handleError(error as Error);
     }
   }

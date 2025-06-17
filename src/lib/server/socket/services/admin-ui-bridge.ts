@@ -131,7 +131,7 @@ export class AdminUIBridge {
    * Handle job progress events
    */
   onJobProgress(connection: SocketConnection, jobId: string, progressData: ProgressData): void {
-    logger.debug(`📊 Job progress: ${jobId} - ${progressData.processed}/${progressData.total || '?'}`);
+    logger.debug(`📊 Job progress: ${jobId} - ${progressData.total_processed}/${progressData.total_discovered || '?'}`);
     
     this.broadcastToAdmin({
       type: 'jobUpdate',

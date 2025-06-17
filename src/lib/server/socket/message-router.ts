@@ -218,12 +218,28 @@ export class JobRequestHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`🔍 Job request from ${connection.id}`);
+    console.log(`🔍 JOB-HANDLER: Processing job request from ${connection.id}`);
+    console.log(`📄 JOB-HANDLER: Request message data:`, JSON.stringify(message, null, 2));
     
     try {
       // For now, create a simple mock job for testing
       // In production, this would query the database for pending jobs
+      console.log(`📋 JOB-HANDLER: Fetching available jobs...`);
       const mockJobs = await this.getAvailableJobs();
+      console.log(`✅ JOB-HANDLER: Found ${mockJobs.length} available jobs`);
+      
+      // Debug: Log jobs with access tokens
+      mockJobs.forEach((job, index) => {
+        console.log(`🔍 JOB-HANDLER: Job ${index + 1}:`, {
+          id: job.id,
+          entityType: job.entityType,
+          entityId: job.entityId,
+          gitlabUrl: job.gitlabUrl,
+          hasAccessToken: !!job.accessToken,
+          accessTokenLength: job.accessToken?.length || 0,
+          accessTokenPreview: job.accessToken ? `${job.accessToken.substring(0, 10)}...` : 'MISSING'
+        });
+      });
       
       // Send job response back to crawler
       const jobResponse = {
@@ -234,16 +250,18 @@ export class JobRequestHandler implements MessageHandler {
         }
       };
       
+      console.log(`📤 JOB-HANDLER: Sending job response to ${connection.id} with ${mockJobs.length} jobs`);
       await connection.send(jobResponse);
+      console.log(`✅ JOB-HANDLER: Job response sent successfully`);
       
-      console.log(`📤 Sent ${mockJobs.length} jobs to ${connection.id}`);
+      console.log(`📊 JOB-HANDLER: Sent ${mockJobs.length} jobs to ${connection.id}`);
       
       return {
         success: true,
         data: { jobs_sent: mockJobs.length }
       };
     } catch (error) {
-      console.error('Error handling job request:', error);
+      console.error('💥 JOB-HANDLER: Error handling job request:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -276,27 +294,27 @@ export class JobStartedHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`🚀 Job started: ${message.job_id}`);
+    console.log(`🚀 Job started: ${message.jobId}`);
     
     try {
-      if (!message.job_id) {
+      if (!message.jobId) {
         return {
           success: false,
-          error: 'Missing job_id in job_started message'
+          error: 'Missing jobId in job_started message'
         };
       }
 
       const success = await jobService.markJobStarted(
-        message.job_id, 
-        connection.id, 
+        message.jobId,
+        connection.id,
         message.data
       );
 
       if (success) {
-        console.log(`✅ Job ${message.job_id} marked as started in database`);
+        console.log(`✅ Job ${message.jobId} marked as started in database`);
         
-        // Notify admin UI of job start
-        adminUIBridge.onJobStarted(connection, message.job_id, message.data);
+        // Notify admin UI of job start - pass message data directly for started events
+        adminUIBridge.onJobStarted(connection, message.jobId, message.data);
         
         return {
           success: true,
@@ -328,27 +346,48 @@ export class JobProgressHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`📈 Job progress: ${message.job_id}`);
+    console.log(`📈 Job progress: ${message.jobId}`);
     
     try {
-      if (!message.job_id) {
+      if (!message.jobId) {
         return {
           success: false,
-          error: 'Missing job_id in job_progress message'
+          error: 'Missing jobId in job_progress message'
         };
       }
 
+      // Convert crawler progress data format to backend expected format
+      const crawlerProgressData = message.data as {
+        stage: 'discovering' | 'fetching' | 'completed' | 'failed';
+        entityType: string;
+        processed: number;
+        total?: number;
+        message?: string;
+        resumeState?: any;
+      };
+
+      // Transform to backend expected ProgressData format
+      const backendProgressData = {
+        entity_type: crawlerProgressData.entityType,
+        total_discovered: crawlerProgressData.total || 0,
+        total_processed: crawlerProgressData.processed,
+        current_page: crawlerProgressData.resumeState?.currentPage,
+        items_per_page: undefined,
+        sub_collection: undefined,
+        estimated_remaining: undefined
+      };
+
       const success = await jobService.updateJobProgress(
-        message.job_id,
-        message.data, // ProgressData
+        message.jobId,
+        backendProgressData,
         connection.id
       );
 
       if (success) {
-        console.log(`✅ Progress updated for job ${message.job_id}`);
+        console.log(`✅ Progress updated for job ${message.jobId}`);
         
-        // Notify admin UI of job progress
-        adminUIBridge.onJobProgress(connection, message.job_id, message.data);
+        // Notify admin UI of job progress (using backend format)
+        adminUIBridge.onJobProgress(connection, message.jobId, backendProgressData);
         
         return {
           success: true,
@@ -380,27 +419,35 @@ export class JobCompletedHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`🎉 Job completed: ${message.job_id}`);
+    console.log(`🎉 Job completed: ${message.jobId}`);
     
     try {
-      if (!message.job_id) {
+      if (!message.jobId) {
         return {
           success: false,
-          error: 'Missing job_id in job_completed message'
+          error: 'Missing jobId in job_completed message'
         };
       }
 
+      // Extract completion data from job_completed message data
+      const completionData = message.data as {
+        success: boolean;
+        finalCounts: Record<string, number>;
+        message?: string;
+        outputFiles?: string[];
+      };
+
       const success = await jobService.markJobCompleted(
-        message.job_id,
-        message.data, // CompletionData
+        message.jobId,
+        completionData,
         connection.id
       );
 
       if (success) {
-        console.log(`✅ Job ${message.job_id} marked as completed in database`);
+        console.log(`✅ Job ${message.jobId} marked as completed in database`);
         
         // Notify admin UI of job completion
-        adminUIBridge.onJobCompleted(connection, message.job_id, message.data);
+        adminUIBridge.onJobCompleted(connection, message.jobId, completionData);
         
         return {
           success: true,
@@ -432,27 +479,36 @@ export class JobFailedHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`❌ Job failed: ${message.job_id}`);
+    console.log(`❌ Job failed: ${message.jobId}`);
     
     try {
-      if (!message.job_id) {
+      if (!message.jobId) {
         return {
           success: false,
-          error: 'Missing job_id in job_failed message'
+          error: 'Missing jobId in job_failed message'
         };
       }
 
+      // Extract failure data from job_failed message data
+      const failureData = message.data as {
+        error: string;
+        errorType?: string;
+        isRecoverable: boolean;
+        resumeState?: any;
+        partialCounts?: Record<string, number>;
+      };
+
       const success = await jobService.markJobFailed(
-        message.job_id,
-        message.data, // FailureData
+        message.jobId,
+        failureData,
         connection.id
       );
 
       if (success) {
-        console.log(`✅ Job ${message.job_id} marked as failed in database`);
+        console.log(`✅ Job ${message.jobId} marked as failed in database`);
         
         // Notify admin UI of job failure
-        adminUIBridge.onJobFailed(connection, message.job_id, message.data);
+        adminUIBridge.onJobFailed(connection, message.jobId, failureData);
         
         return {
           success: true,
@@ -499,23 +555,23 @@ export class TokenRefreshHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`🔄 Token refresh requested: ${message.job_id}`);
+    console.log(`🔄 Token refresh requested: ${message.jobId}`);
     
     try {
-      if (!message.job_id) {
+      if (!message.jobId) {
         return {
           success: false,
-          error: 'Missing job_id in token_refresh_request message'
+          error: 'Missing jobId in token_refresh_request message'
         };
       }
 
       // Get job details to fetch account information
-      const job = await jobService.getJobStatus(message.job_id);
+      const job = await jobService.getJobStatus(message.jobId);
       
       if (!job) {
         return {
           success: false,
-          error: `Job ${message.job_id} not found`
+          error: `Job ${message.jobId} not found`
         };
       }
 
@@ -524,17 +580,17 @@ export class TokenRefreshHandler implements MessageHandler {
       const tokenResponse = {
         type: 'token_refresh_response' as const,
         timestamp: new Date().toISOString(),
-        jobId: message.job_id,
+        jobId: message.jobId,
         data: {
-          success: true,
-          accessToken: job.usingAccount?.access_token || '',
+          accessToken: job.usingAccount?.access_token || '', // Fixed: use correct property path
+          refreshSuccessful: true, // Fixed: use correct property name
           expiresAt: new Date(Date.now() + 3600000).toISOString() // 1 hour from now
         }
       };
       
       await connection.send(tokenResponse);
       
-      console.log(`✅ Token refresh response sent for job ${message.job_id}`);
+      console.log(`✅ Token refresh response sent for job ${message.jobId}`);
       
       return {
         success: true,
@@ -548,10 +604,11 @@ export class TokenRefreshHandler implements MessageHandler {
         const errorResponse = {
           type: 'token_refresh_response' as const,
           timestamp: new Date().toISOString(),
-          jobId: message.job_id,
+          jobId: message.jobId,
           data: {
-            success: false,
-            error: error instanceof Error ? error.message : 'Token refresh failed'
+            accessToken: '', // Required field
+            refreshSuccessful: false, // Fixed: use correct property name
+            expiresAt: new Date().toISOString()
           }
         };
         
@@ -578,17 +635,9 @@ export class CompatibilityMiddleware implements MessageMiddleware {
   priority = 500; // High priority to transform early
 
   async beforeProcess(message: CrawlerMessage, connection: SocketConnection): Promise<CrawlerMessage | null> {
-    // Convert crawler format (jobId) to backend format (job_id)
-    const transformedMessage = { ...message };
-    
-    // Handle jobId -> job_id conversion
-    if ('jobId' in transformedMessage && transformedMessage.jobId) {
-      transformedMessage.job_id = transformedMessage.jobId;
-      delete (transformedMessage as any).jobId;
-      console.log(`🔄 Transformed jobId -> job_id for ${message.type}`);
-    }
-    
-    return transformedMessage;
+    // No transformation needed anymore - messages now use jobId consistently
+    console.log(`📝 Processing ${message.type} message with jobId: ${message.jobId || 'none'}`);
+    return message;
   }
 }
 

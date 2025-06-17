@@ -2,11 +2,10 @@ import { getLogger } from "$lib/logging";
 import { db } from "$lib/server/db";
 import { job as jobSchema } from "$lib/server/db/schema";
 import { JobStatus, CrawlCommand } from "$lib/types";
-import type { Job } from "$lib/server/db/base-schema";
+// Removed unused Job import
 import { eq, desc, sql } from "drizzle-orm";
-import type { 
-  EntityType, 
-  ProgressData
+import type {
+  EntityType
 } from "../types/index.js";
 import type { CompletionData, FailureData, SimpleJob } from "../types/data";
 
@@ -37,6 +36,19 @@ export class JobService {
       });
 
       logger.info(`📋 Found ${dbJobs.length} queued jobs in database`);
+      
+      // Debug: Log each job's details
+      for (const job of dbJobs) {
+        logger.info(`🔍 Job ${job.id}:`, {
+          command: job.command,
+          accountId: job.accountId,
+          hasAccount: !!job.usingAccount,
+          accountData: job.usingAccount ? {
+            id: job.usingAccount.id,
+            hasAccessToken: !!job.usingAccount.accessToken
+          } : null
+        });
+      }
 
       // Convert database jobs to SimpleJob format for crawler
       const simpleJobs = await Promise.all(
@@ -62,16 +74,21 @@ export class JobService {
     try {
       logger.info(`🚀 Marking job ${jobId} as started by connection ${connectionId}`);
       
+      // Debug: Log what we're setting
+      logger.debug(`🔍 DEBUG: Setting started_at to sql(unixepoch()) for job ${jobId}`);
+      
+      // Safely prepare progress data
+      const progressData = startData && typeof startData === 'object' ? { ...startData } : {};
+      progressData.started_by_connection = connectionId;
+      progressData.started_at = new Date().toISOString();
+
+      // Use proper Date objects instead of raw SQL
       await db
         .update(jobSchema)
         .set({
           status: JobStatus.running,
           started_at: new Date(),
-          progress: {
-            ...startData,
-            started_by_connection: connectionId,
-            started_at: new Date().toISOString()
-          }
+          progress: progressData
         })
         .where(eq(jobSchema.id, jobId));
 
@@ -79,6 +96,7 @@ export class JobService {
       return true;
 
     } catch (error) {
+      console.error(`❌ DETAILED ERROR - marking job ${jobId} as started:`, error);
       logger.error(`❌ Error marking job ${jobId} as started:`, { error });
       return false;
     }
@@ -88,8 +106,8 @@ export class JobService {
    * Update job progress and resume state
    */
   async updateJobProgress(
-    jobId: string, 
-    progressData: ProgressData, 
+    jobId: string,
+    progressData: any, // Accept any format from message router transformations
     connectionId: string
   ): Promise<boolean> {
     try {
@@ -105,25 +123,28 @@ export class JobService {
         return false;
       }
 
-      // Merge progress data
+      // Merge progress data - handle both formats
       const existingProgress = currentJob.progress as any || {};
       const updatedProgress = {
         ...existingProgress,
-        stage: progressData.stage,
-        entityType: progressData.entityType,
-        processed: progressData.processed,
-        total: progressData.total,
-        message: progressData.message,
+        // Handle backend format (snake_case)
+        entity_type: progressData.entity_type || progressData.entityType,
+        total_discovered: progressData.total_discovered || progressData.total || 0,
+        total_processed: progressData.total_processed || progressData.processed || 0,
+        current_page: progressData.current_page,
+        items_per_page: progressData.items_per_page,
+        sub_collection: progressData.sub_collection,
+        estimated_remaining: progressData.estimated_remaining,
         last_update: new Date().toISOString(),
         updated_by_connection: connectionId
       };
 
-      // Update resume state if provided
-      const updatedResumeState = progressData.resumeState 
+      // Update resume state if provided - handle both formats
+      const updatedResumeState = progressData.resumeState || progressData.resume_state
         ? {
-            lastEntityId: progressData.resumeState.lastEntityId,
-            currentPage: progressData.resumeState.currentPage,
-            entityType: progressData.resumeState.entityType,
+            lastEntityId: (progressData.resumeState || progressData.resume_state)?.lastEntityId,
+            currentPage: (progressData.resumeState || progressData.resume_state)?.currentPage,
+            entityType: (progressData.resumeState || progressData.resume_state)?.entityType,
             updated_at: new Date().toISOString()
           }
         : currentJob.resumeState;
@@ -149,22 +170,28 @@ export class JobService {
    * Mark job as completed with final results
    */
   async markJobCompleted(
-    jobId: string, 
+    jobId: string,
     completionData: CompletionData,
     connectionId: string
   ): Promise<boolean> {
     try {
       logger.info(`🎉 Marking job ${jobId} as completed`);
       
+      // Debug: Log what we're setting
+      logger.debug(`🔍 DEBUG: Setting finished_at to sql(unixepoch()) for job ${jobId}`);
+      
+      // Safely prepare completion data
+      const safeCompletionData = completionData || {};
       const finalProgress = {
-        success: completionData.success,
-        finalCounts: completionData.finalCounts,
-        message: completionData.message,
-        outputFiles: completionData.outputFiles,
+        success: safeCompletionData.success || false,
+        finalCounts: safeCompletionData.finalCounts || {},
+        message: safeCompletionData.message || 'Completed',
+        outputFiles: safeCompletionData.outputFiles || [],
         completed_at: new Date().toISOString(),
         completed_by_connection: connectionId
       };
 
+      // Use proper Date objects instead of raw SQL
       await db
         .update(jobSchema)
         .set({
@@ -179,6 +206,7 @@ export class JobService {
       return true;
 
     } catch (error) {
+      console.error(`❌ DETAILED ERROR - marking job ${jobId} as completed:`, error);
       logger.error(`❌ Error marking job ${jobId} as completed:`, { error });
       return false;
     }
@@ -188,12 +216,15 @@ export class JobService {
    * Mark job as failed with error details
    */
   async markJobFailed(
-    jobId: string, 
+    jobId: string,
     failureData: FailureData,
     connectionId: string
   ): Promise<boolean> {
     try {
       logger.error(`💥 Marking job ${jobId} as failed: ${failureData.error}`);
+      
+      // Debug: Log what we're setting
+      logger.debug(`🔍 DEBUG: Setting finished_at to sql(unixepoch()) for failed job ${jobId}`);
       
       const errorProgress = {
         error: failureData.error,
@@ -215,20 +246,28 @@ export class JobService {
           }
         : null;
 
+      // Use proper Date objects and build update object safely
+      const updateFields: any = {
+        status: JobStatus.failed,
+        finished_at: new Date(),
+        progress: errorProgress
+      };
+      
+      // Only set resumeState if it's not null
+      if (resumeState !== null) {
+        updateFields.resumeState = resumeState;
+      }
+
       await db
         .update(jobSchema)
-        .set({
-          status: JobStatus.failed,
-          finished_at: new Date(),
-          progress: errorProgress,
-          resumeState: resumeState
-        })
+        .set(updateFields)
         .where(eq(jobSchema.id, jobId));
 
       logger.error(`❌ Job ${jobId} marked as failed`);
       return true;
 
     } catch (error) {
+      console.error(`❌ DETAILED ERROR - marking job ${jobId} as failed:`, error);
       logger.error(`❌ Error marking job ${jobId} as failed:`, { error });
       return false;
     }
@@ -237,7 +276,7 @@ export class JobService {
   /**
    * Get job status and progress
    */
-  async getJobStatus(jobId: string): Promise<Job | null> {
+  async getJobStatus(jobId: string): Promise<any | null> {
     try {
       const job = await db.query.job.findFirst({
         where: eq(jobSchema.id, jobId),
@@ -278,7 +317,7 @@ export class JobService {
       }
 
       // Get access token (this would normally be from account table)
-      const accessToken = dbJob.usingAccount.access_token;
+      const accessToken = dbJob.usingAccount.accessToken;
       if (!accessToken) {
         logger.warn(`❌ No access token available for job ${dbJob.id}, skipping`);
         return null;
@@ -297,7 +336,14 @@ export class JobService {
         } : undefined
       };
 
-      logger.debug(`✅ Converted job ${dbJob.id} to SimpleJob format`);
+      logger.info(`✅ Converted job ${dbJob.id} to SimpleJob:`, {
+        id: simpleJob.id,
+        entityType: simpleJob.entityType,
+        entityId: simpleJob.entityId,
+        gitlabUrl: simpleJob.gitlabUrl,
+        hasAccessToken: !!simpleJob.accessToken,
+        accessTokenLength: simpleJob.accessToken?.length || 0
+      });
       return simpleJob;
 
     } catch (error) {
@@ -308,10 +354,11 @@ export class JobService {
 
   /**
    * Map database CrawlCommand to crawler EntityType
+   * FIXED: GROUP_PROJECT_DISCOVERY now maps to 'areas' to trigger proper discovery
    */
   private mapCommandToEntityType(command: CrawlCommand): EntityType | null {
     const mapping: Record<string, EntityType> = {
-      [CrawlCommand.GROUP_PROJECT_DISCOVERY]: 'group',
+      [CrawlCommand.GROUP_PROJECT_DISCOVERY]: 'areas',  // FIXED: was 'group', now 'areas'
       [CrawlCommand.group]: 'group',
       [CrawlCommand.project]: 'project',
       [CrawlCommand.issues]: 'issue',
@@ -410,3 +457,4 @@ export class JobService {
 
 // Export singleton instance
 export const jobService = new JobService();
+

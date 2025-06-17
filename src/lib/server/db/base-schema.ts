@@ -109,7 +109,7 @@ export const area = sqliteTable("area", {
   type: text({ enum: toDBEnum(AreaType) }).notNull(),
   created_at: integer({ mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`) 
+    .default(new Date()) 
 });
 export const areaRelations = relations(area, ({ many }) => ({
   usingAccounts: many(account),
@@ -123,7 +123,7 @@ export const job = sqliteTable(
     id: text().notNull().$defaultFn(ulid).primaryKey(),
     created_at: integer({ mode: "timestamp" })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .default(new Date()),
     started_at: integer({ mode: "timestamp" }),
     finished_at: integer({ mode: "timestamp" }),
     status: text({ enum: toDBEnum(JobStatus) })
@@ -144,7 +144,7 @@ export const job = sqliteTable(
     userId: text("userId").references(() => user.id),
     provider: text("provider", { enum: toDBEnum(TokenProvider) }),
     gitlabGraphQLUrl: text("gitlabGraphQLUrl"),
-    updated_at: integer("updatedAt", { mode: "timestamp" }).$onUpdateFn(() => sql`(unixepoch())`),
+    updated_at: integer("updatedAt", { mode: "timestamp" }).$onUpdateFn(() => new Date()),
   },
   (table) => [
     index("job_created_at_idx").on(table.created_at),

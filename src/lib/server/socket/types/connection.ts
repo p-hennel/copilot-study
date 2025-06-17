@@ -200,6 +200,7 @@ export interface MessageBuffer {
   clear(): void;
   isFull(): boolean;
   getUsage(): number; // Returns 0-1 representing fullness
+  peek(length?: number): string; // For debugging and JSON parsing
 }
 
 // Connection health monitoring
