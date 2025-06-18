@@ -59,6 +59,8 @@
     format?: string;
     onRefresh?: () => Promise<void>;
     initialJobs?: JobInformation[]; // For backward compatibility
+    jobs?: ApiJobInformation[];
+    pagination?: JobsApiResponse['pagination'];
   };
 
   let props: JobsTableProps = $props();
@@ -98,8 +100,8 @@
   let itemsPerPageOptions = [10, 25, 50, 100];
   
   // Derived values for current page
-  const jobs = $derived(jobsData?.data || []);
-  const pagination = $derived(jobsData?.pagination);
+  const jobs = $derived(props.jobs ?? jobsData?.data ?? []);
+  const pagination = $derived(props.pagination ?? jobsData?.pagination);
   const totalItems = $derived(pagination?.totalCount || 0);
   const totalPages = $derived(pagination?.totalPages || 0);
   const startIndex = $derived(pagination ? (pagination.page - 1) * pagination.limit : 0);
@@ -333,7 +335,16 @@
 
   // Initial load
   $effect(() => {
-    fetchJobs(queryParams);
+    if (!props.jobs) {
+      fetchJobs(queryParams);
+    } else {
+      if (props.jobs && props.pagination) {
+        jobsData = {
+          data: props.jobs,
+          pagination: props.pagination
+        };
+      }
+    }
   });
 
   // Watch for search text changes

@@ -1,4 +1,5 @@
 import { getLogger } from "$lib/logging";
+import AppSettings from "$lib/server/settings";
 import { db } from "$lib/server/db";
 import { job as jobSchema } from "$lib/server/db/schema";
 import { JobStatus, CrawlCommand } from "$lib/types";
@@ -24,9 +25,9 @@ export class JobService {
   async getAvailableJobs(limit: number = 5): Promise<SimpleJob[]> {
     try {
       logger.info(`🔍 Fetching up to ${limit} available jobs from database...`);
-      
+
       // Query for queued jobs
-      const dbJobs = await db.query.job.findMany({
+      const queuedJobs = await db.query.job.findMany({
         where: eq(jobSchema.status, JobStatus.queued),
         orderBy: [desc(jobSchema.created_at)],
         limit,
@@ -35,7 +36,26 @@ export class JobService {
         }
       });
 
-      logger.info(`📋 Found ${dbJobs.length} queued jobs in database`);
+      let dbJobs = queuedJobs;
+
+      const settings = AppSettings();
+      if (settings.app.sendFailedJobsToCrawler) {
+        logger.info('📋 Including failed jobs in the job fetch.');
+        const remainingLimit = limit - queuedJobs.length;
+        if (remainingLimit > 0) {
+          const failedJobs = await db.query.job.findMany({
+            where: eq(jobSchema.status, JobStatus.failed),
+            orderBy: [desc(jobSchema.created_at)],
+            limit: remainingLimit,
+            with: {
+              usingAccount: true
+            }
+          });
+          dbJobs = [...queuedJobs, ...failedJobs];
+        }
+      }
+
+      logger.info(`📋 Found ${dbJobs.length} jobs in database`);
       
       // Debug: Log each job's details
       for (const job of dbJobs) {

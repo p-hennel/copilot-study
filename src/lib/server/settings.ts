@@ -229,7 +229,8 @@ export const settingsSchema = z.object({
         .default(
           process.env.CRAWLER_API_TOKEN ||
             "nLR6HdQXYwpehaQxGRsoZUZmFTje3m4BVwPZRNSkEqYurTmNzxsphvMWQfX3SXNA"
-        )
+        ),
+      sendFailedJobsToCrawler: z.boolean().default(false)
     }).default({})
   // For nested settings, you might add something like:
   // nestedConfig: z.object({

@@ -10,9 +10,18 @@ export interface CompletionData {
 export interface FailureData {
   error: string;
   errorType?: string;
+  stackTrace?: string;
   isRecoverable: boolean;
   resumeState?: JobProgress['resumeState'];
   partialCounts?: Record<string, number>;
+  // Additional context fields from error context
+  requestDetails?: {
+    method?: string;
+    url?: string;
+    status_code?: number;
+    response_headers?: Record<string, string>;
+  };
+  retryCount?: number;
 }
 
 export interface DiscoveryData {

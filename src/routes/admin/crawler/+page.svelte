@@ -132,6 +132,13 @@
     // Clean up subscription on destroy
     onDestroy(() => {
       unsubscribe();
+      disconnectWebSocket();
+
+      // Clean up cache validation interval
+      if (cacheValidationInterval) {
+        clearInterval(cacheValidationInterval);
+        cacheValidationInterval = null;
+      }
     });
     
     try {
@@ -160,16 +167,6 @@
         }
       }
     }, 10000); // Check every 10 seconds
-  });
-
-  onDestroy(() => {
-    disconnectWebSocket();
-    
-    // Clean up cache validation interval
-    if (cacheValidationInterval) {
-      clearInterval(cacheValidationInterval);
-      cacheValidationInterval = null;
-    }
   });
 
   function connectWebSocket() {
@@ -1206,32 +1203,106 @@
         </Card.Header>
         <Card.Content>
           {#if jobFailureLogs.length > 0}
-            <div class="max-h-64 overflow-y-auto space-y-2">
+            <div class="max-h-96 overflow-y-auto space-y-3">
               {#each jobFailureLogs as log (log.timestamp)}
-                <Alert.Root variant="destructive">
-                  <Alert.Title class="text-sm font-medium">
-                    {log.jobId} - {log.taskType}
-                  </Alert.Title>
-                  <Alert.Description class="text-xs space-y-1">
+                <Alert.Root variant="destructive" class="border-l-4 border-l-red-500">
+                  <CircleAlert class="h-4 w-4" />
+                  <Alert.Title class="text-sm font-medium flex items-center justify-between">
+                    <span>{log.jobId} - {log.taskType}</span>
                     <div class="flex items-center gap-2">
-                      <Time timestamp={log.timestamp} format="HH:mm:ss" />
-                      <span>•</span>
-                      <span class="font-mono">{log.error}</span>
+                      {#if log.isRecoverable}
+                        <Badge variant="secondary" class="text-xs">
+                          <RefreshCw class="h-3 w-3 mr-1" />
+                          Recoverable
+                        </Badge>
+                      {:else}
+                        <Badge variant="destructive" class="text-xs">
+                          <XCircle class="h-3 w-3 mr-1" />
+                          Fatal
+                        </Badge>
+                      {/if}
+                      <Time timestamp={log.timestamp} format="HH:mm:ss" class="text-xs text-muted-foreground" />
                     </div>
-                    {#if log.stackTrace}
+                  </Alert.Title>
+                  <Alert.Description class="text-xs space-y-2">
+                    <!-- Main Error Message -->
+                    <div class="flex items-start gap-2 p-2 bg-red-50/50 rounded">
+                      <AlertCircle class="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div class="flex-1">
+                        <div class="font-medium text-red-800 mb-1">Error Message:</div>
+                        <div class="font-mono text-sm text-red-700 break-words">{log.error}</div>
+                      </div>
+                    </div>
+
+                    <!-- Enhanced Context Information -->
+                    {#if log.context && Object.keys(log.context).length > 0}
+                      <div class="space-y-2">
+                        <!-- Quick Context Summary -->
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                          {#if log.context.retryCount !== undefined}
+                            <div class="flex justify-between p-1 bg-muted/30 rounded">
+                              <span>Retry Count:</span>
+                              <span class="font-mono">{log.context.retryCount}</span>
+                            </div>
+                          {/if}
+                          {#if log.context.partialCounts}
+                            <div class="flex justify-between p-1 bg-muted/30 rounded">
+                              <span>Partial Progress:</span>
+                              <span class="font-mono">{Object.values(log.context.partialCounts).reduce((a, b) => a + b, 0)} items</span>
+                            </div>
+                          {/if}
+                        </div>
+
+                        <!-- Request Details if available -->
+                        {#if log.context.requestDetails}
+                          <div class="p-2 bg-muted/20 rounded border">
+                            <div class="font-medium mb-1">Request Details:</div>
+                            <div class="grid grid-cols-2 gap-1 text-xs">
+                              {#if log.context.requestDetails.method}
+                                <div><span class="text-muted-foreground">Method:</span> <span class="font-mono">{log.context.requestDetails.method}</span></div>
+                              {/if}
+                              {#if log.context.requestDetails.url}
+                                <div><span class="text-muted-foreground">URL:</span> <span class="font-mono text-xs break-all">{log.context.requestDetails.url}</span></div>
+                              {/if}
+                              {#if log.context.requestDetails.status_code}
+                                <div><span class="text-muted-foreground">Status:</span> <span class="font-mono">{log.context.requestDetails.status_code}</span></div>
+                              {/if}
+                            </div>
+                          </div>
+                        {/if}
+
+                        <!-- Detailed Context (Expandable) -->
+                        <details class="mt-2">
+                          <summary class="cursor-pointer text-xs opacity-75 hover:opacity-100 flex items-center gap-1">
+                            <ChevronsLeftRightEllipsisIcon class="h-3 w-3" />
+                            View full context details
+                          </summary>
+                          <pre class="mt-2 text-xs bg-muted/50 p-3 rounded overflow-x-auto border">{JSON.stringify(log.context, null, 2)}</pre>
+                        </details>
+                      </div>
+                    {/if}
+
+                    <!-- Stack Trace (Properly displayed when available) -->
+                    {#if log.stackTrace && log.stackTrace !== log.taskType}
                       <details class="mt-2">
-                        <summary class="cursor-pointer text-xs opacity-75 hover:opacity-100">
+                        <summary class="cursor-pointer text-xs opacity-75 hover:opacity-100 flex items-center gap-1">
+                          <Database class="h-3 w-3" />
                           View stack trace
                         </summary>
-                        <pre class="mt-1 text-xs bg-muted/50 p-2 rounded overflow-x-auto whitespace-pre-wrap">{log.stackTrace}</pre>
+                        <div class="mt-2 p-3 bg-gray-900 text-green-400 rounded overflow-x-auto">
+                          <pre class="text-xs font-mono whitespace-pre-wrap">{log.stackTrace}</pre>
+                        </div>
                       </details>
                     {/if}
-                    {#if log.context}
+
+                    <!-- Resume State if available -->
+                    {#if log.context?.resumeState}
                       <details class="mt-1">
-                        <summary class="cursor-pointer text-xs opacity-75 hover:opacity-100">
-                          View context
+                        <summary class="cursor-pointer text-xs opacity-75 hover:opacity-100 flex items-center gap-1">
+                          <Play class="h-3 w-3" />
+                          View resume state
                         </summary>
-                        <pre class="mt-1 text-xs bg-muted/50 p-2 rounded overflow-x-auto">{JSON.stringify(log.context, null, 2)}</pre>
+                        <pre class="mt-2 text-xs bg-blue-50/50 p-3 rounded overflow-x-auto border">{JSON.stringify(log.context.resumeState, null, 2)}</pre>
                       </details>
                     {/if}
                   </Alert.Description>

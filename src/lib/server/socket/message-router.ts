@@ -501,9 +501,17 @@ export class JobFailedHandler implements MessageHandler {
       const failureData = message.data as {
         error: string;
         errorType?: string;
+        stackTrace?: string;
         isRecoverable: boolean;
         resumeState?: any;
         partialCounts?: Record<string, number>;
+        requestDetails?: {
+          method?: string;
+          url?: string;
+          status_code?: number;
+          response_headers?: Record<string, string>;
+        };
+        retryCount?: number;
       };
 
       const success = await jobService.markJobFailed(

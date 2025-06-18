@@ -196,10 +196,18 @@ export class AdminUIBridge {
         timestamp: new Date().toISOString(),
         connectionId: connection.id,
         isRecoverable: failureData.isRecoverable,
-        stackTrace: failureData.errorType,
+        // Correctly map stackTrace field from FailureData
+        stackTrace: failureData.stackTrace || null,
+        // Properly structure the context object with all available error details
         context: {
+          errorType: failureData.errorType,
+          isRecoverable: failureData.isRecoverable,
           partialCounts: failureData.partialCounts,
-          resumeState: failureData.resumeState
+          resumeState: failureData.resumeState,
+          retryCount: failureData.retryCount,
+          requestDetails: failureData.requestDetails,
+          // Include raw error for debugging
+          rawError: failureData.error
         }
       }
     });
