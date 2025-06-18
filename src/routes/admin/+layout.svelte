@@ -18,7 +18,7 @@
   const navItems = [
     { label: "Dashboard", path: "/admin", icon: Home },
     { label: "Crawler Status", path: "/admin/crawler", icon: Activity },
-    { label: "Tokens", path: "/admin/tokens", icon: Key },
+//    { label: "Tokens", path: "/admin/tokens", icon: Key },
     { label: "Accounts", path: "/admin/accounts", icon: Users },
     { label: "Areas", path: "/admin/areas", icon: MapPin },
     { label: "Jobs", path: "/admin/jobs", icon: Briefcase },
