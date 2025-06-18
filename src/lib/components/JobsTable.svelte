@@ -1094,13 +1094,18 @@
                 <Icon />
               </Tooltip.Trigger>
               <Tooltip.Content class="flex flex-col gap-2">
-                {#if (job.status === JobStatus.paused || job.status === JobStatus.failed) && job.resumeState}
-                  <span class="text-lg font-semibold">{job.status}</span>
+                {#if job.progress}
+                  <h1>Progress State</h1>
+                  <Highlight class="p-0 m-0" language={json} code={JSON.stringify(job.progress, null, 2)} let:highlighted>
+                    <LineNumbers {highlighted} hideBorder />
+                  </Highlight>
+                {/if}
+                <hr />
+                {#if job.resumeState}
+                  <h1>Resume State</h1>
                   <Highlight class="p-0 m-0" language={json} code={JSON.stringify(job.resumeState, null, 2)} let:highlighted>
                     <LineNumbers {highlighted} hideBorder />
                   </Highlight>
-                {:else}
-                  {job.status}
                 {/if}
               </Tooltip.Content>
             </Tooltip.Root>
