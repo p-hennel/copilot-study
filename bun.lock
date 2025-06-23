@@ -102,7 +102,7 @@
         "eslint-plugin-svelte": "^3.9.2",
         "eslint-plugin-tailwindcss": "^3.18.0",
         "globals": "^16.2.0",
-        "lucide-svelte": "^0.488.0",
+        "lucide-svelte": "^0.522.0",
         "mode-watcher": "^0.5.1",
         "paneforge": "^1.0.0-next.5",
         "postcss": "^8.5.6",
@@ -1792,7 +1792,7 @@
 
     "lru-cache": ["lru-cache@7.18.3", "", {}, "sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA=="],
 
-    "lucide-svelte": ["lucide-svelte@0.488.0", "", { "peerDependencies": { "svelte": "^3 || ^4 || ^5.0.0-next.42" } }, "sha512-omPkrOTn0bTZBqiC7fCDt2YGeR1iWGcEV814K8u0owUtFI57JwTTOfGnuiB8qdf3I4hBixiBXVigCQ1m0NIFwQ=="],
+    "lucide-svelte": ["lucide-svelte@0.522.0", "", { "peerDependencies": { "svelte": "^3 || ^4 || ^5.0.0-next.42" } }, "sha512-5/Xrf9kx60WaqLqyEFvJVh3HEi6t05PFTNczYsMkH4AQPKr2BW7HctlgDYfUwScz0/OHVlHG+gfgklymMtK2UQ=="],
 
     "lunr": ["lunr@2.3.9", "", {}, "sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow=="],
 
