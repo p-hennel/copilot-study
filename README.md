@@ -2,16 +2,68 @@
 
 This repository contains everything needed to build and run the copilot-study Svelte project.
 
-## Creating a Project
+---
 
-This repository is already set up for development. To start a new project, clone this repository:
+## Overview
 
-```bash
-git clone <repository-url> copilot-study
-cd copilot-study
-```
+**copilot-study** is the primary entrypoint for study participants in the Copima platform. It provides a participant-centric web interface for authorizing data collection, tracking progress, and downloading collected data. The application also includes an admin UI for managing studies and monitoring crawler jobs.
 
-## Developing
+---
+
+## Key Features
+
+### Participant Experience
+
+- **Entry Point:**  
+  Participants access the study via the main entrypoint at `/`. The UI guides users through the study process, starting with authentication and continuing through progress tracking and data access.
+
+- **Authentication (oAuth):**  
+  Participants authenticate using oAuth by visiting the home page and, depending on the configured providers, actively mark their consent and click the provider's button.
+  **Flow:**  
+  1. Visit home page
+  2. Read through the study description
+  3. Indicate explicit consent via toggle switch
+  4. Click the provider button
+  5. Redirection to provider's OAuth-Flow
+    1. Read through permissions activated
+    2. Authorize or reject the request for access
+  3. Redirect to the home page
+
+- **Area/Project Authorization:**  
+  After authentication, participants can view the areas (groups/projects) they have authorized for data collection. The UI provides filtering, searching, and sorting for easy navigation.
+
+- **Progress Tracking:**  
+  The dashboard displays real-time progress indicators for all authorized areas, projects, and jobs. Participants can see job status, completion rates, and detailed breakdowns.  
+  - Progress is updated live as jobs complete.
+  - Job summaries and area/project completion rates are clearly visualized.
+
+- **Data Download:**  
+  Once data collection jobs are complete, participants can download their collected data directly from the application.  
+  - Data is available in a user-friendly overview for those interested as it becomes available over time.
+
+- **Transparency:**  
+  Participants can always see which data is being collected and investigate the (anonymized) data themselves if they like.
+
+### Admin Experience
+
+- **Study Management:**  
+  Admins can configure, launch, and monitor studies, manage user accounts, and oversee crawler jobs.
+- **Real-Time Monitoring:**  
+  Admin UI provides real-time logs, job status, and system health.
+- **REST and Socket APIs:**  
+  Integration points for automation and external tools.
+
+---
+
+## UI Structure and Routes
+
+- [`/`](src/routes/+page.svelte:1): Main participant dashboard (progress, areas, jobs)
+- [`/data/download`](src/routes/data/download/:1): Download collected data
+- [`/admin`](src/routes/admin/:1): Admin dashboard and management UI
+
+---
+
+## Development
 
 Install dependencies with Bun (recommended):
 
@@ -28,12 +80,20 @@ bun run dev
 bun run dev -- --open
 ```
 
+---
+
 ## Building
 
 To create a production build:
 
 ```bash
 bun run build
+```
+
+You can preview the production build with:
+
+```bash
+bun run preview
 ```
 
 ---
@@ -125,4 +185,4 @@ The container exposes `/api/admin/health` for health monitoring. The Compose hea
 
 For more details, see [`docs/socket-deployment.md`](docs/socket-deployment.md:1).
 
-You can preview the production build with `bun run preview`.
+---
