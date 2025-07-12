@@ -5,6 +5,13 @@ import { CrawlCommand, JobStatus } from "$lib/types";
 import { and, eq } from "drizzle-orm";
 import { triggerDiscoveryForAccount } from "$lib/server/job-manager";
 
+
+/**
+ * POST endpoint to trigger a recheck/discovery for a specific account.
+ * Only accessible by admin users.
+ * @param locals - SvelteKit locals (session, user)
+ * @param request - SvelteKit request (JSON body)
+ */
 export async function POST({ locals, request }: { request: Request, locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });

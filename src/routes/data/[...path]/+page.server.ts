@@ -1,15 +1,27 @@
 import { error } from "@sveltejs/kit"
 import { db } from "$lib/server/db"
 import { area, job } from "$lib/server/db/schema"
-import { eq, and, count, sql } from "drizzle-orm" // Added sql import
-import { canAccessAreaFiles, areAreaJobsFinished, fileToCollectionType } from "$lib/server/utils"
+import { eq, sql } from "drizzle-orm" // Only import what is used
+import { canAccessAreaFiles, fileToCollectionType } from "$lib/server/utils"
 import { JobStatus } from "$lib/types"
 import AppSettings from "$lib/server/settings" // Assuming settings has dataRoot path
 import path from "node:path"
 import fs from "node:fs/promises" // For reading directory
 import { getLogger } from "@logtape/logtape";
+
+// Logger for data area file listing and access
 const logger = getLogger(["routes","data","[...path]"]);
 
+
+/**
+ * Loads area details and lists available data files for a given area path.
+ * - Checks authentication and authorization.
+ * - Fetches area metadata and job progress.
+ * - Lists .jsonl files in the area storage directory.
+ * @param locals - SvelteKit locals (session, user)
+ * @param params - Route parameters (area path)
+ * @returns Area details and file info for UI rendering
+ */
 export async function load({ locals, params }: { locals: any, params: any }) {
   // 1. Authentication Check (already done implicitly by hooks, but double-check)
   if (!locals.session || !locals.user?.id) {
@@ -22,7 +34,6 @@ export async function load({ locals, params }: { locals: any, params: any }) {
   // 3. Authorization Check
   const canAccess = await canAccessAreaFiles(areaPath, locals.user.id)
   if (!canAccess && locals.user.role !== "admin") {
-    // Allow admin override? Or rely solely on canAccessAreaFiles?
     throw error(403, "Forbidden")
   }
 
@@ -30,7 +41,6 @@ export async function load({ locals, params }: { locals: any, params: any }) {
   const areaDetails = await db.query.area.findFirst({
     where: eq(area.full_path, areaPath),
     extras: {
-      // Use extras for counts
       jobsTotal: sql<number>`(SELECT COUNT(*) FROM ${job} WHERE ${job.full_path} = ${area.full_path})`
         .mapWith(Number)
         .as("jobsTotal"),
@@ -45,21 +55,15 @@ export async function load({ locals, params }: { locals: any, params: any }) {
     throw error(404, "Area not found")
   }
 
-  // 5. Check if Jobs are Finished (Optional - UI can show progress)
-  // const jobsFinished = await areAreaJobsFinished(areaPath);
-  // if (!jobsFinished) {
-  //    // Maybe allow viewing even if not finished, UI shows progress?
-  // }
-
-  // 6. List Files in Storage Directory
-  let filesInfo: Array<{ type: string; size: number; name: string }> = []
+  // 5. List Files in Storage Directory
+  const filesInfo: Array<{ type: string; size: number; name: string }> = []
   try {
     const storageDir = path.resolve(path.join(AppSettings().paths.dataRoot, areaPath))
     const dirEntries = await fs.readdir(storageDir, { withFileTypes: true })
 
     for (const entry of dirEntries) {
       if (entry.isFile() && entry.name.endsWith(".jsonl")) {
-        // Assuming files are .jsonl
+        // Only .jsonl files are considered data collections
         const collectionType = fileToCollectionType(entry.name)
         if (collectionType) {
           const stats = await fs.stat(path.join(storageDir, entry.name))
@@ -81,7 +85,7 @@ export async function load({ locals, params }: { locals: any, params: any }) {
     }
   }
 
-  // 7. Return Data
+  // 6. Return Data for UI
   return {
     area: areaDetails, // Contains name, path, counts
     files: filesInfo

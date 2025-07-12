@@ -1,9 +1,10 @@
+
 import {
   compareLogLevel,
   configure,
   getAnsiColorFormatter,
   getConsoleSink,
-  getLogger, // Keep the import
+  getLogger, // Centralized logger import
   getTextFormatter,
   withFilter,
   type LogRecord
@@ -16,6 +17,15 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
 
+
+/**
+ * Formats log records with optional property expansion for structured logging.
+ * @param formatterFactory - Factory for the base formatter (text or color)
+ * @param formatterFactoryOptions - Options for the formatter
+ * @param allParams - Whether to include all properties in the output
+ * @param spacer - String to separate message and properties
+ * @returns A function that formats a LogRecord
+ */
 export const complexFormatter = (
   formatterFactory: (options?: object) => (record: any) => string,
   formatterFactoryOptions: any = {},
@@ -57,6 +67,11 @@ export const complexFormatter = (
   };
 };
 
+
+/**
+ * Determines the log level from environment variables.
+ * Supports LOG_LEVEL and DEBUG env vars.
+ */
 function getLogLevelFromEnv(): "info" | "debug" | "warning" | "error" | "fatal" | undefined {
   const envKeys = Object.keys(Bun.env);
   if (envKeys.includes("LOG_LEVEL")) {
@@ -78,6 +93,16 @@ function getLogLevelFromEnv(): "info" | "debug" | "warning" | "error" | "fatal" 
   return undefined;
 }
 
+
+/**
+ * Configures the logging system for the application.
+ * Sets up console, file, and OpenTelemetry sinks with appropriate formatters and log levels.
+ * @param id - Logger category or categories
+ * @param basePath - Directory for log files
+ * @param verbose - Enable verbose logging
+ * @param debug - Enable debug logging
+ * @returns Logger instance for the given category
+ */
 export async function configureLogging(
   id: string | string[],
   basePath: string,
@@ -100,12 +125,12 @@ export async function configureLogging(
   try {
     await mkdir("logs", { recursive: true });
   } catch {
-    /* */
+    /* Directory may already exist */
   }
 
   // Get log level from environment or use defaults
   const envLogLevel = getLogLevelFromEnv();
-  const consoleLogLevel = envLogLevel || (debug ? "debug" : verbose ? "info" : "info"); // Changed default from "warning" to "info"
+  const consoleLogLevel = envLogLevel || (debug ? "debug" : verbose ? "info" : "info");
   const fileLogLevel = envLogLevel || (debug ? "debug" : "info");
 
   const sinks = ["console", "logFile", "errorFile"];
@@ -153,6 +178,12 @@ export async function configureLogging(
   return getLogger(id);
 }
 
+
+/**
+ * Returns the caller's stack frame for debugging/logging purposes.
+ * @param parent - The function to exclude from the stack trace
+ * @returns The caller's stack frame as a string
+ */
 export function getCaller(parent: any) {
   const error = new Error();
   Error.captureStackTrace(error, parent);

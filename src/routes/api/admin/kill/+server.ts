@@ -2,6 +2,13 @@ import { json } from "@sveltejs/kit";
 import pm2 from "@socket.io/pm2";
 import { pm2Restart, pm2Start, pm2Stop } from "$lib/server/utils";
 
+
+/**
+ * POST endpoint to control PM2 processes (start, stop, restart) by PID.
+ * Only accessible by admin users.
+ * @param request - SvelteKit request (JSON body)
+ * @param locals - SvelteKit locals (session, user)
+ */
 export async function POST({ request, locals }: { request: Request, locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });
@@ -33,7 +40,8 @@ export async function POST({ request, locals }: { request: Request, locals: any 
     result = await pm2Restart(data.pid);
   }
 
-  //Bun.spawn(["kill", "-9", data.pid]);
+  // Optionally, force kill the process (disabled by default)
+  // Bun.spawn(["kill", "-9", data.pid]);
 
   return json({
     success: true,

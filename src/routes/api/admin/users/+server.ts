@@ -6,12 +6,21 @@ import type { UserInformation } from "$lib/types";
 import type { AccountInformation } from "$lib/types";
 import { computeHash } from "$lib/server/CryptoHash";
 
+
+// List of hashes for which emails should not be re-hashed in the admin user list
 const toBeCheckedHashes = [
   "e88281261912cf02aac6795f47bb90ccd83205d65234626e41ffeec091d6b5c3",
   "f8b8a10e549d2f979377bc2e45ad61c9dc3999cfbf968dbe75fe73d0f0467ee2",
   "02140ab95dc7f0b790cd10d93f3a80b04f9e784947248e70134c7a0c4bdf9af3"
 ]
 
+
+/**
+ * GET endpoint to list all users and their accounts for admin view.
+ * Hashes emails for privacy except for certain whitelisted hashes.
+ * Only accessible by admin users.
+ * @param locals - SvelteKit locals (session, user)
+ */
 export async function GET({ locals }: { locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
     return json({ error: "Unauthorized!" }, { status: 401 });

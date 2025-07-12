@@ -5,6 +5,8 @@ import { eq, and, gte, lte } from "drizzle-orm";
 import { job } from "$lib/server/db/base-schema";
 import { JobStatus, TokenProvider } from "$lib/types";
 import { getLogger } from "@logtape/logtape";
+
+// Logger for admin jobs bulk API endpoint
 const logger = getLogger(["routes","api","admin","jobs","bulk"]);
 
 export async function POST({ locals, request }: RequestEvent) {

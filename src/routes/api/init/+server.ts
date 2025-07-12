@@ -8,8 +8,19 @@ import { user } from "../../../lib/server/db/auth-schema";
 import { getLogger } from "@logtape/logtape";
 import { isAdmin } from "$lib/server/utils";
 
+
+// Logger for API init endpoint
 const logger = getLogger(["routes","api","init"]);
 
+
+/**
+ * API endpoint to initialize the first admin user and API key.
+ * - Only accessible with the correct init code or by an existing admin.
+ * - Creates a new admin user if none exists, or upgrades an existing user to admin.
+ * - Returns an API key for the user.
+ * @param url - Request URL (for query params)
+ * @param locals - SvelteKit locals (session, user)
+ */
 export async function GET({ url, locals }: { url: URL, locals: any }) {
   try {
     const email = url.searchParams.get("user") || "";
@@ -37,10 +48,9 @@ export async function GET({ url, locals }: { url: URL, locals: any }) {
 
     const ctx = await auth.$context;
 
-    //const hash = await ctx.password.hash(password)
-
     let userId: string | undefined = undefined;
     if (userCount <= 0) {
+      // Create new admin user
       const usr = await ctx.internalAdapter.createUser({
         name: name,
         email: email,
@@ -70,6 +80,7 @@ export async function GET({ url, locals }: { url: URL, locals: any }) {
 
       await ctx.internalAdapter.updatePassword(usr.id, pwd);
     } else {
+      // Upgrade existing user to admin if needed
       const usrRole = ((
         await db
           .select({ role: user.role, id: user.id })
@@ -82,7 +93,6 @@ export async function GET({ url, locals }: { url: URL, locals: any }) {
       if (usrRole.role !== "admin") {
         await db.update(user).set({ role: "admin" }).where(eq(user.id, user.id));
         logger.info("updated role");
-        //await ctx.internalAdapter.updateUserByEmail(email, { role: "admin" })
       }
 
       userId = usrRole.id;
@@ -90,6 +100,7 @@ export async function GET({ url, locals }: { url: URL, locals: any }) {
 
     if (!userId) return text("no user id found");
 
+    // Return existing or new API key
     const oldKey = await db.select().from(apikey).where(eq(apikey.userId, userId)).limit(1);
     if (oldKey.length > 0 && !!oldKey.at(0))
       return json({

@@ -7,6 +7,8 @@ import { JobStatus, TokenProvider, CrawlCommand } from "$lib/types";
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 
+
+// Logger for admin jobs API endpoint
 const logger = getLogger(["api", "admin", "jobs"]);
 
 // Enhanced query parameters schema

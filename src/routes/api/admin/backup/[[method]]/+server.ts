@@ -2,12 +2,20 @@ import { json } from "@sveltejs/kit";
 import { sendBackupMail, sendBackupMailViaAPI } from "$lib/server/db/exporter";
 import AppSettings from "$lib/server/settings";
 
+
+// Default backup method and allowed methods
 const defaultMethod: string = "api";
 const methods = [defaultMethod, "smtp"]
 
+
+/**
+ * GET endpoint to trigger a backup via API or SMTP.
+ * Only accessible by admin users.
+ * @param locals - SvelteKit locals (session, user)
+ * @param params - Route parameters (method)
+ */
 export async function GET({ locals, params }: { params: any, locals: any }) {
   if (!locals.session || !locals.user?.id || locals.user.role !== "admin") {
-    // No need to log unauthorized attempts unless debugging specific issues
     return json({ error: "Unauthorized!" }, { status: 401 });
   }
 

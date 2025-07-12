@@ -10,8 +10,17 @@ import AppSettings from "$lib/server/settings";
 import { job } from "$lib/server/db/base-schema";
 import { and, eq } from "drizzle-orm";
 
+
+// Logger for recheck server operations
 const logger = getLogger(["recheck", "server"]);
 
+
+/**
+ * Handles GET requests to /recheck for triggering a recheck of GitLab accounts for the current user.
+ * - Resets GROUP_PROJECT_DISCOVERY jobs to queued state.
+ * - Triggers new authorization checks for all GitLab accounts.
+ * - Redirects to home after completion.
+ */
 export const GET: RequestHandler = async ({ locals }) => {
   // Verify user is authenticated
   if (!ensureUserIsAuthenticated(locals)) {
@@ -23,7 +32,7 @@ export const GET: RequestHandler = async ({ locals }) => {
   logger.info(`Processing recheck request for user ${userId}`);
 
   try {
-    // Reset GROUP_PROJECT_DISCOVERY jobs
+    // Reset GROUP_PROJECT_DISCOVERY jobs for this user
     logger.info(`Resetting GROUP_PROJECT_DISCOVERY jobs for user ${userId}`);
     try {
       const resetResult = await db
@@ -53,13 +62,12 @@ export const GET: RequestHandler = async ({ locals }) => {
     // Get all accounts for the current user
     const accounts = await getAccounts(userId);
     let recheckCount = 0;
-    
-    // Process each GitLab account
+
+    // Process each GitLab account for recheck
     for (const acct of accounts) {
       if (!acct.id || !acct.provider || !acct.token || acct.provider === "credential") {
         continue;
       }
-      
       // Only process GitLab accounts
       if (acct.provider.toLowerCase().indexOf("gitlab") < 0) {
         continue;
@@ -99,10 +107,9 @@ export const GET: RequestHandler = async ({ locals }) => {
         continue;
       }
 
-      // Trigger authorization scope job creation/check using the modern approach
+      // Trigger authorization scope job creation/check
       const apiUrl = `${opts.baseUrl}/api/graphql`;
       logger.info(`Initiating recheck for account ${acct.id} (${acct.provider})`);
-      
       await handleNewAuthorization(userId, acct.id, opts.provider, apiUrl);
       recheckCount++;
     }

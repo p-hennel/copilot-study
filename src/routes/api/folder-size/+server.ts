@@ -7,21 +7,23 @@ import { formatBytes } from '$lib/utils';
 import { isAdmin } from '$lib/server/utils';
 import { getLogger } from '@logtape/logtape';
 
+
+// Logger for folder size API endpoints
 const logger = getLogger(["backend", "api", "folder-sizes"])
 
 /**
- * API endpoint for calculating folder sizes
- * 
+ * API endpoint for calculating folder sizes and disk space info.
+ *
  * Query parameters:
  * - path: The folder path to calculate (required)
  * - cache: Cache age in milliseconds (optional, default: 600000 = 10 minutes)
  * - format: Whether to return formatted bytes (optional, default: false)
  * - includeSpace: Whether to include disk space info (optional, default: false)
- * 
+ *
  * Examples:
- * GET /api/folder-size?path=./src
- * GET /api/folder-size?path=./data&cache=60000&format=true
- * GET /api/folder-size?path=./logs&includeSpace=true
+ *   GET /api/folder-size?path=./src
+ *   GET /api/folder-size?path=./data&cache=60000&format=true
+ *   GET /api/folder-size?path=./logs&includeSpace=true
  */
 export const GET: RequestHandler = async ({ url, locals }) => {
 	// Check admin authentication
@@ -103,8 +105,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 };
 
 /**
- * API endpoint for clearing folder size cache
- * 
+ * API endpoint for clearing folder size cache.
+ *
  * Body parameters:
  * - path: The folder path to clear cache for (required)
  * - recursive: Whether to clear cache recursively (optional, default: true)

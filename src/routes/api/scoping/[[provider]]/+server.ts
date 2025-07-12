@@ -5,8 +5,16 @@ import { TokenProvider, CrawlCommand, JobStatus } from "$lib/types"; // Added Cr
 import { json } from "@sveltejs/kit";
 import { and, eq } from "drizzle-orm";
 import { getLogger } from "@logtape/logtape";
+
+// Logger for scoping API endpoint
 const logger = getLogger(["routes","api","scoping","[[provider]]"]);
 
+/**
+ * API endpoint to get the status of a GROUP_PROJECT_DISCOVERY job for a given provider.
+ * Returns job progress and completion status for the current user.
+ * @param provider - The provider to check (gitlab, jira, etc.)
+ * @param locals - SvelteKit locals (session, user)
+ */
 export async function GET({ params: { provider }, locals }: { params: { provider: string }, locals: any }) {
   if (!locals.session || !locals.user || !locals.user.id) return unauthorizedResponse();
 
@@ -30,16 +38,16 @@ export async function GET({ params: { provider }, locals }: { params: { provider
   const jobRecord = await db.query.job.findFirst({
     columns: {
       provider: true,
-      created_at: true, // Renamed from createdAt
+      created_at: true,
       updated_at: true,
-      status: true, // Replaces isComplete
-      progress: true, // Contains groupCount, projectCount, groupTotal, projectTotal
-      command: true // To filter for GROUP_PROJECT_DISCOVERY
+      status: true,
+      progress: true,
+      command: true
     },
     where: and(
       eq(jobSchema.userId, locals.user.id),
       eq(jobSchema.provider, _provider),
-      eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY) // Ensure we get the correct job type
+      eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY)
     )
   });
 
