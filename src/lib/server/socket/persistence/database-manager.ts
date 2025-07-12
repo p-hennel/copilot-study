@@ -73,7 +73,7 @@ export class DatabaseManager {
         const result = await operation(tx as any);
         return result;
       } catch (error) {
-        logger.error('Transaction failed, rolling back:', { error });
+        logger.error('Transaction failed, rolling back:', { error, stack: new Error().stack });
         throw error;
       }
     });

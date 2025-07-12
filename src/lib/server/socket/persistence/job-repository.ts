@@ -41,23 +41,8 @@ export class JobRepository {
   /**
    * Create a new job from crawler assignment
    */
-  async createJobFromAssignment(assignment: WebAppJobAssignmentData): Promise<Job> {
+  async createJob(jobData: JobInsert): Promise<Job> {
     return await this.dbManager.withTransaction(async (db) => {
-      const jobData: JobInsert = {
-        id: assignment.web_app_job_id,
-        accountId: assignment.account_id,
-        userId: assignment.created_by_user_id || null,
-        command: this.mapJobTypeToCrawlCommand(assignment.job_type),
-        full_path: assignment.namespace_path || null,
-        provider: assignment.provider === 'gitlab-cloud' ? TokenProvider.gitlabCloud : TokenProvider.gitlab,
-        gitlabGraphQLUrl: assignment.gitlab_host,
-        status: JobStatus.queued,
-        resumeState: assignment.resume ? {} : null,
-        progress: null,
-        created_at: new Date(),
-        updated_at: new Date()
-      };
-
       const [createdJob] = await db.insert(job).values(jobData).returning();
       return createdJob as Job;
     });

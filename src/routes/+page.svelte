@@ -388,7 +388,7 @@
     <!-- Areas Grid -->
     {#if paginatedAreas.length > 0}
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-        {#each paginatedAreas as area, idx (area.full_path)}
+        {#each paginatedAreas as area (area.full_path)}
           <AreaCard {area} />
         {/each}
       </div>

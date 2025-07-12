@@ -3,8 +3,8 @@ import { db } from "$lib/server/db";
 import AppSettings from "$lib/server/settings";
 import {
   area as areaSchema,
-  job as jobSchema
-  // account as accountSchema // No longer directly used here to fetch PAT
+  job as jobSchema,
+  account as accountSchema
 } from "$lib/server/db/schema";
 import { forProvider } from "$lib/utils";
 import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
@@ -84,8 +84,10 @@ export async function initiateGitLabDiscovery(args: InitiateGitLabDiscoveryArgs)
             groupTotal: null,
             projectTotal: null
           },
-          gitlabGraphQLUrl, // Update in case it changed. Assumes this field exists on jobSchema.
-          // updated_at is handled by onUpdateNow()
+          gitlabGraphQLUrl, // Update in case it changed.
+          provider: providerId as TokenProvider, // Ensure provider is also updated
+          accountId: authorizationDbId, // Ensure accountId is also updated
+          userId, // Ensure userId is also updated
         })
         .where(eq(jobSchema.id, existingJobToReset.id));
       currentDiscoveryJobId = existingJobToReset.id;
@@ -280,7 +282,9 @@ export async function handleNewArea(
   areaType: AreaType,
   areaId: string,
   accountId: string,
-  spawningJobId?: string
+  spawningJobId?: string,
+  parentGitlabGraphQLUrl?: string, // New optional parameter
+  parentProvider?: TokenProvider // New optional parameter
 ): Promise<void> {
   logger.info(`Handling new area: ${areaPath} (${areaType}) with ID ${areaId}${spawningJobId ? ` (spawned by job ${spawningJobId})` : ''}`);
 
@@ -299,6 +303,42 @@ export async function handleNewArea(
         name: areaPath.split('/').pop(), // Extract name from path
         type: areaType
       });
+    }
+
+    let effectiveGitlabGraphQLUrl = parentGitlabGraphQLUrl;
+    let effectiveProvider = parentProvider;
+
+    if (spawningJobId && !effectiveGitlabGraphQLUrl) {
+      // Fetch parent job to get gitlabGraphQLUrl and provider if not directly provided
+      const parentJob = await db.query.job.findFirst({
+        where: eq(jobSchema.id, spawningJobId),
+        with: {
+          usingAccount: true // Ensure account is loaded to get provider if needed
+        }
+      });
+
+      if (parentJob) {
+        effectiveGitlabGraphQLUrl = parentJob.gitlabGraphQLUrl ?? undefined;
+        effectiveProvider = parentJob.provider ?? undefined;
+      }
+    }
+
+    // If still no GitLab URL, construct it from AppSettings using the effectiveProvider
+    if (!effectiveGitlabGraphQLUrl && effectiveProvider) {
+      const opts = forProvider<{ provider: TokenProvider; baseUrl: string }>(effectiveProvider, {
+        gitlabCloud: () => ({
+          provider: TokenProvider.gitlabCloud,
+          baseUrl: AppSettings().auth.providers.gitlabCloud.baseUrl
+        }),
+        gitlabOnPrem: () => ({
+          provider: TokenProvider.gitlab,
+          baseUrl: AppSettings().auth.providers.gitlab.baseUrl ?? ""
+        })
+      });
+
+      if (opts && opts.baseUrl) {
+        effectiveGitlabGraphQLUrl = `${opts.baseUrl}/api/graphql`;
+      }
     }
 
     // Create appropriate jobs based on area type
@@ -321,13 +361,17 @@ export async function handleNewArea(
       });
 
       if (!existingJob) {
+        logger.debug(`[JobManager] Creating new job for area ${areaPath} with command ${command}. effectiveGitlabGraphQLUrl: ${effectiveGitlabGraphQLUrl}, effectiveProvider: ${effectiveProvider}`);
         jobsToCreate.push({
           id: ulid(),
           accountId,
           full_path: areaPath,
           command, // Use the actual CrawlCommand enum value that matches crawler JobType
           status: JobStatus.queued,
-          spawned_from: spawningJobId
+          spawned_from: spawningJobId,
+          gitlabGraphQLUrl: effectiveGitlabGraphQLUrl, // Use the determined URL
+          userId: undefined, // parentJob is not in scope, so set to undefined or fetch from context if available
+          provider: effectiveProvider, // Use the determined provider
         });
       } else {
         logger.debug(`Job of type ${command} already exists for area ${areaPath}, skipping`);
@@ -337,6 +381,13 @@ export async function handleNewArea(
     // Insert all new jobs
     if (jobsToCreate.length > 0) {
       logger.info(`Creating ${jobsToCreate.length} new jobs for area ${areaPath}`);
+      logger.debug(`[JobManager] Jobs to create:`, { jobsToCreate });
+      // TEMP DEBUG LOGGING: Output parent-child relationship and gitlabGraphQLUrl for each job
+      for (const job of jobsToCreate) {
+        logger.info(
+          `[TEMP DIAG] Job creation: id=${job.id}, parentJobId=${job.spawned_from}, gitlabGraphQLUrl=${job.gitlabGraphQLUrl}`
+        );
+      }
       await db.insert(jobSchema).values(jobsToCreate);
 
       /*
@@ -381,5 +432,58 @@ export async function handleIpcAreaDiscovery(message: any): Promise<void> {
     return;
   }
 
-  await handleNewArea(areaPath, areaType, areaId, accountId); // Spawning job ID is not relevant for direct IPC calls
+  // Fetch the most recent GROUP_PROJECT_DISCOVERY job for this account to get gitlabGraphQLUrl and provider
+  const discoveryJob = await db.query.job.findFirst({
+    where: and(
+      eq(jobSchema.accountId, accountId),
+      eq(jobSchema.command, CrawlCommand.GROUP_PROJECT_DISCOVERY)
+    ),
+    orderBy: [desc(jobSchema.created_at)]
+  });
+
+  let effectiveGitlabGraphQLUrl: string | undefined;
+  let effectiveProvider: TokenProvider | undefined;
+
+  if (discoveryJob) {
+    effectiveGitlabGraphQLUrl = discoveryJob.gitlabGraphQLUrl ?? undefined;
+    effectiveProvider = discoveryJob.provider ?? undefined;
+  } else {
+    // Fallback: if no discovery job found, try to construct from AppSettings based on provider from account
+    const accountRecord = await db.query.account.findFirst({
+      where: eq(accountSchema.id, accountId),
+    });
+
+    if (accountRecord && accountRecord.providerId) {
+      const opts = forProvider<{ provider: TokenProvider; baseUrl: string }>(accountRecord.providerId as TokenProvider, {
+        gitlabCloud: () => ({
+          provider: TokenProvider.gitlabCloud,
+          baseUrl: AppSettings().auth.providers.gitlabCloud.baseUrl
+        }),
+        gitlabOnPrem: () => ({
+          provider: TokenProvider.gitlab,
+          baseUrl: AppSettings().auth.providers.gitlab.baseUrl ?? ""
+        })
+      });
+
+      if (opts && opts.baseUrl) {
+        effectiveGitlabGraphQLUrl = `${opts.baseUrl}/api/graphql`;
+        effectiveProvider = accountRecord.providerId as TokenProvider;
+      }
+    }
+  }
+
+  if (!effectiveGitlabGraphQLUrl || !effectiveProvider) {
+    logger.error(`Could not determine GitLab URL or provider for account ${accountId} during IPC area discovery.`);
+    return;
+  }
+
+  await handleNewArea(
+    areaPath,
+    areaType,
+    areaId,
+    accountId,
+    undefined, // spawningJobId is not relevant for direct IPC calls for IPC discovery
+    effectiveGitlabGraphQLUrl,
+    effectiveProvider
+  );
 }

@@ -113,7 +113,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
         // Trigger authorization scope job creation/check
         // FOR NOW NO ACCOUNT WILL AUTOMATICALLY START TO CRAWL OR TRIGGER "GROUP_PROJECT_DISCOVERY"
         // const apiUrl = `${opts.baseUrl}/api/graphql`;
-        // await handleNewAuthorization(locals.user!.id!, x.id, opts.provider, token, apiUrl);
+                await handleNewAuthorization(locals.user!.id!, x.id, opts.provider, apiUrl);
       });
   }
 

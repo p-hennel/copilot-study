@@ -68,10 +68,10 @@ export const DiscoveredJobSchema = z.object({
 
 // Discovery summary schema
 export const DiscoverySummarySchema = z.object({
-  total_users: z.number(),
-  total_groups: z.number(),
-  total_projects: z.number(),
-  hierarchy_depth: z.number(),
+  total_users: z.number().optional(),
+  total_groups: z.number().optional(),
+  total_projects: z.number().optional(),
+  hierarchy_depth: z.number().optional(),
 });
 
 // Simple job schema (mirrored from crawler unified-types.ts)
@@ -166,7 +166,7 @@ export const JobFailedMessageSchema = BaseMessageSchema.extend({
 
 export const JobsDiscoveredMessageSchema = BaseMessageSchema.extend({
   type: z.literal('jobs_discovered'),
-  job_id: z.string(), // Required for discovery messages
+  jobId: z.string(), // Required for discovery messages
   data: z.object({
     discovered_jobs: z.array(DiscoveredJobSchema),
     discovery_summary: DiscoverySummarySchema,
@@ -176,7 +176,7 @@ export const JobsDiscoveredMessageSchema = BaseMessageSchema.extend({
 export const TokenRefreshRequestMessageSchema = BaseMessageSchema.extend({
   type: z.literal('token_refresh_request'),
   data: z.object({
-    current_token_expired: z.boolean(),
+    current_token_expired: z.boolean().optional(),
     last_successful_request: z.string().optional(),
     error_details: z.string().optional(),
   }),

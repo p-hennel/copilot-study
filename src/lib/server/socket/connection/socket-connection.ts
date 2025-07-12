@@ -13,6 +13,9 @@ import type {
 } from '../types/index';
 import { ConnectionState as ConnState } from '../types/connection';
 import { MessageBufferImpl } from './message-buffer';
+import { getLogger } from '$lib/logging';
+
+const logger = getLogger(['socket-connection']);
 
 /**
  * SocketConnection - Individual connection wrapper implementation
@@ -217,7 +220,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
     this.metadata.state = state;
     
     if (oldState !== state) {
-      console.log(`Connection ${this.id} state: ${oldState} -> ${state}`);
+      logger.debug(`Connection ${this.id} state: ${oldState} -> ${state}`);
       
       // Emit specific state change events
       switch (state) {
@@ -340,7 +343,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
       this.setState(ConnState.DISCONNECTED);
       
     } catch (error) {
-      console.error(`Error destroying connection ${this.id}:`, error);
+      logger.error(`Error destroying connection ${this.id}:`, error);
     }
   }
 
@@ -352,7 +355,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
     // Handle socket close
     this.socket.on('close', (hadError: boolean) => {
-      console.log(`Socket closed for connection ${this.id}, hadError: ${hadError}`);
+      logger.debug(`Socket closed for connection ${this.id}, hadError: ${hadError}`);
       this.setState(ConnState.DISCONNECTED);
       this.emit('disconnected', { 
         type: 'disconnected', 
@@ -363,7 +366,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
     // Handle socket errors
     this.socket.on('error', (error: Error) => {
-      console.error(`Socket error for connection ${this.id}:`, error);
+      logger.error(`Socket error for connection ${this.id}:`, error);
       this.stats.errors++;
       this.setState(ConnState.ERROR);
       this.emit('error', { type: 'error', connection: this, error });
@@ -371,7 +374,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
     // Handle socket timeout
     this.socket.on('timeout', () => {
-      console.warn(`Socket timeout for connection ${this.id}`);
+      logger.warn(`Socket timeout for connection ${this.id}`);
       this.setState(ConnState.ERROR);
       this.emit('error', { 
         type: 'error', 
@@ -383,8 +386,8 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
   private handleIncomingData(data: Buffer): void {
     try {
-      console.log(`📡 CONNECTION: Received ${data.length} bytes on ${this.id}`);
-      console.log(`📄 CONNECTION: Raw data: ${data.toString().substring(0, 200)}${data.length > 200 ? '...' : ''}`);
+      logger.debug(`📡 CONNECTION: Received ${data.length} bytes on ${this.id}`);
+      logger.debug(`📄 CONNECTION: Raw data: ${data.toString().substring(0, 200)}${data.length > 200 ? '...' : ''}`);
       
       // Update statistics
       this.stats.bytesReceived += data.length;
@@ -395,23 +398,23 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
       // Try newline-delimited messages first (for backward compatibility)
       let messages = this.messageBuffer.extractMessages('\n');
-      console.log(`📦 CONNECTION: Extracted ${messages.length} complete messages from buffer using newline delimiter`);
+      logger.debug(`📦 CONNECTION: Extracted ${messages.length} complete messages from buffer using newline delimiter`);
       
       // If no newline-delimited messages found, try JSON brace counting
       if (messages.length === 0) {
         messages = this.extractJsonMessages();
-        console.log(`📦 CONNECTION: Extracted ${messages.length} complete messages from buffer using JSON parsing`);
+        logger.debug(`📦 CONNECTION: Extracted ${messages.length} complete messages from buffer using JSON parsing`);
       }
       
       for (const messageString of messages) {
-        console.log(`🔍 CONNECTION: Processing message: ${messageString.substring(0, 100)}${messageString.length > 100 ? '...' : ''}`);
+        logger.debug(`🔍 CONNECTION: Processing message: ${messageString.substring(0, 100)}${messageString.length > 100 ? '...' : ''}`);
         this.processMessage(messageString);
       }
 
       this.updateStats();
       
     } catch (error) {
-      console.error(`💥 CONNECTION: Error handling incoming data for ${this.id}:`, error);
+      logger.error(`💥 CONNECTION: Error handling incoming data for ${this.id}:`, error);
       this.stats.errors++;
       this.updateStats();
     }
@@ -419,15 +422,15 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
   private processMessage(messageString: string): void {
     try {
-      console.log(`🔧 CONNECTION: Parsing JSON message on ${this.id}`);
+      logger.debug(`🔧 CONNECTION: Parsing JSON message on ${this.id}`);
       const message = JSON.parse(messageString) as any;
 
       if (!("type" in message)) {
-        console.error(`❌ CONNECTION: Invalid message structure - missing 'type' field:`, message);
+        logger.error(`❌ CONNECTION: Invalid message structure - missing 'type' field:`, message);
         throw new Error(`Invalid message structure: ${JSON.stringify(message)}`);
       }
       
-      console.log(`✅ CONNECTION: Successfully parsed ${message.type} message on ${this.id}`);
+      logger.debug(`✅ CONNECTION: Successfully parsed ${message.type} message on ${this.id}`);
       
       // Update message statistics
       this.stats.messagesReceived++;
@@ -435,7 +438,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
       // Update heartbeat timestamp for heartbeat messages
       if (message.type === 'heartbeat') {
-        console.log(`💓 CONNECTION: Heartbeat received on ${this.id}`);
+        logger.debug(`💓 CONNECTION: Heartbeat received on ${this.id}`);
         this.metadata.lastHeartbeat = new Date();
         this.emit('heartbeat', {
           type: 'heartbeat',
@@ -445,18 +448,20 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
       }
 
       // Emit message event
-      console.log(`📤 CONNECTION: Emitting message event for ${message.type} on ${this.id}`);
+      logger.debug(`📤 CONNECTION: Emitting message event for ${message.type} on ${this.id}`);
+      logger.debug(`📤 CONNECTION: Emitting message object:`, message);
       this.emit('message', {
         type: 'message',
         connection: this,
         message
       });
+      logger.debug(`Parsed message before emitting:`, JSON.stringify(message, null, 2));
       
-      console.log(`✅ CONNECTION: Message event emitted successfully for ${message.type} on ${this.id}`);
+      logger.debug(`✅ CONNECTION: Message event emitted successfully for ${message.type} on ${this.id}`);
       
     } catch (error) {
-      console.error(`💥 CONNECTION: Error parsing message for ${this.id}:`, error);
-      console.error(`📄 CONNECTION: Failed message string:`, messageString);
+      logger.error(`💥 CONNECTION: Error parsing message for ${this.id}:`, error);
+      logger.error(`📄 CONNECTION: Failed message string:`, messageString);
       this.stats.errors++;
       this.updateStats();
     }
@@ -496,8 +501,9 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
         // Validate it's actual JSON by parsing it
         JSON.parse(messageStr);
         messages.push(messageStr);
-      } catch {
-        console.log(`🔍 CONNECTION: Invalid JSON found, skipping: ${messageStr.substring(0, 50)}...`);
+      } catch (error) {
+        logger.error(`💥 CONNECTION: Failed to parse JSON message in extractJsonMessages:`, error);
+        logger.error(`📄 CONNECTION: Malformed message string:`, messageStr);
       }
       
       startIndex = messageEnd;
@@ -517,7 +523,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
     const heartbeatTimeout = this.config.heartbeatTimeout;
 
     if (now - lastHeartbeat > heartbeatTimeout) {
-      console.warn(`Heartbeat timeout for connection ${this.id}`);
+      logger.warn(`Heartbeat timeout for connection ${this.id}`);
       this.setState(ConnState.ERROR);
       this.emit('error', { 
         type: 'error', 

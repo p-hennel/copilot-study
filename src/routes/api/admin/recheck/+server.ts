@@ -1,8 +1,8 @@
 import { json } from "@sveltejs/kit";
-//import { db } from "$lib/server/db";
-//import { job } from "$lib/server/db/base-schema";
-//import { CrawlCommand, JobStatus } from "$lib/types";
-//import { and, eq } from "drizzle-orm";
+import { db } from "$lib/server/db";
+import { job } from "$lib/server/db/base-schema";
+import { CrawlCommand, JobStatus } from "$lib/types";
+import { and, eq } from "drizzle-orm";
 import { triggerDiscoveryForAccount } from "$lib/server/job-manager";
 
 export async function POST({ locals, request }: { request: Request, locals: any }) {
@@ -21,15 +21,13 @@ export async function POST({ locals, request }: { request: Request, locals: any 
 
   await triggerDiscoveryForAccount(userId, accountId, provider); 
 
-  /*
   await db.update(job).set({
     status: JobStatus.queued
   }).where(and(
     eq(job.userId, userId),
     eq(job.accountId, accountId),
     eq(job.command, CrawlCommand.GROUP_PROJECT_DISCOVERY)
-  ))
-  */
+  ));
   
   return json({});
 }

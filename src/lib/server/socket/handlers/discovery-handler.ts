@@ -1,4 +1,5 @@
 import type { JobsDiscoveredMessage, DiscoveredJob } from '../types/messages.js';
+import { DiscoveredJobSchema } from '../types/messages.js';
 import type { SocketConnection } from '../types/connection.js';
 import type { DatabaseManager } from '../persistence/database-manager.js';
 import { JobRepository } from '../persistence/job-repository.js';
@@ -6,6 +7,9 @@ import { AreaRepository } from '../persistence/area-repository.js';
 import { JobStatus, CrawlCommand, TokenProvider, AreaType } from '../../../types.js';
 import type { WebAppJobAssignmentData } from '../types/messages.js';
 import { createJobId, formatTimestamp } from '../utils/index.js';
+import { getLogger } from '$lib/logging';
+
+const logger = getLogger(['socket-discovery-handler']);
 
 /**
  * Process jobs_discovered messages from crawler
@@ -26,6 +30,23 @@ export class DiscoveryHandler {
     this.areaRepository = new AreaRepository(dbManager);
   }
 
+  private mapJobTypeToCrawlCommand(jobType: string): CrawlCommand {
+    switch (jobType) {
+      case 'crawl_group':
+        return CrawlCommand.group;
+      case 'crawl_project':
+        return CrawlCommand.project;
+      case 'discover_areas':
+        return CrawlCommand.GROUP_PROJECT_DISCOVERY;
+      case 'crawl_user':
+        return CrawlCommand.users;
+      // Add other mappings as needed
+      default:
+        logger.warn(`Unknown job type received: ${jobType}. Defaulting to GROUP_PROJECT_DISCOVERY.`);
+        return CrawlCommand.GROUP_PROJECT_DISCOVERY;
+    }
+  }
+
   /**
    * Handle jobs discovered message from crawler
    */
@@ -33,40 +54,72 @@ export class DiscoveryHandler {
     connection: SocketConnection,
     message: JobsDiscoveredMessage
   ): Promise<void> {
+    logger.info(`[DEBUG] handleJobsDiscovered called. Raw message:`, { message });
+    logger.debug(`handleJobsDiscovered: Raw message received:`, message);
     try {
-      console.log(`Processing jobs discovered from ${message.job_id}:`, {
+      logger.info(`Processing jobs discovered from ${message.jobId}:`, {
         discoveredJobs: message.data.discovered_jobs.length,
         summary: message.data.discovery_summary
       });
+    logger.debug(`DiscoveryHandler: Raw discoveredJobs received: ${JSON.stringify(message.data.discovered_jobs)}`);
+
+      // Strict Zod validation for discovered jobs
+      const validatedDiscoveredJobs = message.data.discovered_jobs
+        .map((job, idx) => {
+          const result = DiscoveredJobSchema.safeParse(job);
+          if (!result.success) {
+            logger.warn(
+              `Dropped invalid discovered job at index ${idx}: ${JSON.stringify(job)}. Reason: ${result.error.message}`
+            );
+            return undefined;
+          }
+          return result.data;
+        })
+        .filter(Boolean);
+
+      if (validatedDiscoveredJobs.length !== message.data.discovered_jobs.length) {
+        logger.warn(
+          `Filtered out ${message.data.discovered_jobs.length - validatedDiscoveredJobs.length} invalid discovered jobs from ${message.jobId}`
+        );
+      }
 
       // Process discovered areas first
-      await this.processDiscoveredAreas(message.data.discovered_jobs, message.job_id);
+      await this.processDiscoveredAreas(validatedDiscoveredJobs, message.jobId);
 
       // Create jobs for discovered entities
       const createdJobs = await this.createDiscoveredJobs(
-        message.data.discovered_jobs,
-        message.job_id
+        validatedDiscoveredJobs,
+        message.jobId
       );
 
+      // Automatically create jobs for all required data types for each discovered area
+      const areaJobs = await this.createAreaDataTypeJobs(
+        validatedDiscoveredJobs,
+        message.jobId
+      );
+
+      // Combine all created jobs
+      const allCreatedJobs = [...createdJobs, ...areaJobs];
+
       // Update discovery job with results
-      await this.updateDiscoveryJobResults(message.job_id, message.data, createdJobs);
+      await this.updateDiscoveryJobResults(message.jobId, message.data, allCreatedJobs);
 
       // Queue high-priority jobs for immediate assignment
-      await this.queueHighPriorityJobs(createdJobs);
+      await this.queueHighPriorityJobs(allCreatedJobs);
 
-      console.log(`Successfully processed ${createdJobs.length} discovered jobs from ${message.job_id}`);
+      logger.info(`Successfully processed ${createdJobs.length} discovered jobs from ${message.jobId}`);
 
     } catch (error) {
-      console.error(`Error handling jobs_discovered for ${message.job_id}:`, error);
+      logger.error(`Error handling jobs_discovered for ${message.jobId}: ${error instanceof Error ? error.message : String(error)}`, { error });
       
       // Log error to job progress if possible
       try {
         await this.jobRepository.markJobFailed(
-          message.job_id,
+          message.jobId,
           `Failed to process discovered jobs: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
       } catch (failError) {
-        console.error(`Failed to mark discovery job as failed:`, failError);
+        logger.error(`Failed to mark discovery job as failed: ${failError instanceof Error ? failError.message : String(failError)}`, { failError });
       }
       
       throw error;
@@ -80,6 +133,7 @@ export class DiscoveryHandler {
     discoveredJobs: DiscoveredJob[],
     parentJobId: string
   ): Promise<void> {
+    logger.info(`Raw discoveredJobs received: ${JSON.stringify(discoveredJobs)}`);
     const areasToProcess = discoveredJobs
       .filter(job => job.namespace_path && job.entity_id)
       .map(job => ({
@@ -94,8 +148,9 @@ export class DiscoveryHandler {
     }
 
     try {
+      logger.info(`Attempting to bulk upsert ${areasToProcess.length} areas for discovery job ${parentJobId}. Data: ${JSON.stringify(areasToProcess)}`);
       const createdAreas = await this.areaRepository.bulkUpsertAreas(areasToProcess);
-      console.log(`Processed ${createdAreas.length} areas from discovery job ${parentJobId}`);
+      logger.info(`Processed ${createdAreas.length} areas from discovery job ${parentJobId}`);
       
       // Create area authorizations for the account
       const parentJob = await this.jobRepository.getJob(parentJobId);
@@ -105,38 +160,118 @@ export class DiscoveryHandler {
         }
       }
     } catch (error) {
-      console.error(`Error processing discovered areas:`, error);
+      logger.error(`Error processing discovered areas: ${error instanceof Error ? error.message : String(error)}`, { error });
       throw error;
     }
   }
 
   /**
-   * Create job records for discovered entities
+   * Create new Job records in database for discovered entities
    */
   private async createDiscoveredJobs(
     discoveredJobs: DiscoveredJob[],
     parentJobId: string
   ): Promise<import('../types/database.js').Job[]> {
-    const parentJob = await this.jobRepository.getJob(parentJobId);
-    if (!parentJob) {
-      throw new Error(`Parent discovery job not found: ${parentJobId}`);
-    }
-
     const createdJobs: import('../types/database.js').Job[] = [];
+    const parentJob = await this.jobRepository.getJob(parentJobId);
+
+    if (!parentJob) {
+      logger.error(`Parent job ${parentJobId} not found. Cannot create discovered jobs.`);
+      return [];
+    }
 
     for (const discoveredJob of discoveredJobs) {
+      logger.info(`[DEBUG] Processing discovered job:`, { job_type: discoveredJob.job_type, entity_id: discoveredJob.entity_id, namespace_path: discoveredJob.namespace_path });
       try {
-        const jobAssignment = this.createJobAssignment(discoveredJob, parentJob);
-        const createdJob = await this.jobRepository.createJobFromAssignment(jobAssignment);
-        createdJobs.push(createdJob);
-
-        console.log(`Created job ${createdJob.id} for ${discoveredJob.namespace_path} (${discoveredJob.job_type})`);
+        const command = this.mapJobTypeToCrawlCommand(discoveredJob.job_type);
+        logger.info(`[DEBUG] Mapped job_type "${discoveredJob.job_type}" to command "${command}"`);
+        const newJob = await this.jobRepository.createJob({
+          id: createJobId(),
+          command: command,
+          status: JobStatus.queued,
+          accountId: parentJob.accountId,
+          userId: parentJob.userId,
+          provider: parentJob.provider,
+          gitlabGraphQLUrl: parentJob.gitlabGraphQLUrl,
+          full_path: discoveredJob.namespace_path,
+          progress: {
+            discovered_from: parentJobId,
+            entity_name: discoveredJob.entity_name,
+            estimated_size: discoveredJob.estimated_size,
+            discovery_timestamp: formatTimestamp(),
+          },
+        });
+        createdJobs.push(newJob);
       } catch (error) {
-        console.error(`Error creating job for ${discoveredJob.namespace_path}:`, error);
-        // Continue with other jobs even if one fails
+        logger.error(`Error creating job for discovered entity ${discoveredJob.entity_id}: ${error instanceof Error ? error.message : String(error)}`, { error });
       }
     }
+    return createdJobs;
+  }
 
+  /**
+   * For each discovered area, create jobs for all required data types (branches, commits, issues, etc.)
+   */
+  private async createAreaDataTypeJobs(
+    discoveredJobs: DiscoveredJob[],
+    parentJobId: string
+  ): Promise<import('../types/database.js').Job[]> {
+    const createdJobs: import('../types/database.js').Job[] = [];
+    const parentJob = await this.jobRepository.getJob(parentJobId);
+
+    if (!parentJob) {
+      logger.error(`Parent job ${parentJobId} not found. Cannot create area data type jobs.`);
+      return [];
+    }
+
+    // Only include commands supported by both the backend (CrawlCommand) and the crawler (GitLabTaskType).
+    // See: copilot-study/src/lib/types.ts and crawlz/src/types/gitlab-task-unified.ts
+    // This avoids spawning jobs that will be skipped as "Unknown command" by the backend or not handled by the crawler.
+    const dataTypesToCrawl: CrawlCommand[] = [
+      CrawlCommand.issues,            // FETCH_ISSUES
+      CrawlCommand.mergeRequests,     // FETCH_MERGE_REQUESTS
+      CrawlCommand.commits,           // FETCH_COMMITS
+      CrawlCommand.branches,          // FETCH_BRANCHES
+      CrawlCommand.pipelines,         // FETCH_PIPELINES
+      // Only include commands supported by both enums and implemented in backend/crawler logic.
+      CrawlCommand.groupMilestones,   // FETCH_MILESTONES (for groups)
+      CrawlCommand.epics,             // FETCH_EPICS (for groups)
+      CrawlCommand.jobs,              // FETCH_JOBS (for projects/pipelines)
+      CrawlCommand.mergeRequestNotes, // FETCH_ISSUE_NOTES (closest match)
+      CrawlCommand.issues,            // FETCH_ISSUES
+      CrawlCommand.mergeRequests,     // FETCH_MERGE_REQUESTS
+      CrawlCommand.commits,           // FETCH_COMMITS
+      CrawlCommand.branches,          // FETCH_BRANCHES
+      CrawlCommand.pipelines,         // FETCH_PIPELINES
+      // CrawlCommand.releases,       // Not in CrawlCommand, skip for now
+      // CrawlCommand.events,         // Not in CrawlCommand, skip for now
+      // Add more only if both enums and backend/crawler logic support them.
+    ];
+
+    for (const discoveredJob of discoveredJobs) {
+      // Only create data type jobs for projects and groups
+      if (discoveredJob.job_type === 'crawl_project' || discoveredJob.job_type === 'crawl_group') {
+        for (const command of dataTypesToCrawl) {
+          const newJob = await this.jobRepository.createJob({
+            id: createJobId(),
+            command: command,
+            status: JobStatus.queued,
+            accountId: parentJob.accountId,
+            userId: parentJob.userId,
+            provider: parentJob.provider,
+            gitlabGraphQLUrl: parentJob.gitlabGraphQLUrl,
+            full_path: discoveredJob.namespace_path,
+            progress: {
+              discovered_from: parentJobId,
+              entity_name: discoveredJob.entity_name,
+              estimated_size: discoveredJob.estimated_size,
+              discovery_timestamp: formatTimestamp(),
+            },
+          });
+          createdJobs.push(newJob);
+        }
+      }
+    }
     return createdJobs;
   }
 
@@ -233,7 +368,7 @@ export class DiscoveryHandler {
       }
 
     } catch (error) {
-      console.error(`Error updating discovery job results:`, error);
+      logger.error(`Error updating discovery job results: ${error instanceof Error ? error.message : String(error)}`, { error });
       // Don't throw - discovery was successful even if metadata update failed
     }
   }
@@ -272,13 +407,13 @@ export class DiscoveryHandler {
           // Could add priority metadata here if we had that field
         });
         
-        console.log(`Queued high-priority job: ${job.id} (${job.command})`);
+        logger.info(`Queued high-priority job: ${job.id} (${job.command})`);
       } catch (error) {
-        console.error(`Error queueing high-priority job ${job.id}:`, error);
+        logger.error(`Error queueing high-priority job ${job.id}: ${error instanceof Error ? error.message : String(error)}`, { error });
       }
     }
 
-    console.log(`Queued ${highPriorityJobs.length} high-priority jobs for assignment`);
+    logger.info(`Queued ${highPriorityJobs.length} high-priority jobs for assignment`);
   }
 
   /**
@@ -335,7 +470,7 @@ export class DiscoveryHandler {
 
       return stats;
     } catch (error) {
-      console.error('Error getting discovery statistics:', error);
+      logger.error(`Error getting discovery statistics: ${error instanceof Error ? error.message : String(error)}`, { error });
       return {
         total_discovery_jobs: 0,
         completed_discoveries: 0,

@@ -1,4 +1,8 @@
+import { validateCrawlerMessage } from './types/messages.js';
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { auth } from '$lib/auth.js';
+import { getLogger } from '$lib/logging';
 import type { 
   CrawlerMessage, 
   WebAppMessage, 
@@ -7,7 +11,28 @@ import type {
 } from './types';
 import { jobService } from './services/job-service.js';
 import { adminUIBridge } from './services/admin-ui-bridge.js';
+import { DiscoveryHandler } from './handlers/discovery-handler';
+import { DatabaseManager } from './persistence/database-manager';
 
+class DiscoveryHandlerAdapter {
+  private handler: DiscoveryHandler;
+  constructor(dbManager: DatabaseManager) {
+    this.handler = new DiscoveryHandler(dbManager);
+  }
+  canHandle(message: any) {
+    return message.type === 'jobs_discovered';
+  }
+  async handle(message: any, connection: any) {
+    logger.debug(`DiscoveryHandlerAdapter: Handling jobs_discovered message. Raw message:`, message);
+    logger.debug(`DiscoveryHandlerAdapter: Full message data:`, message.data);
+    logger.debug(`DiscoveryHandlerAdapter: Discovered jobs data:`, message.data?.discovered_jobs);
+    await this.handler.handleJobsDiscovered(connection, message);
+    return { success: true };
+  }
+  getPriority() {
+    return 0;
+  }
+}
 /**
  * Message Router
  * 
@@ -70,8 +95,25 @@ export class MessageRouter {
     connection: SocketConnection
   ): Promise<MessageProcessingResult> {
     try {
+      // Validate incoming message against Zod schema
+      const validationResult = validateCrawlerMessage(message);
+      if (!validationResult.success) {
+        logger.error(`❌ Message validation failed: ${validationResult.error}`, message);
+        return {
+          success: false,
+          error: `Message validation failed: ${validationResult.error}`
+        };
+      }
+      if (!validationResult.data) {
+        logger.error("❌ Validation succeeded but data is undefined", { message });
+        return {
+          success: false,
+          error: "Validation succeeded but data is undefined"
+        };
+      }
+      let processedMessage: CrawlerMessage = validationResult.data;
+
       // Apply pre-processing middleware
-      let processedMessage = message;
       for (const middleware of this.middlewares) {
         if (middleware.beforeProcess) {
           const result = await middleware.beforeProcess(processedMessage, connection);
@@ -196,7 +238,7 @@ export class HeartbeatHandler implements MessageHandler {
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
     // Update connection heartbeat timestamp
     // Update system status metrics
-    console.log(`💓 Heartbeat from ${connection.id}:`, message.data);
+    logger.debug(`💓 Heartbeat from ${connection.id}:`, message.data);
     
     // Notify admin UI of heartbeat
     adminUIBridge.onCrawlerHeartbeat(connection, message.data);
@@ -218,19 +260,22 @@ export class JobRequestHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`🔍 JOB-HANDLER: Processing job request from ${connection.id}`);
-    console.log(`📄 JOB-HANDLER: Request message data:`, JSON.stringify(message, null, 2));
+    logger.debug(`🔍 JOB-HANDLER: Processing job request from ${connection.id}`);
+    logger.debug(`📄 SOCKET-SERVER: Message data: ${JSON.stringify(message, null, 2)}`);
     
     try {
       // For now, create a simple mock job for testing
       // In production, this would query the database for pending jobs
-      console.log(`📋 JOB-HANDLER: Fetching available jobs...`);
-      const mockJobs = await this.getAvailableJobs();
-      console.log(`✅ JOB-HANDLER: Found ${mockJobs.length} available jobs`);
+      logger.debug(`📋 JOB-HANDLER: Fetching available jobs...`);
+      let mockJobs = await this.getAvailableJobs();
+      logger.debug(`✅ JOB-HANDLER: Found ${mockJobs.length} available jobs`);
+      
+      // Filter out jobs with entityType "areas" (not supported by crawler)
+      mockJobs = mockJobs.filter(job => job.entityType !== "areas");
       
       // Debug: Log jobs with access tokens
       mockJobs.forEach((job, index) => {
-        console.log(`🔍 JOB-HANDLER: Job ${index + 1}:`, {
+        logger.debug(`🔍 JOB-HANDLER: Job ${index + 1}:`, {
           id: job.id,
           entityType: job.entityType,
           entityId: job.entityId,
@@ -246,15 +291,20 @@ export class JobRequestHandler implements MessageHandler {
         type: 'job_response' as const,
         timestamp: new Date().toISOString(),
         data: {
-          jobs: mockJobs
+          jobs: mockJobs.map(job => ({
+            ...job,
+            entityType: job.entityType as (
+              "user" | "group" | "project" | "branch" | "issue" | "merge_request" | "commit" | "pipeline" | "release"
+            )
+          }))
         }
       };
       
-      console.log(`📤 JOB-HANDLER: Sending job response to ${connection.id} with ${mockJobs.length} jobs`);
+      logger.debug(`📤 JOB-HANDLER: Sending job response to ${connection.id} with ${mockJobs.length} jobs`);
       await connection.send(jobResponse);
-      console.log(`✅ JOB-HANDLER: Job response sent successfully`);
+      logger.debug(`✅ JOB-HANDLER: Job response sent successfully`);
       
-      console.log(`📊 JOB-HANDLER: Sent ${mockJobs.length} jobs to ${connection.id}`);
+      logger.debug(`📊 JOB-HANDLER: Sent ${mockJobs.length} jobs to ${connection.id}`);
       
       return {
         success: true,
@@ -271,11 +321,11 @@ export class JobRequestHandler implements MessageHandler {
 
   private async getAvailableJobs() {
     // Use real job service to fetch available jobs from database
-    console.log('📋 Fetching available jobs from database...');
+    logger.debug(`📋 JOB-HANDLER: Fetching available jobs...`);
     
     try {
       const jobs = await jobService.getAvailableJobs(5); // Get up to 5 jobs
-      console.log(`✅ Found ${jobs.length} available jobs`);
+      logger.debug(`✅ Found ${jobs.length} available jobs`);
       return jobs;
     } catch (error) {
       console.error('❌ Error fetching jobs from database:', error);
@@ -294,7 +344,7 @@ export class JobStartedHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`🚀 Job started: ${message.jobId}`);
+    logger.debug(`🚀 Job started: ${message.jobId}`);
     
     try {
       if (!message.jobId) {
@@ -311,7 +361,7 @@ export class JobStartedHandler implements MessageHandler {
       );
 
       if (success) {
-        console.log(`✅ Job ${message.jobId} marked as started in database`);
+        logger.debug(`✅ Job ${message.jobId} marked as started in database`);
         
         // Notify admin UI of job start - pass message data directly for started events
         adminUIBridge.onJobStarted(connection, message.jobId, message.data);
@@ -346,7 +396,7 @@ export class JobProgressHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`📈 Job progress: ${message.jobId}`);
+    logger.debug(`📈 Job progress: ${message.jobId}`);
     
     try {
       if (!message.jobId) {
@@ -392,7 +442,7 @@ export class JobProgressHandler implements MessageHandler {
       );
 
       if (success) {
-        console.log(`✅ Progress updated for job ${message.jobId}`);
+        logger.debug(`✅ Progress updated for job ${message.jobId}`);
         
         // Notify admin UI of job progress (using backend format)
         adminUIBridge.onJobProgress(connection, message.jobId, backendProgressData);
@@ -404,7 +454,7 @@ export class JobProgressHandler implements MessageHandler {
       } else {
         return {
           success: false,
-          error: 'Failed to update job progress in database'
+          error: 'Failed to update job status in database'
         };
       }
     } catch (error) {
@@ -427,7 +477,7 @@ export class JobCompletedHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`🎉 Job completed: ${message.jobId}`);
+    logger.debug(`🎉 Job completed: ${message.jobId}`);
     
     try {
       if (!message.jobId) {
@@ -452,7 +502,7 @@ export class JobCompletedHandler implements MessageHandler {
       );
 
       if (success) {
-        console.log(`✅ Job ${message.jobId} marked as completed in database`);
+        logger.debug(`✅ Job ${message.jobId} marked as completed in database`);
         
         // Notify admin UI of job completion
         adminUIBridge.onJobCompleted(connection, message.jobId, completionData);
@@ -487,7 +537,7 @@ export class JobFailedHandler implements MessageHandler {
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`❌ Job failed: ${message.jobId}`);
+    logger.debug(`❌ Job failed: ${message.jobId}`);
     
     try {
       if (!message.jobId) {
@@ -565,13 +615,15 @@ export class ValidationMiddleware implements MessageMiddleware {
   }
 }
 
+const logger = getLogger(['socket-message-router']);
+
 export class TokenRefreshHandler implements MessageHandler {
   canHandle(message: CrawlerMessage): boolean {
     return message.type === 'token_refresh_request';
   }
 
   async handle(message: CrawlerMessage, connection: SocketConnection): Promise<MessageProcessingResult> {
-    console.log(`🔄 Token refresh requested: ${message.jobId}`);
+    logger.warn(`🔄 Token refresh requested: ${message.jobId}`);
     
     try {
       if (!message.jobId) {
@@ -581,8 +633,7 @@ export class TokenRefreshHandler implements MessageHandler {
         };
       }
 
-      // Get job details to fetch account information
-      const job = await jobService.getJobStatus(message.jobId);
+      const job = await jobService.getJobById(message.jobId);
       
       if (!job) {
         return {
@@ -590,30 +641,47 @@ export class TokenRefreshHandler implements MessageHandler {
           error: `Job ${message.jobId} not found`
         };
       }
+      
+      if (!job.usingAccount) {
+        return {
+          success: false,
+          error: `Job ${message.jobId} not found or has no associated account`
+        };
+      }
 
-      // TODO: Implement token refresh logic with OAuth provider
-      // For now, send back current token (in production, refresh with OAuth provider)
-      const tokenResponse = {
+      logger.warn(`Attempting to get access token for provider: ${job.usingAccount.provider}, account: ${job.usingAccount.id}`);
+      const refreshed = await auth.api.getAccessToken({
+        body: {
+          providerId: job.usingAccount.providerId,
+          accountId: job.usingAccount.id,
+          userId: job.usingAccount.userId,
+        }
+      });
+      logger.warn(`Result of getAccessToken: ${JSON.stringify(refreshed)}`);
+
+      const tokenResponse: WebAppMessage = {
         type: 'token_refresh_response' as const,
         timestamp: new Date().toISOString(),
         jobId: message.jobId,
         data: {
-          accessToken: job.usingAccount?.access_token || '', // Fixed: use correct property path
-          refreshSuccessful: true, // Fixed: use correct property name
+          accessToken: refreshed.accessToken ?? "",
+          refreshSuccessful: true,
           expiresAt: new Date(Date.now() + 3600000).toISOString() // 1 hour from now
         }
       };
-      
+
+      logger.warn(`[SOCKET] Full token_refresh_response payload:`, tokenResponse);
+
       await connection.send(tokenResponse);
-      
-      console.log(`✅ Token refresh response sent for job ${message.jobId}`);
+
+      logger.warn(`✅ Token refresh response sent for job ${message.jobId}`);
       
       return {
         success: true,
         data: { token_refreshed: true }
       };
-    } catch (error) {
-      console.error('Error handling token refresh:', error);
+    } catch (error: any) {
+      logger.error('Error handling token refresh:', error);
       
       // Send failure response
       try {
@@ -629,8 +697,8 @@ export class TokenRefreshHandler implements MessageHandler {
         };
         
         await connection.send(errorResponse);
-      } catch (sendError) {
-        console.error('Failed to send token refresh error response:', sendError);
+      } catch (sendError: any) {
+        logger.error('Failed to send token refresh error response:', sendError);
       }
       
       return {
@@ -652,7 +720,7 @@ export class CompatibilityMiddleware implements MessageMiddleware {
 
   async beforeProcess(message: CrawlerMessage, connection: SocketConnection): Promise<CrawlerMessage | null> {
     // No transformation needed anymore - messages now use jobId consistently
-    console.log(`📝 Processing ${message.type} message with jobId: ${message.jobId || 'none'}`);
+    logger.debug(`📝 Processing ${message.type} message with jobId: ${message.jobId || 'none'}`);
     return message;
   }
 }
@@ -663,13 +731,13 @@ export class LoggingMiddleware implements MessageMiddleware {
   priority = 10;
 
   async beforeProcess(message: CrawlerMessage, connection: SocketConnection): Promise<CrawlerMessage | null> {
-    console.log(`📨 Received ${message.type} from ${connection.id}`);
+    logger.debug(`📨 Received ${message.type} from ${connection.id}`);
     return null; // Don't modify message
   }
 
   async afterProcess(result: MessageProcessingResult, message: CrawlerMessage, connection: SocketConnection): Promise<void> {
     if (!result.success) {
-      console.error(`❌ Failed to process ${message.type}: ${result.error}`);
+      logger.error(`❌ Failed to process ${message.type}: ${result.error}`);
     }
   }
 }
@@ -686,7 +754,9 @@ export const createDefaultRouter = (): MessageRouter => {
   router.registerHandler('job_completed', new JobCompletedHandler());
   router.registerHandler('job_failed', new JobFailedHandler());
   router.registerHandler('token_refresh_request', new TokenRefreshHandler());
-  
+  const dbManager = new DatabaseManager();
+  router.registerHandler('jobs_discovered', new DiscoveryHandlerAdapter(dbManager));
+
   // Add default middleware
   router.addMiddleware(new ValidationMiddleware());
   router.addMiddleware(new CompatibilityMiddleware());

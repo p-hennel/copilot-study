@@ -12,6 +12,9 @@ import { SOCKET_CONFIG } from './config.js';
 import { ConnectionPoolImpl } from './connection/connection-pool.js';
 import { MessageRouter, createDefaultRouter } from './message-router.js';
 import { adminUIBridge } from './services/admin-ui-bridge.js';
+import { getLogger } from '$lib/logging';
+
+const logger = getLogger(['socket-server']);
 
 /**
  * Core Socket Server Class
@@ -47,7 +50,7 @@ export class SocketServer {
       await this.startServer();
       
       this.isRunning = true;
-      console.log(`Socket server started on ${this.config.socketPath || `${this.config.host}:${this.config.port}`}`);
+      logger.info(`Socket server started on ${this.config.socketPath || `${this.config.host}:${this.config.port}`}`);
     } catch (error) {
       await this.cleanup();
       throw error;
@@ -81,9 +84,9 @@ export class SocketServer {
       }
 
       await this.cleanup();
-      console.log('Socket server stopped');
+      logger.info('Socket server stopped');
     } catch (error) {
-      console.error('Error stopping socket server:', error);
+      logger.error('Error stopping socket server:', error);
       throw error;
     }
   }
@@ -169,21 +172,21 @@ export class SocketServer {
   private async initializeComponents(): Promise<void> {
     // Initialize connection pool
     this.connectionPool = new ConnectionPoolImpl(this.config);
-    console.log('✅ Connection pool initialized');
+        logger.info('✅ Connection pool initialized');
     
     // Initialize message router
     this.messageRouter = createDefaultRouter();
-    console.log('✅ Message router initialized');
+    logger.info('✅ Message router initialized');
 
     // Initialize admin UI bridge and start status updates
     adminUIBridge.startStatusUpdates(10000); // Update every 10 seconds
-    console.log('✅ Admin UI bridge initialized with status updates');
+    logger.info('✅ Admin UI bridge initialized with status updates');
 
     // TODO: Initialize error manager and progress aggregator when implemented
     // this.errorManager = new ErrorManager(this.config);
     // this.progressAggregator = new ProgressAggregator();
 
-    console.log('✅ All components initialized successfully');
+    logger.info('✅ All components initialized successfully');
   }
 
   private async createSocketServer(): Promise<void> {
@@ -194,12 +197,12 @@ export class SocketServer {
     });
 
     this.server.on('error', (error: Error) => {
-      console.error('Socket server error:', error);
+      logger.error('Socket server error:', error);
       this.errorManager?.handleError(error);
     });
 
     this.server.on('close', () => {
-      console.log('Socket server closed');
+      logger.info('Socket server closed');
     });
   }
 
@@ -221,55 +224,55 @@ export class SocketServer {
 
   private handleNewConnection(socket: Socket): void {
     try {
-      console.log(`🔌 SOCKET-SERVER: New socket connection from ${socket.remoteAddress}`);
+      logger.debug(`🔌 SOCKET-SERVER: New socket connection from ${socket.remoteAddress}`);
       
       if (!this.connectionPool) {
-        console.error('❌ SOCKET-SERVER: Connection pool not initialized, destroying socket');
+        logger.error('❌ SOCKET-SERVER: Connection pool not initialized, destroying socket');
         socket.destroy();
         return;
       }
 
       const connection = this.connectionPool.addConnection(socket);
-      console.log(`✅ SOCKET-SERVER: Connection added to pool: ${connection.id}`);
-      console.log(`📊 SOCKET-SERVER: Connection state: ${connection.getState()}, Active: ${connection.isActive()}`);
+      logger.debug(`✅ SOCKET-SERVER: Connection added to pool: ${connection.id}`);
+      logger.debug(`📊 SOCKET-SERVER: Connection state: ${connection.getState()}, Active: ${connection.isActive()}`);
       
       // Set up message handling
       connection.on('message', (event) => {
-        console.log(`📨 SOCKET-SERVER: Message event received from ${connection.id}`);
+        logger.debug(`📨 SOCKET-SERVER: Message event received from ${connection.id}`);
         if ("message" in event) {
-          console.log(`📋 SOCKET-SERVER: Message type: ${event.message?.type || 'unknown'}`);
+          logger.debug(`📋 SOCKET-SERVER: Message type: ${event.message?.type || 'unknown'}`);
           this.handleCrawlerMessage(event.connection, event.message);
         } else {
-          console.warn(`⚠️ SOCKET-SERVER: Message event missing message property`);
+          logger.warn(`⚠️ SOCKET-SERVER: Message event missing message property`);
         }
       });
 
       // Set up connection lifecycle events for admin UI
       connection.on('connected', (event) => {
         if (event.type === 'connected') {
-          console.log(`🟢 SOCKET-SERVER: Connection ${event.connection.id} marked as connected`);
+          logger.debug(`🟢 SOCKET-SERVER: Connection ${event.connection.id} marked as connected`);
           adminUIBridge.onCrawlerConnected(event.connection);
         }
       });
 
       connection.on('disconnected', (event) => {
         if (event.type === 'disconnected') {
-          console.log(`🔴 SOCKET-SERVER: Connection ${event.connection.id} disconnected: ${event.reason}`);
+          logger.debug(`🔴 SOCKET-SERVER: Connection ${event.connection.id} disconnected: ${event.reason}`);
           adminUIBridge.onCrawlerDisconnected(event.connection.id, event.reason);
         }
       });
 
-      console.log(`🔗 SOCKET-SERVER: New connection established: ${connection.id}`);
+      logger.debug(`🔗 SOCKET-SERVER: New connection established: ${connection.id}`);
     } catch (error) {
-      console.error('💥 SOCKET-SERVER: Error handling new connection:', error);
+      logger.error('💥 SOCKET-SERVER: Error handling new connection:', error);
       socket.destroy();
     }
   }
 
   private async handleCrawlerMessage(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
     try {
-      console.log(`📥 SOCKET-SERVER: Received ${message.type} message from ${connection.id}`);
-      console.log(`📄 SOCKET-SERVER: Message data:`, JSON.stringify(message, null, 2));
+      logger.debug(`📥 SOCKET-SERVER: Received ${message.type} message from ${connection.id}`);
+      logger.debug(`📄 SOCKET-SERVER: Message data:`, JSON.stringify(message, null, 2));
       
       if (!this.messageRouter) {
         console.error('❌ SOCKET-SERVER: Message router not initialized');
@@ -288,7 +291,7 @@ export class SocketServer {
         }
       }
     } catch (error) {
-      console.error(`💥 SOCKET-SERVER: Error handling message ${message.type}:`, error);
+      logger.error('💥 SOCKET-SERVER: Error handling message ${message.type}:', error);
       this.errorManager?.handleError(error as Error);
     }
   }
@@ -302,7 +305,7 @@ export class SocketServer {
         await this.connectionPool.closeAll('Server shutdown');
       }
       
-      console.log('✅ Cleanup completed successfully');
+      logger.info('✅ Cleanup completed successfully');
     } catch (error) {
       console.error('❌ Error during cleanup:', error);
     } finally {

@@ -31,12 +31,26 @@ export class JobService {
         where: eq(jobSchema.status, JobStatus.queued),
         orderBy: [desc(jobSchema.created_at)],
         limit,
+        columns: { // Explicitly select columns
+          id: true,
+          command: true,
+          accountId: true,
+          full_path: true,
+          gitlabGraphQLUrl: true, // Ensure this is selected
+          userId: true,
+          provider: true,
+          resumeState: true,
+          // Add other columns as needed
+        },
         with: {
           usingAccount: true
         }
       });
 
-      let dbJobs = queuedJobs;
+      // Exclude discovery jobs (entityType "areas" or command GROUP_PROJECT_DISCOVERY)
+      let dbJobs = queuedJobs.filter(job => job.command !== CrawlCommand.GROUP_PROJECT_DISCOVERY);
+
+      logger.debug(`[JobService] Raw dbJobs fetched from database:`, { dbJobs });
 
       const settings = AppSettings();
       if (settings.app.sendFailedJobsToCrawler) {
@@ -47,6 +61,17 @@ export class JobService {
             where: eq(jobSchema.status, JobStatus.failed),
             orderBy: [desc(jobSchema.created_at)],
             limit: remainingLimit,
+            columns: { // Explicitly select columns
+              id: true,
+              command: true,
+              accountId: true,
+              full_path: true,
+              gitlabGraphQLUrl: true, // Ensure this is selected
+              userId: true,
+              provider: true,
+              resumeState: true,
+              // Add other columns as needed
+            },
             with: {
               usingAccount: true
             }
@@ -301,6 +326,9 @@ export class JobService {
    * Get job status and progress
    */
   async getJobStatus(jobId: string): Promise<any | null> {
+    return this.getJobById(jobId)
+  }
+  async getJobById(jobId: string): Promise<any | null> {
     try {
       const job = await db.query.job.findFirst({
         where: eq(jobSchema.id, jobId),
@@ -320,6 +348,7 @@ export class JobService {
    * Convert database job to SimpleJob format for crawler
    */
   private async convertToSimpleJob(dbJob: any): Promise<SimpleJob | null> {
+    logger.debug(`[JobService] Converting dbJob to SimpleJob:`, dbJob);
     try {
       if (!dbJob.usingAccount) {
         logger.warn(`❌ Job ${dbJob.id} missing account information, skipping`);
@@ -333,8 +362,8 @@ export class JobService {
         return null;
       }
 
-      // Get GitLab URL from job or account
-      const gitlabUrl = dbJob.gitlabGraphQLUrl || this.getGitLabUrlFromProvider(dbJob.provider);
+      // Get GitLab URL from job or associated account
+      const gitlabUrl = dbJob.gitlabGraphQLUrl || dbJob.usingAccount?.gitlabGraphQLUrl;
       if (!gitlabUrl) {
         logger.warn(`❌ No GitLab URL available for job ${dbJob.id}, skipping`);
         return null;
@@ -396,21 +425,7 @@ export class JobService {
     return mapping[command] || null;
   }
 
-  /**
-   * Get GitLab URL based on provider type
-   */
-  private getGitLabUrlFromProvider(provider: string): string | null {
-    // This would typically come from settings/config
-    switch (provider) {
-      case 'gitlab-cloud':
-        return 'https://gitlab.com';
-      case 'gitlab-onprem':
-        // This should come from configuration
-        return process.env.GITLAB_ONPREM_URL || null;
-      default:
-        return null;
-    }
-  }
+  
 
   /**
    * Get running jobs count for monitoring
