@@ -44,17 +44,19 @@ See [`src/lib/server/socket/`](../src/lib/server/socket/):
 
 ### SocketServer
 
-Manages connections, message routing, and server lifecycle.  
+Manages connections, message routing, and server lifecycle.
 See [`socket-server.ts`](../src/lib/server/socket/socket-server.ts).
+
+**Note:** Progress aggregation is partially implemented. Some advanced aggregation features are experimental or stubbed.
 
 ### MessageRouter
 
-Handles message routing, middleware, and handler registration.  
+Handles message routing, middleware, and handler registration.
 See [`message-router.ts`](../src/lib/server/socket/message-router.ts).
 
 ### Configuration Management
 
-Environment-specific, runtime-updatable configuration.  
+Environment-specific, runtime-updatable configuration.
 See [`types/config.ts`](../src/lib/server/socket/types/config.ts:2).
 
 ---
@@ -100,6 +102,8 @@ Database adapters and job/progress tracking are defined in [`types/database.ts`]
 - Unit tests for core logic
 - Integration tests for message exchange and database updates
 - Load testing with multiple concurrent connections
+
+> Explicit test coverage for all protocol handlers and progress aggregation is not yet complete. Some areas are covered by integration tests, but additional tests may be needed for full coverage.
 
 ---
 

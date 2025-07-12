@@ -23,6 +23,8 @@ This document provides a comprehensive API reference for the socket communicatio
 
 Main class for managing socket connections and message routing.
 
+**Note:** The `ErrorManager` and `ProgressAggregator` components are only partially implemented in `SocketServer`. Some advanced error handling and progress aggregation features are stubbed or experimental and may not be fully functional.
+
 **Constructor:**
 ```typescript
 import { SocketServer } from '$lib/server/socket';

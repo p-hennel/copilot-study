@@ -35,12 +35,12 @@ socket/
 - **Type Safety:** Complete TypeScript type definitions, mirroring the crawler protocol and database schema.
 - **Connection Management:** Unix domain socket server, connection pooling, heartbeat monitoring, authentication, and authorization.
 - **Message Protocol:** Full compatibility with crawler protocol, validation, transformation, middleware, and error handling.
-- **Progress Tracking:** Real-time monitoring, aggregation, reporting, and persistence.
+- **Progress Tracking:** Real-time monitoring, aggregation (partially implemented), reporting, and persistence.
 - **Database Integration:** Job lifecycle management, progress state persistence, error logging, and connection state tracking.
 - **Error Handling:** Categorization, severity levels, recovery strategies, and notification system.
 - **Configuration:** Environment-specific, runtime-updatable, and supports environment variables.
-- **Testing:** Comprehensive type definitions and interfaces for robust testing.
-- **Production-Ready:** Monitoring, log aggregation, resource usage tracking, and future extensibility (WebSocket, load balancing, distributed queue).
+- **Testing:** Comprehensive type definitions and interfaces for robust testing. Some protocol handlers and progress aggregation features may lack explicit test coverage.
+- **Production-Ready:** Monitoring, log aggregation, and resource usage tracking are planned but not fully implemented. The system is extensible for future features (WebSocket, load balancing, distributed queue).
 
 ---
 
@@ -54,11 +54,16 @@ socket/
 
 ## Development and Extension
 
-- Add custom handlers by implementing the `MessageHandler` interface and registering with the router.
-- Add middleware for preprocessing, validation, or transformation.
+- Add custom handlers by implementing the `MessageHandler` interface (see `handlers/`) and registering with the router.
+- Add middleware by implementing the `MessageMiddleware` class (see `message-router.ts`).
 - Extend database adapters for new data types or persistence needs.
 
 ---
+
+## Recent Protocol/Handler Changes
+
+- Handler and middleware class names are documented in `handlers/` and `message-router.ts`.
+- Recent changes: Healthcheck endpoint updated to `/api/admin/health`. Service name in Compose is now `surveytool`. Progress aggregation is partially implemented.
 
 ## References
 

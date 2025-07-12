@@ -60,7 +60,7 @@ DATABASE_URL=postgresql://prod_user:secure_password@db-server:5432/copilot_study
 ## Database Setup
 
 - Validate schema for `jobs`, `areas`, and socket-specific tables.
-- Run migrations as needed.
+- Run migrations as needed. (No dedicated database migration script is provided in this repository; use your preferred migration tool.)
 - Test connectivity:
   ```bash
   npm run test:db-connection
@@ -105,11 +105,41 @@ npm run db:migrate:prod
 pm2 start ecosystem.config.js --env production
 ```
 
-**Docker:**
+---
+
+### Docker Deployment
+
+You can deploy the backend using Docker and Docker Compose for a reproducible environment.
+
+#### Build and Run
+
 ```bash
-docker build -t copilot-study:latest .
-docker-compose -f docker-compose.prod.yml up -d
+docker build -t copilot-study-backend .
+docker compose -f example-docker-compose.yaml up -d
 ```
+
+#### Compose Service Overview
+
+- **Service:** `surveytool`
+- **Ports:** `3000:3000` (HTTP API and healthcheck)
+- **Volumes:** Persistent storage for logs, archive, config, and backup
+- **Environment:** Set `LOG_LEVEL`, `BETTER_AUTH_SECRET`, `SOCKET_PATH`, `OTEL_EXPORTER_OTLP_ENDPOINT`, and `BACKUP_PATH` as needed
+- **Command:** Starts with `startup.sh` and `web/index.js`
+- **Healthcheck:** Uses `/api/admin/health` endpoint for container health
+
+#### Example Healthcheck
+
+The Compose file includes:
+
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:3000/api/admin/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 5
+```
+
+This ensures the backend is healthy and ready for socket communication.
 
 **Socket Server Integration:**
 See [SocketServer](../src/lib/server/socket/socket-server.ts) and [API Reference](./socket-api.md).
@@ -118,19 +148,18 @@ See [SocketServer](../src/lib/server/socket/socket-server.ts) and [API Reference
 
 ## Production Configuration
 
-- Use PM2 or systemd for process management.
-- Example `ecosystem.config.js` and systemd service files are provided in the original deployment guide.
+- Use a process manager such as PM2 or systemd for process management if deploying outside Docker. (No `ecosystem.config.js` or systemd files are provided in this repository.)
 - Configure Nginx as a reverse proxy if needed.
 
 ---
 
 ## Monitoring Setup
 
-- Add health check endpoints to your server.
-- Configure log rotation and monitoring (e.g., Prometheus).
+- Health check endpoints are provided at `/api/admin/health`.
+- Log rotation and Prometheus monitoring are not implemented by default; you may add these as needed for your deployment.
 - Example health check:
   ```typescript
-  app.get('/health/socket', async (req, res) => {
+  app.get('/api/admin/health', async (req, res) => {
     const status = socketServer.getStatus();
     res.json({ status: status.isRunning ? 'healthy' : 'unhealthy' });
   });
