@@ -64,179 +64,119 @@ const getDataRoot = () => {
   return getHomeDataPath();
 };
 
+// Define these constants as they were in your original scope
 const dataRoot = getDataRoot();
 
-// Define the Zod schema for your settings, including nested or array structures if needed.
+// Schemas for nested objects in `auth.providers`
+const gitlabProviderSchema = z.preprocess((val) => val ?? {}, z.object({
+  baseUrl: z.string().optional(),
+  clientId: z.string().optional(),
+  clientSecret: z.string().optional(),
+  userInfoUrl: z.string().optional(),
+  authorizationUrl: z.string().optional(),
+  authorizationUrlParams: z.record(z.string(), z.string()).optional(),
+  tokenUrl: z.string().optional(),
+  type: z.enum(["oauth2", "oidc"]).default("oidc"),
+  discoveryUrl: z.string().optional(),
+  scopes: z.array(z.string()).default(DefaultGitLabScopes.map((x) => `${x}`)),
+  redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab"),
+}));
+
+const gitlabCloudProviderSchema = z.preprocess((val) => val ?? {}, z.object({
+    baseUrl: z.string().nonempty().default("https://gitlab.com"),
+    clientId: z.string().optional(),
+    clientSecret: z.string().optional(),
+    discoveryUrl: z.string().optional(),
+    scopes: z.array(z.string()).default(["read_api", "read_user"]),
+    redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab-cloud"),
+}));
+
+const jiracloudProviderSchema = z.preprocess((val) => val ?? {}, z.object({
+    baseUrl: z.string().default("https://api.atlassian.com"),
+    clientId: z.string().optional(),
+    clientSecret: z.string().optional(),
+    authorizationUrl: z.string().default("https://auth.atlassian.com/authorize"),
+    authorizationUrlParams: z.record(z.string(), z.string()).default({ audience: "api.atlassian.com" }),
+    tokenUrl: z.string().default("https://auth.atlassian.com/oauth/token"),
+    scopes: z.array(z.string()).default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
+    redirectURI: z.string().default("/api/auth/oauth2/callback/jiracloud"),
+    accessibleResourcesUrl: z.string().default("https://api.atlassian.com/oauth/token/accessible-resources"),
+}));
+
+const jiraProviderSchema = z.preprocess((val) => val ?? {}, z.object({
+    baseUrl: z.string().optional(),
+    clientId: z.string().optional(),
+    clientSecret: z.string().optional(),
+    authorizationUrl: z.string().default("/plugins/servlet/oauth/authorize"),
+    tokenUrl: z.string().default("/plugins/servlet/oauth/access-token"),
+    requestTokenUrl: z.string().default("/plugins/servlet/oauth/request-token"),
+    signatureMethod: z.string().default("RSA-SHA1"),
+    redirectURI: z.string().default("/api/auth/oauth/callback/jira"),
+}));
+
+
+// Schemas for top-level properties
+const emailSchema = z.preprocess((val) => val ?? {}, z.object({
+  encryptionPassword: z.string().nonempty().default("1234567890!?"),
+  defaultReceiver: z.union([z.array(z.email()), z.email()]).optional(),
+  sender: z.email().optional(),
+  subject: z.string().default("AUTOMATED BACKUP ({date})"),
+  api: z.preprocess((val) => val ?? {}, z.object({
+      url: z.string().default("http://134.102.23.170:3000/api/send-email"),
+      timeout: z.number().default(30000)
+    })),
+  smtp: z.preprocess((val) => val ?? {}, z.object({
+      host: z.string().default(""),
+      port: z.number().gt(0).default(465),
+      user: z.string().default(""),
+      pass: z.string().default(""),
+      secure: z.boolean().default(true),
+      authMethod: z.string().optional()
+    }))
+}));
+
+const pathsSchema = z.preprocess((val) => val ?? {}, z.object({
+  dataRoot: z.string().nonempty().default(dataRoot),
+  config: z.string().nonempty().default(path.join(dataRoot, "config")),
+  database: z.string().nonempty().default(`file://${path.join(dataRoot, "config", "main.db")}`),
+  archive: z.string().nonempty().default(path.join(dataRoot, "archive")),
+  logs: z.string().nonempty().default(path.join(dataRoot, "logs"))
+}));
+
+const hashingSchema = z.preprocess((val) => val ?? {}, z.object({
+  algorithm: z.enum(["sha256", "sha512", "blake2b512", "md5", "sha1", "sha224", "sha384", "sha512-224", "sha512-256"]).default("sha256"),
+  hmacKey: z.string().nonempty().optional()
+}));
+
+const authSchema = z.preprocess((val) => val ?? {}, z.object({
+  initCode: z.string().nonempty().default(process.env.INIT_CODE ?? "aVNEpnVwsutCH5sq4HGuQCyoFRFh7ifneoiZogrpV2EoLRsc"),
+  secret: z.string().optional(),
+  trustedOrigins: z.array(z.string().nonempty()).default(["http://localhost:3000", "http://localhost:4173", "http://localhost:5173"]),
+  trustedProviders: z.array(z.string().nonempty()).default(["gitlab", "jira", "jiraCloud", "gitlabCloud", "gitlab-cloud", "gitlab-onprem"]),
+  allowDifferentEmails: z.boolean().default(true),
+  admins: z.array(z.object({ email: z.email(), name: z.string().optional() })).default([]),
+  providers: z.preprocess((val) => val ?? {}, z.object({
+      gitlab: gitlabProviderSchema,
+      gitlabCloud: gitlabCloudProviderSchema,
+      jiracloud: jiracloudProviderSchema,
+      jira: jiraProviderSchema
+    }))
+}));
+
+const appSchema = z.preprocess((val) => val ?? {}, z.object({
+  CRAWLER_API_TOKEN: z.string().default(process.env.CRAWLER_API_TOKEN || "nLR6HdQXYwpehaQxGRsoZUZmFTje3m4BVwPZRNSkEqYurTmNzxsphvMWQfX3SXNA"),
+  sendFailedJobsToCrawler: z.boolean().default(false)
+}));
+
+// The final schema. The properties are now optional by virtue of their preprocessors.
 export const settingsSchema = z.object({
   dev: z.boolean().default(false),
   baseUrl: z.string().optional(),
-  email: z
-    .object({
-      encryptionPassword: z.string().nonempty().default("1234567890!?"),
-      defaultReceiver: z.array(z.string().email()).optional().or(z.string().email()).optional(),
-      sender: z.string().email().optional(),
-      subject: z.string().optional().default("AUTOMATED BACKUP ({date})"),
-      api: z.object({
-        url: z.string().optional().default("http://134.102.23.170:3000/api/send-email"),
-        timeout: z.number().optional().default(30000)
-      }).optional(),
-      smtp: z
-        .object({
-          host: z.string(),
-          port: z.number().gt(0),
-          user: z.string(),
-          pass: z.string(),
-          secure: z.boolean().optional().default(true),
-          authMethod: z.string().optional()
-        })
-        .optional()
-        .default({
-          host: "",
-          port: 465,
-          user: "",
-          pass: "",
-          secure: true
-        })
-    })
-    .optional()
-    .default({}),
-  paths: z
-    .object({
-      dataRoot: z.string().nonempty().default(dataRoot),
-      config: z.string().nonempty().default(path.join(dataRoot, "config")),
-      database: z
-        .string()
-        .nonempty()
-        .default(`file://${path.join(dataRoot, "config", "main.db")}`),
-      archive: z.string().nonempty().default(path.join(dataRoot, "archive")),
-      logs: z.string().nonempty().default(path.join(dataRoot, "logs"))
-    })
-    .default({}),
-  hashing: z
-    .object({
-      algorithm: z
-        .enum([
-          "sha256",
-          "sha512",
-          "blake2b512",
-          "md5",
-          "sha1",
-          "sha224",
-          "sha384",
-          "sha512-224",
-          "sha512-256"
-        ])
-        .default("sha256"),
-      hmacKey: z.string().nonempty().optional()
-    })
-    .default({}),
-  auth: z
-    .object({
-      initCode: z
-        .string()
-        .nonempty()
-        .default(process.env.INIT_CODE ?? "aVNEpnVwsutCH5sq4HGuQCyoFRFh7ifneoiZogrpV2EoLRsc"),
-      secret: z.string().optional(),
-      trustedOrigins: z
-        .array(z.string().nonempty())
-        .default(["http://localhost:3000", "http://localhost:4173", "http://localhost:5173"]),
-      trustedProviders: z
-        .array(z.string().nonempty())
-        .default(["gitlab", "jira", "jiraCloud", "gitlabCloud", "gitlab-cloud", "gitlab-onprem"]),
-      allowDifferentEmails: z.boolean().default(true),
-      admins: z
-        .array(
-          z.object({
-            email: z.string().email(),
-            name: z.string().optional()
-          })
-        )
-        .default([]),
-      providers: z
-        .object({
-          gitlab: z
-            .object({
-              baseUrl: z.string().optional(),
-              clientId: z.string().optional(),
-              clientSecret: z.string().optional(),
-              userInfoUrl: z.string().optional(),
-              authorizationUrl: z.string().optional(),
-              authorizationUrlParams: z.record(z.string()).optional(),
-              tokenUrl: z.string().optional(),
-              type: z.enum(["oauth2", "oidc"]).default("oidc"),
-              discoveryUrl: z.string().optional(),
-              scopes: z.array(z.string()).default(DefaultGitLabScopes.map((x) => `${x}`)),
-              redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
-            })
-            .default({}),
-          gitlabCloud: z
-            .object({
-              baseUrl: z.string().nonempty().default("https://gitlab.com"),
-              clientId: z.string().optional(),
-              clientSecret: z.string().optional(),
-              discoveryUrl: z.string().optional(),
-              scopes: z
-                .array(z.string())
-                .default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
-              redirectURI: z.string().default("/api/auth/oauth2/callback/gitlab")
-            })
-            .default({}),
-          jiracloud: z
-            .object({
-              baseUrl: z.string().optional().default("https://api.atlassian.com"),
-              clientId: z.string().optional(),
-              clientSecret: z.string().optional(),
-              authorizationUrl: z.string().default("https://auth.atlassian.com/authorize"),
-              authorizationUrlParams: z
-                .record(z.string())
-                .default({ audience: "api.atlassian.com" }),
-              tokenUrl: z.string().default("https://auth.atlassian.com/oauth/token"),
-              scopes: z
-                .array(z.string())
-                .default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
-              redirectURI: z.string().default("/api/auth/oauth2/callback/jiracloud"),
-              accessibleResourcesUrl: z
-                .string()
-                .default("https://api.atlassian.com/oauth/token/accessible-resources")
-            })
-            .default({}),
-          jira: z
-            .object({
-              baseUrl: z.string().optional(),
-              clientId: z.string().optional(),
-              clientSecret: z.string().optional(),
-              authorizationUrl: z.string().default("/authorize"),
-              authorizationUrlParams: z
-                .record(z.string())
-                .default({ audience: "api.atlassian.com" }),
-              tokenUrl: z.string().default("/oauth/token"),
-              scopes: z
-                .array(z.string())
-                .default(["read:jira-work", "read:jira-user", "read:me", "read:account"]),
-              redirectURI: z.string().default("/api/auth/oauth2/callback/jira"),
-              accessibleResourcesUrl: z
-                .string()
-                .default("https://api.atlassian.com/oauth/token/accessible-resources")
-            })
-            .default({})
-        })
-        .default({})
-    })
-    .default({}),
-  app: z.object({
-      CRAWLER_API_TOKEN: z
-        .string()
-        .default(
-          process.env.CRAWLER_API_TOKEN ||
-            "nLR6HdQXYwpehaQxGRsoZUZmFTje3m4BVwPZRNSkEqYurTmNzxsphvMWQfX3SXNA"
-        ),
-      sendFailedJobsToCrawler: z.boolean().default(false)
-    }).default({})
-  // For nested settings, you might add something like:
-  // nestedConfig: z.object({
-  //   enabled: z.boolean(),
-  //   values: z.array(z.string()),
-  // }),
+  email: emailSchema.optional(),
+  paths: pathsSchema.optional(),
+  hashing: hashingSchema.optional(),
+  auth: authSchema.optional(),
+  app: appSchema.optional()
 });
 
 export type Settings = z.infer<typeof settingsSchema>;

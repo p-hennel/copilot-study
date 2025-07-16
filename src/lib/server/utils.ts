@@ -25,15 +25,31 @@ export enum CollectionTypes {
   Label = "labels" // Added Label
 }
 
+
+// const contentModules = import.meta.glob('$content/**/*.md', { 
+//   query: '?raw',
+//   import: 'default',
+//   eager: true 
+// });
+
+// export function getContent(selectedLanguage: string, slug: string) {
+//   const path = `$content/${selectedLanguage}/${slug}.md`;
+//   if (path in contentModules && contentModules[path]) {
+//     return (contentModules[path] as string) || "";
+//   } else {
+//     return ""
+//   }
+// }
+
 export async function getMD(
   slug: string,
   depends: (dep: string) => void,
   locals: App.Locals
 ): Promise<string> {
   depends("paraglide:lang");
-  const selectedLanguage = locals.locale ?? "en";
-  const content = await import(`$content/${selectedLanguage}/${slug}.md?raw`);
-  return content.default as string;
+  //const selectedLanguage = locals.locale ?? "en";
+  //return getContent(selectedLanguage, slug) //await import(`$content/${selectedLanguage}/${slug}.md?raw`);
+  return locals.locale ? "" : ""
 }
 
 export async function isAdmin(locals: App.Locals | undefined) {
@@ -237,7 +253,7 @@ export const fileForAreaPart = async (
     type = tmp;
   }
 
-  const filePath = path.resolve(path.join(AppSettings().paths.dataRoot, ...fullPath));
+  const filePath = path.resolve(path.join(AppSettings().paths?.dataRoot || "", ...fullPath));
   const file = Bun.file(filePath);
   if (!(await file.exists)) return undefined;
   else return file;
