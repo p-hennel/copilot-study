@@ -1,7 +1,7 @@
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { createClient, type Client } from "@libsql/client";
 import * as schema from "./schema";
-import AppSettings from "../settings"; // Import the class itself
+import AppSettings, { getDataRoot } from "../settings"; // Import the class itself
 import path from "node:path";
 import { getLogger } from "@logtape/logtape";
 
@@ -13,9 +13,10 @@ let dbInstance: LibSQLDatabase<typeof schema> | null = null;
 function getDbClient(): Client {
   if (!client) {
     // Get settings *inside* this function, ensuring AppSettings is initialized
-    let dbUrl = AppSettings().paths.database;
+    let dbUrl = AppSettings().paths?.database;
     if (!dbUrl) {
-      throw new Error("Database path is not defined in settings.");
+      logger.error("Database path is not defined in settings");
+      dbUrl = path.join(getDataRoot(), "config", "default.db");
     }
     logger.info(`Initializing database client`, { dbUrl });
     if (dbUrl.indexOf("://") < 0) {

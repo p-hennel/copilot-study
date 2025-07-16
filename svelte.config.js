@@ -1,13 +1,15 @@
 //import adapter from "@sveltejs/adapter-node";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte"
-import adapter from "svelte-adapter-bun"
+import adapter from "@eslym/sveltekit-adapter-bun";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   preprocess: [vitePreprocess()],
   kit: {
     adapter: adapter({
-      out: "build/web"
+      out: "build/web",
+      precompress: false,
+      envPrefix: '',
     }),
     alias: {
       "@/*": "./src/lib/components/ui",
@@ -17,7 +19,7 @@ const config = {
       $paraglide: "./src/lib/paraglide/messages"
     }
   },
-  extensions: [".svelte", ".svx"]
+  extensions: [".svelte", ".svx"],
 };
 
 export default config;

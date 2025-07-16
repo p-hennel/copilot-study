@@ -1,6 +1,6 @@
 # use the official Bun image
 # see all versions at https://hub.docker.com/r/oven/bun/tags
-FROM oven/bun:1 AS base
+FROM oven/bun:1.2.13 AS base
 WORKDIR /usr/src/app
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -43,12 +43,8 @@ COPY drizzle /usr/src/app/drizzle/
 
 # build for production
 ARG HOME=/home/bun
-ARG BETTER_AUTH_SECRET_FOR_BUILD_ONLY=1234567890123456789012345678901234567890
 ENV NODE_ENV=production
-RUN BETTER_AUTH_SECRET=BETTER_AUTH_SECRET_FOR_BUILD_ONLY \
-  DATA_ROOT=/home/bun/data \
-  SETTINGS_FILE=/home/bun/data/config/settings.yaml \
-  bun run build
+RUN DATA_ROOT=/home/bun/data SETTINGS_FILE=/home/bun/data/config/settings.yaml bun run build
 
 # copy production dependencies and source code into final image
 FROM base AS release

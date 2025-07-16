@@ -56,13 +56,22 @@ const getSettingsFilePath = () => {
   return getLocalSettingsFilePath() ?? homeSettingsFilePath;
 };
 
-const getDataRoot = () => {
+export const getDataRoot = () => {
   const dataPath = Bun.env.DATA_ROOT ?? process.env.DATA_ROOT;
   if (!!dataPath && dataPath.length > 0 && existsSync(dataPath)) {
     return dataPath;
   }
   return getHomeDataPath();
 };
+
+function getDefaults<Schema extends z.ZodObject> ( schema: Schema ) {
+    return Object.fromEntries(
+        Object.entries( schema.shape ).map( ( [ key, value ] ) => {
+            if ( value instanceof z.ZodDefault ) return [ key, value._zod.def.defaultValue ]
+            return [ key, undefined ]
+        } )
+    )
+}
 
 // Define these constants as they were in your original scope
 const dataRoot = getDataRoot();
@@ -150,7 +159,7 @@ const hashingSchema = z.preprocess((val) => val ?? {}, z.object({
 
 const authSchema = z.preprocess((val) => val ?? {}, z.object({
   initCode: z.string().nonempty().default(process.env.INIT_CODE ?? "aVNEpnVwsutCH5sq4HGuQCyoFRFh7ifneoiZogrpV2EoLRsc"),
-  secret: z.string().optional(),
+  secret: z.string().default("aVNEpnVwsutCH5sq4HGuQCyoFRFh7ifneoiZogrpV2EoLRsc"),
   trustedOrigins: z.array(z.string().nonempty()).default(["http://localhost:3000", "http://localhost:4173", "http://localhost:5173"]),
   trustedProviders: z.array(z.string().nonempty()).default(["gitlab", "jira", "jiraCloud", "gitlabCloud", "gitlab-cloud", "gitlab-onprem"]),
   allowDifferentEmails: z.boolean().default(true),
@@ -171,12 +180,12 @@ const appSchema = z.preprocess((val) => val ?? {}, z.object({
 // The final schema. The properties are now optional by virtue of their preprocessors.
 export const settingsSchema = z.object({
   dev: z.boolean().default(false),
-  baseUrl: z.string().optional(),
-  email: emailSchema.optional(),
-  paths: pathsSchema.optional(),
-  hashing: hashingSchema.optional(),
-  auth: authSchema.optional(),
-  app: appSchema.optional()
+  baseUrl: z.string().default("http://localhost:3000"),
+  email: emailSchema,
+  paths: pathsSchema,
+  hashing: hashingSchema,
+  auth: authSchema,
+  app: appSchema
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -215,8 +224,11 @@ export class AppSettings {
     logger.info(`Settings file changed, reloading...`, { filePath: this.filePath });
     try {
       const fileContents = readFileSync(this.filePath, "utf8");
-      const data = yaml.load(fileContents);
-      this.settings = settingsSchema.parse(data);
+      const data: any = yaml.load(fileContents);
+      this.settings = settingsSchema.parse({
+        ...getDefaults(settingsSchema), // Merge with defaults
+        ...data
+      });
       logger.info("Settings reloaded successfully.");
       // TODO: Optionally notify other parts of the application about the change
     } catch (error) {
