@@ -249,19 +249,19 @@ export class MessageValidator {
     const data = message.data;
     
     // Validate system status
-    const validStatuses = ['idle', 'discovering', 'crawling', 'error'];
-    if (!validStatuses.includes(data.system_status)) {
-      return { 
-        success: false, 
-        error: `Invalid system status: ${data.system_status}` 
+    const validStatuses = ['idle', 'discovering', 'processing', 'error'];
+    if (!validStatuses.includes(data.systemStatus)) {
+      return {
+        success: false,
+        error: `Invalid system status: ${data.systemStatus}`
       };
     }
 
     // Validate active jobs count
-    if (data.active_jobs < 0) {
-      return { 
-        success: false, 
-        error: 'Active jobs count cannot be negative' 
+    if (data.activeJobs < 0) {
+      return {
+        success: false,
+        error: 'Active jobs count cannot be negative'
       };
     }
 
@@ -275,40 +275,38 @@ export class MessageValidator {
 
     const data = message.data;
     
-    // Validate completion percentage
-    if (data.overall_completion < 0 || data.overall_completion > 1) {
-      return { 
-        success: false, 
-        error: 'Overall completion must be between 0 and 1' 
+    // Validate processed/total counts for job progress
+    if (data.total && data.processed > data.total) {
+      return {
+        success: false,
+        error: `Processed count (${data.processed}) cannot exceed total count (${data.total}) for ${data.entityType}`
       };
     }
 
-    // Validate progress data
-    for (const progress of data.progress) {
-      if (progress.total_processed > progress.total_discovered) {
-        return { 
-          success: false, 
-          error: `Processed count (${progress.total_processed}) cannot exceed discovered count (${progress.total_discovered}) for ${progress.entity_type}` 
-        };
-      }
+    // Validate processed count is not negative
+    if (data.processed < 0) {
+      return {
+        success: false,
+        error: 'Processed count cannot be negative'
+      };
     }
 
     return { success: true, data: message };
   }
 
   private validateJobMessage(message: CrawlerMessage): MessageProcessingResult<CrawlerMessage> {
-    if (!message.job_id) {
-      return { 
-        success: false, 
-        error: 'Job messages must include job_id' 
+    if (!message.jobId) {
+      return {
+        success: false,
+        error: 'Job messages must include jobId'
       };
     }
 
-    // Validate job_id format (basic validation)
-    if (message.job_id.length < 3) {
-      return { 
-        success: false, 
-        error: 'Job ID must be at least 3 characters long' 
+    // Validate jobId format (basic validation)
+    if (message.jobId.length < 3) {
+      return {
+        success: false,
+        error: 'Job ID must be at least 3 characters long'
       };
     }
 
@@ -320,10 +318,10 @@ export class MessageValidator {
       return { success: false, error: 'Message type mismatch' };
     }
 
-    if (!message.job_id) {
-      return { 
-        success: false, 
-        error: 'Token refresh request must include job_id' 
+    if (!message.jobId) {
+      return {
+        success: false,
+        error: 'Token refresh request must include jobId'
       };
     }
 
@@ -373,10 +371,10 @@ export class MessageValidator {
 
     const data = message.data;
     
-    if (data.refresh_successful && !data.access_token) {
-      return { 
-        success: false, 
-        error: 'Successful token refresh must include access_token' 
+    if (data.refreshSuccessful && !data.accessToken) {
+      return {
+        success: false,
+        error: 'Successful token refresh must include accessToken'
       };
     }
 

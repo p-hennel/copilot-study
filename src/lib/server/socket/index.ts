@@ -171,13 +171,7 @@ const createDefaultSocketServer = async () => {
             failed: jobStats.failed || 0
           }
         });
-      } catch {
-        logger.info(`📈 Server Status:`, {
-          running: status.isRunning,
-          uptime: Math.round(status.uptime / 1000) + 's',
-          connections: `${stats.active}/${stats.total}`,
-        });
-      }
+      } catch { ; }
     }, 5000); // Every 5 seconds
 
     // 5. Handle graceful shutdown

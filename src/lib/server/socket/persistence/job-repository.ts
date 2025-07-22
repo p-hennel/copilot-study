@@ -1,13 +1,12 @@
 import { eq, and, desc, asc, gte, lte, inArray } from 'drizzle-orm';
 import { job } from '$lib/server/db/base-schema';
-import { JobStatus, CrawlCommand, TokenProvider } from '../../../types';
+import { JobStatus, CrawlCommand } from '../../../types';
 import type { DatabaseManager } from './database-manager';
 import type {
   Job,
   JobInsert,
   SocketJobProgress
 } from '../types/database';
-import type { WebAppJobAssignmentData } from '../types/messages';
 
 /**
  * Safely converts a value to a Date object for Drizzle timestamp columns
@@ -375,19 +374,27 @@ export class JobRepository {
    * Map crawler job type to crawl command
    */
   private mapJobTypeToCrawlCommand(jobType: string): CrawlCommand {
-    switch (jobType) {
-      case 'discover_namespaces':
-        return CrawlCommand.GROUP_PROJECT_DISCOVERY;
-      case 'crawl_user':
-        return CrawlCommand.users;
-      case 'crawl_group':
-        return CrawlCommand.group;
-      case 'crawl_project':
-        return CrawlCommand.project;
-      default:
-        return CrawlCommand.authorizationScope;
+      switch (jobType) {
+        case 'discover_namespaces':
+          return CrawlCommand.GROUP_PROJECT_DISCOVERY;
+        case 'crawl_user':
+          return CrawlCommand.users;
+        case 'crawl_group':
+          return CrawlCommand.group;
+        case 'crawl_project':
+          return CrawlCommand.project;
+        case 'groupMilestones':
+          return CrawlCommand.groupMilestones;
+        case 'epics':
+          return CrawlCommand.epics;
+        case 'jobs':
+          return CrawlCommand.jobs;
+        case 'mergeRequestNotes':
+          return CrawlCommand.mergeRequestNotes;
+        default:
+          return CrawlCommand.authorizationScope;
+      }
     }
-  }
 }
 
 // Type definitions

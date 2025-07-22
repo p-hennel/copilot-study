@@ -124,7 +124,7 @@ export class MessageRouter {
       }
 
       // Find and execute handlers
-      const handlers = this.handlers.get(processedMessage.type) || [];
+      const handlers = (this.handlers.get(processedMessage.type) || [])
       
       if (handlers.length === 0) {
         return {
@@ -138,7 +138,7 @@ export class MessageRouter {
       for (const handler of handlers) {
         if (handler.canHandle(processedMessage)) {
           result = await handler.handle(processedMessage, connection);
-          if (result.success) {
+          if (result && result.success && result.data) {
             break; // Stop at first successful handler
           }
         }
@@ -267,11 +267,11 @@ export class JobRequestHandler implements MessageHandler {
       // For now, create a simple mock job for testing
       // In production, this would query the database for pending jobs
       logger.debug(`📋 JOB-HANDLER: Fetching available jobs...`);
-      let mockJobs = await this.getAvailableJobs();
-      logger.debug(`✅ JOB-HANDLER: Found ${mockJobs.length} available jobs`);
+      const mockJobs = await jobService.getAvailableJobs(5)
+      logger.debug(`✅ JOB-HANDLER: Found ${mockJobs?.length || -1} available jobs`);
       
       // Filter out jobs with entityType "areas" (not supported by crawler)
-      mockJobs = mockJobs.filter(job => job.entityType !== "areas");
+      //mockJobs = mockJobs.filter(job => job.entityType !== "areas");
       
       // Debug: Log jobs with access tokens
       mockJobs.forEach((job, index) => {
@@ -316,20 +316,6 @@ export class JobRequestHandler implements MessageHandler {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
-    }
-  }
-
-  private async getAvailableJobs() {
-    // Use real job service to fetch available jobs from database
-    logger.debug(`📋 JOB-HANDLER: Fetching available jobs...`);
-    
-    try {
-      const jobs = await jobService.getAvailableJobs(5); // Get up to 5 jobs
-      logger.debug(`✅ Found ${jobs.length} available jobs`);
-      return jobs;
-    } catch (error) {
-      console.error('❌ Error fetching jobs from database:', error);
-      return [];
     }
   }
 

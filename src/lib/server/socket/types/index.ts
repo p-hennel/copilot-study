@@ -49,7 +49,7 @@ export type {
   ConnectionStateOperations
 } from './database';
 
-export type EntityType = 
+export type EntityType =
   | 'areas'      // Special type for GROUP_PROJECT_DISCOVERY (discovers both groups and projects)
   | 'project'
   | 'group'
@@ -59,4 +59,8 @@ export type EntityType =
   | 'commit'
   | 'branch'
   | 'pipeline'
-  | 'release';
+  | 'release'
+  | 'groupMilestones'
+  | 'epics'
+  | 'jobs'
+  | 'mergeRequestNotes';

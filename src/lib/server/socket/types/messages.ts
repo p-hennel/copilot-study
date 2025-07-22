@@ -24,7 +24,7 @@ export const ProgressDataSchema = z.object({
   sub_collection: z.string().optional(),
   estimated_remaining: z.number().optional(),
   // Enhanced progress data
-  item_counts: z.record(z.number()).optional(),
+  item_counts: z.record(z.string(), z.number()).optional(),
   processing_rate: z.number().optional(),
   estimated_time_remaining: z.number().optional(),
 });
@@ -50,7 +50,7 @@ export const ErrorContextSchema = z.object({
     method: z.string().optional(),
     url: z.string().optional(),
     status_code: z.number().optional(),
-    response_headers: z.record(z.string()).optional(),
+    response_headers: z.record(z.string(), z.string()).optional(),
   }).optional(),
   retry_count: z.number().default(0),
   is_recoverable: z.boolean().default(true),
@@ -63,7 +63,7 @@ export const DiscoveredJobSchema = z.object({
   namespace_path: z.string(),
   entity_name: z.string(),
   priority: z.number().default(1),
-  estimated_size: z.record(z.number()).optional(),
+  estimated_size: z.record(z.string(), z.number()).optional(),
 });
 
 // Discovery summary schema
@@ -77,7 +77,21 @@ export const DiscoverySummarySchema = z.object({
 // Simple job schema (mirrored from crawler unified-types.ts)
 export const SimpleJobSchema = z.object({
   id: z.string(),
-  entityType: z.enum(['project', 'group', 'user', 'issue', 'merge_request', 'commit', 'branch', 'pipeline', 'release']),
+  entityType: z.enum([
+    'project',
+    'group',
+    'user',
+    'issue',
+    'merge_request',
+    'commit',
+    'branch',
+    'pipeline',
+    'release',
+    'groupMilestones',
+    'epics',
+    'jobs',
+    'mergeRequestNotes'
+  ]),
   entityId: z.string(),
   gitlabUrl: z.string(),
   accessToken: z.string(),
@@ -90,7 +104,21 @@ export const SimpleJobSchema = z.object({
 
 // Discovery data schema (mirrored from crawler unified-types.ts)
 export const DiscoveryDataSchema = z.object({
-  entityType: z.enum(['project', 'group', 'user', 'issue', 'merge_request', 'commit', 'branch', 'pipeline', 'release']),
+  entityType: z.enum([
+    'project',
+    'group',
+    'user',
+    'issue',
+    'merge_request',
+    'commit',
+    'branch',
+    'pipeline',
+    'release',
+    'groupMilestones',
+    'epics',
+    'jobs',
+    'mergeRequestNotes'
+  ]),
   entities: z.array(z.object({
     id: z.string(),
     name: z.string(),
@@ -123,7 +151,21 @@ export const JobProgressMessageSchema = BaseMessageSchema.extend({
   type: z.literal('job_progress'),
   data: z.object({
     stage: z.enum(['discovering', 'fetching', 'completed', 'failed']), // Match crawler's ProgressData
-    entityType: z.enum(['project', 'group', 'user', 'issue', 'merge_request', 'commit', 'branch', 'pipeline', 'release']),
+    entityType: z.enum([
+      'project',
+      'group',
+      'user',
+      'issue',
+      'merge_request',
+      'commit',
+      'branch',
+      'pipeline',
+      'release',
+      'groupMilestones',
+      'epics',
+      'jobs',
+      'mergeRequestNotes'
+    ]),
     processed: z.number(),
     total: z.number().optional(),
     message: z.string().optional(),
@@ -141,7 +183,7 @@ export const JobCompletedMessageSchema = BaseMessageSchema.extend({
   type: z.literal('job_completed'),
   data: z.object({
     success: z.boolean(), // Match crawler's CompletionData
-    finalCounts: z.record(z.number()), // Match crawler's CompletionData
+    finalCounts: z.record(z.string(), z.number()), // Match crawler's CompletionData
     message: z.string().optional(), // Match crawler's CompletionData
     outputFiles: z.array(z.string()).optional(), // Match crawler's CompletionData
   }),
@@ -160,7 +202,7 @@ export const JobFailedMessageSchema = BaseMessageSchema.extend({
       currentPage: z.number().optional(),
       entityType: z.string().optional(),
     }).optional(), // Match crawler's FailureData
-    partialCounts: z.record(z.number()).optional(), // Match crawler's FailureData
+    partialCounts: z.record(z.string(), z.number()).optional(), // Match crawler's FailureData
   }),
 });
 
@@ -255,7 +297,7 @@ export const WebAppJobAssignmentDataSchema = JobAssignmentSchema.extend({
   web_app_job_id: z.string(), // Maps to database job.id
   created_by_user_id: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const WebAppProgressUpdateSchema = z.object({
@@ -296,7 +338,7 @@ export const SocketConnectionEventSchema = z.object({
   event_type: z.enum(['connected', 'disconnected', 'error', 'heartbeat_timeout']),
   crawler_id: z.string().optional(),
   timestamp: z.string(),
-  details: z.record(z.any()).optional(),
+  details: z.record(z.string(), z.any()).optional(),
 });
 
 // Type exports

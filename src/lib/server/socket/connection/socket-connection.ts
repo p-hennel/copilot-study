@@ -343,7 +343,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
       this.setState(ConnState.DISCONNECTED);
       
     } catch (error) {
-      logger.error(`Error destroying connection ${this.id}:`, error);
+      logger.error(`Error destroying connection ${this.id}:`, {error});
     }
   }
 
@@ -366,7 +366,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
 
     // Handle socket errors
     this.socket.on('error', (error: Error) => {
-      logger.error(`Socket error for connection ${this.id}:`, error);
+      logger.error(`Socket error for connection ${this.id}:`, {error});
       this.stats.errors++;
       this.setState(ConnState.ERROR);
       this.emit('error', { type: 'error', connection: this, error });
@@ -414,7 +414,7 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
       this.updateStats();
       
     } catch (error) {
-      logger.error(`💥 CONNECTION: Error handling incoming data for ${this.id}:`, error);
+      logger.error(`💥 CONNECTION: Error handling incoming data for ${this.id}:`, {error});
       this.stats.errors++;
       this.updateStats();
     }
@@ -455,13 +455,13 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
         connection: this,
         message
       });
-      logger.debug(`Parsed message before emitting:`, JSON.stringify(message, null, 2));
+      logger.debug(`Parsed message before emitting:`, {message});
       
       logger.debug(`✅ CONNECTION: Message event emitted successfully for ${message.type} on ${this.id}`);
       
     } catch (error) {
-      logger.error(`💥 CONNECTION: Error parsing message for ${this.id}:`, error);
-      logger.error(`📄 CONNECTION: Failed message string:`, messageString);
+      logger.error(`💥 CONNECTION: Error parsing message for ${this.id}:`, {error});
+      logger.error(`📄 CONNECTION: Failed message string:`, {messageString});
       this.stats.errors++;
       this.updateStats();
     }
@@ -502,8 +502,8 @@ export class SocketConnectionImpl extends EventEmitter implements SocketConnecti
         JSON.parse(messageStr);
         messages.push(messageStr);
       } catch (error) {
-        logger.error(`💥 CONNECTION: Failed to parse JSON message in extractJsonMessages:`, error);
-        logger.error(`📄 CONNECTION: Malformed message string:`, messageStr);
+        logger.error(`💥 CONNECTION: Failed to parse JSON message in extractJsonMessages:`, {error});
+        logger.error(`📄 CONNECTION: Malformed message string:`, {messageStr});
       }
       
       startIndex = messageEnd;

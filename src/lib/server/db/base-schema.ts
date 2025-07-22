@@ -102,15 +102,21 @@ export const area_authorizationRelations = relations(area_authorization, ({ one 
   area: one(area)
 }));
 
-export const area = sqliteTable("area", {
-  full_path: text().primaryKey(),
-  gitlab_id: text().notNull().unique(),
-  name: text(),
-  type: text({ enum: toDBEnum(AreaType) }).notNull(),
-  created_at: integer({ mode: "timestamp" })
-    .notNull()
-    .default(new Date()) 
-});
+export const area = sqliteTable(
+  "area",
+  {
+    full_path: text().primaryKey(),
+    gitlab_id: text().notNull(),
+    name: text(),
+    type: text({ enum: toDBEnum(AreaType) }).notNull(),
+    created_at: integer({ mode: "timestamp" })
+      .notNull()
+      .default(new Date())
+  },
+  (table) => [
+    uniqueIndex("area_gitlab_id_type_unique").on(table.gitlab_id, table.type)
+  ]
+);
 export const areaRelations = relations(area, ({ many }) => ({
   usingAccounts: many(account),
   relatedJobs: many(job),

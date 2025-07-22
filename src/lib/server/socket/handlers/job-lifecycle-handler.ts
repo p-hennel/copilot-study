@@ -36,16 +36,16 @@ export class JobLifecycleHandler {
     connection: SocketConnection,
     message: JobStartedMessage
   ): Promise<void> {
-    if (!message.job_id) {
+    if (!message.jobId) {
       throw new Error('Job ID is required for job_started message');
     }
 
     try {
-      console.log(`Job started: ${message.job_id}`, message.data);
+      console.log(`Job started: ${message.jobId}`, message.data);
 
       // Update job status to running
       await this.jobRepository.updateJobStatus(
-        message.job_id,
+        message.jobId,
         JobStatus.running,
         {
           startedAt: new Date(message.timestamp)
@@ -61,21 +61,16 @@ export class JobLifecycleHandler {
         status: 'running'
       };
 
-      if (message.data.estimated_duration) {
-        initialProgress.estimated_time_remaining = message.data.estimated_duration;
-      }
-
-      await this.progressRepository.saveProgressUpdate(message.job_id, initialProgress);
+      await this.progressRepository.saveProgressUpdate(message.jobId, initialProgress);
 
       // Add milestone for job start
-      await this.progressRepository.addProgressMilestone(message.job_id, {
+      await this.progressRepository.addProgressMilestone(message.jobId, {
         name: 'Job Started',
         timestamp: new Date(message.timestamp),
         metadata: {
-          description: `Started ${message.data.job_type} for ${message.data.namespace_path || 'unknown'}`,
-          job_type: message.data.job_type,
-          entity_type: message.data.entity_type,
-          namespace_path: message.data.namespace_path
+          description: `Started job for ${message.data.entityType || 'unknown'} entity`,
+          entity_type: message.data.entityType || 'unknown',
+          namespace_path: message.data.entityId || 'unknown'
         }
       });
 
@@ -83,15 +78,15 @@ export class JobLifecycleHandler {
       const metadata = connection.metadata as any;
       metadata.activeJobs = (metadata.activeJobs || 0) + 1;
 
-      console.log(`Job ${message.job_id} started successfully`);
+      console.log(`Job ${message.jobId} started successfully`);
 
     } catch (error) {
-      console.error(`Error handling job_started for ${message.job_id}:`, error);
+      console.error(`Error handling job_started for ${message.jobId}:`, error);
       
       // Try to mark job as failed if we can't process the start
       try {
         await this.jobRepository.markJobFailed(
-          message.job_id,
+          message.jobId,
           `Failed to process job start: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
       } catch (failError) {
@@ -109,54 +104,52 @@ export class JobLifecycleHandler {
     connection: SocketConnection,
     message: JobProgressMessage
   ): Promise<void> {
-    if (!message.job_id) {
+    if (!message.jobId) {
       throw new Error('Job ID is required for job_progress message');
     }
 
     try {
-      console.log(`Job progress update: ${message.job_id}`, {
-        completion: message.data.overall_completion,
-        timeElapsed: message.data.time_elapsed,
-        entities: message.data.progress.length
+      console.log(`Job progress update: ${message.jobId}`, {
+        stage: message.data.stage,
+        entityType: message.data.entityType,
+        processed: message.data.processed,
+        total: message.data.total
       });
+
+      // Calculate completion percentage from processed/total
+      const completionPercentage = message.data.total ? message.data.processed / message.data.total : 0;
 
       // Convert message progress data to our format
       const progressData: SocketJobProgress = {
-        overall_completion: message.data.overall_completion,
-        time_elapsed: message.data.time_elapsed,
-        estimated_time_remaining: message.data.estimated_time_remaining,
-        entities: message.data.progress.map((entity, index) => ({
-          id: `entity-${index}`,
-          entity_type: entity.entity_type,
-          total_discovered: entity.total_discovered,
-          total_processed: entity.total_processed,
-          current_page: entity.current_page,
-          items_per_page: entity.items_per_page,
-          sub_collection: entity.sub_collection,
-          estimated_remaining: entity.estimated_remaining,
-          completion_percentage: entity.total_discovered > 0 
-            ? (entity.total_processed / entity.total_discovered) * 100 
-            : 0,
-          status: entity.total_processed === entity.total_discovered ? 'completed' : 'active',
-          processing_rate: entity.total_processed / (message.data.time_elapsed / 1000) || 0
-        })),
+        overall_completion: completionPercentage,
+        time_elapsed: 0, // Not provided in new schema
+        entities: [{
+          entity_type: message.data.entityType,
+          total_discovered: message.data.total || 0,
+          total_processed: message.data.processed,
+          current_page: message.data.resumeState?.currentPage || 0,
+          items_per_page: 100, // Default value since not provided
+          sub_collection: undefined,
+          estimated_remaining: (message.data.total || 0) - message.data.processed,
+          processing_rate: 0 // Cannot calculate without time data
+        }],
         last_update: message.timestamp,
         status: 'running'
       };
 
       // Save progress update
-      await this.progressRepository.saveProgressUpdate(message.job_id, progressData);
+      await this.progressRepository.saveProgressUpdate(message.jobId, progressData);
 
       // Update job record with progress
-      await this.jobRepository.updateJobProgress(message.job_id, progressData);
+      await this.jobRepository.updateJobProgress(message.jobId, progressData);
 
       // Check for significant progress milestones
-      await this.checkProgressMilestones(message.job_id, message.data.overall_completion, message.timestamp);
+      await this.checkProgressMilestones(message.jobId, completionPercentage, message.timestamp);
 
-      console.log(`Progress updated for job ${message.job_id}: ${(message.data.overall_completion * 100).toFixed(1)}%`);
+      console.log(`Progress updated for job ${message.jobId}: ${(completionPercentage * 100).toFixed(1)}%`);
 
     } catch (error) {
-      console.error(`Error handling job_progress for ${message.job_id}:`, error);
+      console.error(`Error handling job_progress for ${message.jobId}:`, error);
       throw error;
     }
   }
@@ -168,57 +161,54 @@ export class JobLifecycleHandler {
     connection: SocketConnection,
     message: JobCompletedMessage
   ): Promise<void> {
-    if (!message.job_id) {
+    if (!message.jobId) {
       throw new Error('Job ID is required for job_completed message');
     }
 
     try {
-      console.log(`Job completed: ${message.job_id}`, {
-        duration: message.data.total_duration,
-        outputFiles: message.data.output_files.length,
-        summary: message.data.summary
+      console.log(`Job completed: ${message.jobId}`, {
+        success: message.data.success,
+        outputFiles: message.data.outputFiles?.length || 0,
+        message: message.data.message
       });
 
       // Mark job as completed
       await this.jobRepository.markJobCompleted(
-        message.job_id,
-        message.data.output_files,
-        message.data.summary
+        message.jobId,
+        message.data.outputFiles || [],
+        message.data.message || 'Job completed successfully'
       );
 
-      // Update final progress
+      // Update final progress - convert finalCounts object to entities array
+      const entities = Object.entries(message.data.finalCounts).map(([entityType, count]) => ({
+        entity_type: entityType,
+        total_discovered: count,
+        total_processed: count,
+        current_page: 0,
+        items_per_page: 100,
+        sub_collection: undefined,
+        estimated_remaining: 0,
+        processing_rate: 0 // Cannot calculate without time data
+      }));
+
       const finalProgress: SocketJobProgress = {
         overall_completion: 1.0,
-        time_elapsed: message.data.total_duration,
-        entities: message.data.final_counts.map((entity, index) => ({
-          id: `entity-${index}`,
-          entity_type: entity.entity_type,
-          total_discovered: entity.total_discovered,
-          total_processed: entity.total_processed,
-          current_page: entity.current_page,
-          items_per_page: entity.items_per_page,
-          sub_collection: entity.sub_collection,
-          estimated_remaining: 0,
-          completion_percentage: 100,
-          status: 'completed' as const,
-          processing_rate: entity.total_processed / (message.data.total_duration / 1000) || 0
-        })),
+        time_elapsed: 0, // Not provided in new schema
+        entities: entities,
         last_update: message.timestamp,
         status: 'completed'
       };
 
-      await this.progressRepository.saveProgressUpdate(message.job_id, finalProgress);
+      await this.progressRepository.saveProgressUpdate(message.jobId, finalProgress);
 
       // Add completion milestone
-      await this.progressRepository.addProgressMilestone(message.job_id, {
+      await this.progressRepository.addProgressMilestone(message.jobId, {
         name: 'Job Completed',
         timestamp: new Date(message.timestamp),
         metadata: {
-          job_type: message.data.job_type,
-          description: message.data.summary || 'Job completed successfully',
-          total_duration: message.data.total_duration,
-          output_files: message.data.output_files,
-          final_counts: message.data.final_counts
+          description: message.data.message || 'Job completed successfully',
+          output_files: message.data.outputFiles || [],
+          final_counts: entities
         }
       });
 
@@ -226,10 +216,10 @@ export class JobLifecycleHandler {
       const metadata = connection.metadata as any;
       metadata.activeJobs = Math.max(0, (metadata.activeJobs || 1) - 1);
 
-      console.log(`Job ${message.job_id} completed successfully in ${message.data.total_duration}ms`);
+      console.log(`Job ${message.jobId} completed successfully with status: ${message.data.success ? 'success' : 'failure'}`);
 
     } catch (error) {
-      console.error(`Error handling job_completed for ${message.job_id}:`, error);
+      console.error(`Error handling job_completed for ${message.jobId}:`, error);
       throw error;
     }
   }
@@ -241,43 +231,41 @@ export class JobLifecycleHandler {
     connection: SocketConnection,
     message: JobFailedMessage
   ): Promise<void> {
-    if (!message.job_id) {
+    if (!message.jobId) {
       throw new Error('Job ID is required for job_failed message');
     }
 
     try {
-      console.log(`Job failed: ${message.job_id}`, {
-        errorType: message.data.error_context.error_type,
-        errorMessage: message.data.error_context.error_message,
-        isRecoverable: message.data.error_context.is_recoverable
+      console.log(`Job failed: ${message.jobId}`, {
+        errorType: message.data.errorType,
+        error: message.data.error,
+        isRecoverable: message.data.isRecoverable
       });
 
       // Mark job as failed
       await this.jobRepository.markJobFailed(
-        message.job_id,
-        `${message.data.error_context.error_type}: ${message.data.error_context.error_message}`
+        message.jobId,
+        `${message.data.errorType || 'Unknown'}: ${message.data.error}`
       );
 
       // Save partial progress if available
-      if (message.data.partial_results) {
+      if (message.data.partialCounts) {
+        // Convert partialCounts object to entities array
+        const entities = Object.entries(message.data.partialCounts).map(([entityType, count]) => ({
+          entity_type: entityType,
+          total_discovered: count,
+          total_processed: count,
+          current_page: message.data.resumeState?.currentPage || 0,
+          items_per_page: 100,
+          sub_collection: undefined,
+          estimated_remaining: 0,
+          processing_rate: 0
+        }));
+
         const partialProgress: SocketJobProgress = {
           overall_completion: 0, // Will be calculated from partial results
           time_elapsed: 0, // Not provided in error context
-          entities: message.data.partial_results.map((entity, index) => ({
-            id: `entity-${index}`,
-            entity_type: entity.entity_type,
-            total_discovered: entity.total_discovered,
-            total_processed: entity.total_processed,
-            current_page: entity.current_page,
-            items_per_page: entity.items_per_page,
-            sub_collection: entity.sub_collection,
-            estimated_remaining: entity.estimated_remaining,
-            completion_percentage: entity.total_discovered > 0 
-              ? (entity.total_processed / entity.total_discovered) * 100 
-              : 0,
-            status: 'failed' as const,
-            error_count: 1
-          })),
+          entities: entities,
           last_update: message.timestamp,
           status: 'failed'
         };
@@ -287,19 +275,15 @@ export class JobLifecycleHandler {
         const totalProcessed = partialProgress.entities.reduce((sum, e) => sum + e.total_processed, 0);
         partialProgress.overall_completion = totalDiscovered > 0 ? totalProcessed / totalDiscovered : 0;
 
-        await this.progressRepository.saveProgressUpdate(message.job_id, partialProgress);
+        await this.progressRepository.saveProgressUpdate(message.jobId, partialProgress);
       }
 
       // Add failure milestone
-      await this.progressRepository.addProgressMilestone(message.job_id, {
+      await this.progressRepository.addProgressMilestone(message.jobId, {
         name: 'Job Failed',
         timestamp: new Date(message.timestamp),
         metadata: {
-          job_type: message.data.job_type,
-          description: `${message.data.error_context.error_type}: ${message.data.error_context.error_message}`,
-          error_context: message.data.error_context,
-          recovery_suggestion: message.data.recovery_suggestion,
-          is_recoverable: message.data.error_context.is_recoverable
+          description: `${message.data.errorType || 'Error'}: ${message.data.error}`
         }
       });
 
@@ -308,12 +292,19 @@ export class JobLifecycleHandler {
       metadata.activeJobs = Math.max(0, (metadata.activeJobs || 1) - 1);
 
       // Log the failure for monitoring
-      this.logJobFailure(message.job_id, message.data.error_context);
+      this.logJobFailure(message.jobId, {
+        error_type: message.data.errorType || 'Unknown',
+        error_message: message.data.error,
+        is_recoverable: message.data.isRecoverable,
+        retry_count: 0,
+        stack_trace: undefined,
+        request_details: undefined
+      });
 
-      console.log(`Job ${message.job_id} failed: ${message.data.error_context.error_message}`);
+      console.log(`Job ${message.jobId} failed: ${message.data.error}`);
 
     } catch (error) {
-      console.error(`Error handling job_failed for ${message.job_id}:`, error);
+      console.error(`Error handling job_failed for ${message.jobId}:`, error);
       throw error;
     }
   }
