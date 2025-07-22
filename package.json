@@ -4,7 +4,7 @@
   "version": "1.4.0",
   "type": "module",
   "scripts": {
-    "dev": "DATABASE_URL=\"$PWD/data.private/config/main.db\" DATA_ROOT=$PWD/data.private SETTINGS_FILE=$PWD/data.private/config/settings.yaml bun --bun x vite dev",
+    "dev": "bun --bun x vite dev",
     "build": "bun run prepare && bun --bun x vite build",
     "build:docker": "bun run prepare && (bun --bun x vite build || (echo 'Build completed despite SIGTRAP' && exit 0))",
     "preview": "bun --bun x vite preview",

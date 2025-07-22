@@ -6,7 +6,6 @@ import { ensureUserIsAuthenticated, getMD } from "$lib/server/utils";
 import {
   ContentType,
   type MarkdownContent,
-  type AlertContent
 } from "$lib/content-types";
 import {
   AreaType,
@@ -14,10 +13,10 @@ import {
   TokenProvider,
 } from "$lib/types";
 import { forProvider } from "$lib/utils";
-import { m } from "$paraglide";
 import { and, count, eq, isNotNull, sql } from "drizzle-orm";
 import AppSettings from "../lib/server/settings";
 import type { PageServerLoad } from "./$types";
+import { handleNewAuthorization } from "$lib/server/job-manager";
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
   const linkedAccounts = [] as string[];
@@ -113,7 +112,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
         // Trigger authorization scope job creation/check
         // FOR NOW NO ACCOUNT WILL AUTOMATICALLY START TO CRAWL OR TRIGGER "GROUP_PROJECT_DISCOVERY"
         // const apiUrl = `${opts.baseUrl}/api/graphql`;
-                await handleNewAuthorization(locals.user!.id!, x.id, opts.provider, apiUrl);
+        await handleNewAuthorization(locals.user!.id!, x.id, opts.provider); //, apiUrl);
       });
   }
 

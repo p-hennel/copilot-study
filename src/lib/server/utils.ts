@@ -25,21 +25,20 @@ export enum CollectionTypes {
   Label = "labels" // Added Label
 }
 
+const contentModules = import.meta.glob('/src/content/**/*.md', { 
+  query: '?raw',
+  import: 'default',
+  eager: true 
+});
 
-// const contentModules = import.meta.glob('$content/**/*.md', { 
-//   query: '?raw',
-//   import: 'default',
-//   eager: true 
-// });
-
-// export function getContent(selectedLanguage: string, slug: string) {
-//   const path = `$content/${selectedLanguage}/${slug}.md`;
-//   if (path in contentModules && contentModules[path]) {
-//     return (contentModules[path] as string) || "";
-//   } else {
-//     return ""
-//   }
-// }
+export function getContent(selectedLanguage: string, slug: string) {
+  const path = `/src/content/${selectedLanguage}/${slug}.md`;
+  if (path in contentModules && contentModules[path]) {
+    return (contentModules[path] as string) || "";
+  } else {
+    return ""
+  }
+}
 
 export async function getMD(
   slug: string,
@@ -47,9 +46,9 @@ export async function getMD(
   locals: App.Locals
 ): Promise<string> {
   depends("paraglide:lang");
-  //const selectedLanguage = locals.locale ?? "en";
-  //return getContent(selectedLanguage, slug) //await import(`$content/${selectedLanguage}/${slug}.md?raw`);
-  return locals.locale ? "" : ""
+  const selectedLanguage = locals.locale ?? "en";
+  return getContent(selectedLanguage, slug) //await import(`$content/${selectedLanguage}/${slug}.md?raw`);
+  //return locals.locale ? "" : ""
 }
 
 export async function isAdmin(locals: App.Locals | undefined) {

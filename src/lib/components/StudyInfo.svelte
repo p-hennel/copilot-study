@@ -8,6 +8,7 @@
   import Markdown from "svelte-exmarkdown";
 
   let { contents, user }: { contents: Content[]; user?: object } = $props();
+  console.log("StudyInfo contents", contents);
 </script>
 
 <p class="mb-0">
