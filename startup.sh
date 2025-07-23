@@ -9,6 +9,9 @@ export PATH=$HOME/.bun/bin:$PATH
 #cron
 #autorestic check
 
+bun drizzle-kit migrate
+bun drizzle-kit push
+
 bun --bun run db-test.ts
 
 if [ "$SUPERVUSOR" -eq "pm2" ]; then

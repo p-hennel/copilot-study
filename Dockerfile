@@ -71,7 +71,7 @@ COPY --from=prerelease \
   /usr/src/app/runtime-tsconfig.json \
   /usr/src/app/tsconfig.json
   
-COPY drizzle /usr/src/app/
+COPY ./drizzle ./drizzle.config.ts /usr/src/app/
 
 #COPY --from=prerelease \
 #  /usr/src/app/config/settings.example.yaml \
