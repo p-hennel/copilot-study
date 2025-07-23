@@ -215,6 +215,15 @@ export class AppSettings {
     this.watchFile();
   }
 
+  public raw(): string {
+    try {
+      return readFileSync(this.filePath, "utf8");
+    } catch (error) {
+      logger.error("Error reading settings file:", { error });
+      return "";
+    }
+  }
+
   // Method to reload settings from file
   private reloadSettings() {
     if (this.isWriting) {

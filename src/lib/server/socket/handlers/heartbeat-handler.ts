@@ -47,13 +47,15 @@ export class HeartbeatHandler {
     // Update connection metadata - we'll extend the metadata interface later
     const metadata = connection.metadata as any;
     metadata.lastHeartbeat = message.timestamp;
-    metadata.activeJobs = message.data.active_jobs;
-    metadata.systemStatus = message.data.system_status;
-    metadata.lastActivity = message.data.last_activity;
+    metadata.activeJobs = message.data.activeJobs;
+    metadata.systemStatus = message.data.systemStatus;
+    metadata.lastActivity = message.timestamp; // Use message timestamp since last_activity doesn't exist
 
     // Update database connection state if needed
     const connectionStateOps = this.dbManager.createConnectionStateOperations();
-    await connectionStateOps.updateHeartbeat(connection.id, message.data.system_status);
+    // Map processing status to the expected crawling status for database compatibility
+    const dbStatus = message.data.systemStatus === 'processing' ? 'crawling' : message.data.systemStatus;
+    await connectionStateOps.updateHeartbeat(connection.id, dbStatus as 'idle' | 'discovering' | 'crawling' | 'error');
   }
 
   /**
@@ -65,9 +67,10 @@ export class HeartbeatHandler {
     
     const metrics = {
       timestamp: new Date(message.timestamp),
-      activeJobs: message.data.active_jobs,
-      systemStatus: message.data.system_status,
-      lastActivity: new Date(message.data.last_activity)
+      activeJobs: message.data.activeJobs,
+      systemStatus: message.data.systemStatus,
+      totalProcessed: message.data.totalProcessed,
+      lastActivity: new Date(message.timestamp) // Use message timestamp as activity indicator
     };
 
     // For now, we'll just log the metrics
@@ -80,9 +83,9 @@ export class HeartbeatHandler {
    */
   private logHeartbeat(connection: SocketConnection, message: HeartbeatMessage): void {
     console.log(`Heartbeat received from ${connection.id}:`, {
-      activeJobs: message.data.active_jobs,
-      systemStatus: message.data.system_status,
-      lastActivity: message.data.last_activity,
+      activeJobs: message.data.activeJobs,
+      systemStatus: message.data.systemStatus,
+      totalProcessed: message.data.totalProcessed,
       timestamp: message.timestamp
     });
   }
@@ -95,33 +98,33 @@ export class HeartbeatHandler {
     let status: 'healthy' | 'warning' | 'critical' = 'healthy';
 
     // Check system status
-    if (message.data.system_status === 'error') {
+    if (message.data.systemStatus === 'error') {
       issues.push('Crawler reported error status');
       status = 'critical';
     }
 
-    // Check last activity (if too old, might indicate issues)
-    const lastActivity = new Date(message.data.last_activity);
-    const timeSinceActivity = Date.now() - lastActivity.getTime();
+    // Check message age (if too old, might indicate issues)
+    const messageTime = new Date(message.timestamp);
+    const timeSinceMessage = Date.now() - messageTime.getTime();
     const maxIdleTime = 5 * 60 * 1000; // 5 minutes
 
-    if (timeSinceActivity > maxIdleTime && message.data.active_jobs > 0) {
-      issues.push(`No activity for ${Math.round(timeSinceActivity / 1000)}s but has active jobs`);
+    if (timeSinceMessage > maxIdleTime && message.data.activeJobs > 0) {
+      issues.push(`Last heartbeat was ${Math.round(timeSinceMessage / 1000)}s ago but has active jobs`);
       status = status === 'critical' ? 'critical' : 'warning';
     }
 
     // Check active jobs vs status consistency
-    if (message.data.active_jobs === 0 && message.data.system_status === 'crawling') {
-      issues.push('Status shows crawling but no active jobs');
+    if (message.data.activeJobs === 0 && message.data.systemStatus === 'processing') {
+      issues.push('Status shows processing but no active jobs');
       status = status === 'critical' ? 'critical' : 'warning';
     }
 
     return {
       status,
       issues,
-      activeJobs: message.data.active_jobs,
-      systemStatus: message.data.system_status,
-      lastActivity: lastActivity
+      activeJobs: message.data.activeJobs,
+      systemStatus: message.data.systemStatus,
+      lastActivity: messageTime
     };
   }
 
@@ -161,7 +164,7 @@ export class HeartbeatHandler {
       systemStatuses: {
         idle: 0,
         discovering: 0,
-        crawling: 0,
+        processing: 0,
         error: 0
       },
       healthyConnections: 0,
@@ -216,7 +219,7 @@ interface HeartbeatStatistics {
   systemStatuses: {
     idle: number;
     discovering: number;
-    crawling: number;
+    processing: number;
     error: number;
   };
   healthyConnections: number;

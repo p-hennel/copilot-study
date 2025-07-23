@@ -1,4 +1,4 @@
-import { eq, and, like, inArray } from 'drizzle-orm';
+import { eq, and, or, like, inArray } from 'drizzle-orm';
 import { area, area_authorization } from '$lib/server/db/base-schema';
 import { AreaType } from '../../../types.js';
 import type { DatabaseManager } from './database-manager.js';
@@ -250,54 +250,83 @@ export class AreaRepository {
    * Bulk create or update areas from discovery
    */
   async bulkUpsertAreas(areas: Array<{
-    fullPath: string;
-    gitlabId: string;
-    name: string;
-    type: AreaType;
-  }>): Promise<Area[]> {
-    return await this.dbManager.withTransaction(async (db) => {
-      const results: Area[] = [];
+  fullPath: string;
+  gitlabId: string;
+  name: string;
+  type: AreaType;
+}>): Promise<Area[]> {
+  return await this.dbManager.withTransaction(async (db) => {
+    const results: Area[] = [];
+    // Build OR conditions for (gitlab_id, type) pairs
+    const areaPairs = areas.map(a =>
+      and(eq(area.gitlab_id, a.gitlabId), eq(area.type, a.type))
+    );
+    let existingAreas: any[] = [];
+    if (areaPairs.length > 0) {
+      existingAreas = await db
+        .select()
+        .from(area)
+        .where(areaPairs.length === 1 ? areaPairs[0] : (or as any)(...areaPairs));
+    }
 
-      for (const areaData of areas) {
-        const [existingArea] = await db
-          .select()
-          .from(area)
-          .where(eq(area.full_path, areaData.fullPath))
-          .limit(1);
+    // Map by composite key "gitlab_id::type"
+    const areaKeyMap = new Map<string, any>();
+    for (const a of existingAreas) {
+      areaKeyMap.set(`${a.gitlab_id}::${a.type}`, a);
+    }
 
-        if (existingArea) {
-          // Update existing
-          const [updatedArea] = await db
-            .update(area)
-            .set({
-              gitlab_id: areaData.gitlabId,
-              name: areaData.name,
-              type: areaData.type
-            })
-            .where(eq(area.full_path, areaData.fullPath))
-            .returning();
-          if (updatedArea)
-            results.push(updatedArea);
-        } else {
-          // Create new
-          const [newArea] = await db
-            .insert(area)
-            .values({
-              full_path: areaData.fullPath,
-              gitlab_id: areaData.gitlabId,
-              name: areaData.name,
-              type: areaData.type,
-              created_at: new Date()
-            })
-            .returning();
-          if (newArea)
-            results.push(newArea);
-        }
+    // Prevent duplicate (gitlab_id, type) in input batch
+    const seenKeys = new Set<string>();
+
+    for (const areaData of areas) {
+      const key = `${areaData.gitlabId}::${areaData.type}`;
+      if (seenKeys.has(key)) {
+        // Skip duplicate in input batch
+        continue;
       }
+      seenKeys.add(key);
 
-      return results;
-    });
-  }
+      const existingArea = areaKeyMap.get(key);
+
+      if (existingArea) {
+        // Always update the existing area (by gitlabId and type) with new data
+        const [updatedArea] = await db
+          .update(area)
+          .set({
+            full_path: areaData.fullPath,
+            name: areaData.name,
+            // type: areaData.type, // type should not change
+            // Optionally update created_at if you want to track last update
+          })
+          .where(
+            and(
+              eq(area.gitlab_id, areaData.gitlabId),
+              eq(area.type, areaData.type)
+            )
+          )
+          .returning();
+        if (updatedArea)
+          results.push(updatedArea);
+      } else {
+        // Insert new area
+        const [newArea] = await db
+          .insert(area)
+          .values({
+            full_path: areaData.fullPath,
+            gitlab_id: areaData.gitlabId,
+            name: areaData.name,
+            type: areaData.type,
+            created_at: new Date()
+          })
+          .returning();
+        if (newArea)
+          results.push(newArea);
+      }
+    }
+
+    return results;
+  });
+}
 
   /**
    * Delete area and its authorizations

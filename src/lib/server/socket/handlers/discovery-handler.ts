@@ -31,21 +31,29 @@ export class DiscoveryHandler {
   }
 
   private mapJobTypeToCrawlCommand(jobType: string): CrawlCommand {
-    switch (jobType) {
-      case 'crawl_group':
-        return CrawlCommand.group;
-      case 'crawl_project':
-        return CrawlCommand.project;
-      case 'discover_areas':
-        return CrawlCommand.GROUP_PROJECT_DISCOVERY;
-      case 'crawl_user':
-        return CrawlCommand.users;
-      // Add other mappings as needed
-      default:
-        logger.warn(`Unknown job type received: ${jobType}. Defaulting to GROUP_PROJECT_DISCOVERY.`);
-        return CrawlCommand.GROUP_PROJECT_DISCOVERY;
+      switch (jobType) {
+        case 'crawl_group':
+          return CrawlCommand.group;
+        case 'crawl_project':
+          return CrawlCommand.project;
+        case 'discover_areas':
+          return CrawlCommand.GROUP_PROJECT_DISCOVERY;
+        case 'crawl_user':
+          return CrawlCommand.users;
+        case 'groupMilestones':
+          return CrawlCommand.groupMilestones;
+        case 'epics':
+          return CrawlCommand.epics;
+        case 'jobs':
+          return CrawlCommand.jobs;
+        case 'mergeRequestNotes':
+          return CrawlCommand.mergeRequestNotes;
+        // Add other mappings as needed
+        default:
+          logger.warn(`Unknown job type received: ${jobType}. Defaulting to GROUP_PROJECT_DISCOVERY.`);
+          return CrawlCommand.GROUP_PROJECT_DISCOVERY;
+      }
     }
-  }
 
   /**
    * Handle jobs discovered message from crawler

@@ -267,10 +267,10 @@ export class ProtocolHandler extends EventEmitter {
         };
       }
 
-      if (!message.job_id) {
+      if (!message.jobId) {
         return {
           success: false,
-          error: 'Job-related messages must include job_id'
+          error: 'Job-related messages must include jobId'
         };
       }
     }

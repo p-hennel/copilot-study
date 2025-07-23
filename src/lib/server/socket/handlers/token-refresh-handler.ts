@@ -41,30 +41,30 @@ export class TokenRefreshHandler {
     connection: SocketConnection,
     message: TokenRefreshRequestMessage
   ): Promise<void> {
-    if (!message.job_id) {
+    if (!message.jobId) {
       console.error('Token refresh request missing job_id');
       await this.sendTokenRefreshResponse(connection, 'unknown', false, 'Missing job ID');
       return;
     }
 
     try {
-      console.log(`Processing token refresh request for job ${message.job_id}:`, {
+      console.log(`Processing token refresh request for job ${message.jobId}:`, {
         tokenExpired: message.data.current_token_expired,
         lastRequest: message.data.last_successful_request,
         errorDetails: message.data.error_details
       });
 
       // Get job details
-      const job = await this.jobRepository.getJob(message.job_id);
+      const job = await this.jobRepository.getJob(message.jobId);
       if (!job) {
-        console.error(`Job not found for token refresh: ${message.job_id}`);
-        await this.sendTokenRefreshResponse(connection, message.job_id, false, 'Job not found');
+        console.error(`Job not found for token refresh: ${message.jobId}`);
+        await this.sendTokenRefreshResponse(connection, message.jobId, false, 'Job not found');
         return;
       }
 
       // Update job status to indicate credential issues
       await this.jobRepository.updateJobStatus(
-        message.job_id, 
+        message.jobId, 
         JobStatus.waiting_credential_renewal,
         { errorMessage: `Token expired: ${message.data.error_details}` }
       );
@@ -76,7 +76,7 @@ export class TokenRefreshHandler {
         // Send successful refresh response
         await this.sendTokenRefreshResponse(
           connection, 
-          message.job_id, 
+          message.jobId, 
           true, 
           undefined,
           refreshResult.newToken,
@@ -85,23 +85,23 @@ export class TokenRefreshHandler {
 
         // Update job status back to running
         await this.jobRepository.updateJobStatus(
-          message.job_id, 
+          message.jobId, 
           JobStatus.credential_renewed
         );
 
-        console.log(`Token refresh successful for job ${message.job_id}`);
+        console.log(`Token refresh successful for job ${message.jobId}`);
       } else {
         // Send failure response
         await this.sendTokenRefreshResponse(
           connection, 
-          message.job_id, 
+          message.jobId, 
           false, 
           refreshResult.error || 'Token refresh failed'
         );
 
         // Mark job as failed due to credential issues
         await this.jobRepository.updateJobStatus(
-          message.job_id, 
+          message.jobId, 
           JobStatus.credential_expired,
           { 
             finishedAt: new Date(),
@@ -109,16 +109,16 @@ export class TokenRefreshHandler {
           }
         );
 
-        console.error(`Token refresh failed for job ${message.job_id}: ${refreshResult.error}`);
+        console.error(`Token refresh failed for job ${message.jobId}: ${refreshResult.error}`);
       }
 
     } catch (error) {
-      console.error(`Error handling token refresh for ${message.job_id}:`, error);
+      console.error(`Error handling token refresh for ${message.jobId}:`, error);
       
       // Send error response to crawler
       await this.sendTokenRefreshResponse(
         connection, 
-        message.job_id, 
+        message.jobId, 
         false, 
         `Internal error: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -126,7 +126,7 @@ export class TokenRefreshHandler {
       // Mark job as failed
       try {
         await this.jobRepository.markJobFailed(
-          message.job_id,
+          message.jobId,
           `Token refresh error: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
       } catch (failError) {
@@ -188,11 +188,11 @@ export class TokenRefreshHandler {
       const response: TokenRefreshResponseMessage = {
         type: 'token_refresh_response',
         timestamp: formatTimestamp(),
-        job_id: jobId,
+        jobId: jobId,
         data: {
-          access_token: newToken || '',
-          expires_at: expiresAt,
-          refresh_successful: success
+          accessToken: newToken || '',
+          expiresAt: expiresAt,
+          refreshSuccessful: success
         }
       };
 

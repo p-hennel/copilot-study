@@ -86,7 +86,7 @@ export class SocketServer {
       await this.cleanup();
       logger.info('Socket server stopped');
     } catch (error) {
-      logger.error('Error stopping socket server:', error);
+      logger.error('Error stopping socket server:', {error});
       throw error;
     }
   }
@@ -197,7 +197,7 @@ export class SocketServer {
     });
 
     this.server.on('error', (error: Error) => {
-      logger.error('Socket server error:', error);
+      logger.error('Socket server error:', {error});
       this.errorManager?.handleError(error);
     });
 
@@ -264,7 +264,7 @@ export class SocketServer {
 
       logger.debug(`🔗 SOCKET-SERVER: New connection established: ${connection.id}`);
     } catch (error) {
-      logger.error('💥 SOCKET-SERVER: Error handling new connection:', error);
+      logger.error('💥 SOCKET-SERVER: Error handling new connection:', {error});
       socket.destroy();
     }
   }
@@ -272,26 +272,26 @@ export class SocketServer {
   private async handleCrawlerMessage(connection: SocketConnection, message: CrawlerMessage): Promise<void> {
     try {
       logger.debug(`📥 SOCKET-SERVER: Received ${message.type} message from ${connection.id}`);
-      logger.debug(`📄 SOCKET-SERVER: Message data:`, JSON.stringify(message, null, 2));
+      logger.debug(`📄 SOCKET-SERVER: Message data:`, {message});
       
       if (!this.messageRouter) {
-        console.error('❌ SOCKET-SERVER: Message router not initialized');
+        logger.error('❌ SOCKET-SERVER: Message router not initialized');
         return;
       }
       
-      console.log(`🎯 SOCKET-SERVER: Routing ${message.type} to message router...`);
+      logger.debug(`🎯 SOCKET-SERVER: Routing ${message.type} to message router...`);
       const result = await this.messageRouter.processMessage(message, connection);
       
       if (!result.success) {
-        console.error(`❌ SOCKET-SERVER: Failed to process ${message.type} message:`, result.error);
+        logger.error(`❌ SOCKET-SERVER: Failed to process ${message.type} message:`, {error: result.error});
       } else {
-        console.log(`✅ SOCKET-SERVER: Successfully processed ${message.type} message`);
+        logger.debug(`✅ SOCKET-SERVER: Successfully processed ${message.type} message`);
         if (result.data) {
-          console.log(`📊 SOCKET-SERVER: Result data:`, result.data);
+          logger.debug(`📊 SOCKET-SERVER: Result data:`, {data: result.data});
         }
       }
     } catch (error) {
-      logger.error('💥 SOCKET-SERVER: Error handling message ${message.type}:', error);
+      logger.error('💥 SOCKET-SERVER: Error handling message ${message.type}:', {error});
       this.errorManager?.handleError(error as Error);
     }
   }
@@ -307,7 +307,7 @@ export class SocketServer {
       
       logger.info('✅ Cleanup completed successfully');
     } catch (error) {
-      console.error('❌ Error during cleanup:', error);
+      logger.error('❌ Error during cleanup:', {error});
     } finally {
       // Clear references
       this.server = null;

@@ -6,7 +6,7 @@ import {
   jobQueue,
   jobAssignmentMapping,
   jobErrorLog
-} from '$lib/server/db/schema';
+} from '$lib/server/socket/persistence/schema';
 import { eq, and, lte, desc, asc, count, sql, inArray } from 'drizzle-orm';
 import type {
   SocketDatabaseOperations,
@@ -471,14 +471,18 @@ class SocketDatabaseOperationsImpl implements SocketDatabaseOperations {
   }
 
   private mapJobTypeToCommand(jobType: string): CrawlCommand {
-    switch (jobType) {
-      case 'discover_namespaces': return CrawlCommand.GROUP_PROJECT_DISCOVERY;
-      case 'crawl_user': return CrawlCommand.users;
-      case 'crawl_group': return CrawlCommand.group;
-      case 'crawl_project': return CrawlCommand.project;
-      default: return CrawlCommand.authorizationScope;
+      switch (jobType) {
+        case 'discover_namespaces': return CrawlCommand.GROUP_PROJECT_DISCOVERY;
+        case 'crawl_user': return CrawlCommand.users;
+        case 'crawl_group': return CrawlCommand.group;
+        case 'crawl_project': return CrawlCommand.project;
+        case 'groupMilestones': return CrawlCommand.groupMilestones;
+        case 'epics': return CrawlCommand.epics;
+        case 'jobs': return CrawlCommand.jobs;
+        case 'mergeRequestNotes': return CrawlCommand.mergeRequestNotes;
+        default: return CrawlCommand.authorizationScope;
+      }
     }
-  }
 
   private mapJobStatusToAssignmentStatus(status: string): JobAssignmentMapping['status'] {
     switch (status) {

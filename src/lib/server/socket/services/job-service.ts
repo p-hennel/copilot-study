@@ -48,9 +48,9 @@ export class JobService {
       });
 
       // Exclude discovery jobs (entityType "areas" or command GROUP_PROJECT_DISCOVERY)
-      let dbJobs = queuedJobs.filter(job => job.command !== CrawlCommand.GROUP_PROJECT_DISCOVERY);
-
-      logger.debug(`[JobService] Raw dbJobs fetched from database:`, { dbJobs });
+      //let dbJobs = queuedJobs.filter(job => job.command !== CrawlCommand.GROUP_PROJECT_DISCOVERY);
+      //logger.debug(`[JobService] Raw dbJobs fetched from database:`, { dbJobs });
+      let dbJobs = queuedJobs
 
       const settings = AppSettings();
       if (settings.app.sendFailedJobsToCrawler) {
@@ -81,24 +81,9 @@ export class JobService {
       }
 
       logger.info(`📋 Found ${dbJobs.length} jobs in database`);
-      
-      // Debug: Log each job's details
-      for (const job of dbJobs) {
-        logger.info(`🔍 Job ${job.id}:`, {
-          command: job.command,
-          accountId: job.accountId,
-          hasAccount: !!job.usingAccount,
-          accountData: job.usingAccount ? {
-            id: job.usingAccount.id,
-            hasAccessToken: !!job.usingAccount.accessToken
-          } : null
-        });
-      }
 
       // Convert database jobs to SimpleJob format for crawler
-      const simpleJobs = await Promise.all(
-        dbJobs.map(job => this.convertToSimpleJob(job))
-      );
+      const simpleJobs = dbJobs.map(job => this.convertToSimpleJob(job))
 
       // Filter out jobs that couldn't be converted (missing data, etc.)
       const validJobs = simpleJobs.filter(job => job !== null) as SimpleJob[];
@@ -141,7 +126,6 @@ export class JobService {
       return true;
 
     } catch (error) {
-      console.error(`❌ DETAILED ERROR - marking job ${jobId} as started:`, error);
       logger.error(`❌ Error marking job ${jobId} as started:`, { error });
       return false;
     }
@@ -255,7 +239,6 @@ export class JobService {
       return true;
 
     } catch (error) {
-      console.error(`❌ DETAILED ERROR - marking job ${jobId} as completed:`, error);
       logger.error(`❌ Error marking job ${jobId} as completed:`, { error });
       return false;
     }
@@ -316,7 +299,6 @@ export class JobService {
       return true;
 
     } catch (error) {
-      console.error(`❌ DETAILED ERROR - marking job ${jobId} as failed:`, error);
       logger.error(`❌ Error marking job ${jobId} as failed:`, { error });
       return false;
     }
@@ -347,7 +329,7 @@ export class JobService {
   /**
    * Convert database job to SimpleJob format for crawler
    */
-  private async convertToSimpleJob(dbJob: any): Promise<SimpleJob | null> {
+  private convertToSimpleJob(dbJob: any): SimpleJob | null {
     logger.debug(`[JobService] Converting dbJob to SimpleJob:`, dbJob);
     try {
       if (!dbJob.usingAccount) {
@@ -407,11 +389,10 @@ export class JobService {
 
   /**
    * Map database CrawlCommand to crawler EntityType
-   * FIXED: GROUP_PROJECT_DISCOVERY now maps to 'areas' to trigger proper discovery
    */
   private mapCommandToEntityType(command: CrawlCommand): EntityType | null {
     const mapping: Record<string, EntityType> = {
-      [CrawlCommand.GROUP_PROJECT_DISCOVERY]: 'areas',  // FIXED: was 'group', now 'areas'
+      [CrawlCommand.GROUP_PROJECT_DISCOVERY]: 'areas',
       [CrawlCommand.group]: 'group',
       [CrawlCommand.project]: 'project',
       [CrawlCommand.issues]: 'issue',
@@ -419,7 +400,11 @@ export class JobService {
       [CrawlCommand.commits]: 'commit',
       [CrawlCommand.branches]: 'branch',
       [CrawlCommand.pipelines]: 'pipeline',
-      [CrawlCommand.users]: 'user'
+      [CrawlCommand.users]: 'user',
+      [CrawlCommand.groupMilestones]: 'groupMilestones',
+      [CrawlCommand.epics]: 'epics',
+      [CrawlCommand.jobs]: 'jobs',
+      [CrawlCommand.mergeRequestNotes]: 'mergeRequestNotes'
     };
 
     return mapping[command] || null;
