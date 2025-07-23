@@ -6,6 +6,7 @@ export default defineConfig({
   // Revert back to main schema export file
   schema: "./src/lib/server/db/schema.ts",
   dialect: "sqlite",
+  out: "./drizzle",
 
   dbCredentials: {
     url: dbUrl
