@@ -1,4 +1,4 @@
-import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
+import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "./types";
 import { relations, sql } from "drizzle-orm";
 import {
   blob, // Added blob for json
@@ -102,15 +102,21 @@ export const area_authorizationRelations = relations(area_authorization, ({ one 
   area: one(area)
 }));
 
-export const area = sqliteTable("area", {
-  full_path: text().primaryKey(),
-  gitlab_id: text().notNull().unique(),
-  name: text(),
-  type: text({ enum: toDBEnum(AreaType) }).notNull(),
-  created_at: integer({ mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`) 
-});
+export const area = sqliteTable(
+  "area",
+  {
+    full_path: text().primaryKey(),
+    gitlab_id: text().notNull(),
+    name: text(),
+    type: text({ enum: toDBEnum(AreaType) }).notNull(),
+    created_at: integer({ mode: "timestamp" })
+      .notNull()
+      .default(new Date())
+  },
+  (table) => [
+    uniqueIndex("area_gitlab_id_type_unique").on(table.gitlab_id, table.type)
+  ]
+);
 export const areaRelations = relations(area, ({ many }) => ({
   usingAccounts: many(account),
   relatedJobs: many(job),
@@ -123,7 +129,7 @@ export const job = sqliteTable(
     id: text().notNull().$defaultFn(ulid).primaryKey(),
     created_at: integer({ mode: "timestamp" })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .default(new Date()),
     started_at: integer({ mode: "timestamp" }),
     finished_at: integer({ mode: "timestamp" }),
     status: text({ enum: toDBEnum(JobStatus) })
@@ -134,7 +140,7 @@ export const job = sqliteTable(
       .default(CrawlCommand.authorizationScope),
     full_path: text(), //.references(() => area.full_path),
     branch: text(),
-    from: integer({ mode: "timestamp" }).default(new Date(2022, 1, 1)),
+    from: integer({ mode: "timestamp" }).default(sql`(unixepoch('2022-02-01'))`),
     to: integer({ mode: "timestamp" }),
     accountId: text().notNull().references(() => account.id),
     spawned_from: text(), //.references((): AnySQLiteColumn => job.id),
@@ -144,7 +150,7 @@ export const job = sqliteTable(
     userId: text("userId").references(() => user.id),
     provider: text("provider", { enum: toDBEnum(TokenProvider) }),
     gitlabGraphQLUrl: text("gitlabGraphQLUrl"),
-    updated_at: integer("updatedAt", { mode: "timestamp" }).$onUpdateFn(() => sql`(unixepoch())`),
+    updated_at: integer("updatedAt", { mode: "timestamp" }).$onUpdateFn(() => new Date()),
   },
   (table) => [
     index("job_created_at_idx").on(table.created_at),

@@ -8,6 +8,13 @@
       "when": 1753205429171,
       "tag": "0000_wonderful_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1753268393832,
+      "tag": "0001_graphql-col-issue",
+      "breakpoints": true
     }
   ]
 }
