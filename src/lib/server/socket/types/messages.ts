@@ -1,11 +1,163 @@
+/**
+ * Socket Message Types - Web App Socket Communication
+ * 
+ * This file re-exports all socket message schemas and types from lib-common
+ * to ensure perfect alignment between web app and crawler.
+ * 
+ * ALL SOCKET MESSAGE SCHEMAS ARE NOW SHARED FROM LIB-COMMON
+ */
+
 import { z } from 'zod';
 
-// Mirror the crawler's base message schema - FIXED to match crawler's jobId property
-export const BaseMessageSchema = z.object({
-  type: z.string(),
-  timestamp: z.string(),
-  jobId: z.string().optional(), // Changed from job_id to jobId to match crawler
-});
+// Import ALL shared schemas and utilities from lib-common
+import {
+  // Core schemas
+  EntityTypeSchema,
+  JobStatusSchema,
+  TokenProviderSchema,
+  
+  // Message data schemas
+  SocketMessageSchema,
+  HeartbeatDataSchema,
+  ProgressDataSchema,
+  CompletionDataSchema,
+  FailureDataSchema,
+  DiscoveryDataSchema,
+  SimpleJobSchema,
+  JobAssignmentDataSchema,
+  DiscoveredJobSchema,
+  DiscoverySummarySchema,
+  ErrorContextSchema,
+  
+  // Complete message schemas
+  HeartbeatMessageSchema,
+  JobStartedMessageSchema,
+  JobProgressMessageSchema,
+  JobCompletedMessageSchema,
+  JobFailedMessageSchema,
+  DiscoveryMessageSchema,
+  JobsDiscoveredMessageSchema,
+  TokenRefreshRequestMessageSchema,
+  JobRequestMessageSchema,
+  JobResponseMessageSchema,
+  TokenRefreshResponseMessageSchema,
+  ShutdownMessageSchema,
+  
+  // Union schemas for validation
+  CrawlerToWebAppMessageSchema,
+  WebAppToCrawlerMessageSchema,
+  AnySocketMessageSchema,
+  
+  // Validation utilities
+  validateCrawlerMessage,
+  validateWebAppMessage,
+  validateAnySocketMessage,
+  
+  // Type exports
+  type SocketMessage,
+  type HeartbeatData,
+  type ProgressData,
+  type CompletionData,
+  type FailureData,
+  type DiscoveryData,
+  type SimpleJob,
+  type JobAssignmentData,
+  type DiscoveredJob,
+  type DiscoverySummary,
+  type ErrorContext,
+  type HeartbeatMessage,
+  type JobStartedMessage,
+  type JobProgressMessage,
+  type JobCompletedMessage,
+  type JobFailedMessage,
+  type DiscoveryMessage,
+  type JobsDiscoveredMessage,
+  type TokenRefreshRequestMessage,
+  type JobRequestMessage,
+  type JobResponseMessage,
+  type TokenRefreshResponseMessage,
+  type ShutdownMessage,
+  type CrawlerToWebAppMessage,
+  type WebAppToCrawlerMessage,
+  type AnySocketMessage
+} from '@copima/lib-common';
+
+// Re-export everything for compatibility
+export {
+  // Core schemas
+  EntityTypeSchema,
+  JobStatusSchema,
+  TokenProviderSchema,
+  
+  // Message data schemas
+  SocketMessageSchema,
+  HeartbeatDataSchema,
+  ProgressDataSchema,
+  CompletionDataSchema,
+  FailureDataSchema,
+  DiscoveryDataSchema,
+  SimpleJobSchema,
+  JobAssignmentDataSchema,
+  DiscoveredJobSchema,
+  DiscoverySummarySchema,
+  ErrorContextSchema,
+  
+  // Complete message schemas
+  HeartbeatMessageSchema,
+  JobStartedMessageSchema,
+  JobProgressMessageSchema,
+  JobCompletedMessageSchema,
+  JobFailedMessageSchema,
+  DiscoveryMessageSchema,
+  JobsDiscoveredMessageSchema,
+  TokenRefreshRequestMessageSchema,
+  JobRequestMessageSchema,
+  JobResponseMessageSchema,
+  TokenRefreshResponseMessageSchema,
+  ShutdownMessageSchema,
+  
+  // Union schemas for validation
+  CrawlerToWebAppMessageSchema,
+  WebAppToCrawlerMessageSchema,
+  AnySocketMessageSchema,
+  
+  // Validation utilities
+  validateCrawlerMessage,
+  validateWebAppMessage,
+  validateAnySocketMessage,
+  
+  // Type exports
+  type SocketMessage,
+  type HeartbeatData,
+  type ProgressData,
+  type CompletionData,
+  type FailureData,
+  type DiscoveryData,
+  type SimpleJob,
+  type JobAssignmentData,
+  type DiscoveredJob,
+  type DiscoverySummary,
+  type ErrorContext,
+  type HeartbeatMessage,
+  type JobStartedMessage,
+  type JobProgressMessage,
+  type JobCompletedMessage,
+  type JobFailedMessage,
+  type DiscoveryMessage,
+  type JobsDiscoveredMessage,
+  type TokenRefreshRequestMessage,
+  type JobRequestMessage,
+  type JobResponseMessage,
+  type TokenRefreshResponseMessage,
+  type ShutdownMessage,
+  type CrawlerToWebAppMessage,
+  type WebAppToCrawlerMessage,
+  type AnySocketMessage
+} from '@copima/lib-common';
+
+// Legacy compatibility exports
+export const BaseMessageSchema = SocketMessageSchema;
+export const JobAssignmentSchema = JobAssignmentDataSchema;
 
 // Legacy compatibility schema for backend processing (transforms jobId -> job_id internally)
 export const BackendProcessingSchema = z.object({
@@ -14,286 +166,20 @@ export const BackendProcessingSchema = z.object({
   job_id: z.string().optional(),
 });
 
-// Progress data with entity counts (mirrored from crawler)
-export const ProgressDataSchema = z.object({
-  entity_type: z.string(),
-  total_discovered: z.number(),
-  total_processed: z.number(),
-  current_page: z.number().optional(),
-  items_per_page: z.number().optional(),
-  sub_collection: z.string().optional(),
-  estimated_remaining: z.number().optional(),
-  // Enhanced progress data
-  item_counts: z.record(z.string(), z.number()).optional(),
-  processing_rate: z.number().optional(),
-  estimated_time_remaining: z.number().optional(),
-});
+// Legacy type exports for backward compatibility
+export type BaseMessage = SocketMessage;
+export type JobAssignment = JobAssignmentData;
+export type ProgressDataType = ProgressData;
+export type ErrorContextType = ErrorContext;
+export type CrawlerMessage = CrawlerToWebAppMessage;
+export type WebAppMessage = WebAppToCrawlerMessage;
 
-// Job assignment data (mirrored from crawler)
-export const JobAssignmentSchema = z.object({
-  job_id: z.string(),
-  job_type: z.enum(['discover_namespaces', 'crawl_user', 'crawl_group', 'crawl_project']),
-  entity_id: z.string().optional(),
-  namespace_path: z.string().optional(),
-  gitlab_host: z.string(),
-  access_token: z.string(),
-  priority: z.number().default(1),
-  resume: z.boolean().default(false),
-});
-
-// Error context data (mirrored from crawler)
-export const ErrorContextSchema = z.object({
-  error_type: z.string(),
-  error_message: z.string(),
-  stack_trace: z.string().optional(),
-  request_details: z.object({
-    method: z.string().optional(),
-    url: z.string().optional(),
-    status_code: z.number().optional(),
-    response_headers: z.record(z.string(), z.string()).optional(),
-  }).optional(),
-  retry_count: z.number().default(0),
-  is_recoverable: z.boolean().default(true),
-});
-
-// Discovered job schema (from jobs_discovered message)
-export const DiscoveredJobSchema = z.object({
-  job_type: z.enum(['discover_namespaces', 'crawl_user', 'crawl_group', 'crawl_project']),
-  entity_id: z.string(),
-  namespace_path: z.string(),
-  entity_name: z.string(),
-  priority: z.number().default(1),
-  estimated_size: z.record(z.string(), z.number()).optional(),
-});
-
-// Discovery summary schema
-export const DiscoverySummarySchema = z.object({
-  total_users: z.number().optional(),
-  total_groups: z.number().optional(),
-  total_projects: z.number().optional(),
-  hierarchy_depth: z.number().optional(),
-});
-
-// Simple job schema (mirrored from crawler unified-types.ts)
-export const SimpleJobSchema = z.object({
-  id: z.string(),
-  entityType: z.enum([
-    'project',
-    'group',
-    'user',
-    'issue',
-    'merge_request',
-    'commit',
-    'branch',
-    'pipeline',
-    'release',
-    'groupMilestones',
-    'epics',
-    'jobs',
-    'mergeRequestNotes'
-  ]),
-  entityId: z.string(),
-  gitlabUrl: z.string(),
-  accessToken: z.string(),
-  resumeState: z.object({
-    lastEntityId: z.string().optional(),
-    currentPage: z.number().optional(),
-    entityType: z.string().optional(),
-  }).optional(),
-});
-
-// Discovery data schema (mirrored from crawler unified-types.ts)
-export const DiscoveryDataSchema = z.object({
-  entityType: z.enum([
-    'project',
-    'group',
-    'user',
-    'issue',
-    'merge_request',
-    'commit',
-    'branch',
-    'pipeline',
-    'release',
-    'groupMilestones',
-    'epics',
-    'jobs',
-    'mergeRequestNotes'
-  ]),
-  entities: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    path: z.string(),
-    parentId: z.string().optional(),
-  })),
-});
-
-// Crawler → Web App Messages (mirrored from crawler)
-export const HeartbeatMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('heartbeat'),
-  data: z.object({
-    activeJobs: z.number(), // Match crawler's camelCase
-    totalProcessed: z.number(), // Match crawler's camelCase
-    systemStatus: z.enum(['idle', 'discovering', 'processing', 'error']), // Match crawler's values
-    memoryUsage: z.any().optional(), // Match crawler's optional field
-    uptime: z.number().optional(), // Match crawler's optional field
-  }),
-});
-
-export const JobStartedMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('job_started'),
-  data: z.object({
-    entityType: z.string().optional(), // Match crawler's camelCase
-    entityId: z.string().optional(), // Match crawler's camelCase
-  }),
-});
-
-export const JobProgressMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('job_progress'),
-  data: z.object({
-    stage: z.enum(['discovering', 'fetching', 'completed', 'failed']), // Match crawler's ProgressData
-    entityType: z.enum([
-      'project',
-      'group',
-      'user',
-      'issue',
-      'merge_request',
-      'commit',
-      'branch',
-      'pipeline',
-      'release',
-      'groupMilestones',
-      'epics',
-      'jobs',
-      'mergeRequestNotes'
-    ]),
-    processed: z.number(),
-    total: z.number().optional(),
-    message: z.string().optional(),
-    resumeState: z.object({
-      lastEntityId: z.string().optional(),
-      currentPage: z.number().optional(),
-      entityType: z.string().optional(),
-    }).optional(),
-  }),
-});
-
-export type ProgressDataType = z.infer<typeof ProgressDataSchema>;
-
-export const JobCompletedMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('job_completed'),
-  data: z.object({
-    success: z.boolean(), // Match crawler's CompletionData
-    finalCounts: z.record(z.string(), z.number()), // Match crawler's CompletionData
-    message: z.string().optional(), // Match crawler's CompletionData
-    outputFiles: z.array(z.string()).optional(), // Match crawler's CompletionData
-  }),
-});
-
-export type ErrorContextType = z.infer<typeof ErrorContextSchema>
-
-export const JobFailedMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('job_failed'),
-  data: z.object({
-    error: z.string(), // Match crawler's FailureData
-    errorType: z.string().optional(), // Match crawler's FailureData
-    isRecoverable: z.boolean(), // Match crawler's FailureData
-    resumeState: z.object({
-      lastEntityId: z.string().optional(),
-      currentPage: z.number().optional(),
-      entityType: z.string().optional(),
-    }).optional(), // Match crawler's FailureData
-    partialCounts: z.record(z.string(), z.number()).optional(), // Match crawler's FailureData
-  }),
-});
-
-export const JobsDiscoveredMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('jobs_discovered'),
-  jobId: z.string(), // Required for discovery messages
-  data: z.object({
-    discovered_jobs: z.array(DiscoveredJobSchema),
-    discovery_summary: DiscoverySummarySchema,
-  }),
-});
-
-export const TokenRefreshRequestMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('token_refresh_request'),
-  data: z.object({
-    current_token_expired: z.boolean().optional(),
-    last_successful_request: z.string().optional(),
-    error_details: z.string().optional(),
-  }),
-});
-
-// Job request message schema (crawler sends this to request jobs)
-export const JobRequestMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('job_request'),
-  data: z.object({}), // Empty data as per crawler implementation
-});
-
-// Discovery message schema (crawler sends during entity discovery)
-export const DiscoveryMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('discovery'),
-  data: DiscoveryDataSchema,
-});
-
-// Web App → Crawler Messages (mirrored from crawler)
-export const JobAssignmentMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('job_assignment'),
-  data: JobAssignmentSchema,
-});
-
-// Job response message schema (backend sends jobs to crawler)
-export const JobResponseMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('job_response'),
-  data: z.object({
-    jobs: z.array(SimpleJobSchema),
-  }),
-});
-
-export const TokenRefreshResponseMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('token_refresh_response'),
-  data: z.object({
-    accessToken: z.string(), // Match crawler expectation for camelCase
-    expiresAt: z.string().optional(), // Match crawler expectation for camelCase
-    refreshSuccessful: z.boolean(), // Match crawler expectation for camelCase
-  }),
-});
-
-export const ShutdownMessageSchema = BaseMessageSchema.extend({
-  type: z.literal('shutdown'),
-  data: z.object({
-    graceful: z.boolean().default(true),
-    timeout_seconds: z.number().default(30),
-    reason: z.string().optional(),
-  }),
-});
-
-// Union types for message validation
-export const CrawlerMessageSchema = z.discriminatedUnion('type', [
-  HeartbeatMessageSchema,
-  JobStartedMessageSchema,
-  JobProgressMessageSchema,
-  JobCompletedMessageSchema,
-  JobFailedMessageSchema,
-  JobsDiscoveredMessageSchema,
-  TokenRefreshRequestMessageSchema,
-  JobRequestMessageSchema,
-  DiscoveryMessageSchema,
-]);
-
-export const WebAppMessageSchema = z.discriminatedUnion('type', [
-  JobAssignmentMessageSchema,
-  TokenRefreshResponseMessageSchema,
-  ShutdownMessageSchema,
-  JobResponseMessageSchema,
-]);
-
-// Web application specific extensions
-export const WebAppJobAssignmentDataSchema = JobAssignmentSchema.extend({
+// Web application specific extensions (if any are needed)
+export const WebAppJobAssignmentDataSchema = JobAssignmentDataSchema.extend({
   // Additional web app specific fields
   account_id: z.string(),
   user_id: z.string().optional(),
-  provider: z.enum(['gitlab-onprem', 'gitlab-cloud']),
+  provider: TokenProviderSchema,
   web_app_job_id: z.string(), // Maps to database job.id
   created_by_user_id: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -314,7 +200,7 @@ export const WebAppProgressUpdateSchema = z.object({
 export const WebAppJobStatusSchema = z.object({
   web_app_job_id: z.string(),
   crawler_job_id: z.string().optional(),
-  status: z.enum(['queued', 'assigned', 'running', 'paused', 'completed', 'failed', 'cancelled']),
+  status: JobStatusSchema,
   started_at: z.string().optional(),
   finished_at: z.string().optional(),
   error_message: z.string().optional(),
@@ -328,7 +214,7 @@ export const WebAppErrorContextSchema = ErrorContextSchema.extend({
   crawler_job_id: z.string().optional(),
   account_id: z.string(),
   user_id: z.string().optional(),
-  provider: z.enum(['gitlab-onprem', 'gitlab-cloud']),
+  provider: TokenProviderSchema,
   requires_user_action: z.boolean().default(false),
   admin_notification_sent: z.boolean().default(false),
 });
@@ -341,35 +227,7 @@ export const SocketConnectionEventSchema = z.object({
   details: z.record(z.string(), z.any()).optional(),
 });
 
-// Type exports
-export type BaseMessage = z.infer<typeof BaseMessageSchema>;
-export type ProgressData = z.infer<typeof ProgressDataSchema>;
-export type JobAssignment = z.infer<typeof JobAssignmentSchema>;
-export type ErrorContext = z.infer<typeof ErrorContextSchema>;
-export type DiscoveredJob = z.infer<typeof DiscoveredJobSchema>;
-export type DiscoverySummary = z.infer<typeof DiscoverySummarySchema>;
-
-export type SimpleJob = z.infer<typeof SimpleJobSchema>;
-export type DiscoveryData = z.infer<typeof DiscoveryDataSchema>;
-
-export type HeartbeatMessage = z.infer<typeof HeartbeatMessageSchema>;
-export type JobStartedMessage = z.infer<typeof JobStartedMessageSchema>;
-export type JobProgressMessage = z.infer<typeof JobProgressMessageSchema>;
-export type JobCompletedMessage = z.infer<typeof JobCompletedMessageSchema>;
-export type JobFailedMessage = z.infer<typeof JobFailedMessageSchema>;
-export type JobsDiscoveredMessage = z.infer<typeof JobsDiscoveredMessageSchema>;
-export type TokenRefreshRequestMessage = z.infer<typeof TokenRefreshRequestMessageSchema>;
-export type JobRequestMessage = z.infer<typeof JobRequestMessageSchema>;
-export type DiscoveryMessage = z.infer<typeof DiscoveryMessageSchema>;
-
-export type JobAssignmentMessage = z.infer<typeof JobAssignmentMessageSchema>;
-export type TokenRefreshResponseMessage = z.infer<typeof TokenRefreshResponseMessageSchema>;
-export type ShutdownMessage = z.infer<typeof ShutdownMessageSchema>;
-export type JobResponseMessage = z.infer<typeof JobResponseMessageSchema>;
-
-export type CrawlerMessage = z.infer<typeof CrawlerMessageSchema>;
-export type WebAppMessage = z.infer<typeof WebAppMessageSchema>;
-
+// Web app specific type exports
 export type WebAppJobAssignmentData = z.infer<typeof WebAppJobAssignmentDataSchema>;
 export type WebAppProgressUpdate = z.infer<typeof WebAppProgressUpdateSchema>;
 export type WebAppJobStatus = z.infer<typeof WebAppJobStatusSchema>;
@@ -411,28 +269,3 @@ export interface CrawlerCommand {
   created_at: string;
   expires_at?: string;
 }
-
-// Message validation utilities
-export const validateCrawlerMessage = (message: unknown): MessageProcessingResult<CrawlerMessage> => {
-  try {
-    const parsed = CrawlerMessageSchema.parse(message);
-    return { success: true, data: parsed };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown validation error' 
-    };
-  }
-};
-
-export const validateWebAppMessage = (message: unknown): MessageProcessingResult<WebAppMessage> => {
-  try {
-    const parsed = WebAppMessageSchema.parse(message);
-    return { success: true, data: parsed };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown validation error' 
-    };
-  }
-};

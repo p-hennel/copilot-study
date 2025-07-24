@@ -3,6 +3,24 @@ export * from './database';
 export * from './config';
 export * from './connection';
 
+// Import shared types from lib-common
+export type { 
+  EntityType,
+  GitLabTaskType,
+  SocketMessage,
+  MessageType,
+  JobStatus,
+  TokenProvider,
+  HeartbeatData,
+  ProgressData as SharedProgressData,
+  CompletionData,
+  FailureData,
+  DiscoveryData,
+  TokenRefreshResponseData,
+  JobAssignmentData,
+  MessageProcessingResult as SharedMessageProcessingResult
+} from '@copima/lib-common';
+
 // Re-export commonly used types with better names
 export type { 
   SocketServerConfig,
@@ -49,18 +67,4 @@ export type {
   ConnectionStateOperations
 } from './database';
 
-export type EntityType =
-  | 'areas'      // Special type for GROUP_PROJECT_DISCOVERY (discovers both groups and projects)
-  | 'project'
-  | 'group'
-  | 'user'
-  | 'issue'
-  | 'merge_request'
-  | 'commit'
-  | 'branch'
-  | 'pipeline'
-  | 'release'
-  | 'groupMilestones'
-  | 'epics'
-  | 'jobs'
-  | 'mergeRequestNotes';
+// EntityType is now imported from @copima/lib-common above

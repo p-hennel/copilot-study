@@ -8,6 +8,7 @@ import { JobStatus, CrawlCommand, TokenProvider, AreaType } from '../../../types
 import type { WebAppJobAssignmentData } from '../types/messages.js';
 import { createJobId, formatTimestamp } from '../utils/index.js';
 import { getLogger } from '$lib/logging';
+import { crawlCommandToTaskType } from '@copima/lib-common';
 
 const logger = getLogger(['socket-discovery-handler']);
 

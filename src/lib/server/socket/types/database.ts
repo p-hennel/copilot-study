@@ -1,4 +1,4 @@
-import type { AreaType, CrawlCommand, JobStatus, TokenProvider } from '$lib/types';
+import type { AreaType, CrawlCommand, JobStatus, TokenProvider } from '@copima/lib-common';
 import type { 
   WebAppJobAssignmentData, 
   WebAppProgressUpdate, 

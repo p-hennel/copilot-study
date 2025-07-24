@@ -87,7 +87,7 @@ const _getUserFromJira = async (url: string, tokens: OAuth2Tokens): Promise<User
   return getJiraAccountInfo(cloudId, headers, accountId, 2);
 };
 
-const gitlabOnPrem = AppSettings().auth.providers.gitlab?.baseUrl?.startsWith("http://") ?
+const gitlabOnPrem = !AppSettings().auth.providers.gitlab?.discoveryUrl ?
   {
     authorizationUrl: AppSettings().auth.providers.gitlab.authorizationUrl ?? undefined,
     tokenUrl: AppSettings().auth.providers.gitlab.tokenUrl ?? undefined,
@@ -180,20 +180,6 @@ export const auth = betterAuth({
           redirectURI: AppSettings().auth.providers.jiracloud.redirectURI,
           getUserInfo: getUserFromJiraCloud
         },
-        {
-          providerId: "jiralocal",
-          clientId: AppSettings().auth.providers.jira.clientId!, // Add non-null assertion
-          clientSecret: AppSettings().auth.providers.jira.clientSecret!, // Add non-null assertion
-          authorizationUrl: AppSettings().auth.providers.jira.authorizationUrl,
-          authorizationUrlParams: AppSettings().auth.providers.jira.authorizationUrlParams,
-          tokenUrl: AppSettings().auth.providers.jira.tokenUrl,
-          scopes: AppSettings().auth.providers.jira.scopes,
-          redirectURI: AppSettings().auth.providers.jira.redirectURI,
-          //`${jiraBaseURL}/plugins/servlet/oauth/access-token`,
-          //'RSA-SHA1',
-          //discoveryUrl: `${jiraBaseURL}/.well-known/openid-configuration`,
-          getUserInfo: getUserFromJira
-        }
       ]
     })
   ],

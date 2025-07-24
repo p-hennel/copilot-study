@@ -3,6 +3,9 @@ import { area, area_authorization } from '$lib/server/db/base-schema';
 import { AreaType } from '../../../types.js';
 import type { DatabaseManager } from './database-manager.js';
 import type { Area } from '../types/database.js';
+import { getLogger } from '$lib/logging';
+
+const logger = getLogger(['area-repository']);
 
 /**
  * Database operations for Area table management
@@ -257,6 +260,8 @@ export class AreaRepository {
 }>): Promise<Area[]> {
   return await this.dbManager.withTransaction(async (db) => {
     const results: Area[] = [];
+    logger.info(`Starting bulkUpsertAreas with ${areas.length} areas`);
+    
     // Build OR conditions for (gitlab_id, type) pairs
     const areaPairs = areas.map(a =>
       and(eq(area.gitlab_id, a.gitlabId), eq(area.type, a.type))
@@ -268,6 +273,8 @@ export class AreaRepository {
         .from(area)
         .where(areaPairs.length === 1 ? areaPairs[0] : (or as any)(...areaPairs));
     }
+    
+    logger.info(`Found ${existingAreas.length} existing areas out of ${areas.length} total`);
 
     // Map by composite key "gitlab_id::type"
     const areaKeyMap = new Map<string, any>();
@@ -281,49 +288,98 @@ export class AreaRepository {
     for (const areaData of areas) {
       const key = `${areaData.gitlabId}::${areaData.type}`;
       if (seenKeys.has(key)) {
-        // Skip duplicate in input batch
+        logger.debug(`Skipping duplicate area in batch: ${key}`);
         continue;
       }
       seenKeys.add(key);
 
       const existingArea = areaKeyMap.get(key);
 
-      if (existingArea) {
-        // Always update the existing area (by gitlabId and type) with new data
-        const [updatedArea] = await db
-          .update(area)
-          .set({
-            full_path: areaData.fullPath,
-            name: areaData.name,
-            // type: areaData.type, // type should not change
-            // Optionally update created_at if you want to track last update
-          })
-          .where(
-            and(
-              eq(area.gitlab_id, areaData.gitlabId),
-              eq(area.type, areaData.type)
+      try {
+        if (existingArea) {
+          // Always update the existing area (by gitlabId and type) with new data
+          logger.debug(`Updating existing area: ${key} with full_path: ${areaData.fullPath}`);
+          const [updatedArea] = await db
+            .update(area)
+            .set({
+              full_path: areaData.fullPath,
+              name: areaData.name,
+              // type: areaData.type, // type should not change
+              // Optionally update created_at if you want to track last update
+            })
+            .where(
+              and(
+                eq(area.gitlab_id, areaData.gitlabId),
+                eq(area.type, areaData.type)
+              )
             )
-          )
-          .returning();
-        if (updatedArea)
-          results.push(updatedArea);
-      } else {
-        // Insert new area
-        const [newArea] = await db
-          .insert(area)
-          .values({
-            full_path: areaData.fullPath,
-            gitlab_id: areaData.gitlabId,
-            name: areaData.name,
-            type: areaData.type,
-            created_at: new Date()
-          })
-          .returning();
-        if (newArea)
-          results.push(newArea);
+            .returning();
+          if (updatedArea) {
+            results.push(updatedArea);
+            logger.info(`Successfully updated area: ${key}`);
+          }
+        } else {
+          // Check if full_path already exists (since it's the primary key)
+          const [existingByPath] = await db
+            .select()
+            .from(area)
+            .where(eq(area.full_path, areaData.fullPath))
+            .limit(1);
+          
+          if (existingByPath) {
+            logger.warn(`Area with full_path "${areaData.fullPath}" already exists with different gitlab_id. Current: ${existingByPath.gitlab_id}, New: ${areaData.gitlabId}`);
+            // Update the existing area with new gitlab_id if needed
+            if (existingByPath.gitlab_id !== areaData.gitlabId || existingByPath.type !== areaData.type) {
+              logger.info(`Updating area with full_path: ${areaData.fullPath} to new gitlab_id: ${areaData.gitlabId}`);
+              const [updatedArea] = await db
+                .update(area)
+                .set({
+                  gitlab_id: areaData.gitlabId,
+                  name: areaData.name,
+                  type: areaData.type
+                })
+                .where(eq(area.full_path, areaData.fullPath))
+                .returning();
+              if (updatedArea) {
+                results.push(updatedArea);
+                logger.info(`Successfully updated area by full_path: ${areaData.fullPath}`);
+              }
+            } else {
+              // Area exists with same data, just add to results
+              results.push(existingByPath);
+              logger.debug(`Area already exists with same data: ${areaData.fullPath}`);
+            }
+          } else {
+            // Insert new area
+            logger.info(`Inserting new area: ${key} with full_path: ${areaData.fullPath}`);
+            const [newArea] = await db
+              .insert(area)
+              .values({
+                full_path: areaData.fullPath,
+                gitlab_id: areaData.gitlabId,
+                name: areaData.name,
+                type: areaData.type,
+                created_at: new Date()
+              })
+              .returning();
+            if (newArea) {
+              results.push(newArea);
+              logger.info(`Successfully inserted new area: ${key}`);
+            }
+          }
+        }
+      } catch (error) {
+        logger.error(`Error processing area ${key}:`, { 
+          error, 
+          areaData,
+          errorMessage: error instanceof Error ? error.message : String(error)
+        });
+        // Continue processing other areas instead of failing the entire batch
+        // This prevents one failed insert from blocking all other areas
       }
     }
 
+    logger.info(`Completed bulkUpsertAreas: processed ${results.length} areas successfully`);
     return results;
   });
 }

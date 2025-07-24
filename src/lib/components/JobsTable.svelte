@@ -99,9 +99,12 @@
   let showFilters = $state(false);
   let itemsPerPageOptions = [10, 25, 50, 100];
   
+  // Track if user has interacted with controls (so we ignore props and use our fetched data)
+  let userHasInteracted = $state(false);
+
   // Derived values for current page
-  const jobs = $derived(props.jobs ?? jobsData?.data ?? []);
-  const pagination = $derived(props.pagination ?? jobsData?.pagination);
+  const jobs = $derived(userHasInteracted ? (jobsData?.data ?? []) : (props.jobs ?? jobsData?.data ?? []));
+  const pagination = $derived(userHasInteracted ? jobsData?.pagination : (props.pagination ?? jobsData?.pagination));
   const totalItems = $derived(pagination?.totalCount || 0);
   const totalPages = $derived(pagination?.totalPages || 0);
   const startIndex = $derived(pagination ? (pagination.page - 1) * pagination.limit : 0);
@@ -276,6 +279,7 @@
   const debouncedSearch = () => {
     if (searchTimeout) clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
+      userHasInteracted = true;
       queryParams.page = 1; // Reset to page 1 on search
       const params = buildQueryParams();
       queryParams = { ...params };
@@ -286,6 +290,7 @@
   const debouncedDateSearch = () => {
     if (dateSearchTimeout) clearTimeout(dateSearchTimeout);
     dateSearchTimeout = setTimeout(() => {
+      userHasInteracted = true;
       queryParams.page = 1; // Reset to page 1 on search
       const params = buildQueryParams();
       queryParams = { ...params };
@@ -295,6 +300,7 @@
 
   // Filter change handlers
   const handleFilterChange = () => {
+    userHasInteracted = true;
     queryParams.page = 1; // Reset to page 1 on filter change
     const params = buildQueryParams();
     queryParams = { ...params };
@@ -303,6 +309,7 @@
 
   // Sort change handler
   const handleSort = (field: string) => {
+    userHasInteracted = true;
     if (queryParams.sortBy === field) {
       queryParams.sortOrder = queryParams.sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
@@ -317,6 +324,7 @@
 
   // Clear all filters
   const clearAllFilters = () => {
+    userHasInteracted = true;
     searchText = '';
     dateSearchText = '';
     selectedCommands = [];
@@ -363,6 +371,7 @@
 
   // Handle page changes
   const handlePageChange = (newPage: number) => {
+    userHasInteracted = true;
     queryParams.page = newPage;
     const params = buildQueryParams();
     queryParams = { ...params };
@@ -372,6 +381,7 @@
   // Handle items per page change
   const handleItemsPerPageChange = (val: string | undefined = undefined) => {
     if (val) {
+      userHasInteracted = true;
       queryParams.limit = parseInt(val, 10);
       queryParams.page = 1;
       const params = buildQueryParams();
@@ -614,6 +624,7 @@
           if (value) {
             queryParams.dateField = value as any;
             if (dateSearchText.trim()) {
+              userHasInteracted = true;
               handleFilterChange();
             }
           }
@@ -643,6 +654,7 @@
         onValueChange={(value) => {
           console.log('Sort field changed to:', value);
           if (value) {
+            userHasInteracted = true;
             queryParams.sortBy = value as any;
             queryParams.page = 1;
             const params = buildQueryParams();
@@ -667,6 +679,7 @@
         onValueChange={(value) => {
           console.log('Sort order changed to:', value);
           if (value) {
+            userHasInteracted = true;
             queryParams.sortOrder = value as any;
             queryParams.page = 1;
             const params = buildQueryParams();

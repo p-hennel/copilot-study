@@ -1,4 +1,5 @@
-import type { EntityType, JobProgress } from ".";
+import type { EntityType } from '@copima/lib-common';
+import type { JobProgress } from ".";
 
 export interface CompletionData {
   success: boolean;

@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS `area` (
 	`created_at` integer DEFAULT '"2025-07-22T17:30:29.165Z"' NOT NULL
 );
 --> statement-breakpoint
+DROP INDEX IF EXISTS `area_gitlab_id_unique`;--> statement-breakpoint
 DROP INDEX IF EXISTS `area_gitlab_id_type_unique`;--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS `area_gitlab_id_type_unique` ON `area` (`gitlab_id`,`type`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `area_authorization` (

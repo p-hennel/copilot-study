@@ -48,6 +48,7 @@
   let itemsPerPage = $state(25);
   let itemsPerPageOptions = [10, 25, 50, 100];
   let loading = $state(false);
+  let recrawlLoading = $state<Record<string, boolean>>({});
   let areasData = $state<PaginatedAreasResponse | null>(null);
 
   // Fetch areas data from API
@@ -101,6 +102,46 @@
     fetchAreas(1, itemsPerPage);
   };
 
+  // Handle re-crawl action
+  const handleRecrawl = async (fullPath: string) => {
+    try {
+      recrawlLoading[fullPath] = true;
+      const token = (await authClient.getSession())?.data?.session.token;
+      if (!token) {
+        await goto("/admin/sign-in");
+        throw new Error("No authentication token");
+      }
+
+      const response = await fetch(`/api/admin/areas/recrawl`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ fullPath })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to re-crawl area: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      toast.success("Re-crawl initiated", {
+        description: `${result.jobsCreated} jobs created for ${fullPath}`
+      });
+
+      // Refresh the areas data to show updated job counts
+      await fetchAreas(currentPage, itemsPerPage);
+    } catch (error) {
+      console.error("Error re-crawling area:", error);
+      toast.error("Failed to re-crawl area", {
+        description: error instanceof Error ? error.message : "An unknown error occurred"
+      });
+    } finally {
+      recrawlLoading[fullPath] = false;
+    }
+  };
+
   // Derived values for display
   const areas = $derived(areasData?.data || []);
   const pagination = $derived(areasData?.pagination);
@@ -126,6 +167,7 @@
         >{m["admin.dashboard.areasTable.header.countAccounts"]()}</Table.Head
       >
       <Table.Head class="text-end">{m["admin.dashboard.areasTable.header.countJobs"]()}</Table.Head>
+      <Table.Head class="text-center">Actions</Table.Head>
     </Table.Row>
   </Table.Header>
   <Table.Body>
@@ -156,6 +198,22 @@
         </Table.Cell>
         <Table.Cell class="text-end">{area.countAccounts}</Table.Cell>
         <Table.Cell class="text-end">{area.countJobs}</Table.Cell>
+        <Table.Cell class="text-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onclick={() => handleRecrawl(area.fullPath)}
+            disabled={loading || recrawlLoading[area.fullPath]}
+            class="gap-1"
+          >
+            {#if recrawlLoading[area.fullPath]}
+              <Loader2 class="h-3 w-3 animate-spin" />
+            {:else}
+              <Repeat class="h-3 w-3" />
+            {/if}
+            Re-crawl
+          </Button>
+        </Table.Cell>
       </Table.Row>
     {/each}
   </Table.Body>

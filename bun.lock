@@ -42,6 +42,7 @@
         "drizzle-orm": "^0.44.3",
         "eslint-plugin-drizzle": "^0.2.3",
         "export-to-csv": "^1.4.0",
+        "@copima/lib-common": "file:../lib-common",
         "formsnap": "^2.0.1",
         "framesync": "^6.1.2",
         "graphql": "^16.11.0",
@@ -247,6 +248,8 @@
     "@clack/core": ["@clack/core@0.4.2", "", { "dependencies": { "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-NYQfcEy8MWIxrT5Fj8nIVchfRFA26yYKJcvBS7WlUIlw2OmQOY9DhGGXMovyI5J5PpxrCPGkgUi207EBrjpBvg=="],
 
     "@clack/prompts": ["@clack/prompts@0.10.1", "", { "dependencies": { "@clack/core": "0.4.2", "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-Q0T02vx8ZM9XSv9/Yde0jTmmBQufZhPJfYAg2XrrrxWWaZgq1rr8nU8Hv710BQ1dhoP8rtY7YUdpGej2Qza/cw=="],
+
+    "@copima/lib-common": ["@copima/lib-common@file:../lib-common", { "devDependencies": { "@types/bun": "latest", "typescript": "^5.0.0" }, "peerDependencies": { "zod": "^3.23.0" } }],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 

@@ -3,7 +3,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { job } from '$lib/server/db/base-schema';
-import { JobStatus } from '$lib/types';
+import { JobStatus } from '@copima/lib-common';
 import { getLogger } from '@logtape/logtape';
 
 

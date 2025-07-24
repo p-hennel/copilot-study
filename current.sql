@@ -1,3 +1,4 @@
+/*
 CREATE TABLE `account` (
 	`id` text PRIMARY KEY NOT NULL,
 	`account_id` text NOT NULL,
@@ -151,3 +152,4 @@ CREATE TABLE `verification` (
 	`updated_at` integer
 );
 
+*/

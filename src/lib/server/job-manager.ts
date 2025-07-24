@@ -11,6 +11,8 @@ import { AreaType, CrawlCommand, JobStatus, TokenProvider } from "$lib/types";
 import type { JobInsert } from "$lib/server/db/base-schema"; // Corrected import path for Job
 import { and, desc, eq, or } from "drizzle-orm"; // Removed isNull
 import { monotonicFactory } from "ulid";
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
 const logger = getLogger(["backend", "job-manager"]);
 const ulid = monotonicFactory();
@@ -243,30 +245,203 @@ export async function handleNewAuthorization(
 }
 
 /**
- * Maps area types and discovered data to actual crawler JobType enum values
+ * Maps area types to comprehensive crawler command sets
+ * This ensures all possible GitLab data is crawled for each discovered area
  */
-const getJobTypesForArea = (areaType: AreaType): CrawlCommand[] => {
+export const getCrawlCommandsForAreaType = (areaType: AreaType): CrawlCommand[] => {
   if (areaType === AreaType.group) {
     return [
-      CrawlCommand.group, // Maps to GROUP_DETAILS in crawler
-      CrawlCommand.groupMembers, // Maps to GROUP_MEMBERS in crawler
-      CrawlCommand.groupProjects, // Maps to GROUP_PROJECTS in crawler
-      CrawlCommand.groupIssues, // Maps to GROUP_ISSUES in crawler
+      // Group discovery and metadata
+      CrawlCommand.group,
+      CrawlCommand.groupMembers,
+      CrawlCommand.groupProjects,
+      CrawlCommand.groupSubgroups,
+      CrawlCommand.groupIssues,
+      CrawlCommand.epics,
+      CrawlCommand.epicIssues,
+      CrawlCommand.epicNotes,
+      CrawlCommand.epicDiscussions,
+      CrawlCommand.groupCustomAttributes,
+      CrawlCommand.groupAccessRequests,
+      CrawlCommand.groupVariables,
+      CrawlCommand.groupLabels,
+      CrawlCommand.groupBadges,
+      CrawlCommand.groupDeployTokens,
+      CrawlCommand.groupIssueBoards,
+      CrawlCommand.groupMilestones
     ];
   }
 
   if (areaType === AreaType.project) {
     return [
-      CrawlCommand.project, // Maps to PROJECT_DETAILS in crawler
-      CrawlCommand.issues, // Maps to PROJECT_ISSUES in crawler
-      CrawlCommand.mergeRequests, // Maps to PROJECT_MERGE_REQUESTS in crawler
-      CrawlCommand.branches, // Maps to PROJECT_BRANCHES in crawler
-      CrawlCommand.pipelines, // Maps to PROJECT_PIPELINES in crawler
+      // Project metadata and configuration
+      CrawlCommand.project,
+      CrawlCommand.projectMembers,
+      CrawlCommand.projectVariables,
+      CrawlCommand.projectCustomAttributes,
+      CrawlCommand.projectStatistics,
+      CrawlCommand.projectBadges,
+      CrawlCommand.projectTemplates,
+      CrawlCommand.projectAccessRequests,
+      CrawlCommand.projectHooks,
+      CrawlCommand.projectIssueBoards,
+      CrawlCommand.freezePeriods,
+      
+      // Issues and project management
+      CrawlCommand.issues,
+      
+      // Repository data
+      CrawlCommand.commits,
+      CrawlCommand.commitDiscussions,
+      CrawlCommand.branches,
+      CrawlCommand.tags,
+      
+      // Merge requests
+      CrawlCommand.mergeRequests,
+      CrawlCommand.mergeRequestNotes,
+      CrawlCommand.mergeRequestDiscussions,
+      CrawlCommand.mergeRequestAwardEmojis,
+      
+      // CI/CD and deployments
+      CrawlCommand.pipelines,
+      CrawlCommand.pipelineSchedules,
+      CrawlCommand.jobs,
+      CrawlCommand.deployments,
+      CrawlCommand.environments,
+      CrawlCommand.pipelineScheduleVariables,
+      CrawlCommand.pipelineTriggers,
+      
+      // Security and packages
+      CrawlCommand.vulnerabilities,
+      CrawlCommand.protectedBranches,
+      CrawlCommand.protectedTags,
+      CrawlCommand.deployKeys,
+      CrawlCommand.containerRegistryRepositories,
+      CrawlCommand.packages,
+      
+      // Other project data
+      CrawlCommand.projectSnippets,
+      CrawlCommand.pagesDomains
     ];
   }
 
   return [];
 };
+
+/**
+ * Pre-creates the folder structure and empty .jsonl files for a new area.
+ * This ensures consistent data organization and makes debugging easier.
+ * @param areaPath The full path of the area (e.g., "group-01", "group-01/test")
+ * @param areaType The type of area (group or project)
+ */
+async function preCreateAreaStructure(areaPath: string, areaType: AreaType): Promise<void> {
+  try {
+    const dataRoot = process.env.DATA_ROOT || './data';
+    const areaDir = join(dataRoot, 'archive', areaPath);
+    
+    // Ensure the area directory exists
+    await fs.mkdir(areaDir, { recursive: true });
+    logger.info(`📁 Pre-created directory structure for ${areaType}: ${areaPath}`);
+    
+    // Define expected files based on area type
+    const expectedFiles: string[] = [];
+    
+    if (areaType === AreaType.group) {
+      // Group-specific files based on getCrawlCommandsForAreaType
+      expectedFiles.push(
+        'groups.jsonl',         // group metadata
+        'groupMembers.jsonl',   // group members (users)
+        'groupProjects.jsonl',  // projects in group
+        'groupSubgroups.jsonl', // subgroups
+        'groupIssues.jsonl',    // group-level issues
+        'epics.jsonl',          // epics
+        'epicIssues.jsonl',     // epic issues
+        'epicNotes.jsonl',      // epic notes
+        'epicDiscussions.jsonl', // epic discussions
+        'groupCustomAttributes.jsonl',
+        'groupAccessRequests.jsonl',
+        'groupVariables.jsonl',
+        'groupLabels.jsonl',
+        'groupBadges.jsonl',
+        'groupDeployTokens.jsonl',
+        'groupIssueBoards.jsonl',
+        'groupMilestones.jsonl'
+      );
+    } else if (areaType === AreaType.project) {
+      // Project-specific files based on getCrawlCommandsForAreaType
+      expectedFiles.push(
+        // Project metadata
+        'projects.jsonl',
+        'projectMembers.jsonl',
+        'projectVariables.jsonl',
+        'projectCustomAttributes.jsonl',
+        'projectStatistics.jsonl',
+        'projectBadges.jsonl',
+        'projectTemplates.jsonl',
+        'projectAccessRequests.jsonl',
+        'projectHooks.jsonl',
+        'projectIssueBoards.jsonl',
+        'freezePeriods.jsonl',
+        
+        // Issues and project management
+        'issues.jsonl',
+        
+        // Repository data
+        'commits.jsonl',
+        'commitDiscussions.jsonl',
+        'branches.jsonl',
+        'tags.jsonl',
+        
+        // Merge requests
+        'mergeRequests.jsonl',
+        'mergeRequestNotes.jsonl',
+        'mergeRequestDiscussions.jsonl',
+        'mergeRequestAwardEmojis.jsonl',
+        
+        // CI/CD and deployments
+        'pipelines.jsonl',
+        'pipelineSchedules.jsonl',
+        'jobs.jsonl',
+        'deployments.jsonl',
+        'environments.jsonl',
+        'pipelineScheduleVariables.jsonl',
+        'pipelineTriggers.jsonl',
+        
+        // Security and packages
+        'vulnerabilities.jsonl',
+        'protectedBranches.jsonl',
+        'protectedTags.jsonl',
+        'deployKeys.jsonl',
+        'containerRegistryRepositories.jsonl',
+        'packages.jsonl',
+        
+        // Other project data
+        'projectSnippets.jsonl',
+        'pagesDomains.jsonl'
+      );
+    }
+    
+    // Create empty .jsonl files for all expected data types
+    for (const fileName of expectedFiles) {
+      const filePath = join(areaDir, fileName);
+      try {
+        // Only create if file doesn't exist to avoid overwriting existing data
+        await fs.access(filePath);
+        logger.debug(`📄 File already exists, skipping: ${fileName}`);
+      } catch {
+        // File doesn't exist, create it
+        await fs.writeFile(filePath, '', 'utf8');
+        logger.debug(`📄 Pre-created empty file: ${fileName}`);
+      }
+    }
+    
+    logger.info(`✅ Pre-created ${expectedFiles.length} empty .jsonl files for ${areaType} area: ${areaPath}`);
+    
+  } catch (error) {
+    logger.error(`❌ Failed to pre-create structure for ${areaPath}:`, { error });
+    // Don't throw - pre-creation failure shouldn't block area discovery
+  }
+}
 
 /**
  * Handles creation of jobs when a new area (group or project) is created/discovered.
@@ -303,6 +478,9 @@ export async function handleNewArea(
         name: areaPath.split('/').pop(), // Extract name from path
         type: areaType
       });
+      
+      // Pre-create the folder structure and empty .jsonl files for this new area
+      await preCreateAreaStructure(areaPath, areaType);
     }
 
     let effectiveGitlabGraphQLUrl = parentGitlabGraphQLUrl;
@@ -343,7 +521,7 @@ export async function handleNewArea(
 
     // Create appropriate jobs based on area type
     const jobsToCreate = [];
-    const commandsForArea = getJobTypesForArea(areaType);
+    const commandsForArea = getCrawlCommandsForAreaType(areaType);
 
     logger.info(`Creating jobs for ${areaType} area ${areaPath}: ${commandsForArea.join(', ')}`);
 

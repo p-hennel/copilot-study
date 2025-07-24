@@ -89,6 +89,7 @@
     "zod": "^4.0.5"
   },
   "dependencies": {
+    "@copima/lib-common": "file:../lib-common",
     "@gitbeaker/node": "^35.8.1",
     "@gitbeaker/rest": "^43.3.0",
     "@libsql/client": "^0.15.10",

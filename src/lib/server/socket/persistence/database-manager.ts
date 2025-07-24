@@ -25,7 +25,7 @@ import type {
   WebAppProgressUpdate,
   WebAppJobStatus
 } from '../types/messages.js';
-import { JobStatus, CrawlCommand, AreaType, TokenProvider } from '$lib/types';
+import { JobStatus, CrawlCommand, AreaType, TokenProvider } from '@copima/lib-common';
 import { getLogger } from '@logtape/logtape';
 
 const logger = getLogger(['server', 'socket', 'database']);

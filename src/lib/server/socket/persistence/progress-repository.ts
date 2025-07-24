@@ -3,7 +3,7 @@ import type { DatabaseManager } from './database-manager.js';
 import type { SocketJobProgress, ProgressMilestone } from '../types/database.js';
 import type { ProgressSnapshot } from '../types/progress.js';
 import { job } from '$lib/server/db/base-schema';
-import { JobStatus } from '$lib/types';
+import { JobStatus } from '@copima/lib-common';
 
 /**
  * Progress data persistence and retrieval

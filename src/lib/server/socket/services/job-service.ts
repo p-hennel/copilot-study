@@ -5,9 +5,7 @@ import { job as jobSchema } from "$lib/server/db/schema";
 import { JobStatus, CrawlCommand } from "$lib/types";
 // Removed unused Job import
 import { eq, desc, sql } from "drizzle-orm";
-import type {
-  EntityType
-} from "../types/index.js";
+import type { EntityType } from '@copima/lib-common';
 import type { CompletionData, FailureData, SimpleJob } from "../types/data";
 
 const logger = getLogger(["backend", "socket", "job-service"]);
@@ -392,19 +390,69 @@ export class JobService {
    */
   private mapCommandToEntityType(command: CrawlCommand): EntityType | null {
     const mapping: Record<string, EntityType> = {
+      // Core discovery commands
       [CrawlCommand.GROUP_PROJECT_DISCOVERY]: 'areas',
       [CrawlCommand.group]: 'group',
       [CrawlCommand.project]: 'project',
+      
+      // Group-level commands - map to group entity type
+      [CrawlCommand.groupMembers]: 'group',
+      [CrawlCommand.groupProjects]: 'group',
+      [CrawlCommand.groupSubgroups]: 'group',
+      [CrawlCommand.groupIssues]: 'group',
+      [CrawlCommand.epics]: 'group',
+      [CrawlCommand.epicIssues]: 'group',
+      [CrawlCommand.epicNotes]: 'group',
+      [CrawlCommand.epicDiscussions]: 'group',
+      [CrawlCommand.groupCustomAttributes]: 'group',
+      [CrawlCommand.groupAccessRequests]: 'group',
+      [CrawlCommand.groupVariables]: 'group',
+      [CrawlCommand.groupLabels]: 'group',
+      [CrawlCommand.groupBadges]: 'group',
+      [CrawlCommand.groupDeployTokens]: 'group',
+      [CrawlCommand.groupIssueBoards]: 'group',
+      [CrawlCommand.groupMilestones]: 'group',
+      
+      // Project-level commands - map to project entity type
+      [CrawlCommand.projectMembers]: 'project',
+      [CrawlCommand.projectVariables]: 'project',
+      [CrawlCommand.projectCustomAttributes]: 'project',
+      [CrawlCommand.projectStatistics]: 'project',
+      [CrawlCommand.projectBadges]: 'project',
+      [CrawlCommand.projectTemplates]: 'project',
+      [CrawlCommand.projectAccessRequests]: 'project',
+      [CrawlCommand.projectHooks]: 'project',
+      [CrawlCommand.projectIssueBoards]: 'project',
+      [CrawlCommand.freezePeriods]: 'project',
+      [CrawlCommand.projectSnippets]: 'project',
+      [CrawlCommand.pagesDomains]: 'project',
+      [CrawlCommand.protectedBranches]: 'project',
+      [CrawlCommand.protectedTags]: 'project',
+      [CrawlCommand.deployKeys]: 'project',
+      [CrawlCommand.containerRegistryRepositories]: 'project',
+      [CrawlCommand.packages]: 'project',
+      [CrawlCommand.vulnerabilities]: 'project',
+      
+      // Content-specific entity mappings
       [CrawlCommand.issues]: 'issue',
       [CrawlCommand.mergeRequests]: 'merge_request',
+      [CrawlCommand.mergeRequestNotes]: 'merge_request',
+      [CrawlCommand.mergeRequestDiscussions]: 'merge_request',
+      [CrawlCommand.mergeRequestAwardEmojis]: 'merge_request',
       [CrawlCommand.commits]: 'commit',
+      [CrawlCommand.commitDiscussions]: 'commit',
       [CrawlCommand.branches]: 'branch',
+      [CrawlCommand.tags]: 'branch',
       [CrawlCommand.pipelines]: 'pipeline',
+      [CrawlCommand.pipelineSchedules]: 'pipeline',
+      [CrawlCommand.jobs]: 'pipeline',
+      [CrawlCommand.deployments]: 'pipeline',
+      [CrawlCommand.environments]: 'pipeline',
+      [CrawlCommand.pipelineScheduleVariables]: 'pipeline',
+      [CrawlCommand.pipelineTriggers]: 'pipeline',
       [CrawlCommand.users]: 'user',
-      [CrawlCommand.groupMilestones]: 'groupMilestones',
-      [CrawlCommand.epics]: 'epics',
-      [CrawlCommand.jobs]: 'jobs',
-      [CrawlCommand.mergeRequestNotes]: 'mergeRequestNotes'
+      [CrawlCommand.timelogs]: 'user',
+      [CrawlCommand.workItems]: 'issue'
     };
 
     return mapping[command] || null;
