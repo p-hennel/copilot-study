@@ -115,7 +115,7 @@
         "prettier-plugin-svelte": "^3.4.0",
         "prettier-plugin-tailwindcss": "^0.6.14",
         "sv": "^0.8.19",
-        "svelte": "^5.36.13",
+        "svelte": "^5.37.1",
         "svelte-check": "^4.3.0",
         "svelte-motion": "^0.12.2",
         "tslib": "^2.8.1",
@@ -2398,7 +2398,7 @@
 
     "sv": ["sv@0.8.19", "", { "bin": { "sv": "dist/bin.js" } }, "sha512-d38gR4/CoEnyLqIexYp7jXeMwtKG3t9/wiNDd37LPz4H3idGhLaJlUtXP3N7hmOVnC58Fyyb/p26taPE22Le2g=="],
 
-    "svelte": ["svelte@5.36.13", "", { "dependencies": { "@ampproject/remapping": "^2.3.0", "@jridgewell/sourcemap-codec": "^1.5.0", "@sveltejs/acorn-typescript": "^1.0.5", "@types/estree": "^1.0.5", "acorn": "^8.12.1", "aria-query": "^5.3.1", "axobject-query": "^4.1.0", "clsx": "^2.1.1", "esm-env": "^1.2.1", "esrap": "^2.1.0", "is-reference": "^3.0.3", "locate-character": "^3.0.0", "magic-string": "^0.30.11", "zimmerframe": "^1.1.2" } }, "sha512-LnSywHHQM/nJekC65d84T1Yo85IeCYN4AryWYPhTokSvcEAFdYFCfbMhX1mc0zHizT736QQj0nalUk+SXaWrEQ=="],
+    "svelte": ["svelte@5.37.1", "", { "dependencies": { "@ampproject/remapping": "^2.3.0", "@jridgewell/sourcemap-codec": "^1.5.0", "@sveltejs/acorn-typescript": "^1.0.5", "@types/estree": "^1.0.5", "acorn": "^8.12.1", "aria-query": "^5.3.1", "axobject-query": "^4.1.0", "clsx": "^2.1.1", "esm-env": "^1.2.1", "esrap": "^2.1.0", "is-reference": "^3.0.3", "locate-character": "^3.0.0", "magic-string": "^0.30.11", "zimmerframe": "^1.1.2" } }, "sha512-h8arWpQZ+3z8eahyBT5KkiBOUsG6xvI5Ykg0ozRr9xEdImgSMUPUlOFWRNkUsT7Ti0DSUCTEbPoped0aoxFyWA=="],
 
     "svelte-adapter-bun": ["svelte-adapter-bun@github:gornostay25/svelte-adapter-bun#ade8792", { "dependencies": { "tiny-glob": "^0.2.9" } }, "gornostay25-svelte-adapter-bun-ade8792"],
 
