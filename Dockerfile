@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
   apt-get upgrade -qq -y && \
-  apt-get install -qq -y nano htop cifs-utils bash wget bzip2 curl procps cron
+  apt-get install -qq -y nano htop cifs-utils bash wget bzip2 curl procps cron sqlite3
 
 
 # RUN mkdir -p /home/bun/.ssh/config.d
@@ -59,6 +59,8 @@ COPY --from=prerelease \
 #  /usr/src/app/.autorestic.yml \
 #  /usr/src/app/backup.cron \
   /usr/src/app/db-test.ts \
+  /usr/src/app/db-migrate-safe.ts \
+  /usr/src/app/db-cli.sh \
   ./
 #  /usr/src/app/dual-server.js \
 
@@ -79,7 +81,7 @@ COPY drizzle /usr/src/app/
 
 #RUN crontab -u bun /usr/src/app/backup.cron
 #RUN rm -f /home/bun/data/config/main.db;
-RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config
+RUN mkdir -p /home/bun/data/logs /home/bun/data/archive /home/bun/data/config /home/bun/data/backups
 RUN chown -R bun:bun /home/bun/data
 # /home/bun/.ssh
 

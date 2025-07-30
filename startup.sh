@@ -9,7 +9,26 @@ export PATH=$HOME/.bun/bin:$PATH
 #cron
 #autorestic check
 
-bun --bun run db-test.ts
+# Safe database initialization and migration
+echo "🚀 Starting database initialization..."
+
+# Check if we should use the safe migrator or fallback to db-test
+if [ -f "db-migrate-safe.ts" ]; then
+  echo "📦 Using safe migration system..."
+  bun --bun run db-migrate-safe.ts
+  MIGRATION_EXIT_CODE=$?
+  
+  if [ $MIGRATION_EXIT_CODE -eq 0 ]; then
+    echo "✅ Safe migration completed successfully"
+  else
+    echo "❌ Safe migration failed with code $MIGRATION_EXIT_CODE"
+    echo "🔄 Falling back to legacy db-test..."
+    bun --bun run db-test.ts
+  fi
+else
+  echo "⚠️ Safe migrator not found, using legacy db-test..."
+  bun --bun run db-test.ts
+fi
 
 if [ "$SUPERVUSOR" -eq "pm2" ]; then
   bun pm2-runtime start ecosystem.config.cjs
