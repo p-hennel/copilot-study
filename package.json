@@ -44,7 +44,7 @@
     "@graphql-codegen/near-operation-file-preset": "^3.1.0",
     "@inlang/paraglide-js": "^2.2.0",
     "@internationalized/date": "^3.8.2",
-    "@lucide/svelte": "^0.534.0",
+    "@lucide/svelte": "^0.535.0",
     "@sveltejs/adapter-auto": "^6.0.1",
     "@sveltejs/adapter-node": "^5.2.13",
     "@sveltejs/enhanced-img": "^0.7.0",
