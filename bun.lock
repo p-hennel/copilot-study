@@ -81,7 +81,7 @@
         "@graphql-codegen/near-operation-file-preset": "^3.1.0",
         "@inlang/paraglide-js": "^2.2.0",
         "@internationalized/date": "^3.8.2",
-        "@lucide/svelte": "^0.534.0",
+        "@lucide/svelte": "^0.537.0",
         "@sveltejs/adapter-auto": "^6.0.1",
         "@sveltejs/adapter-node": "^5.2.13",
         "@sveltejs/enhanced-img": "^0.7.0",
@@ -572,7 +572,7 @@
 
     "@logtape/otel": ["@logtape/otel@1.0.4", "", { "dependencies": { "@opentelemetry/api": "^1.9.0", "@opentelemetry/api-logs": "^0.202.0", "@opentelemetry/exporter-logs-otlp-http": "^0.202.0", "@opentelemetry/otlp-exporter-base": "^0.202.0", "@opentelemetry/resources": "^2.0.1", "@opentelemetry/sdk-logs": "^0.202.0", "@opentelemetry/semantic-conventions": "^1.34.0" }, "peerDependencies": { "@logtape/logtape": "1.0.4" } }, "sha512-JMRAR+p2iWwek2jUqiAzozBqG7n+m6MyO97BmJz3/p0FBqHQJDx9fQs1OXeiH0TDhkh3/k7hShKQkl2ZrvrWjw=="],
 
-    "@lucide/svelte": ["@lucide/svelte@0.534.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-XqlT0ibiEEoEGcmZLdk0RNtq1OW77OjqxXZjJE/23Wabl+2d9Pxg9AAx7+6WFv8BSf8K6im73vz3cZKYEgY9Mw=="],
+    "@lucide/svelte": ["@lucide/svelte@0.537.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-KmeU/UOq1HJtDS4+Fq6p99CeXI/RzRHCuNrYQ7lqfKwBLtr0gEJgCm8W1RiKZyx155xx8lkVIgWHG0tyGhSYew=="],
 
     "@melt-ui/svelte": ["@melt-ui/svelte@0.86.6", "", { "dependencies": { "@floating-ui/core": "^1.3.1", "@floating-ui/dom": "^1.4.5", "@internationalized/date": "^3.5.0", "dequal": "^2.0.3", "focus-trap": "^7.5.2", "nanoid": "^5.0.4" }, "peerDependencies": { "svelte": "^3.0.0 || ^4.0.0 || ^5.0.0-next.118" } }, "sha512-Jer+M7DgIwT5IHfTayb4Iw/fkkxWNmC/mqn/nMh9JrbPbkxmyabfLQnhJ+JDn5HK77f84j34lubO3iqFtYAfMg=="],
 
