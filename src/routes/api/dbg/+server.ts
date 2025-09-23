@@ -23,6 +23,11 @@ export async function GET({ url }: { url: URL }) {
         const result = await repairer.repair();
         return json(result);
       }
+      case "accounts": {
+        const db = getDb();
+        const accounts = await db.select().from("accounts");
+        return json({ accounts });
+      }
       case "errors":
       case "logs": {
         const logFile = Bun.file(path.join(AppSettings.getInstance().getSettings().paths.logs, code === "errors" ? "backend.error.log" : "backend.log"))
