@@ -46,8 +46,17 @@ const getHomeDataPath = () => {
 
 const getSettingsFilePath = () => {
   const settingsFilePath = Bun.env.SETTINGS_FILE ?? process.env.SETTINGS_FILE;
+  console.warn("Env SETTINGS_FILE:", settingsFilePath)
   if (!!settingsFilePath && settingsFilePath.length > 0 && existsSync(settingsFilePath)) {
     return settingsFilePath;
+  }
+  const dataRoot = Bun.env.DATA_ROOT ?? process.env.DATA_ROOT;
+  console.warn("Env DATA_ROOT:", dataRoot)
+  if (dataRoot && dataRoot.length > 0 && existsSync(dataRoot)) {
+    const candidate = path.join(dataRoot, "config", "settings.yaml");
+    if (existsSync(candidate)) {
+      return candidate;
+    }
   }
   const homeSettingsFilePath = getHomeSettingsFilePath();
   if (existsSync(homeSettingsFilePath)) {
@@ -58,6 +67,7 @@ const getSettingsFilePath = () => {
 
 export const getDataRoot = () => {
   const dataPath = Bun.env.DATA_ROOT ?? process.env.DATA_ROOT;
+  console.error(dataPath)
   if (!!dataPath && dataPath.length > 0 && existsSync(dataPath)) {
     return dataPath;
   }
@@ -194,12 +204,13 @@ export class AppSettings {
   // The singleton instance.
   private static instance: AppSettings;
   private settings: Settings;
-  private readonly filePath: string;
+  public readonly filePath: string;
   private isWriting: boolean = false; // Flag to prevent reload loop
   private watcher: FSWatcher | null = null; // To hold the watcher instance
 
   // Private constructor to enforce singleton pattern.
   private constructor(filePath: string) {
+    console.error(filePath)
     logger.info("Loading Settings from: {filePath} ({exists})", {
       filePath,
       exists: existsSync(filePath)
@@ -285,6 +296,7 @@ export class AppSettings {
       if (!filePath || filePath.length <= 0) {
         throw new Error("First-time initialization requires a file path.");
       }
+      console.warn("Using settings file:", filePath);
       if (!existsSync(filePath)) {
         const temp = settingsSchema.parse({});
         logger.debug("Generated default settings", { temp, yaml: yaml.dump(temp) });
